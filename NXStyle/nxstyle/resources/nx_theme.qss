@@ -23,13 +23,15 @@ QMainWindow::separator:hover { background: #C7E3E7; }
 QDockWidget { color: #1E2329; }
 QDockWidget > QWidget { background: #FFFFFF; }
 QMainWindow > QTabBar { background: #EEF1F4; border: none; }
-QMainWindow > QTabBar::tab {
+QMainWindow > QTabBar::tab, QMainWindow > QTabBar::tab:top {
     background: transparent; color: #5D6670; border: none;
     padding: 5px 12px 5px 12px; margin: 0px; min-width: 60px;
     border-bottom: 2px solid transparent;
 }
-QMainWindow > QTabBar::tab:hover { color: #1E2329; background: #E3F1F3; }
-QMainWindow > QTabBar::tab:selected { color: #0B6E79; background: #FFFFFF; border-bottom: 2px solid #0B6E79; }
+QMainWindow > QTabBar::tab:hover, QMainWindow > QTabBar::tab:top:!selected:hover { color: #1E2329; background: #E3F1F3; }
+QMainWindow > QTabBar::tab:selected, QMainWindow > QTabBar::tab:top:selected {
+    color: #0B6E79; background: #FFFFFF; border: none; border-bottom: 2px solid #0B6E79; border-radius: 0px; font-weight: normal;
+}
 
 QWidget#NXDockTitle { background: #EEF1F4; border-bottom: 1px solid #D5DAE0; }
 QWidget#NXDockTitle QLabel { color: #1E2329; font-weight: 600; padding-left: 6px; }
@@ -58,12 +60,12 @@ QDockWidget#Model QTabBar::tab:selected { color: #0B6E79; border-top: 2px solid 
 
 /* ---- graphics-window document tabs (NX shows them above the view) ------ */
 QMdiArea QTabBar { background: #EEF1F4; }
-QMdiArea QTabBar::tab {
+QMdiArea QTabBar::tab, QMdiArea QTabBar::tab:top {
     background: #E4E8EC; color: #5D6670; border: 1px solid #D5DAE0; border-bottom: none;
     padding: 4px 14px; margin-right: 1px;
 }
-QMdiArea QTabBar::tab:hover { background: #E3F1F3; color: #1E2329; }
-QMdiArea QTabBar::tab:selected { background: #FFFFFF; color: #1E2329; border-top: 2px solid #0B6E79; }
+QMdiArea QTabBar::tab:hover, QMdiArea QTabBar::tab:top:!selected:hover { background: #E3F1F3; color: #1E2329; }
+QMdiArea QTabBar::tab:selected, QMdiArea QTabBar::tab:top:selected { background: #FFFFFF; color: #1E2329; border-top: 2px solid #0B6E79; }
 
 /* ---- status bar / cue line ---------------------------------------------- */
 QStatusBar { background: #FFFFFF; border-top: 1px solid #D5DAE0; color: #1E2329; }

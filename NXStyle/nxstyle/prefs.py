@@ -47,6 +47,15 @@ def navigation_style(cfg):
     return choice
 
 
+def base_stylesheet(cfg):
+    """FreeCAD's light stylesheet that the NX theme is layered on."""
+    name = cfg.get("stylesheet", "auto")
+    if name != "auto":
+        return name
+    # 1.0 ships one file per theme; 1.1 has one FreeCAD.qss plus a "Theme" parameter
+    return "FreeCAD.qss" if freecad_version() >= (1, 1) else "FreeCAD Light.qss"
+
+
 def uses_own_navigation(cfg=None):
     cfg = cfg or config.get()
     return cfg.get("navigation", "nx") == "nx"
@@ -90,7 +99,13 @@ def apply(cfg=None):
     v.SetBool("ZoomAtCursor", bool(cfg.get("zoom_at_cursor", True)))
     v.SetBool("InvertZoom", bool(cfg.get("invert_wheel_zoom", True)))
     v.SetString("NavigationStyle", navigation_style(cfg))
-    App.ParamGet(MAIN).SetString("StyleSheet", cfg.get("stylesheet", ""))
+    # only write when different: FreeCAD 1.1 reloads its stylesheet on every
+    # change of these parameters, which would drop the NX layer on top
+    main = App.ParamGet(MAIN)
+    if main.GetString("StyleSheet") != base_stylesheet(cfg):
+        main.SetString("StyleSheet", base_stylesheet(cfg))
+    if freecad_version() >= (1, 1) and main.GetString("Theme") != "FreeCAD Light":
+        main.SetString("Theme", "FreeCAD Light")
     app = cfg.get("default_application", "modeling")
     wb = {"modeling": "PartDesignWorkbench", "drafting": "TechDrawWorkbench",
           "assemblies": "AssemblyWorkbench"}.get(app, "PartDesignWorkbench")

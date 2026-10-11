@@ -26,7 +26,7 @@ DEFAULTS = {
     "hide_menubar": True,              # menus stay reachable from the Menu button
     "hide_native_toolbars": True,
     "floating_task_panel": False,      # True = feature dialogs float over the graphics window like NX
-    "stylesheet": "FreeCAD Light.qss",
+    "stylesheet": "auto",                # FreeCAD's light stylesheet for this version; or a file name
     "background": "light_gray_gradient",
     "colors": {
         "preselection": "#FF2020",
@@ -86,12 +86,13 @@ def load():
                 _merge(cfg, json.load(f))
         except (OSError, ValueError) as e:
             App.Console.PrintWarning(f"NXStyle: ignoring unreadable {path}: {e}\n")
-    else:
-        try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(DEFAULTS, f, indent=2)
-        except OSError:
-            pass
+    # A reference copy of every setting; nxstyle.json holds only what you change,
+    # so new defaults still reach existing profiles.
+    try:
+        with open(os.path.join(profile_dir(), "nxstyle.defaults.json"), "w", encoding="utf-8") as f:
+            json.dump(DEFAULTS, f, indent=2)
+    except OSError:
+        pass
     _cfg = cfg
     return cfg
 

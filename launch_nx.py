@@ -237,6 +237,40 @@ def prepare_profile(profile: Path, reset: bool = False) -> dict[str, Path]:
     return paths
 
 
+def seed_user_cfg(paths: dict[str, Path], version: tuple[int, int, int] | None) -> bool:
+    """Give a brand-new NX profile the few settings FreeCAD reads before any
+    add-on runs: the light stylesheet, no first-run wizard, and no panels in
+    overlays (FreeCAD 1.1 puts the Tasks panel in one). Never touches an
+    existing user.cfg. Returns True if it wrote one."""
+    cfg = paths["home"] / "user.cfg"
+    if cfg.exists():
+        return False
+    import xml.etree.ElementTree as ET
+
+    root = ET.Element("FCParameters")
+    top = ET.SubElement(root, "FCParamGroup", Name="Root")
+
+    def group(parent, *names):
+        for n in names:
+            found = next((g for g in parent.findall("FCParamGroup") if g.get("Name") == n), None)
+            parent = found if found is not None else ET.SubElement(parent, "FCParamGroup", Name=n)
+        return parent
+
+    v11 = bool(version and version >= (1, 1, 0))
+    main = group(top, "BaseApp", "Preferences", "MainWindow")
+    ET.SubElement(main, "FCText", Name="StyleSheet").text = "FreeCAD.qss" if v11 else "FreeCAD Light.qss"
+    if v11:
+        ET.SubElement(main, "FCText", Name="Theme").text = "FreeCAD Light"
+    start = group(top, "BaseApp", "Preferences", "Mod", "Start")
+    ET.SubElement(start, "FCBool", Name="FirstStart2024", Value="0")
+    general = group(top, "BaseApp", "Preferences", "General")
+    ET.SubElement(general, "FCText", Name="AutoloadModule").text = "PartDesignWorkbench"
+    for side in ("OverlayLeft", "OverlayRight", "OverlayTop", "OverlayBottom"):
+        ET.SubElement(group(top, "BaseApp", "MainWindow", "DockWindows", side), "FCText", Name="Widgets")
+    ET.ElementTree(root).write(cfg, encoding="UTF-8", xml_declaration=True)
+    return True
+
+
 def build_env(paths: dict[str, Path], extra: dict | None = None) -> dict:
     env = _clean_env()
     env["FREECAD_USER_HOME"] = str(paths["home"])
@@ -382,6 +416,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     paths = prepare_profile(profile, reset=reset)
+    seed_user_cfg(paths, install.version)
     env = build_env(paths, extra)
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")

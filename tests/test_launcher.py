@@ -39,6 +39,28 @@ class ProfileTests(unittest.TestCase):
             self.assertFalse(marker.exists())
 
 
+class SeedTests(unittest.TestCase):
+    def test_seeds_new_profile_for_each_version(self):
+        import xml.etree.ElementTree as ET
+        for version, sheet in (((1, 0, 2), "FreeCAD Light.qss"), ((1, 1, 4), "FreeCAD.qss")):
+            with tempfile.TemporaryDirectory() as tmp:
+                paths = launch_nx.prepare_profile(Path(tmp) / "p")
+                self.assertTrue(launch_nx.seed_user_cfg(paths, version))
+                tree = ET.parse(paths["home"] / "user.cfg")
+                texts = {e.get("Name"): (e.text or "") for e in tree.iter("FCText")}
+                self.assertEqual(texts["StyleSheet"], sheet)
+                self.assertEqual(texts["Widgets"], "")          # no panels in overlays
+                self.assertEqual(tree.getroot().tag, "FCParameters")
+
+    def test_never_overwrites_existing_user_cfg(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = launch_nx.prepare_profile(Path(tmp) / "p")
+            cfg = paths["home"] / "user.cfg"
+            cfg.write_text("mine")
+            self.assertFalse(launch_nx.seed_user_cfg(paths, (1, 1, 4)))
+            self.assertEqual(cfg.read_text(), "mine")
+
+
 class EnvTests(unittest.TestCase):
     def test_env_points_freecad_at_profile_and_drops_inherited_values(self):
         os.environ["FREECAD_USER_HOME"] = "SHOULD-NOT-LEAK"

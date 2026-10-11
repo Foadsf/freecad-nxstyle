@@ -59,7 +59,7 @@ Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry 
 python launch_nx.py --smoke-test out
 ```
 
-This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 46 behaviours. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
+This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 48 behaviours. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
 python -m unittest discover -s tests
@@ -69,7 +69,7 @@ Launcher unit tests; FreeCAD is not needed.
 
 ## Requirements
 
-FreeCAD 1.0 or newer (tested: 1.0.2 on Windows 11, Qt 5.15). The code also targets 1.1 (Qt 6 / PySide6) but has not been run there yet. Any Python 3.8+ runs the launcher, including FreeCAD's own.
+FreeCAD 1.0 or newer. Tested on Windows 11 with FreeCAD 1.0.2 (Qt 5.15) and 1.1.4 (Qt 6). Any Python 3.8+ runs the launcher, including FreeCAD's own.
 
 ## Licence and trademarks
 

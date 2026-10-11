@@ -57,7 +57,7 @@
     {"name": "Render", "groups": [
       {"name": "Material", "items": [
         {"cmd": "Std_SetMaterial", "label": "Assign Material", "size": "large"},
-        {"cmd": ["Materials_Edit", "Material_MaterialEditor"], "label": "Material Editor"},
+        {"cmd": ["Material_Edit", "Materials_Edit", "Material_MaterialEditor"], "label": "Material Editor"},
         {"cmd": ["Std_SetAppearance", "Std_DlgDisplayProperties"], "label": "Object Display"}
       ]},
       {"name": "Image", "items": [

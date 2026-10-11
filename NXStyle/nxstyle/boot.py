@@ -22,7 +22,24 @@ def _start(attempt=0):
         App.Console.PrintError("NXStyle failed to start:\n" + traceback.format_exc() + "\n")
 
 
+OVERLAYS = "User parameter:BaseApp/MainWindow/DockWindows"
+NX_DOCKED = {"Model", "Tasks", "NXHistory", "Selection view"}
+
+
+def release_overlays():
+    """FreeCAD 1.1 puts the Tasks panel in a right-hand overlay by default; NX
+    keeps the dialog with the navigators, so take NX's panels out of overlays."""
+    root = App.ParamGet(OVERLAYS)
+    for side in ("OverlayLeft", "OverlayRight", "OverlayTop", "OverlayBottom"):
+        grp = root.GetGroup(side)
+        names = [n for n in grp.GetString("Widgets", "").split(",") if n]
+        keep = [n for n in names if n not in NX_DOCKED]
+        if keep != names:
+            grp.SetString("Widgets", ",".join(keep) + ("," if keep else ""))
+
+
 def schedule():
     # The NX profile is already configured; skip FreeCAD's first-run welcome panel
     App.ParamGet(START).SetBool("FirstStart2024", False)
+    release_overlays()
     QtCore.QTimer.singleShot(0, _start)

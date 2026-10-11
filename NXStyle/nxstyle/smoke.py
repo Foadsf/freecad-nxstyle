@@ -126,10 +126,6 @@ class Smoke:
                    if not command_actions(f"NXStyle_App_{a['id']}")
                    or command_actions(f"NXStyle_App_{a['id']}")[0].icon().isNull()]
         self.check("Application buttons have icons", not no_icon, no_icon)
-        css = QtWidgets.QApplication.instance().styleSheet()
-        self.check("NX theme applied over FreeCAD Light", sh.theme_active() and "QMainWindow" in
-                   css.split("/* NXStyle theme */")[0])
-        self.check("no unfilled stylesheet placeholders", "@Theme" not in css)
         bars = [[b.tabText(i) for i in range(b.count())] for b in Gui.getMainWindow().findChildren(QtWidgets.QTabBar)]
         left = next((t for t in bars if "Part Navigator" in t), [])
         self.check("left panels share one tab strip", "Dialog" in left, left)
@@ -172,6 +168,12 @@ class Smoke:
         return bad
 
     def s_gates(self):
+        # checked a few seconds in: FreeCAD 1.1 may reload its own stylesheet after start-up
+        css = QtWidgets.QApplication.instance().styleSheet()
+        base = css.split("/* NXStyle theme */")[0]
+        self.check("NX theme applied over FreeCAD's light theme", self.shell.theme_active() and len(base) > 10000,
+                   f"base {len(base)} chars")
+        self.check("no unfilled stylesheet placeholders", "@Theme" not in css)
         clipped = self.labels_clipped()
         self.check("ribbon group labels not clipped", not clipped, clipped)
         doc = App.ActiveDocument
@@ -199,6 +201,20 @@ class Smoke:
         else:
             self.check("view triad lower-left, FreeCAD's hidden", False, "no triad")
         self.shot("01_modeling.png")
+        # what occupies the right part of the graphics area (diagnostics)
+        mw = Gui.getMainWindow()
+        chain = []
+        w = mw.childAt(QtCore.QPoint(int(mw.width() * 0.88), int(mw.height() * 0.6)))
+        while w is not None and w is not mw and len(chain) < 12:
+            chain.append(f"{type(w).__name__}#{w.objectName()}")
+            w = w.parentWidget()
+        self.info["widget at right of view"] = chain
+        self.info["docks"] = [(d.objectName(), d.isVisible(), d.isFloating(), str(mw.dockWidgetArea(d)))
+                              for d in mw.findChildren(QtWidgets.QDockWidget)]
+        self.info["overlays"] = [(t.objectName(), t.isVisible(), t.count(), [t.tabText(i) for i in range(t.count())])
+                                 for t in mw.findChildren(QtWidgets.QTabWidget) if t.objectName().startswith("Overlay")]
+        boxes = [o[0] for o in self.info["overlays"] if o[1]]
+        self.check("no overlay box over the graphics window", not boxes, boxes)
         try:  # grab() cannot capture OpenGL; render the 3D view itself
             Gui.Selection.addSelection(doc.Name, "Box", "Face6")
             Gui.Selection.setPreselection(doc.getObject("Box"), "Face2")
@@ -332,6 +348,9 @@ class Smoke:
                    tabs)
         visible = [tb.objectName() for tb in self.shell.native_toolbars() if tb.isVisible()]
         self.check("sketcher toolbars stay hidden", not visible, visible)
+        boxes = [t.objectName() for t in Gui.getMainWindow().findChildren(QtWidgets.QTabWidget)
+                 if t.objectName().startswith("Overlay") and t.isVisible()]
+        self.check("no overlay box over the view in sketch mode", not boxes, boxes)
         self.shot("02_sketch.png")
         tested, bad = self.press_keys("sketch")
         self.check(f"sketch key presses reach their commands ({tested} keys)", tested and not bad, bad)

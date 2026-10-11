@@ -50,6 +50,22 @@ class DockTitle(QtWidgets.QWidget):
         lay.addWidget(close)
 
 
+class OverlayGuard(QtCore.QObject):
+    """Hides an overlay frame as soon as it is shown if it only holds panels
+    that NXStyle keeps docked on the left."""
+
+    TITLES = {"Model", "Tasks", "NXHistory", "Selection view", "Part Navigator", "Dialog", "History",
+              "Selection View"}
+
+    def stale(self, tw):
+        return all(tw.tabText(i) in self.TITLES for i in range(tw.count()))
+
+    def eventFilter(self, obj, ev):
+        if ev.type() == QtCore.QEvent.Show and self.stale(obj):
+            QtCore.QTimer.singleShot(0, obj.hide)
+        return False
+
+
 # Workbenches FreeCAD activates by itself when an object is edited
 FOLLOWER_WORKBENCHES = {"SketcherWorkbench", "SpreadsheetWorkbench"}
 DOCK_TITLES = {"Model": "Part Navigator", "Report view": "Information", "Python console": "Journal (Python)",
@@ -112,6 +128,7 @@ class Shell(QtCore.QObject):
         self.setup_errors = []
         self._nav_state = None
         self._ticks = 0
+        self._overlay_guard = OverlayGuard(self)
 
     # ================================================================ setup
     def setup(self):
@@ -502,7 +519,21 @@ class Shell(QtCore.QObject):
         mdi = self.mw.findChild(QtWidgets.QMdiArea)
         if mdi is not None:
             mdi.setTabPosition(QtWidgets.QTabWidget.North)
+        self._hide_stale_overlays()
         self.show_part_navigator()
+
+    def _hide_stale_overlays(self):
+        """An overlay frame that only lists panels NXStyle docks itself is an
+        empty box over the 3D view (FreeCAD 1.1 default layout). Hide it now
+        and whenever FreeCAD shows it again (e.g. when a dialog opens)."""
+        for tw in self.mw.findChildren(QtWidgets.QTabWidget):
+            if not tw.objectName().startswith("Overlay"):
+                continue
+            if not tw.property("nxGuarded"):
+                tw.installEventFilter(self._overlay_guard)
+                tw.setProperty("nxGuarded", True)
+            if tw.isVisible() and self._overlay_guard.stale(tw):
+                tw.hide()
 
     def _blank_titles(self):
         for name in LEFT_PANELS:
@@ -524,15 +555,18 @@ class Shell(QtCore.QObject):
         dirs = [os.path.join(App.getUserAppDataDir(), "Gui", "Stylesheets"),
                 os.path.join(App.getResourceDir(), "Gui", "Stylesheets")]
         QtCore.QDir.setSearchPaths("qss", [d for d in dirs if os.path.isdir(d)] + list(QtCore.QDir.searchPaths("qss")))
-        current = app.styleSheet()
-        base = current.split(THEME_MARK)[0]
-        name = self.cfg.get("stylesheet", "")
-        for d in dirs:
-            path = os.path.join(d, name) if name else ""
-            if path and os.path.isfile(path):
-                with open(path, encoding="utf-8") as f:
-                    base = f.read()
-                break
+        base = app.styleSheet().split(THEME_MARK)[0]
+        if len(base) < 1000:
+            # FreeCAD has not applied its own theme yet (first start of a fresh
+            # profile on 1.0): load the file ourselves. Once FreeCAD has loaded
+            # it, it is already resolved (1.1 computes its values from YAML).
+            name = prefs.base_stylesheet(self.cfg)
+            for d in dirs:
+                path = os.path.join(d, name) if name else ""
+                if path and os.path.isfile(path):
+                    with open(path, encoding="utf-8") as f:
+                        base = f.read()
+                    break
         # FreeCAD fills these placeholders when it loads a stylesheet itself; an
         # unfilled one makes Qt drop the rules around it. Use the NX accent tints.
         for token, value in THEME_TOKENS.items():
@@ -572,10 +606,11 @@ class Shell(QtCore.QObject):
         # NX keeps the Part Navigator in front; FreeCAD leaves its (often empty)
         # Tasks panel in front after start-up, new documents and closed dialogs.
         self._ticks += 1
-        if self._ticks % 20 == 0:   # FreeCAD may re-apply its own stylesheet or dock headers
+        if self._ticks % 5 == 0:   # FreeCAD may re-apply its own stylesheet or dock headers
             if self.cfg.get("theme", "nx") == "nx" and not self.theme_active():
                 self._apply_theme()
             self._blank_titles()
+            self._hide_stale_overlays()
         state = (dialog, len(App.listDocuments()))
         if state != self._nav_state:
             if not dialog:
