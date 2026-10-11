@@ -146,6 +146,10 @@ class NxMouse(QtCore.QObject):
         self.rmb_pending = False
         self.last_radial = None
         self.triad = None
+        self.mode = None
+        self.lmb_rotate = False
+        self.swallow_release = None
+        self.manager = None
         self.hold_timer = QtCore.QTimer(self)
         self.hold_timer.setSingleShot(True)
         self.hold_timer.timeout.connect(self._mb2_hold)
@@ -258,8 +262,28 @@ class NxMouse(QtCore.QObject):
         self.last_radial = menu
         menu.popup_at(self.rmb_global)
 
+    def set_mode(self, mode):
+        """None, or 'rotate' (NX F7: MB1 drag rotates until Esc / MB2 / MB3)."""
+        self.mode = mode
+        self.lmb_rotate = False
+        if mode == "rotate":
+            self.widget.setCursor(Qt.OpenHandCursor)
+        else:
+            self.widget.unsetCursor()
+
     def eventFilter(self, obj, ev):
         t = ev.type()
+        if t == QtCore.QEvent.KeyPress and ev.key() == Qt.Key_Escape:
+            if self.mode:
+                self.manager.set_mode(None)
+                return True
+            if commands.immediate_hide.active:
+                commands.stop_immediate_hide()
+                status("Immediate Hide finished")
+                return True
+            return False
+        if obj is not self.widget:   # the graphics view itself: only keys matter
+            return False
         if self._replaying or t not in (QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonRelease,
                                         QtCore.QEvent.MouseMove, QtCore.QEvent.MouseButtonDblClick):
             return False
@@ -269,10 +293,39 @@ class NxMouse(QtCore.QObject):
             App.Console.PrintWarning(f"NXStyle navigation: {e}\n")
             return False
 
+    def _rotate_mode(self, t, ev, p):
+        """Mouse handling while F7 Rotate is on. Returns True if consumed."""
+        button = ev.button()
+        if t == QtCore.QEvent.MouseButtonPress:
+            if button == Qt.LeftButton:
+                self.lmb_rotate = True
+                self.last = p
+                self.widget.setCursor(Qt.ClosedHandCursor)
+                return True
+            if button in (Qt.RightButton, Qt.MiddleButton):
+                self.manager.set_mode(None)
+                self.swallow_release = button
+                return True
+        if t == QtCore.QEvent.MouseMove and self.lmb_rotate:
+            self.rotate(p.x() - self.last.x(), p.y() - self.last.y())
+            self.last = p
+            return True
+        if t == QtCore.QEvent.MouseButtonRelease and button == Qt.LeftButton and self.lmb_rotate:
+            self.lmb_rotate = False
+            self.widget.setCursor(Qt.OpenHandCursor)
+            return True
+        return False
+
     def _handle(self, t, ev):
         own = prefs.uses_own_navigation(self.cfg)
         button = ev.button()
         p = pos(ev)
+        if self.swallow_release is not None and t == QtCore.QEvent.MouseButtonRelease \
+                and button == self.swallow_release:
+            self.swallow_release = None
+            return True
+        if self.mode == "rotate" and self._rotate_mode(t, ev, p):
+            return True
         if t == QtCore.QEvent.MouseButtonDblClick:
             return own and button == Qt.MiddleButton
         if t == QtCore.QEvent.MouseButtonPress:
@@ -363,6 +416,7 @@ class NavigationManager(QtCore.QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.filters = {}
+        self.mode = None
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.scan)
         self.timer.start(800)
@@ -381,7 +435,11 @@ class NavigationManager(QtCore.QObject):
                 if key in self.filters:
                     continue
                 f = NxMouse(view, widget)
+                f.manager = self
+                if self.mode:
+                    f.set_mode(self.mode)
                 widget.installEventFilter(f)
+                view.graphicsView().installEventFilter(f)   # keyboard focus sits on the view, not the viewport
                 widget.destroyed.connect(lambda _=None, k=key: self.filters.pop(k, None))
                 self.filters[key] = f
                 if config.get().get("view_triad", "nx") == "nx":
@@ -391,6 +449,15 @@ class NavigationManager(QtCore.QObject):
                     except Exception as e:
                         App.Console.PrintWarning(f"NXStyle: view triad unavailable: {e}\n")
         prefs.apply_navigation_to_open_views()
+
+    def set_mode(self, mode):
+        self.mode = mode
+        for f in list(self.filters.values()):
+            try:
+                f.set_mode(mode)
+            except RuntimeError:   # view closed
+                pass
+        status("Rotate: drag MB1 to rotate; Esc, MB2 or MB3 to finish" if mode == "rotate" else "", 4000)
 
     def filter_for_active_view(self):
         try:

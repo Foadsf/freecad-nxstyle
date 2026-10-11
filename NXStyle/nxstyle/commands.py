@@ -266,11 +266,7 @@ class SwitchApplication:
         self.app = app
 
     def GetResources(self):
-        res = {"MenuText": self.app["title"],
-               "ToolTip": f"Switch to the {self.app['title']} application"}
-        if self.app.get("shortcut"):
-            res["Accel"] = self.app["shortcut"]
-        return res
+        return {"MenuText": self.app["title"], "ToolTip": f"Switch to the {self.app['title']} application"}
 
     def IsActive(self):
         return True
@@ -278,6 +274,171 @@ class SwitchApplication:
     def Activated(self):
         from . import shell
         shell.switch_application(self.app["id"])
+
+
+class RotateMode:
+    def GetResources(self):
+        return {"MenuText": "Rotate", "ToolTip": "Drag with MB1 to rotate the view; Esc, MB2 or MB3 ends (NX: F7)",
+                "Pixmap": _pixmap("Std_ViewRotateRight", "Std_ViewIsometric")}
+
+    def IsActive(self):
+        return _view3d() is not None
+
+    def Activated(self):
+        from . import shell
+        sh = shell.instance()
+        if sh is not None:
+            nav = sh.navigation
+            nav.set_mode(None if nav.mode == "rotate" else "rotate")
+
+
+class Refresh:
+    def GetResources(self):
+        return {"MenuText": "Refresh", "ToolTip": "Redraw the graphics window (NX: F5)",
+                "Pixmap": _pixmap("Std_Refresh")}
+
+    def IsActive(self):
+        return _view3d() is not None
+
+    def Activated(self):
+        Gui.Selection.clearPreselection()
+        view = _view3d()
+        if view is not None:
+            view.redraw()
+
+
+class ImmediateHideObserver:
+    def __init__(self):
+        self.active = False
+
+    def addSelection(self, doc, obj, sub, _pnt=None):
+        try:
+            d = App.getDocument(doc)
+            o = d.getObject(obj)
+        except Exception:
+            return
+        target = o
+        # a feature inside a Body is one step of the solid: hide the Body
+        if o is not None and o.isDerivedFrom("PartDesign::Feature") and not o.isDerivedFrom("PartDesign::Body"):
+            body = o.getParentGeoFeatureGroup()
+            target = body or o
+        if target is not None and getattr(target, "ViewObject", None) is not None:
+            d.openTransaction("Immediate Hide")
+            target.ViewObject.Visibility = False
+            d.commitTransaction()
+        from .qt import QtCore
+        QtCore.QTimer.singleShot(0, Gui.Selection.clearSelection)
+
+
+immediate_hide = ImmediateHideObserver()
+
+
+def stop_immediate_hide():
+    if immediate_hide.active:
+        Gui.Selection.removeObserver(immediate_hide)
+        immediate_hide.active = False
+
+
+class ImmediateHide:
+    def GetResources(self):
+        return {"MenuText": "Immediate Hide", "ToolTip": "Pick objects to hide them at once; Esc finishes (NX: Ctrl+Shift+I)",
+                "Pixmap": _pixmap("Std_HideSelection")}
+
+    def IsActive(self):
+        return _has_doc()
+
+    def Activated(self):
+        if immediate_hide.active:
+            stop_immediate_hide()
+            return
+        sel = Gui.Selection.getSelectionEx("", 0)
+        if sel:   # objects already selected: hide those and stay in the mode
+            for s in sel:
+                immediate_hide.addSelection(s.DocumentName, s.ObjectName, "")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addObserver(immediate_hide)
+        immediate_hide.active = True
+
+
+def object_information():
+    """Text for NX's Information window about the current selection."""
+    lines = []
+    for s in Gui.Selection.getSelectionEx("", 0):
+        o = s.Object
+        lines.append(f"{o.Label}  ({o.Name})")
+        lines.append(f"  Type            {o.TypeId}")
+        vo = getattr(o, "ViewObject", None)
+        if vo is not None:
+            lines.append(f"  Shown           {'yes' if vo.Visibility else 'no'}")
+        pl = getattr(o, "Placement", None)
+        if pl is not None:
+            p, (yaw, pitch, roll) = pl.Base, pl.Rotation.toEuler()
+            lines.append(f"  Position        {p.x:.4f}, {p.y:.4f}, {p.z:.4f} mm")
+            lines.append(f"  Rotation (YPR)  {yaw:.3f}, {pitch:.3f}, {roll:.3f} deg")
+        shape = getattr(o, "Shape", None)
+        if shape is not None and not shape.isNull():
+            bb = shape.BoundBox
+            lines.append(f"  Shape           {shape.ShapeType}: {len(shape.Solids)} solids, {len(shape.Faces)} faces, "
+                         f"{len(shape.Edges)} edges, {len(shape.Vertexes)} vertices")
+            if shape.Solids:
+                lines.append(f"  Volume          {shape.Volume:.4f} mm^3")
+            if shape.Faces:
+                lines.append(f"  Area            {shape.Area:.4f} mm^2")
+            lines.append(f"  Bounding box    {bb.XLength:.4f} x {bb.YLength:.4f} x {bb.ZLength:.4f} mm")
+        for name, sub in zip(s.SubElementNames, s.SubObjects):
+            if sub.ShapeType == "Face":
+                lines.append(f"  {name:<15} area {sub.Area:.4f} mm^2")
+            elif sub.ShapeType == "Edge":
+                lines.append(f"  {name:<15} length {sub.Length:.4f} mm")
+            elif sub.ShapeType == "Vertex":
+                pt = sub.Point
+                lines.append(f"  {name:<15} at {pt.x:.4f}, {pt.y:.4f}, {pt.z:.4f} mm")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+class ObjectInfo:
+    def GetResources(self):
+        return {"MenuText": "Object Information", "ToolTip": "Information about the selected objects (NX: Ctrl+I)",
+                "Pixmap": _pixmap("Std_WhatsThis", "Std_DlgParameter")}
+
+    def IsActive(self):
+        return bool(Gui.Selection.getSelection())
+
+    def Activated(self):
+        from .qt import QtGui, QtWidgets
+        text = object_information()
+        App.Console.PrintMessage("Information\n" + text + "\n")
+        dlg = QtWidgets.QDialog(Gui.getMainWindow())
+        dlg.setObjectName("NXInformation")
+        dlg.setWindowTitle("Information")
+        dlg.resize(560, 360)
+        lay = QtWidgets.QVBoxLayout(dlg)
+        box = QtWidgets.QPlainTextEdit(text)
+        box.setReadOnly(True)
+        box.setFont(QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont))
+        lay.addWidget(box)
+        dlg.show()
+        global _info_dialog
+        _info_dialog = dlg
+
+
+_info_dialog = None
+
+
+class TouchMode:
+    def GetResources(self):
+        return {"MenuText": "Touch Mode", "ToolTip": "Larger ribbon and bar icons for touch screens (NX: F4)",
+                "Pixmap": _pixmap("Std_ViewFitAll")}
+
+    def IsActive(self):
+        return True
+
+    def Activated(self):
+        from . import shell
+        sh = shell.instance()
+        if sh is not None:
+            sh.set_touch_mode(not sh.touch_mode)
 
 
 GLOBAL_TOOLBAR = "User parameter:BaseApp/Workbench/Global/Toolbar/Custom_NXStyle"
@@ -292,6 +453,11 @@ def register(apps):
         "NXStyle_Expressions": Expressions(),
         "NXStyle_RepeatCommand": RepeatCommand(),
         "NXStyle_ToggleNativeUI": ToggleNativeUI(),
+        "NXStyle_RotateMode": RotateMode(),
+        "NXStyle_Refresh": Refresh(),
+        "NXStyle_ImmediateHide": ImmediateHide(),
+        "NXStyle_ObjectInfo": ObjectInfo(),
+        "NXStyle_TouchMode": TouchMode(),
     }
     for key in config.BACKGROUNDS:
         table[f"NXStyle_Background_{key}"] = Background(key)

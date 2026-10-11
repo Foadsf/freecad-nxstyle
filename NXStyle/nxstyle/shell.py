@@ -60,6 +60,8 @@ BORDER_TOOLS = [("Std_SelBack", "Previous Selection"), ("Std_SelForward", "Next 
                 ("Std_BoxSelection", "Rectangle"), ("Std_BoxElementSelection", "Rectangle (Elements)"),
                 ("Std_SelectAll", "Select All"), ("Std_TreeSelection", "Find in Navigator")]
 CUE_IDLE = "Select objects and use MB3, or double-click an object"
+CUE_IMMEDIATE_HIDE = "Immediate Hide: select objects to hide them. Esc = finish"
+CUE_ROTATE = "Rotate: drag MB1 to rotate the view. Esc, MB2 or MB3 = finish"
 CUE_DIALOG = "Set the dialog options. MB2 = OK, Esc = Cancel"
 CUE_SKETCH = "Sketch: choose a curve or constraint tool, or select curves. Ctrl+Q = Finish Sketch"
 LAYOUT_PARAM = "User parameter:BaseApp/Preferences/Mod/NXStyle"
@@ -105,7 +107,8 @@ class Shell(QtCore.QObject):
         self._preloaded = set()
         self._tracked = set()
         self.ready = False
-        self.shortcut_result = {}
+        self.shortcut_rows = []
+        self.touch_mode = False
         self.setup_errors = []
         self._nav_state = None
         self._ticks = 0
@@ -126,12 +129,13 @@ class Shell(QtCore.QObject):
         self.switch_application(default if self._app(default) else self.apps[0]["id"])
         try:
             if self.cfg.get("nx_shortcuts", True):
-                self.shortcut_result = shortcuts.apply()
-                shortcuts.report(self.shortcut_result)
+                self.shortcut_rows = shortcuts.apply(self)
+                shortcuts.report(self.shortcut_rows)
         except Exception:
             import traceback
             self.setup_errors.append(traceback.format_exc())
         self._track_commands()
+        self._reclaim_keys()
         self.watch = QtCore.QTimer(self)
         self.watch.timeout.connect(self._tick)
         self.watch.start(300)
@@ -308,6 +312,7 @@ class Shell(QtCore.QObject):
         finally:
             self._loading = False
         self._track_commands()
+        self._reclaim_keys()
 
     # ------------------------------------------------------- applications
     def switch_application(self, app_id):
@@ -325,6 +330,7 @@ class Shell(QtCore.QObject):
         self.build_ribbon(app)
         self.enforce_ui()
         self._track_commands()
+        self._reclaim_keys()
 
     def _on_workbench(self, name):
         if self._loading:
@@ -345,6 +351,7 @@ class Shell(QtCore.QObject):
             self.build_ribbon(app)
         self.enforce_ui()
         self._track_commands()
+        self._reclaim_keys()
 
     # ---------------------------------------------------------- border bar
     def _build_border_bar(self):
@@ -556,6 +563,10 @@ class Shell(QtCore.QObject):
         except Exception:
             dialog = False
         text = CUE_SKETCH if sketch else CUE_DIALOG if dialog else CUE_IDLE
+        if commands.immediate_hide.active:
+            text = CUE_IMMEDIATE_HIDE
+        elif getattr(self, "navigation", None) is not None and self.navigation.mode == "rotate":
+            text = CUE_ROTATE
         if self.cue.text() != text:
             self.cue.setText(text)
         # NX keeps the Part Navigator in front; FreeCAD leaves its (often empty)
@@ -608,6 +619,30 @@ class Shell(QtCore.QObject):
                 continue
             acts[0].triggered.connect(lambda _=False, n=name: commands.remember(n))
             self._tracked.add(name)
+
+    def _reclaim_keys(self):
+        """Newly loaded workbenches bring their own shortcuts; take the NX keys back."""
+        inst = shortcuts.instance()
+        if inst is not None:
+            inst.reapply()
+
+    def set_touch_mode(self, on):
+        """NX Touch Mode: bigger icons on the ribbon and the bars."""
+        from . import ribbon
+        self.touch_mode = on
+        ribbon.LARGE, ribbon.SMALL = (44, 24) if on else (32, 16)
+        bar_icon = QtCore.QSize(24 if on else 16, 24 if on else 16)
+        for bar in (self.ribbon.qat, self.border_bar):
+            bar.setIconSize(bar_icon)
+            for b in bar.findChildren(QtWidgets.QToolButton):
+                b.setIconSize(bar_icon)
+        self.resource_bar.setIconSize(QtCore.QSize(32 if on else 22, 32 if on else 22))
+        current = self.ribbon.tabs.tabText(self.ribbon.tabs.currentIndex())
+        if self.current_app is not None:
+            self.build_ribbon(self.current_app)
+            self.ribbon.select(current)
+        status = "on" if on else "off"
+        self.mw.statusBar().showMessage(f"Touch Mode {status}", 2500)
 
     # ===================================================== native UI toggle
     def native_toolbars(self):

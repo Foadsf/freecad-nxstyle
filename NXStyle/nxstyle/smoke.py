@@ -15,7 +15,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from . import commands, navigation, prefs, shortcuts
-from .qt import QtCore, QtWidgets, Qt, mouse_event
+from .qt import QAction, QtCore, QtWidgets, Qt, mouse_event
 from .selection_filter import TypeGate
 
 OUT = os.environ.get("NXSTYLE_SMOKE_OUT", "")
@@ -86,6 +86,8 @@ class Smoke:
         yield self.s_radial_open, 900
         yield self.s_radial_check, 300
         yield self.s_visibility, 300
+        yield self.s_keys_doc, 300
+        yield self.s_new_commands, 500
         yield self.s_finder, 100
         yield self.s_repeat, 800
         yield self.s_sketch_enter, 1500
@@ -115,9 +117,10 @@ class Smoke:
         visible = [tb.objectName() for tb in sh.native_toolbars() if tb.isVisible()]
         self.check("FreeCAD toolbars hidden", not visible, visible)
         self.check("menu bar hidden", not Gui.getMainWindow().menuBar().isVisible())
-        bad = shortcuts.report(sh.shortcut_result)
-        self.check("NX shortcuts applied", not bad and sh.shortcut_result,
-                   f"{len(sh.shortcut_result)} set; mismatches: {bad}")
+        missing = shortcuts.report(sh.shortcut_rows)
+        self.check("every NXtips shortcut has a FreeCAD target", sh.shortcut_rows and not missing,
+                   f"{len(sh.shortcut_rows)} rows; missing: {[r['nx'] for r in missing]}")
+        self.info["shortcut_rows"] = sh.shortcut_rows
         from .ribbon import command_actions
         no_icon = [a["id"] for a in sh.apps
                    if not command_actions(f"NXStyle_App_{a['id']}")
@@ -330,6 +333,8 @@ class Smoke:
         visible = [tb.objectName() for tb in self.shell.native_toolbars() if tb.isVisible()]
         self.check("sketcher toolbars stay hidden", not visible, visible)
         self.shot("02_sketch.png")
+        tested, bad = self.press_keys("sketch")
+        self.check(f"sketch key presses reach their commands ({tested} keys)", tested and not bad, bad)
 
     def s_sketch_leave(self):
         Gui.ActiveDocument.resetEdit()
@@ -380,6 +385,144 @@ class Smoke:
         self.shot("08_application.png", self.shell.ribbon)
         self.shell.ribbon.select("Home")
 
+    # ------------------------------------------------------ keyboard tests
+    def press_keys(self, context):
+        """Press every key of one context; the probe eats the shortcut event so nothing runs."""
+        try:
+            from PySide6 import QtTest
+        except ImportError:
+            from PySide2 import QtTest
+        inst = shortcuts.instance()
+        target = self.nav().widget
+        mw = Gui.getMainWindow()
+        mw.activateWindow()
+        app = QtWidgets.QApplication.instance()
+        if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+            # a hidden desktop has no foreground window; window shortcuts need one
+            app.setActiveWindow(mw)
+        self.info[f"active window ({context})"] = type(app.activeWindow()).__name__ if app.activeWindow() else None
+        target.setFocus()
+        results = []
+        probe = ShortcutProbe()
+        app.installEventFilter(probe)
+        try:
+            # positive control: a key proven to work by the real-execution test above
+            control = inst.targets.get(shortcuts.norm("Ctrl+Shift+B"))
+            was = control.isEnabled()
+            control.setEnabled(True)
+            QtTest.QTest.keyClick(target, Qt.Key_B, Qt.ControlModifier | Qt.ShiftModifier)
+            control.setEnabled(was)
+            if cpp(control) not in [h[0] for h in probe.hits]:
+                return 0, [("probe", "Ctrl+Shift+B", f"instrument failed: control key not seen ({probe.hits})")]
+            tested = 0
+            for row in self.shell.shortcut_rows:
+                if row["context"] != context:
+                    continue
+                tested += 1
+                key = row["keys"]
+                act = inst.targets.get(key)
+                if act is None:
+                    results.append((row["nx"], key, "no action"))
+                    continue
+                was = act.isEnabled()
+                act.setEnabled(True)
+                probe.hits = []
+                k, m = decode(key)
+                QtTest.QTest.keyClick(target, k, m)
+                act.setEnabled(was)
+                got = [h for h in probe.hits if h[0] == cpp(act)]
+                if not got:
+                    others = [h[1] for h in probe.hits]
+                    results.append((row["nx"], key, f"did not reach its command; went to {others}"))
+                elif any(h[2] for h in got):
+                    results.append((row["nx"], key, "ambiguous"))
+            if context == "doc":
+                # a FreeCAD default outside the NX table must survive the hidden toolbars too
+                acts = Gui.Command.get("Std_ToggleVisibility").getAction()
+                key = acts[0].shortcut().toString() if acts else ""
+                if key:
+                    probe.hits = []
+                    was = acts[0].isEnabled()
+                    acts[0].setEnabled(True)
+                    k, m = decode(key)
+                    QtTest.QTest.keyClick(target, k, m)
+                    acts[0].setEnabled(was)
+                    self.info["Space spy"] = [h[1] for h in probe.hits]
+                    if cpp(acts[0]) not in [h[0] for h in probe.hits]:
+                        results.append(("FreeCAD default Std_ToggleVisibility", key, "did not reach its command"))
+                    tested += 1
+        finally:
+            app.removeEventFilter(probe)
+        self.info[f"key failures ({context})"] = results
+        return tested, results
+
+    def s_keys_doc(self):
+        doc = App.ActiveDocument
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Box")
+        tested, bad = self.press_keys("doc")
+        self.check(f"real key presses reach their commands ({tested} keys)", tested and not bad, bad)
+        # independent of Qt's dispatch: no other action holds an NX key or a chord starting with it
+        inst = shortcuts.instance()
+        ours = {id(a) for a in inst.targets.values()}
+        clashes = []
+        for act in Gui.getMainWindow().findChildren(QAction):
+            if id(act) in ours:
+                continue
+            for s in act.shortcuts():
+                txt = s.toString()
+                if txt and (shortcuts.norm(txt) in inst.targets or shortcuts.first_chord(txt) in inst.targets):
+                    clashes.append(f"{act.objectName() or act.text()}={txt}")
+        self.check("no other action shares an NX key", not clashes, clashes[:10])
+
+    def s_new_commands(self):
+        doc = App.ActiveDocument
+        box = doc.getObject("Box")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Box", "Face1")
+        text = commands.object_information()
+        self.check("Object Information (Ctrl+I) reports volume and face area",
+                   "Volume" in text and "Face1" in text and "area" in text, text.splitlines()[:3])
+        Gui.Selection.clearSelection()
+        Gui.runCommand("NXStyle_ImmediateHide")
+        on = commands.immediate_hide.active
+        Gui.Selection.addSelection(doc.Name, "Box", "Face2")
+        QtWidgets.QApplication.processEvents()
+        hidden = not box.ViewObject.Visibility
+        commands.stop_immediate_hide()
+        box.ViewObject.Visibility = True
+        self.check("Immediate Hide (Ctrl+Shift+I) hides what you pick", on and hidden)
+        # F7 rotate mode: MB1 drag rotates, Esc ends
+        nav = self.shell.navigation
+        f = self.nav()
+        nav.set_mode("rotate")
+        o0 = self.camera()[0]
+        self.drag(f, [Qt.LeftButton], 50, 20)
+        o1 = self.camera()[0]
+        try:
+            from PySide6 import QtTest
+        except ImportError:
+            from PySide2 import QtTest
+        QtTest.QTest.keyClick(self.view().graphicsView(), Qt.Key_Escape)
+        self.check("Rotate mode (F7): MB1 drag rotates, Esc ends", o1 != o0 and nav.mode is None,
+                   f"rotated={o1 != o0}, mode after Esc={nav.mode}")
+        def page_sizes():
+            page = self.shell.ribbon.stack.currentWidget()
+            return {b.iconSize().width() for b in page.findChildren(QtWidgets.QToolButton, "NXRibbonButton")}
+        Gui.runCommand("NXStyle_TouchMode")
+        sizes = page_sizes()
+        big = 44 in sizes
+        Gui.runCommand("NXStyle_TouchMode")
+        sizes_after = page_sizes()
+        self.check("Touch Mode (F4) enlarges ribbon icons and back", big and 44 not in sizes_after,
+                   f"on {sorted(sizes)}, off {sorted(sizes_after)}")
+        Gui.runCommand("NXStyle_Refresh")
+        lazy = [e for e in shortcuts.TABLE if e.workbench]
+        for e in lazy:
+            self.shell.preload([e.workbench])
+        absent = [f"{e.nx}: {e.cmd}" for e in lazy if shortcuts.resolve(e, set(Gui.listCommands())) == ""]
+        self.check("lazily loaded shortcut targets exist after their workbench loads", not absent, absent)
+
     # --------------------------------------------------------------- runner
     def next(self):
         if not self.steps:
@@ -401,6 +544,51 @@ class Smoke:
             for name in list(App.listDocuments()):
                 App.closeDocument(name)
             QtCore.QTimer.singleShot(300, Gui.getMainWindow().close)
+
+
+def _shiboken():
+    try:
+        import shiboken6 as shiboken
+    except ImportError:
+        import shiboken2 as shiboken
+    return shiboken
+
+
+def cpp(obj):
+    """C++ address of a Qt object (Python wrappers of one object can differ)."""
+    return _shiboken().getCppPointer(obj)[0]
+
+
+class ShortcutProbe(QtCore.QObject):
+    """Application-wide filter: records which action Qt sends each QShortcutEvent
+    to, and consumes it so the command never runs during the test."""
+
+    def __init__(self):
+        super().__init__()
+        self.hits = []      # (receiver address, receiver name, ambiguous)
+
+    def eventFilter(self, obj, ev):
+        if ev.type() != QtCore.QEvent.Shortcut:
+            return False
+        ambiguous = False
+        try:   # PySide may hand over a plain QEvent; cast to read the flag
+            from PySide import QtGui
+            sb = _shiboken()
+            ambiguous = bool(sb.wrapInstance(sb.getCppPointer(ev)[0], QtGui.QShortcutEvent).isAmbiguous())
+        except Exception:
+            pass
+        self.hits.append((cpp(obj), obj.objectName(), ambiguous))
+        return True
+
+
+def decode(key):
+    """'Ctrl+Shift+B' -> (Qt.Key, Qt.KeyboardModifiers) for QTest."""
+    from PySide import QtGui
+    c = QtGui.QKeySequence(key)[0]
+    if hasattr(c, "key"):          # Qt 6: QKeyCombination
+        return c.key(), c.keyboardModifiers()
+    mask = int(Qt.KeyboardModifierMask)
+    return Qt.Key(c & ~mask), Qt.KeyboardModifiers(c & mask)
 
 
 _smoke = None
