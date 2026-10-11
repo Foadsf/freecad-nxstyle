@@ -1,0 +1,25 @@
+{
+  "_comment": "Applications offered on the Application tab (NX: Application tab / File > All Applications). ribbon = JSON file; null = build the ribbon from the workbench's own toolbars. Missing workbenches are hidden.",
+  "groups": [
+    {"name": "Design", "apps": [
+      {"id": "modeling", "title": "Modeling", "workbench": "PartDesignWorkbench", "ribbon": "modeling.json", "shortcut": "Ctrl+M", "size": "large"},
+      {"id": "shape_studio", "title": "Shape Studio", "workbench": "SurfaceWorkbench", "ribbon": null},
+      {"id": "drafting", "title": "Drafting", "workbench": "TechDrawWorkbench", "ribbon": "drafting.json", "shortcut": "Ctrl+Shift+D", "size": "large"},
+      {"id": "assemblies", "title": "Assemblies", "workbench": "AssemblyWorkbench", "ribbon": "modeling.json", "first_tab": "Assemblies"},
+      {"id": "sheet_metal", "title": "Sheet Metal", "workbench": "SMWorkBench", "ribbon": null},
+      {"id": "part", "title": "Basic Modeling (Part)", "workbench": "PartWorkbench", "ribbon": null}
+    ]},
+    {"name": "Simulation", "apps": [
+      {"id": "simulation", "title": "Pre/Post", "workbench": "FemWorkbench", "ribbon": null, "size": "large"}
+    ]},
+    {"name": "Manufacturing", "apps": [
+      {"id": "manufacturing", "title": "Manufacturing", "workbench": "CAMWorkbench", "ribbon": null, "size": "large"}
+    ]},
+    {"name": "Other", "apps": [
+      {"id": "mesh", "title": "Mesh", "workbench": "MeshWorkbench", "ribbon": null},
+      {"id": "spreadsheet", "title": "Spreadsheet", "workbench": "SpreadsheetWorkbench", "ribbon": null},
+      {"id": "bim", "title": "BIM", "workbench": "BIMWorkbench", "ribbon": null},
+      {"id": "draft", "title": "Draft 2D", "workbench": "DraftWorkbench", "ribbon": null}
+    ]}
+  ]
+}

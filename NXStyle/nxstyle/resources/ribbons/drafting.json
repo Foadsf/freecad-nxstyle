@@ -1,0 +1,58 @@
+{
+  "_comment": "NX Drafting application mapped onto FreeCAD TechDraw.",
+  "title": "Drafting",
+  "workbench": "TechDrawWorkbench",
+  "preload": [],
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "Drawing", "items": [
+        {"cmd": "TechDraw_PageDefault", "label": "New Sheet", "size": "large"},
+        {"cmd": "TechDraw_PageTemplate", "label": "Sheet from Template"},
+        {"cmd": "TechDraw_RedrawPage", "label": "Update Views"}
+      ]},
+      {"name": "View", "items": [
+        {"cmd": "TechDraw_View", "label": "Base View", "size": "large"},
+        {"cmd": "TechDraw_ProjectionGroup", "label": "Projected View", "size": "large"},
+        {"cmd": "TechDraw_SectionView", "label": "Section View"},
+        {"cmd": "TechDraw_ComplexSection", "label": "Stepped Section"},
+        {"cmd": "TechDraw_DetailView", "label": "Detail View"},
+        {"cmd": "TechDraw_BrokenView", "label": "Broken View"},
+        {"cmd": "TechDraw_SpreadsheetView", "label": "Tabular Note"},
+        {"cmd": "TechDraw_Image", "label": "Image"},
+        {"cmd": "TechDraw_Symbol", "label": "Symbol"}
+      ]},
+      {"name": "Dimension", "items": [
+        {"cmd": ["TechDraw_Dimension", "TechDraw_LengthDimension"], "label": "Rapid Dimension", "size": "large"},
+        {"cmd": "TechDraw_LengthDimension", "label": "Linear"},
+        {"cmd": "TechDraw_HorizontalDimension", "label": "Horizontal"},
+        {"cmd": "TechDraw_VerticalDimension", "label": "Vertical"},
+        {"cmd": "TechDraw_RadiusDimension", "label": "Radial"},
+        {"cmd": "TechDraw_DiameterDimension", "label": "Diameter"},
+        {"cmd": "TechDraw_AngleDimension", "label": "Angular"}
+      ]},
+      {"name": "Annotation", "items": [
+        {"cmd": ["TechDraw_RichTextAnnotation", "TechDraw_Annotation"], "label": "Note", "size": "large"},
+        {"cmd": "TechDraw_Balloon", "label": "ID Symbol (Balloon)"},
+        {"cmd": "TechDraw_LeaderLine", "label": "Leader"},
+        {"cmd": "TechDraw_WeldSymbol", "label": "Weld Symbol"},
+        {"cmd": "TechDraw_SurfaceFinishSymbols", "label": "Surface Finish"}
+      ]},
+      {"name": "Centerline and Hatch", "items": [
+        {"cmd": "TechDraw_FaceCenterLine", "label": "Center Mark", "size": "large"},
+        {"cmd": "TechDraw_2LineCenterLine", "label": "2D Centerline"},
+        {"cmd": "TechDraw_2PointCenterLine", "label": "Centerline by Points"},
+        {"cmd": "TechDraw_Hatch", "label": "Hatch"},
+        {"cmd": "TechDraw_GeometricHatch", "label": "Crosshatch"}
+      ]},
+      {"name": "Export", "items": [
+        {"cmd": "TechDraw_ExportPageDXF", "label": "Export DXF", "size": "large"},
+        {"cmd": "TechDraw_ExportPageSVG", "label": "Export SVG"},
+        {"cmd": "Std_PrintPdf", "label": "Export PDF"},
+        {"cmd": "Std_Print", "label": "Print"}
+      ]}
+    ]},
+    {"include": "common:View"},
+    {"include": "common:Tools"},
+    {"include": "common:Application"}
+  ]
+}

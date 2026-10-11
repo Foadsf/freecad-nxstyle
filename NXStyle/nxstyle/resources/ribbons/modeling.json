@@ -1,0 +1,148 @@
+{
+  "_comment": "NX Modeling application. 'cmd' is a FreeCAD command name or a list of candidates (first one that exists wins). 'label' is the NX name shown on the button. size: large | small.",
+  "title": "Modeling",
+  "workbench": "PartDesignWorkbench",
+  "preload": ["SketcherWorkbench", "PartWorkbench", "SurfaceWorkbench", "AssemblyWorkbench", "SpreadsheetWorkbench"],
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "Direct Sketch", "items": [
+        {"cmd": "PartDesign_NewSketch", "label": "Sketch", "size": "large"},
+        {"cmd": "Sketcher_LeaveSketch", "label": "Finish Sketch"},
+        {"cmd": "Sketcher_CreatePolyline", "label": "Profile"},
+        {"cmd": ["Sketcher_CompCreateRectangles", "Sketcher_CreateRectangle"], "label": "Rectangle"},
+        {"cmd": ["Sketcher_CompCreateCircle", "Sketcher_CreateCircle"], "label": "Circle"},
+        {"cmd": ["Sketcher_Dimension", "Sketcher_CompDimensionTools"], "label": "Rapid Dimension"},
+        {"cmd": "Sketcher_Trimming", "label": "Quick Trim"}
+      ]},
+      {"name": "Feature", "items": [
+        {"cmd": "PartDesign_Pad", "label": "Extrude", "size": "large"},
+        {"cmd": "PartDesign_Revolution", "label": "Revolve", "size": "large"},
+        {"cmd": "PartDesign_Hole", "label": "Hole", "size": "large"},
+        {"cmd": "PartDesign_Pocket", "label": "Extrude (Subtract)"},
+        {"cmd": "PartDesign_Groove", "label": "Revolve (Subtract)"},
+        {"cmd": "PartDesign_Boolean", "label": "Unite / Subtract"},
+        {"cmd": "PartDesign_Fillet", "label": "Edge Blend", "size": "large"},
+        {"cmd": "PartDesign_Chamfer", "label": "Chamfer"},
+        {"cmd": "PartDesign_Draft", "label": "Draft"},
+        {"cmd": "PartDesign_Thickness", "label": "Shell"},
+        {"dropdown": "Datum", "size": "large", "items": [
+          {"cmd": "PartDesign_Plane", "label": "Datum Plane"},
+          {"cmd": "PartDesign_Line", "label": "Datum Axis"},
+          {"cmd": "PartDesign_Point", "label": "Point"},
+          {"cmd": "PartDesign_CoordinateSystem", "label": "Datum CSYS"}
+        ]},
+        {"cmd": "PartDesign_CompPrimitiveAdditive", "label": "Block / Cylinder"},
+        {"cmd": "PartDesign_AdditiveLoft", "label": "Through Curves"},
+        {"cmd": "PartDesign_AdditivePipe", "label": "Sweep along Guide"},
+        {"cmd": "PartDesign_AdditiveHelix", "label": "Helix Feature"},
+        {"cmd": "PartDesign_Body", "label": "New Body"}
+      ]},
+      {"name": "Associative Copy", "items": [
+        {"cmd": "PartDesign_SubShapeBinder", "label": "WAVE Linker", "size": "large"},
+        {"cmd": "PartDesign_ShapeBinder", "label": "Extract Geometry"},
+        {"cmd": "PartDesign_Clone", "label": "Clone Body"}
+      ]},
+      {"name": "Pattern", "items": [
+        {"cmd": "PartDesign_LinearPattern", "label": "Pattern Feature", "size": "large"},
+        {"cmd": "PartDesign_PolarPattern", "label": "Circular Pattern"},
+        {"cmd": "PartDesign_Mirrored", "label": "Mirror Feature"},
+        {"cmd": "PartDesign_MultiTransform", "label": "Multi-Transform"}
+      ]},
+      {"name": "Synchronous Modeling", "items": [
+        {"cmd": "Part_Defeaturing", "label": "Delete Face", "size": "large"}
+      ]},
+      {"name": "Edit Feature", "items": [
+        {"cmd": "Std_Edit", "label": "Edit Parameters"},
+        {"cmd": "PartDesign_MoveTip", "label": "Make Current Feature"},
+        {"cmd": "PartDesign_MoveFeature", "label": "Move to Body"},
+        {"cmd": ["PartDesign_ToggleSuppress", "Std_ToggleFreeze"], "label": "Suppress"},
+        {"cmd": "Std_Refresh", "label": "Update Model"}
+      ]}
+    ]},
+    {"name": "Assemblies", "groups": [
+      {"name": "Assembly", "items": [
+        {"cmd": "Assembly_CreateAssembly", "label": "New Assembly", "size": "large"},
+        {"cmd": ["Assembly_Insert", "Assembly_InsertLink"], "label": "Add Component", "size": "large"},
+        {"cmd": "Assembly_InsertNewPart", "label": "Create New Component", "optional": true},
+        {"cmd": "Assembly_ToggleGrounded", "label": "Ground"},
+        {"cmd": "Assembly_SolveAssembly", "label": "Update Assembly"}
+      ]},
+      {"name": "Assembly Constraints", "items": [
+        {"cmd": "Assembly_CreateJointFixed", "label": "Fix", "size": "large"},
+        {"cmd": "Assembly_CreateJointRevolute", "label": "Hinge"},
+        {"cmd": "Assembly_CreateJointCylindrical", "label": "Cylindrical"},
+        {"cmd": "Assembly_CreateJointSlider", "label": "Slider"},
+        {"cmd": "Assembly_CreateJointBall", "label": "Ball"},
+        {"cmd": "Assembly_CreateJointDistance", "label": "Distance"},
+        {"cmd": "Assembly_CreateJointParallel", "label": "Parallel"},
+        {"cmd": "Assembly_CreateJointPerpendicular", "label": "Perpendicular"},
+        {"cmd": "Assembly_CreateJointAngle", "label": "Angle"},
+        {"cmd": "Assembly_CreateJointRackPinion", "label": "Rack and Pinion"},
+        {"cmd": "Assembly_CreateJointScrew", "label": "Screw"},
+        {"cmd": "Assembly_CreateJointGears", "label": "Gear"}
+      ]},
+      {"name": "Exploded Views", "items": [
+        {"cmd": "Assembly_CreateView", "label": "New Explosion", "size": "large"}
+      ]},
+      {"name": "Reports", "items": [
+        {"cmd": "Assembly_CreateBom", "label": "Bill of Materials", "size": "large"},
+        {"cmd": "Assembly_ExportASMT", "label": "Export Assembly"}
+      ]}
+    ]},
+    {"name": "Curve", "groups": [
+      {"name": "Direct Sketch", "items": [
+        {"cmd": "PartDesign_NewSketch", "label": "Sketch", "size": "large"}
+      ]},
+      {"name": "Curve", "items": [
+        {"cmd": "Part_Primitives", "label": "Curve Primitives", "size": "large"}
+      ]},
+      {"name": "Derived Curve", "items": [
+        {"cmd": "Part_Offset2D", "label": "Offset Curve", "size": "large"},
+        {"cmd": "Part_ProjectionOnSurface", "label": "Project Curve"},
+        {"cmd": "Part_Section", "label": "Intersection Curve"},
+        {"cmd": "Surface_BlendCurve", "label": "Bridge Curve"}
+      ]}
+    ]},
+    {"name": "Surface", "groups": [
+      {"name": "Surface", "items": [
+        {"cmd": "Part_Loft", "label": "Through Curves", "size": "large"},
+        {"cmd": "Part_Sweep", "label": "Swept", "size": "large"},
+        {"cmd": "Surface_Filling", "label": "N-Sided Surface"},
+        {"cmd": "Surface_GeomFillSurface", "label": "Through Curve Mesh"},
+        {"cmd": "Surface_Sections", "label": "Section Surface"},
+        {"cmd": "Part_RuledSurface", "label": "Ruled"},
+        {"cmd": "Part_Extrude", "label": "Extrude (Sheet)"},
+        {"cmd": "Part_Revolve", "label": "Revolve (Sheet)"}
+      ]},
+      {"name": "Surface Operations", "items": [
+        {"cmd": "Part_Offset", "label": "Offset Surface", "size": "large"},
+        {"cmd": "Surface_ExtendFace", "label": "Extend Sheet"},
+        {"cmd": "Part_Thickness", "label": "Thicken"},
+        {"cmd": "Part_SliceApart", "label": "Split Body"},
+        {"cmd": "Part_BooleanFragments", "label": "Fragments"}
+      ]},
+      {"name": "Combine", "items": [
+        {"cmd": "Part_Fuse", "label": "Unite"},
+        {"cmd": "Part_Cut", "label": "Subtract"},
+        {"cmd": "Part_Common", "label": "Intersect"}
+      ]}
+    ]},
+    {"name": "Analysis", "groups": [
+      {"name": "Measure", "items": [
+        {"cmd": ["Std_Measure", "Std_MeasureDistance"], "label": "Measure", "size": "large"},
+        {"cmd": "Std_MeasureDistance", "label": "Measure Distance (classic)", "optional": true}
+      ]},
+      {"name": "Check", "items": [
+        {"cmd": "Part_CheckGeometry", "label": "Examine Geometry", "size": "large"}
+      ]},
+      {"name": "Section", "items": [
+        {"cmd": ["Part_SectionCut", "Std_SectionCut"], "label": "Edit Section", "size": "large"},
+        {"cmd": "Std_ToggleClipPlane", "label": "Clip Section"}
+      ]}
+    ]},
+    {"include": "common:View"},
+    {"include": "common:Render"},
+    {"include": "common:Tools"},
+    {"include": "common:Application"}
+  ]
+}

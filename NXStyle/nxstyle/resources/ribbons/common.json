@@ -1,0 +1,90 @@
+{
+  "_comment": "Tabs shared by every application. 'Application' is filled in by code from apps.json.",
+  "tabs": [
+    {"name": "View", "groups": [
+      {"name": "Orientation", "items": [
+        {"cmd": "Std_ViewFitAll", "label": "Fit", "size": "large"},
+        {"cmd": "Std_ViewFitSelection", "label": "Fit Selection"},
+        {"cmd": "Std_ViewBoxZoom", "label": "Zoom"},
+        {"cmd": "NXStyle_SnapView", "label": "Snap View"},
+        {"dropdown": "Orient View", "size": "large", "items": [
+          {"cmd": "Std_ViewTrimetric", "label": "Trimetric"},
+          {"cmd": "Std_ViewIsometric", "label": "Isometric"},
+          {"cmd": "Std_ViewTop", "label": "Top"},
+          {"cmd": "Std_ViewFront", "label": "Front"},
+          {"cmd": "Std_ViewRight", "label": "Right"},
+          {"cmd": "Std_ViewLeft", "label": "Left"},
+          {"cmd": "Std_ViewRear", "label": "Back"},
+          {"cmd": "Std_ViewBottom", "label": "Bottom"}
+        ]},
+        {"cmd": ["Std_PerspectiveCamera", "Std_ViewPerspective"], "label": "Perspective"},
+        {"cmd": ["Std_OrthographicCamera", "Std_ViewOrthographic"], "label": "Orthographic"}
+      ]},
+      {"name": "Style", "items": [
+        {"cmd": "Std_DrawStyleFlatLines", "label": "Shaded with Edges", "size": "large"},
+        {"cmd": "Std_DrawStyleShaded", "label": "Shaded"},
+        {"cmd": ["Std_DrawStyleHiddenLine", "Std_DrawStyleHidden"], "label": "Wireframe with Hidden Edges"},
+        {"cmd": "Std_DrawStyleWireframe", "label": "Static Wireframe"},
+        {"cmd": "Std_DrawStyleNoShading", "label": "No Shading"},
+        {"dropdown": "Background", "size": "large", "items": [
+          {"cmd": "NXStyle_Background_white", "label": "White Background"},
+          {"cmd": "NXStyle_Background_light", "label": "Light Background"},
+          {"cmd": "NXStyle_Background_light_gray_gradient", "label": "Light Gray Gradient"},
+          {"cmd": "NXStyle_Background_dark_gray_gradient", "label": "Dark Gray Gradient"},
+          {"cmd": "NXStyle_Background_dark", "label": "Dark Background"}
+        ]}
+      ]},
+      {"name": "Visibility", "items": [
+        {"cmd": "NXStyle_ShowHide", "label": "Show and Hide", "size": "large"},
+        {"cmd": "Std_HideSelection", "label": "Hide"},
+        {"cmd": "Std_ShowSelection", "label": "Show"},
+        {"cmd": "Std_ShowObjects", "label": "Show All"},
+        {"cmd": "NXStyle_InvertVisibility", "label": "Invert Shown and Hidden"},
+        {"cmd": "Std_ToggleSelectability", "label": "Selectable"}
+      ]},
+      {"name": "Visualization", "items": [
+        {"cmd": ["Std_SetAppearance", "Std_DlgDisplayProperties"], "label": "Edit Object Display", "size": "large"},
+        {"cmd": "Std_SetMaterial", "label": "Assign Material"},
+        {"cmd": "Std_ToggleClipPlane", "label": "Clip Section"}
+      ]},
+      {"name": "Window", "items": [
+        {"cmd": "Std_MainFullscreen", "label": "Full Screen", "size": "large"},
+        {"cmd": "Std_TileWindows", "label": "Tile"},
+        {"cmd": "Std_CascadeWindows", "label": "Cascade"},
+        {"cmd": "Std_ActivateNextWindow", "label": "Next Window"}
+      ]}
+    ]},
+    {"name": "Render", "groups": [
+      {"name": "Material", "items": [
+        {"cmd": "Std_SetMaterial", "label": "Assign Material", "size": "large"},
+        {"cmd": ["Materials_Edit", "Material_MaterialEditor"], "label": "Material Editor"},
+        {"cmd": ["Std_SetAppearance", "Std_DlgDisplayProperties"], "label": "Object Display"}
+      ]},
+      {"name": "Image", "items": [
+        {"cmd": "Std_ViewScreenShot", "label": "Save Image", "size": "large"},
+        {"cmd": ["Std_PerspectiveCamera", "Std_ViewPerspective"], "label": "Perspective"},
+        {"cmd": ["Std_OrthographicCamera", "Std_ViewOrthographic"], "label": "Orthographic"}
+      ]}
+    ]},
+    {"name": "Tools", "groups": [
+      {"name": "Utilities", "items": [
+        {"cmd": "NXStyle_Expressions", "label": "Expressions", "size": "large"},
+        {"cmd": "Std_VarSet", "label": "Variable Set"},
+        {"cmd": "Spreadsheet_CreateSheet", "label": "Spreadsheet"},
+        {"cmd": "Std_DlgParameter", "label": "Parameter Editor"}
+      ]},
+      {"name": "Journal", "items": [
+        {"cmd": "Std_DlgMacroRecord", "label": "Record", "size": "large"},
+        {"cmd": "Std_DlgMacroExecute", "label": "Play"},
+        {"cmd": "Std_DlgMacroExecuteDirect", "label": "Run Current Journal"}
+      ]},
+      {"name": "Customize", "items": [
+        {"cmd": "Std_DlgCustomize", "label": "Customize", "size": "large"},
+        {"cmd": "Std_DlgPreferences", "label": "Preferences"},
+        {"cmd": "Std_AddonMgr", "label": "Add-on Manager"},
+        {"cmd": "NXStyle_ToggleNativeUI", "label": "FreeCAD Menus and Toolbars"}
+      ]}
+    ]},
+    {"name": "Application", "groups": []}
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "_comment": "Contextual tab shown while a sketch is in edit mode (NX: Sketch task environment).",
+  "tabs": [
+    {"name": "Sketch", "contextual": true, "groups": [
+      {"name": "Sketch", "items": [
+        {"cmd": "Sketcher_LeaveSketch", "label": "Finish Sketch", "size": "large"},
+        {"cmd": "Sketcher_ViewSketch", "label": "Orient to Sketch"},
+        {"cmd": "Sketcher_ViewSection", "label": "View Section"},
+        {"cmd": "Sketcher_MapSketch", "label": "Reattach Sketch"}
+      ]},
+      {"name": "Curve", "items": [
+        {"cmd": "Sketcher_CreatePolyline", "label": "Profile", "size": "large"},
+        {"cmd": ["Sketcher_CompCreateRectangles", "Sketcher_CreateRectangle"], "label": "Rectangle"},
+        {"cmd": ["Sketcher_CompCreateCircle", "Sketcher_CreateCircle"], "label": "Circle"},
+        {"cmd": ["Sketcher_CompCreateArc", "Sketcher_CreateArc"], "label": "Arc"},
+        {"cmd": ["Sketcher_CompLine", "Sketcher_CreateLine"], "label": "Line"},
+        {"cmd": "Sketcher_CreatePoint", "label": "Point"},
+        {"cmd": ["Sketcher_CompCreateBSpline", "Sketcher_CreateBSpline"], "label": "Studio Spline"},
+        {"cmd": ["Sketcher_CompCreateFillets", "Sketcher_CreateFillet"], "label": "Fillet"},
+        {"cmd": ["Sketcher_CompSlot", "Sketcher_CreateSlot"], "label": "Slot"},
+        {"cmd": ["Sketcher_CompCreateRegularPolygon", "Sketcher_CreateHexagon"], "label": "Polygon"},
+        {"cmd": ["Sketcher_CompCreateConic", "Sketcher_CreateEllipseByCenter"], "label": "Ellipse / Conic"}
+      ]},
+      {"name": "Edit Curve", "items": [
+        {"cmd": "Sketcher_Trimming", "label": "Quick Trim", "size": "large"},
+        {"cmd": "Sketcher_Extend", "label": "Quick Extend"},
+        {"cmd": "Sketcher_Split", "label": "Split"},
+        {"cmd": "Sketcher_Offset", "label": "Offset Curve"},
+        {"cmd": "Sketcher_RectangularArray", "label": "Pattern Curve"},
+        {"cmd": "Sketcher_Symmetry", "label": "Mirror Curve"},
+        {"cmd": ["Sketcher_CompExternal", "Sketcher_External"], "label": "Project Curve"},
+        {"cmd": "Sketcher_Translate", "label": "Move Curve"},
+        {"cmd": "Sketcher_Rotate", "label": "Rotate Curve"},
+        {"cmd": "Sketcher_Scale", "label": "Scale Curve"},
+        {"cmd": ["Sketcher_ToggleConstruction", "Sketcher_CompToggleConstruction"], "label": "Convert To/From Reference"}
+      ]},
+      {"name": "Constraints", "items": [
+        {"cmd": ["Sketcher_Dimension", "Sketcher_CompDimensionTools"], "label": "Rapid Dimension", "size": "large"},
+        {"cmd": ["Sketcher_ConstrainCoincidentUnified", "Sketcher_ConstrainCoincident"], "label": "Coincident"},
+        {"cmd": ["Sketcher_ConstrainHorizontal", "Sketcher_CompHorizontalVertical"], "label": "Horizontal"},
+        {"cmd": "Sketcher_ConstrainVertical", "label": "Vertical"},
+        {"cmd": "Sketcher_ConstrainParallel", "label": "Parallel"},
+        {"cmd": "Sketcher_ConstrainPerpendicular", "label": "Perpendicular"},
+        {"cmd": "Sketcher_ConstrainTangent", "label": "Tangent"},
+        {"cmd": "Sketcher_ConstrainEqual", "label": "Equal"},
+        {"cmd": "Sketcher_ConstrainSymmetric", "label": "Symmetric"},
+        {"cmd": "Sketcher_ConstrainLock", "label": "Fixed"},
+        {"cmd": "Sketcher_ConstrainBlock", "label": "Block"},
+        {"cmd": ["Sketcher_CompConstrainRadDia", "Sketcher_ConstrainRadius"], "label": "Radius / Diameter"},
+        {"cmd": "Sketcher_ConstrainAngle", "label": "Angle"},
+        {"cmd": "Sketcher_ConstrainDistance", "label": "Distance"}
+      ]},
+      {"name": "Tools", "items": [
+        {"cmd": "Sketcher_ValidateSketch", "label": "Validate Sketch", "size": "large"},
+        {"cmd": "Sketcher_SelectElementsWithDoFs", "label": "Under-Constrained Curves"},
+        {"cmd": "Sketcher_Grid", "label": "Grid"},
+        {"cmd": "Sketcher_Snap", "label": "Snap"},
+        {"cmd": "Sketcher_RenderingOrder", "label": "Rendering Order"}
+      ]}
+    ]}
+  ]
+}
