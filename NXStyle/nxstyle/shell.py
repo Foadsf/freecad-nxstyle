@@ -18,13 +18,38 @@ import FreeCADGui as Gui
 from . import commands, config, navigation, prefs, shortcuts
 from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
-from .ribbon import (CommandButton, Ribbon, command_actions, command_icon, expand_tabs, known_commands,
-                     resolve, spec_groups, sub_actions)
+from .ribbon import (CommandButton, Ribbon, command_actions, expand_tabs, known_commands,
+                     spec_groups, sub_actions)
 from .selection_filter import TypeFilter
 
 OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
 GLOBAL_TOOLBARS = {"File", "Edit", "Clipboard", "Workbench", "Macro", "View", "Individual views",
                    "Structure", "Help", "Navigation", "Selection"}
+THEME_MARK = "/* NXStyle theme */"
+THEME_TOKENS = {"@ThemeAccentColor1": "#0B6E79", "@ThemeAccentColor2": "#8CC5CC", "@ThemeAccentColor3": "#C7E3E7"}
+LEFT_PANELS = ["Model", "Tasks", "NXHistory", "Selection view"]
+BOTTOM_PANELS = ["Report view", "Python console"]
+
+
+class DockTitle(QtWidgets.QWidget):
+    """Slim panel header: title on the left, close on the right."""
+
+    def __init__(self, dock):
+        super().__init__(dock)
+        self.setObjectName("NXDockTitle")
+        lay = QtWidgets.QHBoxLayout(self)
+        lay.setContentsMargins(0, 2, 4, 2)
+        self.label = QtWidgets.QLabel(dock.windowTitle())
+        dock.windowTitleChanged.connect(self.label.setText)
+        lay.addWidget(self.label, 1)
+        close = QtWidgets.QToolButton(self)
+        close.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_TitleBarCloseButton))
+        close.setIconSize(QtCore.QSize(10, 10))
+        close.setToolTip("Close")
+        close.clicked.connect(dock.close)
+        lay.addWidget(close)
+
+
 # Workbenches FreeCAD activates by itself when an object is edited
 FOLLOWER_WORKBENCHES = {"SketcherWorkbench", "SpreadsheetWorkbench"}
 DOCK_TITLES = {"Model": "Part Navigator", "Report view": "Information", "Python console": "Journal (Python)",
@@ -83,10 +108,11 @@ class Shell(QtCore.QObject):
         self.shortcut_result = {}
         self.setup_errors = []
         self._nav_state = None
+        self._ticks = 0
 
     # ================================================================ setup
     def setup(self):
-        steps = [self._prefs, self._register_commands, self._build_ribbon_bar, self._build_border_bar,
+        steps = [self._prefs, self._apply_theme, self._register_commands, self._build_ribbon_bar, self._build_border_bar,
                  self._build_resource_bar, self._arrange_docks, self._build_cue_line, self._navigation]
         for step in steps:
             try:
@@ -324,15 +350,13 @@ class Shell(QtCore.QObject):
     def _build_border_bar(self):
         tb = self._toolbar("NXTopBorderBar", "Top Border Bar")
         tb.setIconSize(QtCore.QSize(16, 16))
-        tb.setStyleSheet("QToolBar#NXTopBorderBar { background: #ECEEF0; border-bottom: 1px solid #C9CED3;"
-                         " spacing: 3px; padding: 1px 4px; }")
         menu_button = QtWidgets.QToolButton(tb)
         menu_button.setObjectName("NXMenuButton")
         menu_button.setText("Menu")
         menu_button.setToolButtonStyle(Qt.ToolButtonTextOnly)
         menu_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
-        menu_button.setMinimumWidth(64)
-        menu_button.setStyleSheet("QToolButton { padding: 2px 16px 2px 6px; }")
+        menu_button.setMinimumWidth(68)
+        menu_button.setStyleSheet("QToolButton { padding: 2px 18px 2px 8px; }")
         self._menu = QtWidgets.QMenu(menu_button)
         self._menu.aboutToShow.connect(self._fill_menu)
         menu_button.setMenu(self._menu)
@@ -363,32 +387,21 @@ class Shell(QtCore.QObject):
     def _build_resource_bar(self):
         tb = self._toolbar("NXResourceBar", "Resource Bar")
         tb.setOrientation(Qt.Vertical)
-        tb.setIconSize(QtCore.QSize(24, 24))
-        tb.setStyleSheet("QToolBar#NXResourceBar { background: #E4E7EA; border-right: 1px solid #C9CED3;"
-                         " spacing: 2px; padding: 2px; }"
-                         "QToolBar#NXResourceBar QToolButton:checked { background: #CFE4F4;"
-                         " border: 1px solid #78AEDB; }")
+        tb.setIconSize(QtCore.QSize(22, 22))
         self._build_history_dock()
-        style = self.mw.style()
         entries = [
-            ("Part Navigator", "Model", ["PartDesign_Body", "Std_TreeCollapse"], QtWidgets.QStyle.SP_FileDialogDetailedView),
-            ("History", "NXHistory", ["Std_RecentFiles", "Std_Open"], QtWidgets.QStyle.SP_FileDialogContentsView),
-            ("Information", "Report view", ["Std_ReportView"], QtWidgets.QStyle.SP_MessageBoxInformation),
-            ("Journal (Python)", "Python console", ["Std_DlgMacroRecord"], QtWidgets.QStyle.SP_ComputerIcon),
-            ("Selection", "Selection view", ["Std_SelectAll"], QtWidgets.QStyle.SP_DialogApplyButton),
+            ("Part Navigator", "Model", "navigator"),
+            ("History", "NXHistory", "history"),
+            ("Information", "Report view", "information"),
+            ("Journal (Python)", "Python console", "journal"),
+            ("Selection", "Selection view", "selection"),
         ]
         self.resource_actions = {}
-        known = known_commands()
-        for title, dock_name, icon_cmds, fallback in entries:
+        for title, dock_name, icon_name in entries:
             dock = self.mw.findChild(QtWidgets.QDockWidget, dock_name)
             if dock is None:
                 continue
-            icon = QtGui.QIcon()
-            name = resolve(icon_cmds, known)
-            if name:
-                icon = command_icon(name)
-            if icon.isNull():
-                icon = style.standardIcon(fallback)
+            icon = QtGui.QIcon(config.resource("icons", f"{icon_name}.svg"))
             act = dock.toggleViewAction()
             act.setIcon(icon)
             act.setText(title)
@@ -453,6 +466,7 @@ class Shell(QtCore.QObject):
                 model.show()
                 model.raise_()
             p.SetBool("LayoutInitialized", True)
+        self._style_docks()
         tasks = self.mw.findChild(QtWidgets.QDockWidget, "Tasks")
         if tasks is not None and self.cfg.get("floating_task_panel"):
             tasks.setFloating(True)
@@ -460,11 +474,74 @@ class Shell(QtCore.QObject):
             origin = central.mapToGlobal(QtCore.QPoint(12, 12)) if central else QtCore.QPoint(80, 200)
             tasks.setGeometry(origin.x(), origin.y(), 340, 520)
 
+    def _style_docks(self):
+        """One tab strip for the left panels (the tabs are their headers, as in
+        NX's navigators); a slim header for the bottom panels; document tabs
+        above the graphics window."""
+        find = lambda n: self.mw.findChild(QtWidgets.QDockWidget, n)  # noqa: E731
+        model = find("Model")
+        self.mw.setTabPosition(Qt.LeftDockWidgetArea, QtWidgets.QTabWidget.North)
+        self.mw.setTabPosition(Qt.BottomDockWidgetArea, QtWidgets.QTabWidget.North)
+        if model is not None:
+            for name in LEFT_PANELS[1:]:
+                d = find(name)
+                if d is not None and not d.isFloating():
+                    self.mw.tabifyDockWidget(model, d)
+        self._blank_titles()
+        for name in BOTTOM_PANELS:
+            d = find(name)
+            if d is not None and (d.titleBarWidget() is None or d.titleBarWidget().objectName() != "NXDockTitle"):
+                d.setTitleBarWidget(DockTitle(d))
+        mdi = self.mw.findChild(QtWidgets.QMdiArea)
+        if mdi is not None:
+            mdi.setTabPosition(QtWidgets.QTabWidget.North)
+        self.show_part_navigator()
+
+    def _blank_titles(self):
+        for name in LEFT_PANELS:
+            d = self.mw.findChild(QtWidgets.QDockWidget, name)
+            if d is None or d.isFloating():
+                continue
+            tw = d.titleBarWidget()
+            if tw is None or tw.objectName() != "NXNoTitle":
+                blank = QtWidgets.QWidget(d)
+                blank.setObjectName("NXNoTitle")
+                blank.setFixedHeight(0)
+                d.setTitleBarWidget(blank)
+
+    # --------------------------------------------------------------- theme
+    def _apply_theme(self):
+        if self.cfg.get("theme", "nx") != "nx":
+            return
+        app = QtWidgets.QApplication.instance()
+        dirs = [os.path.join(App.getUserAppDataDir(), "Gui", "Stylesheets"),
+                os.path.join(App.getResourceDir(), "Gui", "Stylesheets")]
+        QtCore.QDir.setSearchPaths("qss", [d for d in dirs if os.path.isdir(d)] + list(QtCore.QDir.searchPaths("qss")))
+        current = app.styleSheet()
+        base = current.split(THEME_MARK)[0]
+        name = self.cfg.get("stylesheet", "")
+        for d in dirs:
+            path = os.path.join(d, name) if name else ""
+            if path and os.path.isfile(path):
+                with open(path, encoding="utf-8") as f:
+                    base = f.read()
+                break
+        # FreeCAD fills these placeholders when it loads a stylesheet itself; an
+        # unfilled one makes Qt drop the rules around it. Use the NX accent tints.
+        for token, value in THEME_TOKENS.items():
+            base = base.replace(token, value)
+        with open(config.resource("nx_theme.qss"), encoding="utf-8") as f:
+            theme = f.read()
+        app.setStyleSheet(base + "\n" + theme)
+
+    def theme_active(self):
+        return THEME_MARK in QtWidgets.QApplication.instance().styleSheet()
+
     # ------------------------------------------------------------ cue line
     def _build_cue_line(self):
         self.cue = QtWidgets.QLabel(CUE_IDLE)
         self.cue.setObjectName("NXCueLine")
-        self.cue.setStyleSheet("QLabel#NXCueLine { color: #00575D; padding-left: 4px; }")
+        self.cue.setStyleSheet("QLabel#NXCueLine { color: #0B6E79; padding-left: 6px; }")
         self.mw.statusBar().insertWidget(0, self.cue, 1)
 
     def _navigation(self):
@@ -483,6 +560,11 @@ class Shell(QtCore.QObject):
             self.cue.setText(text)
         # NX keeps the Part Navigator in front; FreeCAD leaves its (often empty)
         # Tasks panel in front after start-up, new documents and closed dialogs.
+        self._ticks += 1
+        if self._ticks % 20 == 0:   # FreeCAD may re-apply its own stylesheet or dock headers
+            if self.cfg.get("theme", "nx") == "nx" and not self.theme_active():
+                self._apply_theme()
+            self._blank_titles()
         state = (dialog, len(App.listDocuments()))
         if state != self._nav_state:
             if not dialog:

@@ -123,6 +123,16 @@ class Smoke:
                    if not command_actions(f"NXStyle_App_{a['id']}")
                    or command_actions(f"NXStyle_App_{a['id']}")[0].icon().isNull()]
         self.check("Application buttons have icons", not no_icon, no_icon)
+        css = QtWidgets.QApplication.instance().styleSheet()
+        self.check("NX theme applied over FreeCAD Light", sh.theme_active() and "QMainWindow" in
+                   css.split("/* NXStyle theme */")[0])
+        self.check("no unfilled stylesheet placeholders", "@Theme" not in css)
+        bars = [[b.tabText(i) for i in range(b.count())] for b in Gui.getMainWindow().findChildren(QtWidgets.QTabBar)]
+        left = next((t for t in bars if "Part Navigator" in t), [])
+        self.check("left panels share one tab strip", "Dialog" in left, left)
+        mdi = Gui.getMainWindow().findChild(QtWidgets.QMdiArea)
+        self.check("document tabs above the graphics window",
+                   mdi is not None and mdi.tabPosition() == QtWidgets.QTabWidget.North)
         sh._fill_history()
         self.check("History panel explains when empty", sh.history_dock.widget().count() >= 1)
         self.info["freecad"] = App.Version()[:4]
@@ -147,7 +157,20 @@ class Smoke:
         Gui.SendMsgToActiveView("ViewFit")
         Gui.runCommand("Std_ViewTrimetric")
 
+    def labels_clipped(self):
+        """Ribbon group labels on the current page that fall outside the visible area."""
+        page = self.shell.ribbon.stack.currentWidget()
+        vp = page.viewport()
+        bad = []
+        for lab in page.widget().findChildren(QtWidgets.QLabel, "NXRibbonGroupLabel"):
+            bottom = lab.mapTo(vp, QtCore.QPoint(0, lab.height())).y()
+            if bottom > vp.height():
+                bad.append(f"{lab.text()} ({bottom}>{vp.height()})")
+        return bad
+
     def s_gates(self):
+        clipped = self.labels_clipped()
+        self.check("ribbon group labels not clipped", not clipped, clipped)
         doc = App.ActiveDocument
         box = doc.getObject("Box")
         face, edge, body = TypeGate("face"), TypeGate("edge"), TypeGate("body")

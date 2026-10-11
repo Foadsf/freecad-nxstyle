@@ -119,6 +119,12 @@ class CommandButton(QtWidgets.QToolButton):
         if menu is not None:
             self.setMenu(menu)
             self.setPopupMode(QtWidgets.QToolButton.MenuButtonPopup)
+            if big:  # the drop-down arrow needs room next to the label
+                self.setMaximumWidth(140)
+        if big:
+            fm = self.fontMetrics()
+            widest = max(fm.horizontalAdvance(line) for line in self.text().split("\n"))
+            self.setMinimumWidth(max(52, widest + (26 if menu is not None else 12)))
         self.clicked.connect(self._run)
         if self.action is not None:
             self.action.changed.connect(self._sync)
@@ -244,6 +250,54 @@ class RibbonGroup(QtWidgets.QFrame):
         self.count += 1
 
 
+class RibbonPage(QtWidgets.QScrollArea):
+    """A ribbon page that scrolls sideways with the wheel and shows edge
+    arrows when the groups do not fit, instead of a scrollbar over the labels."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("NXRibbonPage")
+        self.setWidgetResizable(True)
+        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.arrows = []
+        for arrow, step in ((Qt.LeftArrow, -1), (Qt.RightArrow, 1)):
+            b = QtWidgets.QToolButton(self)
+            b.setObjectName("NXRibbonScroll")
+            b.setArrowType(arrow)
+            b.setAutoRepeat(True)
+            b.clicked.connect(lambda _=False, s=step: self.scroll_by(s * 160))
+            b.hide()
+            self.arrows.append(b)
+        self.horizontalScrollBar().rangeChanged.connect(lambda *_: self._update_arrows())
+        self.horizontalScrollBar().valueChanged.connect(lambda *_: self._update_arrows())
+
+    def scroll_by(self, dx):
+        bar = self.horizontalScrollBar()
+        bar.setValue(bar.value() + dx)
+
+    def wheelEvent(self, ev):
+        delta = ev.angleDelta()
+        self.scroll_by(-(delta.y() or delta.x()) // 2)
+        ev.accept()
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self._update_arrows()
+
+    def _update_arrows(self):
+        bar = self.horizontalScrollBar()
+        h = self.viewport().height()
+        left, right = self.arrows
+        left.setGeometry(0, 0, 16, h)
+        right.setGeometry(self.width() - 16, 0, 16, h)
+        left.setVisible(bar.value() > bar.minimum())
+        right.setVisible(bar.value() < bar.maximum())
+        left.raise_()
+        right.raise_()
+
+
 class Ribbon(QtWidgets.QWidget):
     """Tab row (File button, quick access toolbar, tabs, command finder) + pages."""
 
@@ -345,12 +399,7 @@ class Ribbon(QtWidgets.QWidget):
         return False
 
     def _page(self):
-        area = QtWidgets.QScrollArea(self.stack)
-        area.setObjectName("NXRibbonPage")
-        area.setWidgetResizable(True)
-        area.setFrameShape(QtWidgets.QFrame.NoFrame)
-        area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        area = RibbonPage(self.stack)
         inner = QtWidgets.QWidget()
         inner.setObjectName("NXRibbonPageInner")
         lay = QtWidgets.QHBoxLayout(inner)
@@ -378,8 +427,7 @@ class Ribbon(QtWidgets.QWidget):
             else:
                 group.deleteLater()
         lay.addStretch(1)
-        # leave room for the (thin) overflow scrollbar so group labels stay visible
-        area.setMinimumHeight(area.widget().sizeHint().height() + 9)
+        area.setMinimumHeight(area.widget().sizeHint().height() + 2)
         if index is None:
             index = self.tabs.count()
         self.stack.insertWidget(index, area)

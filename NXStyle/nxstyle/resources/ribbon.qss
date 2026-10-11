@@ -1,57 +1,60 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later
-   NX-inspired light ribbon. Original styling; no Siemens assets are used. */
+   NX-inspired light ribbon. Original styling; no Siemens assets are used.
+   Tokens: see nx_theme.qss. */
 
-#NXRibbon { background: #F5F6F7; }
+#NXRibbon { background: #FFFFFF; }
 
-#NXRibbonHeader { background: #E4E7EA; border-bottom: 1px solid #C9CED3; }
+#NXRibbonHeader { background: #EEF1F4; border-bottom: 1px solid #D5DAE0; }
 
 #NXFileButton {
-    background: #00737A; color: white; font-weight: bold;
-    border: none; padding: 4px 16px; margin: 0px 4px 0px 0px;
+    background: #0B6E79; color: white; font-weight: 600;
+    border: none; padding: 5px 18px; margin: 0px 6px 0px 0px;
 }
-#NXFileButton:hover { background: #008C94; }
+#NXFileButton:hover { background: #0D8290; }
+#NXFileButton:pressed { background: #095E68; }
 #NXFileButton::menu-indicator { image: none; width: 0px; }
 
-#NXQuickAccess { background: transparent; border: none; spacing: 0px; padding: 0px 6px 0px 0px; }
-#NXQuickAccess QToolButton { padding: 2px; border: 1px solid transparent; }
-#NXQuickAccess QToolButton:hover { background: #D3E6F5; border: 1px solid #9FC6E6; }
+#NXQuickAccess { background: transparent; border: none; spacing: 1px; padding: 0px 8px 0px 0px; }
+#NXQuickAccess QToolButton { padding: 3px; border: 1px solid transparent; border-radius: 2px; }
+#NXQuickAccess QToolButton:hover { background: #E3F1F3; border: 1px solid #8CC5CC; }
 
 #NXRibbonTabs { background: transparent; }
 #NXRibbonTabs::tab {
-    background: transparent; color: #2B2F33;
-    padding: 4px 12px 4px 12px; margin: 2px 0px 0px 0px;
-    border: 1px solid transparent; border-bottom: none;
+    background: transparent; color: #3A4249;
+    padding: 6px 14px 5px 14px; margin: 0px;
+    border: none; border-bottom: 2px solid transparent;
 }
-#NXRibbonTabs::tab:hover { background: #EEF4F9; }
-#NXRibbonTabs::tab:selected {
-    background: #F5F6F7; border: 1px solid #C9CED3; border-bottom: 1px solid #F5F6F7;
-    color: #00737A;
-}
+#NXRibbonTabs::tab:hover { color: #1E2329; background: #E3F1F3; }
+#NXRibbonTabs::tab:selected { color: #0B6E79; background: #FFFFFF; border-bottom: 2px solid #0B6E79; }
 
-#NXRibbonStack, #NXRibbonPage, #NXRibbonPageInner { background: #F5F6F7; }
+#NXRibbonStack, #NXRibbonPage, #NXRibbonPageInner { background: #FFFFFF; }
+#NXRibbonStack { border-bottom: 1px solid #D5DAE0; }
 
 #NXRibbonGroup { background: transparent; }
-#NXRibbonGroupLabel { color: #5A6066; font-size: 8pt; padding-top: 1px; }
-#NXRibbonSeparator { color: #D3D7DB; margin: 4px 0px 4px 0px; }
+#NXRibbonGroupLabel { color: #6B747D; font-size: 8pt; padding: 1px 0px 2px 0px; }
+#NXRibbonSeparator { color: #E1E5E9; margin: 6px 2px 6px 2px; }
 
 QToolButton#NXRibbonButton {
-    color: #1F2326; border: 1px solid transparent; border-radius: 2px;
-    padding: 1px 3px 1px 3px; background: transparent;
+    color: #1E2329; border: 1px solid transparent; border-radius: 3px;
+    padding: 2px 4px 2px 4px; background: transparent;
 }
-QToolButton#NXRibbonButton:hover { background: #D3E6F5; border: 1px solid #9FC6E6; }
+QToolButton#NXRibbonButton:hover { background: #E3F1F3; border: 1px solid #8CC5CC; }
 QToolButton#NXRibbonButton:pressed, QToolButton#NXRibbonButton:checked {
-    background: #B9D7EF; border: 1px solid #78AEDB;
+    background: #C7E3E7; border: 1px solid #6FB6BF;
 }
-QToolButton#NXRibbonButton:disabled { color: #9AA0A6; }
+QToolButton#NXRibbonButton:disabled { color: #A3AAB1; }
+QToolButton#NXRibbonButton::menu-button { border: none; width: 12px; }
+QToolButton#NXRibbonButton::menu-button:hover { background: #C7E3E7; }
 
-#NXCollapseButton { border: none; padding: 2px; }
+#NXCollapseButton { border: none; padding: 3px; border-radius: 2px; }
+#NXCollapseButton:hover { background: #E3F1F3; }
 
 QLineEdit#NXCommandFinder {
-    border: 1px solid #B8BEC4; border-radius: 2px; padding: 2px 6px;
-    background: white; min-width: 210px; color: #1F2326;
+    border: 1px solid #C3CAD1; border-radius: 12px; padding: 3px 10px;
+    background: #FFFFFF; min-width: 230px; color: #1E2329; margin: 2px 0px;
 }
-QLineEdit#NXCommandFinder:focus { border: 1px solid #00737A; }
+QLineEdit#NXCommandFinder:hover { border: 1px solid #8CC5CC; }
+QLineEdit#NXCommandFinder:focus { border: 1px solid #0B6E79; }
 
-QScrollArea#NXRibbonPage QScrollBar:horizontal { height: 7px; background: #E9ECEF; border: none; }
-QScrollArea#NXRibbonPage QScrollBar::handle:horizontal { background: #B8BEC4; border-radius: 3px; min-width: 40px; }
-QScrollArea#NXRibbonPage QScrollBar::add-line:horizontal, QScrollArea#NXRibbonPage QScrollBar::sub-line:horizontal { width: 0px; }
+QToolButton#NXRibbonScroll { background: rgba(238, 241, 244, 235); border: none; border-left: 1px solid #D5DAE0; border-right: 1px solid #D5DAE0; }
+QToolButton#NXRibbonScroll:hover { background: #E3F1F3; }
