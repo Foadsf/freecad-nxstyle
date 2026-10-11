@@ -24,7 +24,7 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Sketch task environment | Contextual **Sketch** tab with Finish Sketch, Profile, Rapid Dimension, constraints |
 | Mouse | MB2 rotate; hold MB2 to rotate about the point under the cursor; Shift+MB2 / MB2+MB3 pan; Ctrl+MB2 / MB1+MB2 zoom; wheel zoom; **MB2 click = OK**; **hold MB3 = radial menu** (view menu, or object menu over a part) |
 | Keys | Ctrl+F, Home, End, Ctrl+Alt+F/T/R/L, F8 Snap View, Ctrl+B, Ctrl+Shift+B, Ctrl+Shift+U, Ctrl+W Show and Hide, Ctrl+J, Ctrl+T, X Extrude, Ctrl+E Expressions, F4 Repeat, Ctrl+Q Finish Sketch, Z, D, Ctrl+M, Ctrl+Shift+D, Ctrl+1, Ctrl+2 |
-| Graphics window | Light-grey gradient background (five NX presets on View › Background), red preselection, orange selection, grey bodies with dark edges, view triad bottom-left, no view cube |
+| Graphics window | Light-grey gradient background (five NX presets on View › Background), red preselection, orange selection, grey bodies with dark edges, view triad bottom-left (drawn by NXStyle; FreeCAD 1.0 can only put its own bottom-right), no view cube |
 | Cue line | NX-style prompt at the bottom left |
 
 **Tools › FreeCAD Menus and Toolbars** brings back FreeCAD's own menu bar and toolbars at any time.
@@ -57,7 +57,7 @@ Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry 
 python launch_nx.py --smoke-test out
 ```
 
-This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 29 behaviours. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
+This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 33 behaviours. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
 python -m unittest discover -s tests

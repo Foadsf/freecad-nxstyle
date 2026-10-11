@@ -118,6 +118,13 @@ class Smoke:
         bad = shortcuts.report(sh.shortcut_result)
         self.check("NX shortcuts applied", not bad and sh.shortcut_result,
                    f"{len(sh.shortcut_result)} set; mismatches: {bad}")
+        from .ribbon import command_actions
+        no_icon = [a["id"] for a in sh.apps
+                   if not command_actions(f"NXStyle_App_{a['id']}")
+                   or command_actions(f"NXStyle_App_{a['id']}")[0].icon().isNull()]
+        self.check("Application buttons have icons", not no_icon, no_icon)
+        sh._fill_history()
+        self.check("History panel explains when empty", sh.history_dock.widget().count() >= 1)
         self.info["freecad"] = App.Version()[:4]
         self.info["qt"] = QtCore.qVersion()
         groups = {}
@@ -152,6 +159,19 @@ class Smoke:
         want = prefs.navigation_style(self.shell.cfg)
         self.check("navigation style", nav_type == want, nav_type)
         self.check("NX mouse filter attached", self.nav() is not None)
+        self.check("Part Navigator in front without a dialog", self.shell.current_left_tab() == "Part Navigator",
+                   self.shell.current_left_tab())
+        tri = self.nav().triad if self.nav() else None
+        vp = self.nav().widget if self.nav() else None
+        if tri is not None and vp is not None:
+            g = tri.geometry()
+            lower_left = g.left() < vp.width() * 0.2 and g.top() > vp.height() * 0.6
+            corner_off = not App.ParamGet(prefs.VIEW).GetBool("CornerCoordSystem", True)
+            self.check("view triad lower-left, FreeCAD's hidden", tri.isVisible() and lower_left and corner_off,
+                       f"triad {g.left()},{g.top()} in {vp.width()}x{vp.height()}, FreeCAD corner off={corner_off}")
+            self.shot("07_triad.png", tri)
+        else:
+            self.check("view triad lower-left, FreeCAD's hidden", False, "no triad")
         self.shot("01_modeling.png")
         try:  # grab() cannot capture OpenGL; render the 3D view itself
             Gui.Selection.addSelection(doc.Name, "Box", "Face6")
@@ -333,6 +353,9 @@ class Smoke:
         self.check("Expressions sheet (Ctrl+E)", doc is not None and doc.getObject("Expressions") is not None)
         self.check("back to Modeling", self.shell.ribbon.tab_names() == EXPECTED_MODELING_TABS,
                    self.shell.ribbon.tab_names())
+        self.shell.ribbon.select("Application")
+        self.shot("08_application.png", self.shell.ribbon)
+        self.shell.ribbon.select("Home")
 
     # --------------------------------------------------------------- runner
     def next(self):

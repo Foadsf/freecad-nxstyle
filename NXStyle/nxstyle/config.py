@@ -35,6 +35,7 @@ DEFAULTS = {
         "edges": "#1E1E1E",
     },
     "edge_width": 1,
+    "view_triad": "nx",                # "nx" = lower-left (NXStyle), "freecad" = FreeCAD's lower-right one
     "zoom_at_cursor": True,
     "invert_wheel_zoom": True,         # FreeCAD default: wheel forward zooms in
     "rotate_degrees_per_pixel": 0.4,

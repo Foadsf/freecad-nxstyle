@@ -19,7 +19,7 @@ from . import commands, config, navigation, prefs, shortcuts
 from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
 from .ribbon import (CommandButton, Ribbon, command_actions, command_icon, expand_tabs, known_commands,
-                     resolve, spec_groups)
+                     resolve, spec_groups, sub_actions)
 from .selection_filter import TypeFilter
 
 OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
@@ -82,6 +82,7 @@ class Shell(QtCore.QObject):
         self.ready = False
         self.shortcut_result = {}
         self.setup_errors = []
+        self._nav_state = None
 
     # ================================================================ setup
     def setup(self):
@@ -130,6 +131,23 @@ class Shell(QtCore.QObject):
         missing = [n for n in names if not command_actions(n)]
         if missing:
             App.Console.PrintWarning(f"NXStyle: no QAction for {missing}\n")
+        # Application buttons get their workbench's icon (from Std_Workbench's entries)
+        wb_actions = sub_actions()
+        for app in self.apps:
+            acts = command_actions(f"NXStyle_App_{app['id']}")
+            src = wb_actions.get(app["workbench"])
+            icon = src.icon() if src is not None else self._workbench_icon(app["workbench"])
+            if acts and icon is not None and not icon.isNull():
+                acts[0].setIcon(icon)
+
+    @staticmethod
+    def _workbench_icon(name):
+        """Icon file declared by the workbench (Assembly is missing from Std_Workbench in 1.0)."""
+        wb = Gui.listWorkbenches().get(name)
+        path = getattr(wb, "Icon", "") if wb is not None else ""
+        if isinstance(path, str) and os.path.isfile(path):
+            return QtGui.QIcon(path)
+        return None
 
     def _app(self, app_id):
         return next((a for a in self.apps if a["id"] == app_id), None)
@@ -215,8 +233,7 @@ class Shell(QtCore.QObject):
     def _application_groups(self):
         groups = []
         for gname, apps in self.app_groups:
-            items = [{"cmd": f"NXStyle_App_{a['id']}", "label": a["title"], "size": a.get("size", "small")}
-                     for a in apps]
+            items = [{"cmd": f"NXStyle_App_{a['id']}", "label": a["title"], "size": "large"} for a in apps]
             groups.append((gname, items))
         groups.append(("User Interface", [{"cmd": "NXStyle_ToggleNativeUI", "label": "FreeCAD Menus and Toolbars"}]))
         return groups
@@ -397,13 +414,17 @@ class Shell(QtCore.QObject):
         lst = self.history_dock.widget()
         lst.clear()
         p = App.ParamGet("User parameter:BaseApp/Preferences/RecentFiles")
-        for i in range(p.GetInt("RecentFiles", 4) or 12):
+        for i in range(max(p.GetInt("RecentFiles", 4), 12)):
             path = p.GetString(f"MRU{i}")
             if path:
                 item = QtWidgets.QListWidgetItem(os.path.basename(path))
                 item.setToolTip(path)
                 item.setData(Qt.UserRole, path)
                 lst.addItem(item)
+        if not lst.count():
+            item = QtWidgets.QListWidgetItem("No recently opened parts yet.\nFiles you open appear here.")
+            item.setFlags(Qt.NoItemFlags)
+            lst.addItem(item)
 
     def _open_history_item(self, item):
         path = item.data(Qt.UserRole)
@@ -460,6 +481,26 @@ class Shell(QtCore.QObject):
         text = CUE_SKETCH if sketch else CUE_DIALOG if dialog else CUE_IDLE
         if self.cue.text() != text:
             self.cue.setText(text)
+        # NX keeps the Part Navigator in front; FreeCAD leaves its (often empty)
+        # Tasks panel in front after start-up, new documents and closed dialogs.
+        state = (dialog, len(App.listDocuments()))
+        if state != self._nav_state:
+            if not dialog:
+                self.show_part_navigator()
+            self._nav_state = state
+
+    def show_part_navigator(self):
+        model = self.mw.findChild(QtWidgets.QDockWidget, "Model")
+        if model is not None and model.isVisible():
+            model.raise_()
+
+    def current_left_tab(self):
+        """Title of the front tab among the left dock panels (for tests)."""
+        for bar in self.mw.findChildren(QtWidgets.QTabBar):
+            texts = [bar.tabText(i) for i in range(bar.count())]
+            if "Part Navigator" in texts:
+                return bar.tabText(bar.currentIndex())
+        return None
 
     def _sketch_tab(self, active, force=False):
         has = self.ribbon.has_tab("Sketch")

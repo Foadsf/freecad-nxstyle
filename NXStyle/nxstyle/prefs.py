@@ -83,9 +83,10 @@ def apply(cfg=None):
     v.SetUnsigned("DefaultShapeLineColor", packed(colors["edges"]))
     v.SetInt("DefaultShapeLineWidth", int(cfg.get("edge_width", 1)))
     v.SetBool("RandomColor", False)
-    # NX shows a view triad in the lower-left corner and no view cube
+    # NX shows a view triad in the lower-left corner and no view cube. FreeCAD
+    # 1.0 can only draw its triad lower-right, so NXStyle draws its own.
     v.SetBool("ShowNaviCube", False)
-    v.SetBool("CornerCoordSystem", True)
+    v.SetBool("CornerCoordSystem", cfg.get("view_triad", "nx") == "freecad")
     v.SetBool("ZoomAtCursor", bool(cfg.get("zoom_at_cursor", True)))
     v.SetBool("InvertZoom", bool(cfg.get("invert_wheel_zoom", True)))
     v.SetString("NavigationStyle", navigation_style(cfg))

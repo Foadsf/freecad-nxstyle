@@ -145,6 +145,7 @@ class NxMouse(QtCore.QObject):
         self.hold_used = False
         self.rmb_pending = False
         self.last_radial = None
+        self.triad = None
         self.hold_timer = QtCore.QTimer(self)
         self.hold_timer.setSingleShot(True)
         self.hold_timer.timeout.connect(self._mb2_hold)
@@ -383,6 +384,12 @@ class NavigationManager(QtCore.QObject):
                 widget.installEventFilter(f)
                 widget.destroyed.connect(lambda _=None, k=key: self.filters.pop(k, None))
                 self.filters[key] = f
+                if config.get().get("view_triad", "nx") == "nx":
+                    try:
+                        from .triad import ViewTriad
+                        f.triad = ViewTriad(view, view.graphicsView())
+                    except Exception as e:
+                        App.Console.PrintWarning(f"NXStyle: view triad unavailable: {e}\n")
         prefs.apply_navigation_to_open_views()
 
     def filter_for_active_view(self):
