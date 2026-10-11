@@ -129,6 +129,9 @@ class Shell(QtCore.QObject):
         self._nav_state = None
         self._ticks = 0
         self._overlay_guard = OverlayGuard(self)
+        self._last_sketch = None
+        self._pending_idle = 0
+        self._known_docs = set(App.listDocuments())
 
     # ================================================================ setup
     def setup(self):
@@ -589,7 +592,62 @@ class Shell(QtCore.QObject):
         self.navigation = navigation.NavigationManager(self)
 
     # ======================================================== periodic work
+    def _edited_sketch(self):
+        try:
+            vp = Gui.ActiveDocument.getInEdit() if Gui.ActiveDocument else None
+            obj = vp.Object if vp is not None else None
+            return obj if obj is not None and obj.isDerivedFrom("Sketcher::SketchObject") else None
+        except Exception:
+            return None
+
+    def _feature_flow(self):
+        """Finish Sketch inside NX Extrude/Revolve carries on into the feature."""
+        sk = self._edited_sketch()
+        if sk is not None:
+            self._last_sketch = sk
+            if commands.pending_feature["command"]:
+                commands.pending_feature["sketch"] = sk
+            return
+        if self._last_sketch is not None:
+            done, self._last_sketch = self._last_sketch, None
+            if commands.pending_feature["command"] and commands.pending_feature["sketch"] is done:
+                QtCore.QTimer.singleShot(0, lambda: commands.continue_pending_feature(done))
+                return
+        # a pending feature whose sketch never started (plane pick cancelled)
+        if commands.pending_feature["command"] and commands.pending_feature["sketch"] is None:
+            try:
+                busy = bool(Gui.Control.activeDialog())
+            except Exception:
+                busy = False
+            self._pending_idle = 0 if busy else self._pending_idle + 1
+            if self._pending_idle > 10:
+                commands.pending_feature["command"] = None
+                self._pending_idle = 0
+
+    def _new_part_template(self):
+        """NX's Model template starts with a datum coordinate system; give a new
+        empty document a Body with its origin planes shown, ready to pick."""
+        names = set(App.listDocuments())
+        new = names - self._known_docs
+        self._known_docs = names
+        if not self.cfg.get("new_part_datum", True) or not self.current_app \
+                or self.current_app.get("id") not in ("modeling", "assemblies"):
+            return
+        for name in new:
+            doc = App.getDocument(name)
+            if doc.Objects or doc.FileName:
+                continue
+            body = doc.addObject("PartDesign::Body", "Body")
+            try:
+                Gui.getDocument(name).ActiveView.setActiveObject("pdbody", body)
+                body.Origin.ViewObject.Visibility = True
+            except Exception:
+                pass
+            doc.recompute()
+
     def _tick(self):
+        self._feature_flow()
+        self._new_part_template()
         sketch = navigation.in_sketch_edit()
         self._sketch_tab(sketch)
         try:
@@ -731,4 +789,7 @@ def start():
     if os.environ.get("NXSTYLE_SMOKE_OUT"):
         from . import smoke
         smoke.start(_shell)
+    elif os.environ.get("NXSTYLE_TUTORIAL_OUT"):
+        from . import tutorial
+        tutorial.start(_shell)
     return _shell

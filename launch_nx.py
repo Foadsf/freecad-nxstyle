@@ -380,6 +380,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--wait", action="store_true", help="wait for FreeCAD to exit")
     ap.add_argument("--smoke-test", type=Path, metavar="OUTDIR",
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
+    ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
+                    help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
@@ -398,11 +400,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"warning: FreeCAD {install.version_str} is older than 1.0 and is not supported", file=sys.stderr)
 
     extra = {}
-    if args.smoke_test:
-        out = args.smoke_test.resolve()
+    harness = "smoke" if args.smoke_test else "tutorial" if args.tutorial else None
+    if harness:
+        out = (args.smoke_test or args.tutorial).resolve()
         out.mkdir(parents=True, exist_ok=True)
-        profile = args.profile or Path(tempfile.mkdtemp(prefix="nxstyle-smoke-"))
-        extra = {"NXSTYLE_SMOKE_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1"}
+        profile = args.profile or Path(tempfile.mkdtemp(prefix=f"nxstyle-{harness}-"))
+        extra = {f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1"}
         reset = True
     else:
         ver = f"{install.version[0]}.{install.version[1]}" if install.version else "unknown"
@@ -421,11 +424,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")
 
-    if args.smoke_test:
+    if harness:
         if os.name == "nt" and not args.visible:
             code = run_on_hidden_desktop(cmd, env, timeout_s=600)
             if code is None:
-                print("smoke test timed out", file=sys.stderr)
+                print(f"{harness} run timed out", file=sys.stderr)
                 return 3
         else:
             proc = subprocess.Popen(cmd, env=env)
@@ -433,19 +436,23 @@ def main(argv: list[str] | None = None) -> int:
                 proc.wait(timeout=600)
             except subprocess.TimeoutExpired:
                 proc.kill()
-                print("smoke test timed out", file=sys.stderr)
+                print(f"{harness} run timed out", file=sys.stderr)
                 return 3
-        result_file = args.smoke_test.resolve() / "smoke.json"
+        result_file = out / ("smoke.json" if harness == "smoke" else "tutorial.json")
         if not result_file.is_file():
-            print("smoke test produced no result (FreeCAD crashed or NXStyle failed to load)", file=sys.stderr)
+            print(f"{harness} run produced no result (FreeCAD crashed or NXStyle failed to load)", file=sys.stderr)
             return 2
         result = json.loads(result_file.read_text(encoding="utf-8"))
-        failed = [c for c in result.get("checks", []) if not c.get("ok")]
-        for c in result.get("checks", []):
-            print(f"{'PASS' if c['ok'] else 'FAIL'}  {c['name']}: {c.get('detail', '')}")
         if not args.profile:
             shutil.rmtree(profile, ignore_errors=True)
-        return 1 if failed else 0
+        if harness == "smoke":
+            failed = [c for c in result.get("checks", []) if not c.get("ok")]
+            for c in result.get("checks", []):
+                print(f"{'PASS' if c['ok'] else 'FAIL'}  {c['name']}: {c.get('detail', '')}")
+            return 1 if failed else 0
+        for s in result.get("steps", []):
+            print(f"{s['tutorial'][:1]}{s['n']:>3} {s['outcome']:<8} {s['nx']}  [{s['replay']}]  {s['detail']}")
+        return 1 if any(s["outcome"] == "FAILED" for s in result.get("steps", [])) else 0
 
     kwargs = {}
     if os.name == "nt" and not args.wait:

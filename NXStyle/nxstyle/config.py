@@ -44,6 +44,7 @@ DEFAULTS = {
     "mb2_hold_sets_rotation_point_ms": 450,
     "mb3_hold_radial_menu_ms": 350,
     "default_application": "modeling",
+    "new_part_datum": True,            # a new empty part gets a Body with its origin planes shown (NX Model template)
     "nx_shortcuts": True,
 }
 

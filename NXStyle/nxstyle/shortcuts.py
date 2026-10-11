@@ -82,7 +82,8 @@ TABLE = [
     Entry("Edit Section", "Ctrl+H", ["Part_SectionCut", "Std_ToggleClipPlane"], nx_id="UG_VIEW_SECTIONING"),
     Entry("Toggle Full Screen", "Alt+Return", "Std_MainFullscreen", nx_id="UG_VIEW_FULL_SCREEN_MODE"),
     # ---- Modeling
-    Entry("Extrude", "X", "PartDesign_Pad", nx_id="UG_MODELING_EXTRUDED_FEATURE"),
+    Entry("Extrude", "X", ["NXStyle_Extrude", "PartDesign_Pad"], nx_id="UG_MODELING_EXTRUDED_FEATURE",
+          note="with nothing selected: sketch first, Finish Sketch continues into the Extrude dialog"),
     Entry("Move Object", "Ctrl+T", "Std_TransformManip"),
     # ---- Sketch (sketch edit mode)
     Entry("Profile", "Z", "Sketcher_CreatePolyline", "sketch", nx_id="UG_SKETCH_PROFILE"),

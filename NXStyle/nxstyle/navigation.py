@@ -20,7 +20,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from . import commands, config, prefs
-from .qt import QtCore, QtWidgets, Qt, global_pos, mouse_event, pos
+from .qt import QtCore, QtGui, QtWidgets, Qt, global_pos, mouse_event, pos
 from .radial import RadialMenu
 from .ribbon import command_icon, is_enabled, known_commands, resolve, trigger
 
@@ -240,7 +240,22 @@ class NxMouse(QtCore.QObject):
             self.widget.setCursor(Qt.CrossCursor)
             status("Rotation point set; drag MB2 to rotate about it")
 
+    def sketch_tool_active(self):
+        """FreeCAD's sketcher tools set a custom (bitmap) cursor on the view."""
+        try:
+            return self.widget.cursor().shape() == Qt.BitmapCursor
+        except Exception:
+            return False
+
     def _mb2_click(self):
+        if in_sketch_edit():
+            # NX: MB2 ends the current curve tool; Esc does that in FreeCAD
+            if self.sketch_tool_active():
+                gv = self.view.graphicsView()
+                for kind in (QtCore.QEvent.KeyPress, QtCore.QEvent.KeyRelease):
+                    QtWidgets.QApplication.sendEvent(gv, QtGui.QKeyEvent(kind, Qt.Key_Escape, Qt.NoModifier))
+                status("Tool ended (MB2)")
+            return
         if self.cfg.get("mb2_click_is_ok", True) and accept_task_dialog():
             status("OK (MB2)")
 
@@ -317,6 +332,7 @@ class NxMouse(QtCore.QObject):
         return False
 
     def _handle(self, t, ev):
+        self.events = getattr(self, "events", 0) + 1
         own = prefs.uses_own_navigation(self.cfg)
         button = ev.button()
         p = pos(ev)
@@ -364,7 +380,7 @@ class NxMouse(QtCore.QObject):
                     self.hold_timer.stop()
                 if self.moved:
                     dx, dy = p.x() - self.last.x(), p.y() - self.last.y()
-                    mods = QtWidgets.QApplication.keyboardModifiers()
+                    mods = ev.modifiers()   # this event's state, not a possibly stale global one
                     if self.extra_rmb or mods & Qt.ShiftModifier:
                         self.pan(dx, dy)
                     elif self.extra_lmb or mods & Qt.ControlModifier:

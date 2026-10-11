@@ -441,6 +441,62 @@ class TouchMode:
             sh.set_touch_mode(not sh.touch_mode)
 
 
+# --------------------------------------------------------------------------
+# NX feature workflow: Extrude / Revolve first, sketch inside the command
+# --------------------------------------------------------------------------
+pending_feature = {"command": None, "sketch": None}
+
+
+def _selected_sketch():
+    for s in Gui.Selection.getSelectionEx("", 0):
+        o = s.Object
+        if o.isDerivedFrom("Sketcher::SketchObject"):
+            return o
+        for name in s.SubElementNames:   # Body + "Sketch.Edge1"
+            leaf = o.getSubObject(name, 1) if "." in name else None
+            if leaf is not None and leaf.isDerivedFrom("Sketcher::SketchObject"):
+                return leaf
+    return None
+
+
+class SketchFirstFeature:
+    """NX Extrude/Revolve: with a sketch selected the FreeCAD feature starts at
+    once; otherwise a sketch is started on the selected face or plane (or
+    FreeCAD asks for one), and Finish Sketch carries straight on into the
+    feature dialog, as in NX."""
+
+    def __init__(self, target, title, tip, pixmap_from):
+        self.target, self.title, self.tip, self.pixmap_from = target, title, tip, pixmap_from
+
+    def GetResources(self):
+        return {"MenuText": self.title, "ToolTip": self.tip, "Pixmap": _pixmap(self.pixmap_from)}
+
+    def IsActive(self):
+        return _has_doc() and not Gui.Control.activeDialog()
+
+    def Activated(self):
+        if _selected_sketch() is not None:
+            Gui.runCommand(self.target)
+            return
+        pending_feature["command"] = self.target
+        pending_feature["sketch"] = None
+        Gui.runCommand("PartDesign_NewSketch")
+
+
+def continue_pending_feature(sketch):
+    """Called by the shell when a sketch leaves edit mode."""
+    cmd = pending_feature["command"]
+    pending_feature["command"] = None
+    if not cmd or sketch is None or sketch.Document is None:
+        return False
+    if not sketch.Geometry:          # sketch cancelled or left empty
+        return False
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(sketch)
+    Gui.runCommand(cmd)
+    return True
+
+
 GLOBAL_TOOLBAR = "User parameter:BaseApp/Workbench/Global/Toolbar/Custom_NXStyle"
 
 
@@ -458,6 +514,16 @@ def register(apps):
         "NXStyle_ImmediateHide": ImmediateHide(),
         "NXStyle_ObjectInfo": ObjectInfo(),
         "NXStyle_TouchMode": TouchMode(),
+        "NXStyle_Extrude": SketchFirstFeature("PartDesign_Pad", "Extrude",
+                                              "Extrude a sketch; with nothing selected, sketch first (NX: X)",
+                                              "PartDesign_Pad"),
+        "NXStyle_ExtrudeSubtract": SketchFirstFeature("PartDesign_Pocket", "Extrude (Subtract)",
+                                                      "Extrude a sketch and subtract it", "PartDesign_Pocket"),
+        "NXStyle_Revolve": SketchFirstFeature("PartDesign_Revolution", "Revolve",
+                                              "Revolve a sketch; with nothing selected, sketch first",
+                                              "PartDesign_Revolution"),
+        "NXStyle_RevolveSubtract": SketchFirstFeature("PartDesign_Groove", "Revolve (Subtract)",
+                                                      "Revolve a sketch and subtract it", "PartDesign_Groove"),
     }
     for key in config.BACKGROUNDS:
         table[f"NXStyle_Background_{key}"] = Background(key)

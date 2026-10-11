@@ -15,11 +15,11 @@
         {"cmd": "Sketcher_Trimming", "label": "Quick Trim"}
       ]},
       {"name": "Feature", "items": [
-        {"cmd": "PartDesign_Pad", "label": "Extrude", "size": "large"},
-        {"cmd": "PartDesign_Revolution", "label": "Revolve", "size": "large"},
+        {"cmd": ["NXStyle_Extrude", "PartDesign_Pad"], "label": "Extrude", "size": "large"},
+        {"cmd": ["NXStyle_Revolve", "PartDesign_Revolution"], "label": "Revolve", "size": "large"},
         {"cmd": "PartDesign_Hole", "label": "Hole", "size": "large"},
-        {"cmd": "PartDesign_Pocket", "label": "Extrude (Subtract)"},
-        {"cmd": "PartDesign_Groove", "label": "Revolve (Subtract)"},
+        {"cmd": ["NXStyle_ExtrudeSubtract", "PartDesign_Pocket"], "label": "Extrude (Subtract)"},
+        {"cmd": ["NXStyle_RevolveSubtract", "PartDesign_Groove"], "label": "Revolve (Subtract)"},
         {"cmd": "PartDesign_Boolean", "label": "Unite / Subtract"},
         {"cmd": "PartDesign_Fillet", "label": "Edge Blend", "size": "large"},
         {"cmd": "PartDesign_Chamfer", "label": "Chamfer"},
