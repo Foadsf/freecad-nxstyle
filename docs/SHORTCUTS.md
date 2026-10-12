@@ -1,6 +1,6 @@
 # Keyboard shortcuts
 
-The NX bindings follow [Foadsf/NXtips](https://github.com/Foadsf/NXtips), plus Ctrl+T (Move Object) from the NX textbooks. Every key below was pressed through Qt's real shortcut system by the self-test (`launch_nx.py --smoke-test`) on FreeCAD 1.0.2 and reached its FreeCAD command, with no other action holding the key. Sketch keys were tested in sketch edit mode.
+The NX bindings follow [Foadsf/NXtips](https://github.com/Foadsf/NXtips), plus Ctrl+T (Move Object) from the NX textbooks. Every key below was pressed through Qt's real shortcut system by the self-test (`launch_nx.py --smoke-test`) on FreeCAD 1.0.2 and 1.1.4 and reached its FreeCAD command, with no other action holding the key. Sketch keys were tested in sketch edit mode.
 
 One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while two textbooks give F4 as Repeat Command. This project follows NXtips; Repeat Command stays on the Quick Access Toolbar.
 

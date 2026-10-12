@@ -21,7 +21,8 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Top Border Bar | Menu button (all FreeCAD menus), Type Filter that really restricts picking, selection tools |
 | Resource Bar | Part Navigator, History (recent parts), Information, Journal (Python console), Selection |
 | Applications | Modeling (PartDesign), Drafting (TechDraw), Assemblies, Shape Studio, Pre/Post (FEM), Manufacturing (CAM), … Applications without a hand-made ribbon get one generated from their workbench toolbars. |
-| Sketch task environment | Contextual **Sketch** tab with Finish Sketch, Profile, Rapid Dimension, constraints |
+| Feature workflow | Extrude (X) or Revolve with nothing selected: pick a plane, sketch, and Finish Sketch (Ctrl+Q) carries straight on into the feature dialog. A new part starts with a Body ready to sketch on. |
+| Sketch task environment | Contextual **Sketch** tab with Finish Sketch, Profile, Rapid Dimension, constraints; MB2 ends the active curve tool |
 | Mouse | MB2 rotate; hold MB2 to rotate about the point under the cursor; Shift+MB2 / MB2+MB3 pan; Ctrl+MB2 / MB1+MB2 zoom; wheel zoom; **MB2 click = OK**; **hold MB3 = radial menu** (view menu, or object menu over a part) |
 | Keys | All 65 bindings from [NXtips](https://github.com/Foadsf/NXtips): file, edit, view (Home, End, Ctrl+Alt+F/T/R/L, F5–F8, W, Ctrl+H), selection (Ctrl+B, Ctrl+Shift+I/K/U/B, Ctrl+J, Ctrl+I), sketch (Z, R, L, A, O, P, S, T, E, F, D, C, Ctrl+Q), applications (Ctrl+M, Ctrl+Shift+D/M/Y, Ctrl+Alt+S), Ctrl+1/2/E/L, F4 Touch Mode. Each one is pressed by the self-test; see [docs/SHORTCUTS.md](docs/SHORTCUTS.md) |
 | Graphics window | Light-grey gradient background (five NX presets on View › Background), red preselection, orange selection, grey bodies with dark edges, view triad bottom-left (drawn by NXStyle; FreeCAD 1.0 can only put its own bottom-right), no view cube |
@@ -62,15 +63,23 @@ python launch_nx.py --smoke-test out
 This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 48 behaviours. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
+python launch_nx.py --tutorial out
+```
+
+Replays two beginner exercises from NX textbooks through the UI: keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+
+```bash
 python -m unittest discover -s tests
 ```
 
-Launcher unit tests; FreeCAD is not needed.
+Launcher unit tests; FreeCAD is not needed. These and a lint run on every push (GitHub Actions).
 
 ## Requirements
 
-FreeCAD 1.0 or newer. Tested on Windows 11 with FreeCAD 1.0.2 (Qt 5.15) and 1.1.4 (Qt 6). Any Python 3.8+ runs the launcher, including FreeCAD's own.
+FreeCAD 1.0 or newer. Tested on Windows 11 with FreeCAD 1.0.2 (Qt 5.15) and 1.1.4 (Qt 6). The launcher also looks for FreeCAD on Linux and macOS, but those platforms have not been tested yet, and the hidden-desktop test mode is Windows-only. Any Python 3.8+ runs the launcher, including FreeCAD's own.
+
+Known FreeCAD 1.1.4 issue: a PartDesign Body whose origin planes stay visible disappears from the 3D view after a view fit (plain FreeCAD does this too). NXStyle therefore keeps the origin hidden; FreeCAD shows it while you pick a sketch plane.
 
 ## Licence and trademarks
 
-LGPL-2.1-or-later, matching FreeCAD; the full licence text still needs adding before publication. Siemens and NX are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.
+[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Siemens and NX are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.

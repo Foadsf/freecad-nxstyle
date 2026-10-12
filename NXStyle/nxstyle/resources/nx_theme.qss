@@ -3,7 +3,7 @@
    Applied after FreeCAD's "FreeCAD Light" stylesheet. Original styling in the
    spirit of the NX light theme; no Siemens assets.
 
-   Tokens (keep in sync with ribbon.qss and theme.py):
+   Tokens (keep in sync with ribbon.qss and THEME_TOKENS in shell.py):
      chrome   #EEF1F4   window background, bars
      panel    #FFFFFF   navigators, ribbon page
      line     #D5DAE0   borders and separators

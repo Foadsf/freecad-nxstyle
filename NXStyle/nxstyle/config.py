@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 """Settings for the NX-style shell.
 
-Defaults live here. A user can override any key in ``nxstyle.json`` inside the
-profile folder (the launcher prints its location); the file is created with the
-defaults on first start so it is easy to find and edit.
+Defaults live here. Override any key in ``nxstyle.json`` in the profile's
+config folder (the launcher prints the profile location); every setting and its
+default is written to ``nxstyle.defaults.json`` next to it for reference.
 """
 
 import copy

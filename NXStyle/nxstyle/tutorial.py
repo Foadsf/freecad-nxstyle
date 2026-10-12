@@ -624,10 +624,6 @@ class Replay:
         self.send(QtCore.QEvent.MouseButtonRelease, QtCore.QPoint(p.x() + 70, p.y() + 30), Qt.MiddleButton,
                   Qt.NoButton)
         o1 = cam.orientation.getValue().getValue()
-        same_cam = f.view.getCameraNode() == self.view().getCameraNode()
-        self.info["MB2 drag diag"] = {"filter events": getattr(f, "events", "n/a"), "same camera": same_cam,
-                                      "filter view camera": str(f.view.getCamera())[:200],
-                                      "active view camera": str(self.view().getCamera())[:200]}
         self.step("Hold MB2 and drag to rotate", "MB2 drag", SAME if o1 != o0 else FAIL, "")
         self.key("F8")
         self.wait = 900

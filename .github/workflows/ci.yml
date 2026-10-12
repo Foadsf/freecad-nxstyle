@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Lint (errors only)
+        run: |
+          python -m pip install ruff
+          ruff check --select F,E9 .
+      - name: Launcher unit tests (no FreeCAD needed)
+        run: python -m unittest discover -s tests -v
+      - name: Ribbon definitions are valid JSON
+        run: python -c "import json, glob; [json.load(open(f, encoding='utf-8')) for f in glob.glob('NXStyle/nxstyle/resources/ribbons/*.json')]; print('ok')"
