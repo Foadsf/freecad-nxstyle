@@ -35,7 +35,9 @@
         {"cmd": "TechDraw_Balloon", "label": "ID Symbol (Balloon)"},
         {"cmd": "TechDraw_LeaderLine", "label": "Leader"},
         {"cmd": "TechDraw_WeldSymbol", "label": "Weld Symbol"},
-        {"cmd": "TechDraw_SurfaceFinishSymbols", "label": "Surface Finish"}
+        {"cmd": "TechDraw_SurfaceFinishSymbols", "label": "Surface Finish"},
+        {"cmd": "NXStyle_FeatureControlFrame", "label": "Feature Control Frame", "size": "large"},
+        {"cmd": "NXStyle_DatumFeatureSymbol", "label": "Datum Feature Symbol"}
       ]},
       {"name": "Centerline and Hatch", "items": [
         {"cmd": "TechDraw_FaceCenterLine", "label": "Center Mark", "size": "large"},

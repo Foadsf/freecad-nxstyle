@@ -626,7 +626,8 @@ class Shell(QtCore.QObject):
 
     def _new_part_template(self):
         """NX's Model template starts with a datum coordinate system; give a new
-        empty document a Body with its origin planes shown, ready to pick."""
+        empty document a Body ready to sketch on. In the Assemblies application
+        the new document gets an empty Assembly instead (NX's Assembly template)."""
         names = set(App.listDocuments())
         new = names - self._known_docs
         if not self.cfg.get("new_part_datum", True) or not self.current_app \
@@ -642,10 +643,14 @@ class Shell(QtCore.QObject):
             views = gdoc.mdiViewsOfType("Gui::View3DInventor") if gdoc else []
             if not views or App.ActiveDocument is not doc:
                 continue          # view not ready yet: try again on the next tick
-            # The origin planes stay hidden: in FreeCAD 1.1.4 a visible Body origin
-            # makes the whole Body vanish from the 3D view after a view fit (seen in
-            # plain FreeCAD too). FreeCAD shows the planes while you pick a sketch plane.
-            Gui.runCommand("PartDesign_Body")
+            if self.current_app.get("id") == "assemblies":
+                # NX's Assembly template: an empty assembly, ready for Add Component
+                Gui.runCommand("Assembly_CreateAssembly")
+            else:
+                # The origin planes stay hidden: in FreeCAD 1.1.4 a visible Body origin
+                # makes the whole Body vanish from the 3D view after a view fit (seen in
+                # plain FreeCAD too). FreeCAD shows the planes while you pick a sketch plane.
+                Gui.runCommand("PartDesign_Body")
             self._known_docs.add(name)
         self._known_docs &= names
 

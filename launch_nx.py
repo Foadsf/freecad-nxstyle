@@ -478,9 +478,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
-                         "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing)")
+                         "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
+                         "G Shaft Support assembly, H GD&T plate drawing)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")

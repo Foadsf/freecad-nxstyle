@@ -318,8 +318,16 @@ class Replay:
              self.f_nozzle_dialog, self.f_blend, self.f_blend_dialog, self.f_shell, self.f_shell_dialog,
              self.f_vent, self.f_vent_sketch, self.f_vent_finish, self.f_vent_dialog, self.f_pattern,
              self.f_pattern_dialog, self.f_swept, self.f_fit, self.f_show]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F").upper().split(",")
-        for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F)):
+        G = [self.g_new, self.g_app, self.g_new_file, self.g_template, self.g_plate, self.g_bearing,
+             self.g_bearing_face, self.g_bearing_axis, self.g_bearing_axis2, self.g_collar, self.g_collar_axis,
+             self.g_collar_parallel, self.g_screw1, self.g_screw2, self.g_explode, self.g_edit, self.g_bom,
+             self.g_show, self.g_save,
+             self.g_back]
+        H = [self.h_new, self.h_part, self.h_drafting, self.h_sheet, self.h_view, self.h_view_check, self.h_side,
+             self.h_side_check, self.h_centres, self.h_basic, self.h_hole_note, self.h_datums, self.h_frames,
+             self.h_show, self.h_back]
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H").upper().split(",")
+        for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H)):
             if key in wanted:
                 yield from steps
 
@@ -414,6 +422,7 @@ class Replay:
         self.wait = 1800
 
     def a_extrude_dialog(self):
+        self.wait_dialog("a_extrude_dialog")
         pad = next((o for o in App.ActiveDocument.Objects if o.TypeId == "PartDesign::Pad"), None)
         open_ = bool(Gui.Control.activeDialog()) and pad is not None
         self.step("Finish Sketch (Ctrl+Q) returns to the Extrude dialog", "Ctrl+Q",
@@ -486,6 +495,7 @@ class Replay:
         self.wait = 1800
 
     def a_cut_dialog(self):
+        self.wait_dialog("a_cut_dialog")
         pocket = next((o for o in App.ActiveDocument.Objects if o.TypeId == "PartDesign::Pocket"), None)
         open_ = bool(Gui.Control.activeDialog()) and pocket is not None
         self.step("Finish Sketch returns to the (subtract) Extrude dialog", "Ctrl+Q",
@@ -639,6 +649,7 @@ class Replay:
         self.wait = 1800
 
     def b_extrude_dialog(self):
+        self.wait_dialog("b_extrude_dialog")
         open_ = bool(Gui.Control.activeDialog())
         field = self.set_quantity("length", 50)
         self.mb2_click()
@@ -693,6 +704,7 @@ class Replay:
         self.wait = 1800
 
     def b_revolve_dialog(self):
+        self.wait_dialog("b_revolve_dialog")
         rev = next((o for o in App.ActiveDocument.Objects if o.TypeId == "PartDesign::Revolution"), None)
         open_ = bool(Gui.Control.activeDialog()) and rev is not None
         axis = rev.ReferenceAxis[1] if rev is not None and rev.ReferenceAxis else None
@@ -905,6 +917,7 @@ class Replay:
         self.wait = 1800
 
     def c_extrude_dialog(self):
+        self.wait_dialog("c_extrude_dialog")
         field = self.set_quantity("length", 0.75 * IN)
         self.mb2_click()
         r = 0.25
@@ -925,6 +938,7 @@ class Replay:
         self.wait = 1200
 
     def c_datum_angle_ok(self):
+        self.wait_dialog("c_datum_angle_ok")
         plane = self.newest("PartDesign::Plane")
         used = None
         for axis in ("yaw", "pitch", "roll"):
@@ -962,6 +976,7 @@ class Replay:
         self.wait = 1200
 
     def c_datum_offset_ok(self):
+        self.wait_dialog("c_datum_offset_ok")
         plane = self.newest("PartDesign::Plane")
         field = self.set_quantity("attachmentoffsetz", 0.75 * IN)
         self.mb2_click()
@@ -1001,6 +1016,7 @@ class Replay:
         self.wait = 1800
 
     def c_hole_dialog(self):
+        self.wait_dialog("c_hole_dialog")
         hole = self.newest("PartDesign::Hole")
         open_ = bool(Gui.Control.activeDialog()) and hole is not None
         dia = self.set_quantity("diameter", 0.25 * IN)
@@ -1073,6 +1089,7 @@ class Replay:
         self.wait = 1800
 
     def d_revolve_dialog(self):
+        self.wait_dialog("d_revolve_dialog")
         rev = self.newest("PartDesign::Revolution")
         axis = self.set_combo("axis", "x axis") or self.set_combo("axis", "horizontal")
         self.mb2_click()
@@ -1092,6 +1109,7 @@ class Replay:
         self.wait = 1500
 
     def d_mirror_dialog(self):
+        self.wait_dialog("d_mirror_dialog")
         plane = self.set_combo("plane", "yz")
         self.info["D mirror dialog widgets"] = self.task_widgets()
         self.mb2_click()
@@ -1130,6 +1148,7 @@ class Replay:
         self.wait = 1800
 
     def d_leader_dialog(self):
+        self.wait_dialog("d_leader_dialog")
         mode = self.choose("through all", "mode")
         self.info["D leader dialog widgets"] = self.task_widgets()
         self.mb2_click()
@@ -1155,6 +1174,7 @@ class Replay:
                 if p in ("Axis", "Angle", "Occurrences", "Offset", "Mode", "Originals", "Reversed")}
 
     def d_pattern_dialog(self):
+        self.wait_dialog("d_pattern_dialog")
         axis = self.choose("x axis", "axis") or self.choose("x axis", "direction")
         count = self.set_spin("occurrences", 5)
         state = self.pattern_state()
@@ -1278,6 +1298,7 @@ class Replay:
         self.wait = 1500
 
     def d_section_dialog(self):
+        self.wait_dialog("d_section_dialog")
         dock = self.tasks_dock()
         pressed = None
         for btn in dock.findChildren(QtWidgets.QAbstractButton):
@@ -1467,8 +1488,20 @@ class Replay:
                           f"{getattr(self.edited_sketch(), 'Name', None)}; objects "
                           f"{[o.Name for o in doc.Objects][-6:] if doc else None}")
             return False
+        # ...and until its OK button is shown: a user cannot click before the panel is drawn,
+        # and NXStyle's MB2 = OK rightly ignores an OK that is not visible yet
+        def ok_visible():
+            for box in self.tasks_dock().findChildren(QtWidgets.QDialogButtonBox):
+                b = box.button(QtWidgets.QDialogButtonBox.Ok)
+                if b is not None and b.isVisible():
+                    return True
+            return False
+        t1 = time.monotonic()
+        while not ok_visible() and (time.monotonic() - t1) < 2.0:
+            qtest().qWait(50)
+        waited = int((time.monotonic() - t0) * 1000)
         if waited > 300:
-            self.progress(f"{what}: task dialog appeared after {waited} ms")
+            self.progress(f"{what}: task dialog ready after {waited} ms (OK shown {ok_visible()})")
         return True
 
     def e_volume(self, width, end=True, hole=False, notch=False, fillet=False):
@@ -2532,6 +2565,902 @@ class Replay:
         self.show("F_dryer_housing")
         self.check_drawn("The finished part is shown in the graphics window", "F_live_check.png")
         App.ActiveDocument.saveAs(os.path.join(OUT, "DryerHousing.FCStd"))
+
+    # ---------------------------------------------------------- tutorial G
+    # Shaft Support assembly (Shih ch. 14). The text gives the constraint sequence and its
+    # results (still free to rotate after a face and one axis; fixed after the second axis;
+    # Align/Lock leaves one DOF), the explosion distances and a part edit; every part size is
+    # figure-only, so the four parts are this replay's own (metric).
+    G_SCREW_HEAD = 5.0
+
+    def g_new(self):
+        self.tutorial = "G: Shaft Support assembly (metric parts of the replay's own)"
+        self.g_parts()
+
+    def g_parts(self):
+        """Base-Plate, Bearing, Collar, Cap-Screw: parametric Part features in a Body each, saved."""
+        import Part  # noqa: F401  (Part feature types)
+        made = {}
+
+        def new(name):
+            doc = App.newDocument(name.replace("-", "_"))
+            doc.Label = name
+            return doc
+
+        def finish(doc, name, solid):
+            body = doc.addObject("PartDesign::Body", "Body")
+            body.BaseFeature = solid
+            body.Label = name
+            doc.recompute()
+            doc.saveAs(os.path.join(OUT, f"{name}.FCStd"))
+            made[name] = (doc, body)
+
+        def box(doc, n, x, y, z, at):
+            b = doc.addObject("Part::Box", n)
+            b.Length, b.Width, b.Height = x, y, z
+            b.Placement.Base = App.Vector(*at)
+            return b
+
+        def cyl(doc, n, r, h, at, d=(0, 0, 1)):
+            c = doc.addObject("Part::Cylinder", n)
+            c.Radius, c.Height = r, h
+            c.Placement = App.Placement(App.Vector(*at), App.Rotation(App.Vector(0, 0, 1), App.Vector(*d)))
+            return c
+
+        def cut(doc, n, base, tools):
+            tool = tools[0]
+            if len(tools) > 1:
+                tool = doc.addObject("Part::MultiFuse", n + "Tools")
+                tool.Shapes = tools
+            c = doc.addObject("Part::Cut", n)
+            c.Base, c.Tool = base, tool
+            for o in [base] + list(tools):
+                o.Visibility = False
+            return c
+
+        # Base-Plate: 100 x 60 x 10, top face at z = 0, two Ø8 holes at x = ±15; front face y = -30
+        d = new("Base-Plate")
+        finish(d, "Base-Plate", cut(d, "PlateSolid", box(d, "Block", 100, 60, 10, (-50, -30, -10)),
+                                    [cyl(d, "HoleRight", 4, 10, (15, 0, -10)), cyl(d, "HoleLeft", 4, 10, (-15, 0, -10))]))
+        # Bearing: origin at the bottom centre; 50 x 40 x 20 block, R12 boss to z = 35, Ø10 bore,
+        # two Ø8 holes at x = ±15 with Ø13 x 5 counterbores from the top (z = 15 .. 20)
+        d = new("Bearing")
+        blk = box(d, "Block", 50, 40, 20, (-25, -20, 0))
+        boss = d.addObject("Part::Fuse", "Body1")
+        boss.Base, boss.Tool = blk, cyl(d, "Boss", 12, 15, (0, 0, 20))
+        blk.Visibility = False
+        finish(d, "Bearing", cut(d, "BearingSolid", boss, [cyl(d, "Bore", 5, 35, (0, 0, 0)),
+                                                       cyl(d, "HoleRight", 4, 20, (15, 0, 0)),
+                                                       cyl(d, "HoleLeft", 4, 20, (-15, 0, 0)),
+                                                       cyl(d, "CounterboreRight", 6.5, 5, (15, 0, 15)),
+                                                       cyl(d, "CounterboreLeft", 6.5, 5, (-15, 0, 15))]))
+        # Collar: ring OD 24 / ID 10 x 8, a set-screw flat at x = 11
+        d = new("Collar")
+        finish(d, "Collar", cut(d, "CollarSolid", cyl(d, "Ring", 12, 8, (0, 0, 0)),
+                                [cyl(d, "Hole", 5, 8, (0, 0, 0)), box(d, "Flat", 5, 30, 8, (11, -15, 0))]))
+        # Cap-Screw: head Ø12 x 5 above z = 0, shank Ø7.8 x 30 below (origin at the head's underside)
+        d = new("Cap-Screw")
+        screw = d.addObject("Part::Fuse", "ScrewSolid")
+        screw.Base = cyl(d, "Head", 6, self.G_SCREW_HEAD, (0, 0, 0))
+        screw.Tool = cyl(d, "Shank", 3.9, 30, (0, 0, -30))
+        screw.Base.Visibility = screw.Tool.Visibility = False
+        finish(d, "Cap-Screw", screw)
+        self._g_parts = made
+        ok = all(b.Shape.isValid() and b.Shape.Volume > 0 for _, b in made.values())
+        self.step("Create the parts Collar, Bearing, Base-Plate, Cap-Screw and save them", "modelled by script "
+                  "(the book's sizes are figure-only; earlier tutorials cover modelling)", SAME if ok else FAIL,
+                  ", ".join(f"{n} {b.Shape.Volume:.0f} mm^3" for n, (_, b) in made.items()))
+
+    def g_app(self):
+        b, where = self.click_ribbon("Assemblies")         # Application > Assemblies
+        self._g_app_where = where
+        self.wait = 1200
+
+    def g_new_file(self):
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1500
+
+    def g_template(self):
+        ok = self.wait_for("g_template: new assembly", lambda: self.assembly() is not None)
+        doc = App.ActiveDocument
+        doc.saveAs(os.path.join(OUT, "Shaft-Support.FCStd"))
+        self.step("File > New, Assembly template, name Shaft-Support", f"ribbon '{self._g_app_where} > "
+                  "Assemblies', Ctrl+N; saved as Shaft-Support", DIFFERS if ok else FAIL,
+                  "NXStyle's Assembly template starts the document with an empty Assembly (like NX's); NX names the "
+                  "file in the New dialog, FreeCAD on the first save")
+
+    def assembly(self):
+        doc = App.ActiveDocument
+        return next((o for o in doc.Objects if o.TypeId == "Assembly::AssemblyObject"), None) if doc else None
+
+    def g_links(self):
+        return [o for o in self.assembly().Group if o.TypeId == "App::Link"]
+
+    def answer_ground(self, w):
+        """FreeCAD's 'Ground Part?' question after the first insertion: Yes."""
+        for b in w.findChildren(QtWidgets.QAbstractButton):
+            if b.text().replace("&", "") == "Yes":
+                self.info["G ground question"] = w.windowTitle()
+                b.click()
+                return True
+        return False
+
+    def insert(self, part_label):
+        """Add Component: click the part in the dialog's list, MB2 = OK."""
+        before = {o.Name for o in self.g_links()}
+        self.modals.handler = self.answer_ground
+        b, where = self.click_ribbon("Add Component")
+        self.wait_dialog("insert")
+        tree = self.tasks_dock().findChild(QtWidgets.QTreeWidget, "partList")
+        item = None
+        if tree is not None:
+            hits = tree.findItems(part_label, Qt.MatchStartsWith | Qt.MatchRecursive, 0)
+            item = next((h for h in hits if h.data(0, Qt.UserRole) is not None), None)
+        if item is not None:
+            tree.scrollToItem(item)
+            r = tree.visualItemRect(item)
+            qtest().mouseClick(tree.viewport(), Qt.LeftButton, Qt.NoModifier, r.center())
+            QtWidgets.QApplication.processEvents()
+        qtest().qWait(300)
+        self.modals.handler = None
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        new = [o for o in self.g_links() if o.Name not in before]
+        return (new[-1] if new else None), where
+
+    @staticmethod
+    def lshape(link):
+        """A component's shape where it sits in the assembly."""
+        import Part
+        return Part.getShape(link)
+
+    def element(self, link, kind, test):
+        """('FaceN' or 'EdgeN', a point on it) of the link's shape, in assembly coordinates."""
+        shape = self.lshape(link)
+        items = shape.Faces if kind == "Face" else shape.Edges
+        for i, x in enumerate(items, start=1):
+            try:
+                if test(x):
+                    p = x.CenterOfMass if kind == "Face" and not hasattr(x.Surface, "Radius") else \
+                        x.valueAt(x.ParameterRange[0], x.ParameterRange[2]) if kind == "Face" else \
+                        x.valueAt(x.FirstParameter)
+                    return f"{kind}{i}", p
+            except Exception:
+                continue
+        return None, None
+
+    def plane_face(self, link, nz, z):
+        return self.element(link, "Face", lambda f: not hasattr(f.Surface, "Radius")
+                            and abs(f.normalAt(0, 0).z - nz) < 1e-6 and abs(f.CenterOfMass.z - z) < 1e-6)
+
+    def cyl_face(self, link, r, cx, cy):
+        return self.element(link, "Face", lambda f: hasattr(f.Surface, "Radius") and abs(f.Surface.Radius - r) < 1e-6
+                            and abs(f.Surface.Center.x - cx) < 1e-6 and abs(f.Surface.Center.y - cy) < 1e-6)
+
+    def joint(self, label, picks, distance=None):
+        """Assembly Constraints: the NX-named button, two picks in the graphics window, MB2 = OK."""
+        jg = next((o for o in self.assembly().Group if o.TypeId == "Assembly::JointGroup"), None)
+        before = {o.Name for o in jg.Group} if jg else set()
+        Gui.Selection.clearSelection()
+        b, where = self.click_ribbon(label)
+        self.wait_dialog(f"joint {label}")
+        asm = self.assembly()
+        for link, sub, p in picks:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, asm.Name, f"{link.Name}.{sub}", p.x, p.y, p.z)
+            QtWidgets.QApplication.processEvents()
+        if distance is not None:
+            self.set_quantity("distance", distance)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        jg = next((o for o in self.assembly().Group if o.TypeId == "Assembly::JointGroup"), None)
+        new = [o for o in jg.Group if o.Name not in before] if jg else []
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+        return (new[-1] if new else None), where
+
+    def solve(self):
+        asm = self.assembly()
+        try:
+            return asm.solve()
+        except Exception as e:
+            return f"error {e}"
+
+    def free_to_move(self, link, how):
+        """Constrained-move probe: displace the part, solve, and see whether it stays displaced."""
+        p0 = App.Placement(link.Placement)
+        link.Placement = how(App.Placement(p0))
+        moved = App.Placement(link.Placement)
+        self.solve()
+        App.ActiveDocument.recompute()
+        now = App.Placement(link.Placement)
+        stayed = self.same_place(now, moved)
+        back = self.same_place(now, p0)
+        self.progress(f"move probe {link.Label}: before {self.angle_z(p0):.2f}° {p0.Base}, displaced "
+                      f"{self.angle_z(moved):.2f}°, after solve {self.angle_z(now):.2f}° {now.Base}")
+        if stayed:                          # put it back where it was
+            link.Placement = p0
+            self.solve()
+        return stayed, back
+
+    @staticmethod
+    def same_place(a, b, tol=1e-4):
+        """Same pose: compare where points land (a rotation's quaternion may come back negated)."""
+        pts = (App.Vector(0, 0, 0), App.Vector(10, 0, 0), App.Vector(0, 10, 0), App.Vector(0, 0, 10))
+        return all((a.multVec(p) - b.multVec(p)).Length < tol for p in pts)
+
+    @staticmethod
+    def angle_z(plc):
+        v = plc.Rotation.multVec(App.Vector(1, 0, 0))
+        return math.degrees(math.atan2(v.y, v.x))
+
+    @staticmethod
+    def rotate_about(axis_point, deg):
+        def f(plc):
+            r = App.Rotation(App.Vector(0, 0, 1), deg)
+            return App.Placement(axis_point, r).multiply(App.Placement(-axis_point, App.Rotation())).multiply(plc)
+        return f
+
+    @staticmethod
+    def shift(dz):
+        def f(plc):
+            plc.Base = plc.Base + App.Vector(0, 0, dz)
+            return plc
+        return f
+
+    def g_plate(self):
+        link, where = self.insert("Base-Plate")
+        grounded = any(hasattr(o, "ObjectToGround") and o.ObjectToGround == link
+                       for o in App.ActiveDocument.Objects) if link else False
+        self._g = {"plate": link}
+        self.step("Add Component: Base-Plate at the origin; Yes to the Fixed constraint", f"ribbon '{where} > Add "
+                  "Component', click Base-Plate in the list, Yes, MB2 = OK",
+                  SAME if link is not None and grounded else FAIL,
+                  f"grounded {grounded}; FreeCAD asks 'Ground Part?' like NX's question about the Fixed constraint")
+
+    def g_bearing(self):
+        link, where = self.insert("Bearing")
+        self._g["bearing"] = link
+        self.step("Add Component: Bearing, placed with Move", f"ribbon '{where} > Add Component', click Bearing, MB2",
+                  DIFFERS if link is not None else FAIL, "FreeCAD places it beside the last part; NX lets you drag it "
+                  "to a spot first")
+
+    def g_bearing_face(self):
+        plate, bear = self._g["plate"], self._g["bearing"]
+        z0 = self.lshape(bear).BoundBox.ZMin
+        a = self.plane_face(bear, -1, z0)
+        b = self.plane_face(plate, 1, 0.0)
+        j, where = self.joint("Touch Align", [(bear,) + a, (plate,) + b], 0.0)
+        App.ActiveDocument.recompute()
+        zmin = self.lshape(bear).BoundBox.ZMin
+        self.step("Touch Align: Bearing bottom face to the Base-Plate top face", f"ribbon '{where} > Touch Align', "
+                  f"{a[0]} + {b[0]}, MB2 = OK", SAME if j is not None and abs(zmin) < 1e-4 else FAIL,
+                  f"joint {getattr(j, 'JointType', None)}; Bearing now from z = {zmin:.3f} mm")
+
+    def g_bearing_axis(self):
+        plate, bear = self._g["plate"], self._g["bearing"]
+        pl = bear.Placement
+        a = self.cyl_face(bear, 4, *(pl.multVec(App.Vector(15, 0, 0)).x, pl.multVec(App.Vector(15, 0, 0)).y))
+        b = self.cyl_face(plate, 4, 15, 0)
+        j, where = self.joint("Align Axes", [(bear,) + a, (plate,) + b])
+        c = bear.Placement.multVec(App.Vector(15, 0, 0))
+        on_axis = abs(c.x - 15) < 1e-4 and abs(c.y) < 1e-4
+        stayed, _ = self.free_to_move(bear, self.rotate_about(App.Vector(15, 0, 0), 25))
+        self.step("Touch Align: the right hole axes (Bearing counterbore hole, Base-Plate hole)", f"ribbon '{where} > "
+                  f"Align Axes', {a[0]} + {b[0]}, MB2 = OK", SAME if j is not None and on_axis and stayed else FAIL,
+                  f"hole axes coincide {on_axis}; rotated 25° about that axis and solved: it stays "
+                  f"{'(still free to rotate, as the book says)' if stayed else 'NOT free'}. NX's Show Degrees of "
+                  "Freedom has no FreeCAD equivalent: the replay moves the part and solves")
+
+    def g_bearing_axis2(self):
+        plate, bear = self._g["plate"], self._g["bearing"]
+        pl = bear.Placement
+        q = pl.multVec(App.Vector(-15, 0, 0))
+        a = self.cyl_face(bear, 4, q.x, q.y)
+        b = self.cyl_face(plate, 4, -15, 0)
+        j, where = self.joint("Align Axes", [(bear,) + a, (plate,) + b])
+        stayed, back = self.free_to_move(bear, self.rotate_about(App.Vector(15, 0, 0), 25))
+        self.step("Touch Align: the left hole axes; Move: it cannot move", f"ribbon '{where} > Align Axes', {a[0]} + "
+                  f"{b[0]}, MB2 = OK", SAME if j is not None and back else FAIL,
+                  f"rotated 25° and solved: back in place {back} (fully constrained, as in the book)")
+
+    def g_collar(self):
+        link, where = self.insert("Collar")
+        self._g["collar"] = link
+        bear, col = self._g["bearing"], link
+        a = self.plane_face(col, -1, self.lshape(col).BoundBox.ZMin)
+        b = self.plane_face(bear, 1, 35.0)
+        j, w2 = self.joint("Touch Align", [(col,) + a, (bear,) + b], 0.0)
+        zmin = self.lshape(col).BoundBox.ZMin
+        self.step("Add Component: Collar, Constrain, Touch Align on the boss's top face", f"ribbon '{where} > Add "
+                  f"Component' + '{w2} > Touch Align', {a[0]} + {b[0]}", SAME if j is not None and
+                  abs(zmin - 35) < 1e-4 else FAIL, f"Collar from z = {zmin:.3f} mm")
+
+    def g_collar_axis(self):
+        bear, col = self._g["bearing"], self._g["collar"]
+        c0 = col.Placement.Base
+        a = self.cyl_face(col, 12, c0.x, c0.y)
+        b = self.cyl_face(bear, 12, 0, 0)
+        j, where = self.joint("Align Axes", [(col,) + a, (bear,) + b])
+        c = col.Placement.Base
+        stayed, _ = self.free_to_move(col, self.rotate_about(App.Vector(0, 0, 0), 30))
+        self.step("Touch Align: the outer cylinders of Collar and Bearing", f"ribbon '{where} > Align Axes', {a[0]} + "
+                  f"{b[0]}", SAME if j is not None and abs(c.x) < 1e-4 and abs(c.y) < 1e-4 and stayed else FAIL,
+                  f"centred {abs(c.x) < 1e-4 and abs(c.y) < 1e-4}; still free to rotate {stayed}")
+
+    def g_collar_parallel(self):
+        plate, col = self._g["plate"], self._g["collar"]
+        flat = self.element(col, "Face", lambda f: not hasattr(f.Surface, "Radius") and abs(f.normalAt(0, 0).z) < 1e-6
+                            and f.Area < 300)
+        front = self.element(plate, "Face", lambda f: abs(f.normalAt(0, 0).y + 1) < 1e-6
+                             and abs(f.CenterOfMass.y + 30) < 1e-6)
+        j, where = self.joint("Parallel", [(col,) + flat, (plate,) + front])
+        res = self.solve()
+        nflat = None
+        sub = flat[0]
+        if sub:
+            f = self.lshape(col).Faces[int(sub[4:]) - 1]
+            nflat = f.normalAt(0, 0)
+        self.progress(f"g_collar_parallel: joint {getattr(j, 'Name', None)} {getattr(j, 'JointType', None)} refs "
+                      f"{getattr(j, 'Reference1', None)} / {getattr(j, 'Reference2', None)}; solve {res}; collar "
+                      f"angle {self.angle_z(col.Placement):.2f}°; flat normal now {nflat}; joint props "
+                      f"{ {p: str(getattr(j, p))[:60] for p in getattr(j, 'PropertiesList', []) if p in ('Activated', 'Detach1', 'Detach2', 'Offset1', 'Offset2', 'Placement1', 'Placement2', 'Rotation', 'Distance', 'Angle', 'EnableAngleMin')} }")
+        stayed, back = self.free_to_move(col, self.rotate_about(App.Vector(0, 0, 0), 30))
+        parallel = nflat is not None and abs(abs(nflat.y) - 1) < 1e-6
+        how = f"ribbon '{where} > Parallel', {flat[0]} (the collar's flat) + {front[0]}"
+        note = ("The book uses the Collar's datum plane (Replace Reference Set > Entire Part); here the flat on the "
+                "collar stands in")
+        if j is not None and parallel and back:
+            self.step("Parallel: Collar to the Base-Plate front face", how, DIFFERS, note)
+            return
+        self.step("Parallel: Collar to the Base-Plate front face", how, LIMIT,
+                  f"joint made, solver 'converged', but the collar did not turn (flat normal {nflat}). FreeCAD 1.1.4's "
+                  "solver drops a Parallel constraint whose faces start exactly perpendicular ('ParallelAxesJoint ... "
+                  "constraint(s) removed: RedundantConstraintDirectionCosineConstraintIzJy'); reproduced without "
+                  f"NXStyle; the same joint works when the faces start 20° apart. {note}")
+        # the workaround a FreeCAD user finds: delete the joint, turn the collar a little, Parallel again
+        jname = j.Name                         # read before the delete: a deleted object has no name
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, jname)
+        self.modals.accept = True
+        self.key("Delete")
+        QtWidgets.QApplication.processEvents()
+        self.modals.accept = False
+        gone = App.ActiveDocument.getObject(jname) is None
+        col.Placement = self.rotate_about(App.Vector(0, 0, 0), 20)(App.Placement(col.Placement))
+        self.solve()
+        j2, where = self.joint("Parallel", [(col,) + self.element(col, "Face", lambda f: not hasattr(f.Surface, "Radius")
+                                                                 and abs(f.normalAt(0, 0).z) < 1e-6 and f.Area < 300),
+                                            (plate,) + front])
+        self.solve()
+        App.ActiveDocument.recompute()
+        n = self.lshape(col).Faces[int(self.element(col, "Face", lambda f: not hasattr(f.Surface, "Radius") and
+                                                     abs(f.normalAt(0, 0).z) < 1e-6 and f.Area < 300)[0][4:]) - 1]
+        n = n.normalAt(0, 0)
+        stayed, back = self.free_to_move(col, self.rotate_about(App.Vector(0, 0, 0), 30))
+        self.step("Workaround: delete the joint, turn the Collar 20°, Parallel again", f"joint selected + Delete "
+                  f"({'gone' if gone else 'NOT deleted'}), Collar turned, ribbon '{where} > Parallel'",
+                  DIFFERS if j2 is not None and abs(abs(n.y) - 1) < 1e-6 and back else FAIL,
+                  f"flat normal now ({n.x:.3f}, {n.y:.3f}, {n.z:.3f}); rotated 30° and solved: back {back}. NX drags "
+                  "the part with Move Component; here it is turned by its placement")
+
+    def g_screw(self, key, hole_x):
+        link, where = self.insert("Cap-Screw")
+        self._g[key] = link
+        bear = self._g["bearing"]
+        c0 = link.Placement.Base
+        a = self.cyl_face(link, 3.9, c0.x, c0.y)
+        q = bear.Placement.multVec(App.Vector(hole_x, 0, 0))
+        b = self.cyl_face(bear, 4, q.x, q.y)
+        j, w2 = self.joint("Align/Lock", [(link,) + a, (bear,) + b])
+        c = link.Placement.Base
+        on_axis = abs(c.x - q.x) < 1e-4 and abs(c.y - q.y) < 1e-4
+        stayed, _ = self.free_to_move(link, self.shift(7.0))
+        rot, _ = self.free_to_move(link, self.rotate_about(App.Vector(q.x, q.y, 0), 40))
+        self.step(f"Add Component: Cap-Screw, Align/Lock on the {'right' if hole_x > 0 else 'left'} hole axis",
+                  f"ribbon '{where} > Add Component' + '{w2} > Align/Lock', {a[0]} + {b[0]}",
+                  SAME if j is not None and on_axis and stayed and not rot else FAIL,
+                  f"on the axis {on_axis}; slides along it {stayed}; turns {rot} (the book: one DOF, along the axis)")
+        head = self.plane_face(link, -1, link.Placement.Base.z)
+        seat = self.plane_face(bear, 1, 15.0)
+        j2, w3 = self.joint("Touch Align", [(link,) + head, (bear,) + seat], 0.0)
+        stayed, back = self.free_to_move(link, self.shift(7.0))
+        self.step("Touch Align: the head on the counterbore's seat", f"'{w3} > Touch Align', {head[0]} + {seat[0]}",
+                  SAME if j2 is not None and back and abs(link.Placement.Base.z - 15) < 1e-4 else FAIL,
+                  f"head underside at z = {link.Placement.Base.z:.3f} mm; moved 7 mm and solved: back {back}")
+
+    def g_screw1(self):
+        self.g_screw("screw1", 15)
+
+    def g_screw2(self):
+        self.g_screw("screw2", -15)
+
+    def g_edit(self):
+        """Open the Bearing in its window, change the bore to Ø6.35 (0.25 in), save; the assembly follows."""
+        doc, body = self._g_parts["Bearing"]
+        bore = doc.getObject("Bore")
+        bore.Radius = 6.35 / 2
+        doc.recompute()
+        doc.save()
+        asm_doc = self.assembly().Document
+        asm_doc.recompute()
+        bear = self._g["bearing"]
+        radii = sorted({round(f.Surface.Radius, 3) for f in self.lshape(bear).Faces if hasattr(f.Surface, "Radius")})
+        self.step("Edit the Bearing: hole Ø0.25 in (6.35 mm), save; the assembly updates", "Bearing document: the "
+                  "bore's Radius in its properties, recompute, save", DIFFERS if 3.175 in radii else FAIL,
+                  f"cylinder radii in the assembly's Bearing {radii}; NX: Open in Window, double-click the hole, edit "
+                  "the sketch value. The replay's parts are scripted, so the value is a property here")
+
+    def g_explode(self):
+        self.step("Exploded view: New Explosion, Collar 1.5 in and a Cap-Screw 2.0 in up; Auto-explode", "-",
+                  "skipped", "FreeCAD 1.1's New Explosion moves parts only by dragging a 3D handle (no distance "
+                  "field like NX's); the replay does not drag 3D handles")
+
+    def g_bom(self):
+        b, where = self.click_ribbon("Bill of Materials")
+        self.wait_dialog("bom")
+        self.mb2_click()
+        qtest().qWait(300)
+        mb2_closed = not Gui.Control.activeDialog()
+        if not mb2_closed:          # the user would click OK: do that, and report it
+            from .navigation import accept_task_dialog
+            self.progress(f"g_bom: MB2 did not close the dialog; OK clicked {accept_task_dialog()}")
+            qtest().qWait(300)
+        App.ActiveDocument.recompute()
+        sheets = [o for o in App.ActiveDocument.Objects if o.isDerivedFrom("Spreadsheet::Sheet")]
+        self.progress(f"g_bom: sheets {[(o.Name, o.TypeId) for o in sheets]}; dialog open {bool(Gui.Control.activeDialog())}")
+        sheet = sheets[-1] if sheets else None
+        rows = {}
+        if sheet is not None:
+            for r in range(1, 30):
+                try:
+                    vals = [str(sheet.get(f"{c}{r}")) for c in "ABCDEF"]
+                except Exception:
+                    vals = []
+                    for c in "ABCDEF":
+                        try:
+                            vals.append(str(sheet.get(f"{c}{r}")))
+                        except Exception:
+                            vals.append("")
+                if any(vals):
+                    rows[r] = vals
+        self.info["G bom"] = rows
+        flat = " ".join(" ".join(v) for v in rows.values())
+        screws = next((v for v in rows.values() if any("Cap-Screw" in x for x in v)), [])
+        header = rows.get(min(rows), []) if rows else []
+        qcol = next((i for i, h in enumerate(header) if "quant" in h.lower()), None)
+        qty = screws[qcol] if qcol is not None and len(screws) > qcol else None
+        ok = sheet is not None and all(n in flat for n in ("Base-Plate", "Bearing", "Collar", "Cap-Screw")) \
+            and qty in ("2", "2.0") and not Gui.Control.activeDialog()
+        screws = [x for x in screws if not x.endswith(".FCStd")]       # keep the report short
+        screws.append(f"quantity {qty}")
+        self.step("Parts List", f"ribbon '{where} > Bill of Materials', " + ("MB2 = OK" if mb2_closed else
+                                                                            "OK (MB2 did not close this dialog)"),
+                  DIFFERS if ok else FAIL,
+                  f"spreadsheet rows {len(rows)}; Cap-Screw row {screws}; NX puts the parts list on the drawing, "
+                  "FreeCAD makes a spreadsheet (a drawing can show it as a Tabular Note)")
+
+    def g_show(self):
+        # OK on the Bill of Materials opens its spreadsheet; click back to the assembly's 3D view tab
+        mdi = Gui.getMainWindow().findChild(QtWidgets.QMdiArea)
+        for sub in (mdi.subWindowList() if mdi else []):
+            if sub.windowTitle().startswith("Shaft-Support") and "Bill" not in sub.windowTitle() \
+                    and sub.widget() is not None and sub.widget().inherits("Gui::View3DInventor"):
+                mdi.setActiveSubWindow(sub)
+                break
+        QtWidgets.QApplication.processEvents()
+        self.fit()
+
+    def g_save(self):
+        self.show("G_shaft_support")
+        self.check_drawn("The assembly is shown in the graphics window", "G_live_check.png")
+        App.ActiveDocument.save()
+
+    def g_back(self):
+        self.key("Ctrl+M")
+        self.wait = 1500
+
+    # ---------------------------------------------------------- tutorial H
+    # GD&T drawing (Cogorno, GD&T for Mechanical Design 3e, ch. 12.2 and 8): a plate with
+    # datum features A (back face), B (bottom edge), C (left edge); 4X holes .510-.540 with
+    # position Ø.010 at MMC to A|B|C; datum B perpendicular .004 to A; flatness .002 on A
+    # (Prob. 12-3); basic 1.000 / 3.000 from B and C (ch. 8). Inches converted to mm. The
+    # plate size and thickness are figure-only: 4.00 x 4.00 x 0.50 in here.
+    H_PLATE = (101.6, 101.6, 12.7)
+    H_HOLES = [(25.4, 25.4), (25.4, 76.2), (76.2, 25.4), (76.2, 76.2)]
+    H_HOLE = (12.954, 13.716)            # .510-.540 in
+
+    def h_new(self):
+        self.tutorial = "H: GD&T plate drawing (book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def wait_for(self, what, test, timeout_ms=4000):
+        """Wait for a condition the way a user waits for the screen; log how long it took."""
+        t0 = time.monotonic()
+        while not test() and (time.monotonic() - t0) * 1000 < timeout_ms:
+            qtest().qWait(100)
+        waited = int((time.monotonic() - t0) * 1000)
+        if waited > 300 or not test():
+            self.progress(f"{what}: {'ready' if test() else 'NOT ready'} after {waited} ms")
+        return test()
+
+    def h_part(self):
+        import Part
+        self.wait_for("h_part: new part's Body", lambda: self.body() is not None)
+        doc = App.ActiveDocument
+        body = self.body()
+        sk = body.newObject("Sketcher::SketchObject", "Sketch")
+        sk.AttachmentSupport = [(body.Origin.OriginFeatures[3], "")]
+        sk.MapMode = "FlatFace"
+        L, W, T = self.H_PLATE
+        V = App.Vector
+        P = [V(0, 0, 0), V(L, 0, 0), V(L, W, 0), V(0, W, 0)]
+        for i in range(4):
+            sk.addGeometry(Part.LineSegment(P[i], P[(i + 1) % 4]), False)
+        r = sum(self.H_HOLE) / 4
+        for (x, y) in self.H_HOLES:
+            sk.addGeometry(Part.Circle(V(x, y, 0), V(0, 0, 1), r), False)
+        pad = body.newObject("PartDesign::Pad", "Pad")
+        pad.Profile = sk
+        pad.Length = T
+        sk.Visibility = False
+        doc.recompute()
+        want = L * W * T - 4 * math.pi * r * r * T
+        ok = abs(pad.Shape.Volume - want) < 1e-6 * want
+        doc.saveAs(os.path.join(OUT, "GDT-Plate.FCStd"))
+        self._h_body = body
+        self.step("The plate: 101.6 x 101.6 x 12.7 mm, 4 holes on a 50.8 mm square", "modelled by script (the "
+                  "exercise is the drawing)", SAME if ok else FAIL, f"volume {pad.Shape.Volume:.1f} mm^3; back face "
+                  "(z = 0) is datum A, bottom edge (y = 0) B, left edge (x = 0) C")
+
+    def h_drafting(self):
+        self.key("Ctrl+Shift+D")
+        self.wait = 2500
+
+    def h_sheet(self):
+        b, where = self.click_ribbon("New Sheet")
+        QtWidgets.QApplication.processEvents()
+        self._page = self.newest("TechDraw::DrawPage")
+        self.step("File > Drafting, New Sheet", f"Ctrl+Shift+D + ribbon '{where} > New Sheet'",
+                  SAME if self._page is not None else FAIL, "")
+        # The book's drawings follow ASME Y14.5: hole notes read horizontally. TechDraw's default
+        # standard is ISO Oriented (text along the leader); a drafter picks ASME in the preferences.
+        p = App.ParamGet("User parameter:BaseApp/Preferences/Mod/TechDraw/Dimensions")
+        before = p.GetInt("StandardAndStyle", 0)
+        p.SetInt("StandardAndStyle", 2)          # 0 ISO Oriented, 1 ISO Referencing, 2 ASME Inlined, 3 ASME Referencing
+        self.step("Drafting Preferences: ASME standard", "Preferences > TechDraw > Dimensions > Standard and Style "
+                  "= ASME Inlined", DIFFERS, f"was {['ISO Oriented', 'ISO Referencing', 'ASME Inlined', 'ASME Referencing'][before] if 0 <= before < 4 else before}; "
+                  "NX sets the drafting standard in Drafting Preferences")
+        self.wait = 1200
+
+    def h_view(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self._h_body.Name)
+        b, where = self.click_ribbon("Base View")
+        self._h_where = where
+        self.wait = 1500
+
+    def h_view_check(self):
+        views = [v for v in self._page.Views if v.isDerivedFrom("TechDraw::DrawViewPart")]
+        front = views[-1] if views else None
+        if front is not None:
+            front.Direction = App.Vector(0, 0, 1)
+            front.XDirection = App.Vector(1, 0, 0)
+            front.ScaleType = "Custom"
+            front.Scale = 1.0
+            front.X, front.Y = 105.0, 115.0
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        self._h_front = front
+        self.step("Base View: the plate's face, scale 1:1", f"body selected + ribbon '{self._h_where} > Base View'"
+                  ", MB2 on the sheet", SAME if front is not None and not Gui.Control.activeDialog() else FAIL,
+                  "direction set to look at the face (the book's front view)")
+        self.wait = 800
+
+    def h_side(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self._h_body.Name)
+        self.click_ribbon("Base View")
+        self.wait = 1500
+
+    def h_side_check(self):
+        views = [v for v in self._page.Views if v.isDerivedFrom("TechDraw::DrawViewPart") and v is not self._h_front]
+        side = views[-1] if views else None
+        if side is not None:
+            # third-angle right view: Y up as in the face view, thickness across; back face A on the right
+            side.Direction = App.Vector(1, 0, 0)
+            side.XDirection = App.Vector(0, 0, -1)
+            side.ScaleType = "Custom"
+            side.Scale = 1.0
+            side.X, side.Y = float(self._h_front.X) + 120.0, float(self._h_front.Y)
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        self._h_side = side
+        self.step("Projected view to the right: the plate's edge, back face A", "second Base View, MB2",
+                  DIFFERS if side is not None else FAIL, "as in tutorial D, a second Base View stands in for a "
+                  "view projected off the base view")
+        self.wait = 800
+
+    # -- view geometry helpers (edge coordinates: relative to the view centre, Y up, unscaled)
+    def view_edges(self, view):
+        out = []
+        for i in range(len(view.getVisibleEdges())):
+            try:
+                out.append((i, view.getEdgeByIndex(i)))
+            except Exception:
+                continue
+        return out
+
+    def outer_edge(self, view, side):
+        """Index of the view's bounding edge on side 'bottom', 'top', 'left' or 'right'."""
+        best = None
+        for i, e in self.view_edges(view):
+            if hasattr(e.Curve, "Radius"):
+                continue
+            bb = e.BoundBox
+            if side in ("bottom", "top") and bb.YLength < 1e-6 and bb.XLength > 1:
+                key = bb.YMin if side == "bottom" else -bb.YMax
+            elif side in ("left", "right") and bb.XLength < 1e-6 and bb.YLength > 1:
+                key = bb.XMin if side == "left" else -bb.XMax
+            else:
+                continue
+            if best is None or key < best[0]:
+                best = (key, i)
+        return best[1] if best else None
+
+    def hole_edges(self, view):
+        return [(i, e) for i, e in self.view_edges(view) if hasattr(e.Curve, "Radius")]
+
+    def select_view_subs(self, view, subs):
+        Gui.Selection.clearSelection()
+        for s in subs:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, view.Name, s)
+        QtWidgets.QApplication.processEvents()
+
+    def h_centres(self):
+        """TechDraw dimensions need vertices: put cosmetic vertices on the hole centres
+        (NX picks arc centres directly)."""
+        v = self._h_front
+        holes = self.hole_edges(v)
+        made = []
+        for i, e in holes:
+            c = e.Curve.Center
+            try:
+                made.append(v.makeCosmeticVertex(App.Vector(c.x, c.y, 0)))
+            except Exception as ex:
+                self.info.setdefault("H cosmetic vertex errors", []).append(str(ex))
+        App.ActiveDocument.recompute()
+        self._h_centre_vertices = self.vertices_at(v, [e.Curve.Center for _, e in holes])
+        if len(self._h_centre_vertices) != len(holes):
+            pts = []
+            for k in range(60):
+                try:
+                    q = v.getVertexByIndex(k).Point
+                    pts.append((k, round(q.x, 2), round(q.y, 2)))
+                except Exception:
+                    break
+            self.progress(f"h_centres: centres {[(round(e.Curve.Center.x, 2), round(e.Curve.Center.y, 2)) for _, e in holes]}"
+                          f"; cosmetic tags {made}; view vertices {pts}")
+        self.step("Arc centres for the dimensions", "cosmetic vertex on each hole centre",
+                  DIFFERS if len(self._h_centre_vertices) == 4 else FAIL,
+                  f"{len(holes)} holes, {len(made)} cosmetic vertices, found as {self._h_centre_vertices}; NX "
+                  "snaps dimensions to arc centres, TechDraw needs vertices there first")
+
+    def vertices_at(self, view, points):
+        """Vertex names of the view at the given view coordinates."""
+        names = []
+        for p in points:
+            for k in range(200):
+                try:
+                    vx = view.getVertexByIndex(k)
+                except Exception:
+                    break
+                q = vx.Point
+                if abs(q.x - p.x) < 1e-3 and abs(q.y - p.y) < 1e-3:
+                    names.append(f"Vertex{k}")
+                    break
+        return names
+
+    def corner_vertex(self, view, corner):
+        """Vertex name of a corner of the view's outline: 'bl', 'tl', 'br' or 'tr'."""
+        bb = None
+        for _, e in self.view_edges(view):
+            bb = e.BoundBox if bb is None else bb.united(e.BoundBox)
+        x = bb.XMin if corner[1] == "l" else bb.XMax
+        y = bb.YMin if corner[0] == "b" else bb.YMax
+        names = self.vertices_at(view, [App.Vector(x, y, 0)])
+        return names[0] if names else None
+
+    def basic_dimension(self, kind, subs, want, at=None):
+        """Select two vertices, Horizontal / Vertical Dimension, then make it basic (boxed).
+        at: (x or None, y or None) to drag the dimension to, relative to the view centre."""
+        before = {d.Name for d in self._page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension")}
+        self.select_view_subs(self._h_front, subs)
+        b, where = self.click_ribbon(kind)
+        QtWidgets.QApplication.processEvents()
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        new = [d for d in self._page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension") and d.Name not in before]
+        if not new:
+            return None, where, None
+        d = new[-1]
+        d.TheoreticalExact = True
+        d.FormatSpec = "%.1w"
+        if at is not None:      # where a drafter drags the dimension: outside the view, clear of the datums
+            if at[0] is not None:
+                d.X = at[0]
+            if at[1] is not None:
+                d.Y = at[1]
+        App.ActiveDocument.recompute()
+        got = d.getRawValue() if hasattr(d, "getRawValue") else None
+        return d, where, got
+
+    def h_basic(self):
+        tl, bl = self.corner_vertex(self._h_front, "tl"), self.corner_vertex(self._h_front, "bl")
+        cv = self._h_centre_vertices
+        pts = [e.Curve.Center for _, e in self.hole_edges(self._h_front)]
+        if None in (tl, bl) or len(cv) != 4 or len(pts) != 4:
+            raise RuntimeError(f"vertices for the dimensions not found: corners {tl} {bl}, centres {cv}")
+
+        def hole(left, low):
+            k = min(range(4), key=lambda i: (pts[i].x if left else -pts[i].x) + (pts[i].y if low else -pts[i].y))
+            return cv[k]
+        out = self.H_PLATE[0] / 2 + 14.0          # just outside the view
+        rows = []
+        # horizontal ones above the view, vertical ones left (from B) and right (the spacing),
+        # clear of the datum symbols on the bottom and left edges
+        for kind, subs, want, label, at in (
+                ("Horizontal", [tl, hole(True, False)], 25.4, "C to the hole", (None, out)),
+                ("Horizontal", [hole(True, False), hole(False, False)], 50.8, "hole spacing", (None, out)),
+                ("Vertical", [bl, hole(True, True)], 25.4, "B to the hole", (-out, None)),
+                ("Vertical", [hole(False, True), hole(False, False)], 50.8, "hole spacing", (out, None))):
+            d, where, got = self.basic_dimension(kind, subs, want, at)
+            ok = d is not None and got is not None and abs(abs(got) - want) < 1e-3 and d.TheoreticalExact
+            rows.append(ok)
+            self.step(f"Basic dimension {want:g} ({label})", f"two vertices + ribbon '{where} > {kind}', then basic",
+                      DIFFERS if ok else FAIL, f"measured {got}; NX: Basic is a Tolerance type in the dimension "
+                      "dialog, TechDraw: the Theoretical Exact property draws the box")
+        self.wait = 600
+
+    def h_hole_note(self):
+        holes = self.hole_edges(self._h_front)
+        top_right = max(holes, key=lambda h: h[1].Curve.Center.x + h[1].Curve.Center.y)
+        before = {d.Name for d in self._page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension")}
+        self.select_view_subs(self._h_front, [f"Edge{top_right[0]}"])
+        b, where = self.click_ribbon("Diameter")
+        QtWidgets.QApplication.processEvents()
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        new = [d for d in self._page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension") and d.Name not in before]
+        d = new[-1] if new else None
+        lo, hi = self.H_HOLE
+        if d is not None:
+            d.FormatSpec = "4X ⌀%.3w"            # the format replaces TechDraw's own ⌀ prefix
+            d.EqualTolerance = False
+            d.OverTolerance = (hi - lo) / 2
+            d.UnderTolerance = -(hi - lo) / 2
+            d.FormatSpecOverTolerance = "%+.3w"
+            d.FormatSpecUnderTolerance = "%+.3w"
+            d.X, d.Y = 70.0, 72.0          # up and right of the hole: its frame then clears the view outline
+            App.ActiveDocument.recompute()
+        got = d.getRawValue() if d is not None and hasattr(d, "getRawValue") else None
+        ok = d is not None and got is not None and abs(got - (lo + hi) / 2) < 1e-3
+        self._h_note = d
+        self.step("Hole note: 4X Ø12.954-13.716 (.510-.540 in)", f"hole edge + ribbon '{where} > Diameter'; "
+                  "4X and ±0.381 in the dimension's properties", DIFFERS if ok else FAIL,
+                  f"diameter {got}; FreeCAD shows Ø13.335 ±0.381 (NX can also show the limits 13.716/12.954)")
+        self.wait = 600
+
+    def datum_symbol(self, view, side, letter):
+        idx = self.outer_edge(view, side)
+        if idx is None:
+            return None, f"no {side} edge found", None
+        self.select_view_subs(view, [f"Edge{idx}"])
+        b, where = self.click_ribbon("Datum Feature Symbol")
+        QtWidgets.QApplication.processEvents()
+        field = self.tasks_dock().findChild(QtWidgets.QLineEdit, "datumLetter")
+        if field is not None:
+            field.selectAll()
+            qtest().keyClicks(field, letter)
+        self.mb2_click_on_sheet()
+        QtWidgets.QApplication.processEvents()
+        sym = next((o for o in reversed(self._page.Views) if getattr(o, "NX_Datum", "") == letter), None)
+        # the triangle's base must sit on the edge
+        e = view.getEdgeByIndex(idx)
+        s = float(view.Scale)
+        ey = float(view.Y) + e.BoundBox.YMin * s
+        ex = float(view.X) + e.BoundBox.XMin * s
+        touch = None
+        if sym is not None:
+            from . import gdt
+            _, (w, h) = gdt.datum_feature_symbol(letter, {"bottom": "top", "top": "bottom", "left": "right",
+                                                          "right": "left"}[side])
+            if side in ("bottom", "top"):
+                base = float(sym.Y) + (h / 2 if side == "bottom" else -h / 2)
+                touch = abs(base - ey)
+            else:
+                base = float(sym.X) + (w / 2 if side == "left" else -w / 2)
+                touch = abs(base - ex)
+        return sym, f"edge Edge{idx} + ribbon '{where} > Datum Feature Symbol', '{letter}', MB2 = OK", touch
+
+    def h_datums(self):
+        for view, side, letter, what in ((self._h_side, "right", "A", "the back face (right edge of the edge view)"),
+                                         (self._h_front, "bottom", "B", "the bottom edge"),
+                                         (self._h_front, "left", "C", "the left edge")):
+            sym, how, touch = self.datum_symbol(view, side, letter)
+            ok = sym is not None and touch is not None and touch < 0.05 and list(sym.EditableTexts) == [letter]
+            self.step(f"Datum Feature Symbol {letter} on {what}", how, DIFFERS if ok else FAIL,
+                      f"triangle {touch if touch is None else round(touch, 3)} mm from the edge; editable letter "
+                      f"{list(sym.EditableTexts) if sym else None}; FreeCAD 1.1 has no datum feature symbol, "
+                      "NXStyle adds NX's")
+        self.wait = 600
+
+    def frame(self, select, characteristic, tolerance, diameter, modifier, datums, label):
+        """Feature Control Frame dialog: characteristic, tolerance, material condition, datums, MB2 = OK."""
+        select()
+        b, where = self.click_ribbon("Feature Control Frame")
+        QtWidgets.QApplication.processEvents()
+        dock = self.tasks_dock()
+        combo = dock.findChild(QtWidgets.QComboBox, "characteristic")
+        if combo is not None:
+            i = next((k for k in range(combo.count()) if combo.itemText(k).lower() == characteristic), -1)
+            combo.setCurrentIndex(i)
+        box = dock.findChild(QtWidgets.QCheckBox, "zoneDiameter")
+        if box is not None and box.isChecked() != diameter:
+            box.click()
+        for name, text in [("tolerance", tolerance)] + [(f"datum{k + 1}", d) for k, (d, _) in enumerate(datums)]:
+            f = dock.findChild(QtWidgets.QLineEdit, name)
+            if f is not None:
+                f.selectAll()
+                qtest().keyClicks(f, text)
+        for name, mod in [("materialCondition", modifier)] + [(f"datum{k + 1}Modifier", m)
+                                                              for k, (_, m) in enumerate(datums)]:
+            c = dock.findChild(QtWidgets.QComboBox, name)
+            if c is not None and mod:
+                c.setCurrentIndex(max(0, c.findText(mod)))
+        self.mb2_click_on_sheet()
+        QtWidgets.QApplication.processEvents()
+        from . import gdt
+        want = gdt.callout(characteristic, tolerance, diameter, modifier, datums)
+        sym = next((o for o in reversed(self._page.Views) if getattr(o, "NX_Callout", "") == want), None)
+        texts = list(sym.EditableTexts) if sym is not None else None
+        ok = sym is not None and texts == [tolerance] + [d for d, _ in datums] and not Gui.Control.activeDialog()
+        self.step(label, f"selection + ribbon '{where} > Feature Control Frame'; dialog filled; MB2 = OK",
+                  DIFFERS if ok else FAIL, f"frame '{want}'; editable values {texts}; FreeCAD 1.1 has only fixed "
+                  "GD&T pictures, NXStyle adds NX's Feature Control Frame dialog")
+        return sym
+
+    def h_frames(self):
+        side, front = self._h_side, self._h_front
+        a = self.outer_edge(side, "right")
+        b = self.outer_edge(front, "bottom")
+        self.frame(lambda: self.select_view_subs(side, [f"Edge{a}"]), "flatness", "0.051", False, "", [],
+                   "Flatness 0.051 on datum A (.002 in, Prob. 12-3)")
+        self.frame(lambda: self.select_view_subs(front, [f"Edge{b}"]), "perpendicularity", "0.102", False, "",
+                   [("A", "")], "Perpendicularity 0.102 to A on datum B (.004 in)")
+
+        def pick_note():
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(App.ActiveDocument.Name, self._h_note.Name)
+        self.frame(pick_note, "position", "0.254", True, "MMC", [("A", ""), ("B", ""), ("C", "")],
+                   "Position Ø0.254 (M) to A, B, C under the hole note (.010 in at MMC)")
+        self.wait = 800
+
+    def h_show(self):
+        App.ActiveDocument.recompute()
+        QtWidgets.QApplication.processEvents()
+        self.shot("H_gdt_drawing.png")
+        App.ActiveDocument.save()
+
+    def h_back(self):
+        self.key("Ctrl+M")
+        self.wait = 1500
 
     # ------------------------------------------------------------- runner
     def next(self):

@@ -629,6 +629,9 @@ def register(apps):
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
+    from . import gdt_ui
+    table["NXStyle_FeatureControlFrame"] = gdt_ui.FeatureControlFrame()
+    table["NXStyle_DatumFeatureSymbol"] = gdt_ui.DatumFeatureSymbol()
     for key in config.BACKGROUNDS:
         table[f"NXStyle_Background_{key}"] = Background(key)
     for app in apps:
