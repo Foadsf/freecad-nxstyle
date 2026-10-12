@@ -128,6 +128,8 @@ class Smoke:
         from . import plm
         st = plm.status()
         self.info["strata"] = st
+        self.info["Strata PanelVisible after placement"] = App.ParamGet(
+            "User parameter:BaseApp/Preferences/Mod/Strata").GetBool("PanelVisible", True)
         want = os.environ.get("NXSTYLE_STRATA_EXPECTED", "1") == "1"
         if not want:
             self.check("Strata off as asked", not st["panel"], st)
@@ -138,6 +140,11 @@ class Smoke:
         tabbed = p is not None and model is not None and p in mw.tabifiedDockWidgets(model)
         self.check("Strata panel among the left navigators", st["placed"] and st["panel_area"] == "left" and tabbed,
                    f"area {st['panel_area']}, tabbed with the Part Navigator {tabbed}")
+        bars = [[b.tabText(i) for i in range(b.count())] for b in mw.findChildren(QtWidgets.QTabBar)
+                if b.isVisible()]
+        left = next((t for t in bars if "Part Navigator" in t), [])
+        self.check("Versions and history tab in the left strip (also on a second start)",
+                   "Versions and history" in left, left)
         self.check("Part Navigator stays in front", self.shell.current_left_tab() == "Part Navigator",
                    self.shell.current_left_tab())
         stray = [(t.count(), t.geometry().getRect()) for t in mw.findChildren(QtWidgets.QTabBar)
@@ -487,6 +494,15 @@ class Smoke:
         Gui.runCommand("NXStyle_Expressions")
 
     def s_final(self):
+        self.info["Strata PanelVisible at the end"] = App.ParamGet(
+            "User parameter:BaseApp/Preferences/Mod/Strata").GetBool("PanelVisible", True)
+        # FreeCAD reports a command icon it cannot resolve in the Report view ("Cannot find icon: X")
+        report = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Report view")
+        texts = [w.toPlainText() for w in (report.findChildren(QtWidgets.QTextEdit) +
+                                          report.findChildren(QtWidgets.QPlainTextEdit))] if report else []
+        missing_icons = sorted({ln.strip() for t in texts for ln in t.splitlines() if "Cannot find icon" in ln})
+        self.check("every command icon found (Report view has no 'Cannot find icon')",
+                   bool(texts) and not missing_icons, missing_icons if texts else "no Report view text")
         # sample across Strata's 2 s toolbar timer: hidden at one instant is not "stays hidden"
         from .tutorial import qtest
         shown = 0

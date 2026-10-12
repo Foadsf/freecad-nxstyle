@@ -90,13 +90,15 @@ Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry 
 python launch_nx.py --smoke-test out
 ```
 
-This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 58 behaviours, Strata's start and placement among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
+This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 60 behaviours, Strata's start and placement among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
 python launch_nx.py --tutorial out
 ```
 
 Replays eleven exercises from NX, GD&T and engineering-graphics textbooks through the UI (`--tutorials G,H` picks some): keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, a GD&T drawing, sketch Extend/Trim/Fillet and an associative offset, constraints with the solver's degree-of-freedom messages and dimension formulas, and a part driven by a table of expressions. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+
+Each run uses a fresh throwaway profile. To test what a second start sees (settings saved by the first), give both runs the same `--profile DIR`; it is kept between runs.
 
 Self-test and tutorial runs are capped at 4 GB of memory (`--max-memory-gb`), run one at a time, and end with exit code 4 if FreeCAD asks for more.
 

@@ -10,7 +10,7 @@ With nothing selected the symbol goes to the middle of the sheet.
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import gdt
+from . import config, gdt
 from .qt import QtWidgets
 
 GAP = 2.0     # mm between a frame and the edge or dimension it belongs to
@@ -259,7 +259,7 @@ class FeatureControlFrame:
         return {"MenuText": "Feature Control Frame",
                 "ToolTip": "NX Drafting: a GD&T feature control frame (characteristic, tolerance, material "
                            "condition, datums). Select an edge or dimension first to place it there.",
-                "Pixmap": "TechDraw_Symbol"}
+                "Pixmap": config.resource("icons", "feature_control_frame.svg")}
 
     def IsActive(self):
         return App.ActiveDocument is not None and active_page() is not None and not Gui.Control.activeDialog()
@@ -273,7 +273,7 @@ class DatumFeatureSymbol:
         return {"MenuText": "Datum Feature Symbol",
                 "ToolTip": "NX Drafting: a datum feature symbol. Select the datum edge first; the symbol is "
                            "placed against it from outside the view.",
-                "Pixmap": "TechDraw_Symbol"}
+                "Pixmap": config.resource("icons", "datum_feature_symbol.svg")}
 
     def IsActive(self):
         return App.ActiveDocument is not None and active_page() is not None and not Gui.Control.activeDialog()

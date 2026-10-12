@@ -498,7 +498,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("files", nargs="*", help="documents to open")
     ap.add_argument("--freecad", help="FreeCAD executable or install folder (default: newest found)")
-    ap.add_argument("--profile", type=Path, help=f"profile folder (default: {default_profile_root()}/profile-<ver>)")
+    ap.add_argument("--profile", type=Path, help=f"profile folder (default: {default_profile_root()}/profile-<ver>; "
+                    "with --smoke-test/--tutorial a fresh temporary one, or this folder kept between runs)")
     ap.add_argument("--reset-profile", action="store_true", help="delete the NX profile before starting")
     ap.add_argument("--list", action="store_true", help="list FreeCAD installs and exit")
     ap.add_argument("--dry-run", action="store_true", help="print what would run, start nothing")
@@ -542,7 +543,9 @@ def main(argv: list[str] | None = None) -> int:
         profile = args.profile or Path(tempfile.mkdtemp(prefix=f"nxstyle-{harness}-"))
         extra = {f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1",
                  "NXSTYLE_TUTORIALS": args.tutorials}
-        reset = True
+        # a throwaway profile by default; a --profile given is kept between runs (a second start sees
+        # what the first one saved), unless --reset-profile is given too
+        reset = args.reset_profile if args.profile else True
     else:
         ver = f"{install.version[0]}.{install.version[1]}" if install.version else "unknown"
         profile = args.profile or default_profile_root() / f"profile-{ver}"

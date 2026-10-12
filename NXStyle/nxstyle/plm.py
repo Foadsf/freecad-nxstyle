@@ -107,6 +107,10 @@ def _place(shell, sb):
     model = mw.findChild(QtWidgets.QDockWidget, "Model")
     if model is not None and not panel.isFloating():
         mw.tabifyDockWidget(model, panel)
+        # Strata remembers its panel as hidden whenever another tab is in front of it (it saves
+        # QDockWidget.visibilityChanged), so it would start hidden next time: NXStyle always keeps
+        # the tab in the strip, like the other navigators
+        panel.show()
         model.raise_()
     # Strata's own QActions (enabled with the active project) on the resource bar and the PLM tab
     acts = sb.actions()
