@@ -167,6 +167,26 @@ class Smoke:
                 bad.append(f"{lab.text()} ({bottom}>{vp.height()})")
         return bad
 
+    def check_units(self):
+        """Metric by default, and an imperial schema left in the profile is switched back."""
+        from . import prefs
+        names = prefs.unit_schemas()
+        p = App.ParamGet(prefs.UNITS)
+        at_start = names[p.GetInt("UserSchema", 0)] if names else "?"
+        imperial = next((i for i, n in enumerate(names) if prefs.is_imperial(n)), None)
+        planted = "?"
+        if imperial is not None:                      # negative control: plant imperial, then re-apply
+            p.SetInt("UserSchema", imperial)
+            App.Units.setSchema(imperial)
+            planted = App.Units.Quantity("25.4 mm").UserString
+        after = prefs.apply_units()
+        q = App.Units.Quantity("25.4 mm").UserString
+        std = names[prefs.standard_schema(names)] if names else "?"
+        self.check("units are metric (mm) by default", at_start == std and after == std and imperial is not None
+                   and "mm" not in planted and "mm" in q and p.GetInt("UserSchema", -1) == prefs.standard_schema(names),
+                   f"at start '{at_start}'; planted '{names[imperial] if imperial is not None else None}' "
+                   f"(25.4 mm shown as '{planted}'); NXStyle set '{after}' (25.4 mm shown as '{q}')")
+
     def s_gates(self):
         # checked a few seconds in: FreeCAD 1.1 may reload its own stylesheet after start-up
         css = QtWidgets.QApplication.instance().styleSheet()
@@ -174,6 +194,7 @@ class Smoke:
         self.check("NX theme applied over FreeCAD's light theme", self.shell.theme_active() and len(base) > 10000,
                    f"base {len(base)} chars")
         self.check("no unfilled stylesheet placeholders", "@Theme" not in css)
+        self.check_units()
         clipped = self.labels_clipped()
         self.check("ribbon group labels not clipped", not clipped, clipped)
         doc = App.ActiveDocument

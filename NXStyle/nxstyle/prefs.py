@@ -13,6 +13,8 @@ from . import config
 VIEW = "User parameter:BaseApp/Preferences/View"
 MAIN = "User parameter:BaseApp/Preferences/MainWindow"
 GENERAL = "User parameter:BaseApp/Preferences/General"
+UNITS = "User parameter:BaseApp/Preferences/Units"
+IMPERIAL_WORDS = ("imperial", "us ", "us customary", "inch", "ft", "feet", "lb")
 
 NATIVE_NX_STYLE = "Gui::SiemensNXNavigationStyle"   # FreeCAD 1.1+ (PR #21813)
 NX_BASE_STYLE = "Gui::BlenderNavigationStyle"       # MB2 rotate, Shift+MB2 pan, wheel zoom
@@ -79,8 +81,61 @@ def set_background(name):
     return label
 
 
+def unit_schemas():
+    """FreeCAD's unit schemas by index, as their descriptions ("Standard (mm, kg, s, °)")."""
+    try:
+        names = App.Units.listSchemas()      # 1.1: internal names ("Internal", "Imperial", ...)
+        count = names if isinstance(names, int) else len(names)
+        out = []
+        for i in range(count):
+            try:
+                out.append(str(App.Units.listSchemas(i)))
+            except Exception:
+                out.append(str(names[i]) if not isinstance(names, int) else str(i))
+        return out
+    except Exception:
+        return []
+
+
+def standard_schema(names):
+    """Index of the Standard (mm, kg) schema: FreeCAD calls it 'Standard' or, internally, 'Internal'."""
+    for word in ("standard", "internal"):
+        for i, n in enumerate(names):
+            if n.lower().startswith(word):
+                return i
+    return 0
+
+
+def is_imperial(name):
+    n = name.lower() + " "
+    return any(w in n for w in IMPERIAL_WORDS)
+
+
+def apply_units(cfg=None):
+    """Metric by default: FreeCAD's Standard schema (mm, kg, s, °) unless the setting says otherwise.
+
+    "metric" switches an imperial schema back to Standard and leaves other metric
+    schemas (MKS, building, FEM, ...) alone; "freecad" leaves units untouched.
+    Returns the schema name in use."""
+    cfg = cfg or config.get()
+    names = unit_schemas()
+    p = App.ParamGet(UNITS)
+    current = p.GetInt("UserSchema", 0)
+    if cfg.get("units", "metric") == "metric" and names:
+        if not (0 <= current < len(names)) or is_imperial(names[current]):
+            standard = standard_schema(names)
+            p.SetInt("UserSchema", standard)
+            try:
+                App.Units.setSchema(standard)
+            except Exception:
+                pass
+            current = standard
+    return names[current] if 0 <= current < len(names) else ""
+
+
 def apply(cfg=None):
     cfg = cfg or config.get()
+    apply_units(cfg)
     v = App.ParamGet(VIEW)
     colors = cfg["colors"]
     set_background(cfg.get("background", "light_gray_gradient"))

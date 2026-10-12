@@ -406,24 +406,124 @@ class ObjectInfo:
         return bool(Gui.Selection.getSelection())
 
     def Activated(self):
-        from .qt import QtGui, QtWidgets
-        text = object_information()
-        App.Console.PrintMessage("Information\n" + text + "\n")
-        dlg = QtWidgets.QDialog(Gui.getMainWindow())
-        dlg.setObjectName("NXInformation")
-        dlg.setWindowTitle("Information")
-        dlg.resize(560, 360)
-        lay = QtWidgets.QVBoxLayout(dlg)
-        box = QtWidgets.QPlainTextEdit(text)
-        box.setReadOnly(True)
-        box.setFont(QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont))
-        lay.addWidget(box)
-        dlg.show()
-        global _info_dialog
-        _info_dialog = dlg
+        show_information(object_information())
+
+
+def show_information(text):
+    """NX's Information window: a non-modal text window (also echoed to the Report view)."""
+    from .qt import QtGui, QtWidgets
+    global _info_dialog
+    App.Console.PrintMessage("Information\n" + text + "\n")
+    if _info_dialog is not None:
+        try:
+            _info_dialog.close()
+        except RuntimeError:
+            pass
+    dlg = QtWidgets.QDialog(Gui.getMainWindow())
+    dlg.setObjectName("NXInformation")
+    dlg.setWindowTitle("Information")
+    dlg.resize(560, 360)
+    lay = QtWidgets.QVBoxLayout(dlg)
+    box = QtWidgets.QPlainTextEdit(text)
+    box.setReadOnly(True)
+    box.setFont(QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont))
+    lay.addWidget(box)
+    dlg.show()
+    _info_dialog = dlg
+    return dlg
 
 
 _info_dialog = None
+
+
+def density_of(obj):
+    """(material name, density in kg/m^3) assigned to obj or its Body, or (None, None)."""
+    for o in [obj] + list(getattr(obj, "InList", [])):
+        mat = getattr(o, "ShapeMaterial", None)
+        if mat is None:
+            continue
+        rho = None
+        try:
+            rho = mat.getPhysicalValue("Density")
+        except Exception:
+            props = getattr(mat, "PhysicalProperties", {}) or {}
+            rho = props.get("Density")
+        if rho in (None, ""):
+            continue
+        try:
+            q = App.Units.Quantity(rho) if isinstance(rho, str) else rho
+            return getattr(mat, "Name", "?"), float(q.getValueAs("kg/m^3"))
+        except Exception:
+            continue
+    return None, None
+
+
+def measure_bodies(objs):
+    """NX Measure Bodies: volume, area, mass (from the assigned material), centre of mass.
+
+    Returns (text, rows); each row is a dict of the numbers for one solid object."""
+    rows, lines = [], []
+    U = App.Units
+    from . import prefs
+    names = prefs.unit_schemas()
+    current = App.ParamGet(prefs.UNITS).GetInt("UserSchema", 0)
+    metric = not (0 <= current < len(names) and prefs.is_imperial(names[current]))
+    # values arrive in FreeCAD's internal units: mm³, mm², mm, kg
+    kinds = {"volume": (U.Volume, "mm³", 1), "area": (U.Area, "mm²", 1), "length": (U.Length, "mm", 2),
+             "mass": (U.Mass, "kg", 4)}
+
+    def q(value, kind):
+        unit, label, digits = kinds[kind]
+        if metric:   # NX reports a millimetre part in mm³, mm² and kg; FreeCAD would pick ml, cm² or g by size
+            return f"{value:,.{digits}f} {label}"
+        return U.Quantity(value, unit).UserString
+
+    for o in objs:
+        shape = getattr(o, "Shape", None)
+        if shape is None or shape.isNull() or not shape.Solids:
+            continue
+        name, rho = density_of(o)
+        vol = shape.Volume                         # mm^3
+        mass = vol * 1e-9 * rho if rho else None   # kg
+        com = shape.Solids[0].CenterOfMass if len(shape.Solids) == 1 else shape.CenterOfMass
+        rows.append({"object": o.Name, "volume_mm3": vol, "area_mm2": shape.Area, "material": name,
+                     "density_kg_m3": rho, "mass_kg": mass, "com": (com.x, com.y, com.z)})
+        lines += [f"{o.Label}  ({o.Name})",
+                  f"  Volume          {q(vol, 'volume')}",
+                  f"  Surface area    {q(shape.Area, 'area')}",
+                  f"  Material        {name or 'none assigned (Tools > Assign Material)'}"]
+        if rho:
+            lines += [f"  Density         {rho:g} kg/m³",
+                      f"  Mass            {q(mass, 'mass')}"]
+        lines += [f"  Centre of mass  {q(com.x, 'length')}, {q(com.y, 'length')}, {q(com.z, 'length')}", ""]
+    return "\n".join(lines).rstrip() or "Select a solid body to measure.", rows
+
+
+last_measure = []
+
+
+class MeasureBodies:
+    def GetResources(self):
+        return {"MenuText": "Measure Bodies",
+                "ToolTip": "Volume, area, mass and centre of mass of the selected bodies (NX: Analysis > Measure)",
+                "Pixmap": _pixmap("Part_CheckGeometry", "Std_MeasureDistance")}
+
+    def IsActive(self):
+        return App.ActiveDocument is not None
+
+    def Activated(self):
+        global last_measure
+        objs = Gui.Selection.getSelection()
+        if not objs:
+            body = None
+            try:
+                body = Gui.ActiveDocument.ActiveView.getActiveObject("pdbody")
+            except Exception:
+                pass
+            objs = [body] if body is not None else [o for o in App.ActiveDocument.Objects
+                                                    if o.isDerivedFrom("PartDesign::Body")]
+        text, last_measure = measure_bodies(objs)
+        show_information(text)
 
 
 class TouchMode:
@@ -513,6 +613,7 @@ def register(apps):
         "NXStyle_Refresh": Refresh(),
         "NXStyle_ImmediateHide": ImmediateHide(),
         "NXStyle_ObjectInfo": ObjectInfo(),
+        "NXStyle_MeasureBodies": MeasureBodies(),
         "NXStyle_TouchMode": TouchMode(),
         "NXStyle_Extrude": SketchFirstFeature("PartDesign_Pad", "Extrude",
                                               "Extrude a sketch; with nothing selected, sketch first (NX: X)",

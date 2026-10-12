@@ -130,6 +130,7 @@
     {"name": "Analysis", "groups": [
       {"name": "Measure", "items": [
         {"cmd": ["Std_Measure", "Std_MeasureDistance"], "label": "Measure", "size": "large"},
+        {"cmd": "NXStyle_MeasureBodies", "label": "Measure Bodies", "size": "large"},
         {"cmd": "Std_MeasureDistance", "label": "Measure Distance (classic)", "optional": true}
       ]},
       {"name": "Check", "items": [

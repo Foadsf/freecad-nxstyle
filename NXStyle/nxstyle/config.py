@@ -22,6 +22,7 @@ DEFAULTS = {
     # "native" = FreeCAD's Gui::SiemensNXNavigationStyle (FreeCAD 1.1+)
     # anything else is used verbatim as a FreeCAD navigation style class name
     "navigation": "nx",
+    "units": "metric",                 # "metric": FreeCAD's Standard schema (mm, kg); "freecad": leave units alone
     "labels": "nx",                    # "nx" names (Extrude, Edge Blend) or "freecad" names (Pad, Fillet)
     "hide_menubar": True,              # menus stay reachable from the Menu button
     "hide_native_toolbars": True,

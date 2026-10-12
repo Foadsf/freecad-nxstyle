@@ -34,6 +34,7 @@ from .ribbon import CommandButton
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
+LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
 
 
 def qtest():
@@ -51,6 +52,7 @@ class ModalWatcher(QtCore.QObject):
         super().__init__()
         self.seen = []
         self.accept = False      # True: answer Yes/OK (e.g. a delete confirmation the step expects)
+        self.handler = None      # callable(widget) -> True when it handled a dialog the step expects
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(150)
@@ -59,6 +61,12 @@ class ModalWatcher(QtCore.QObject):
         w = QtWidgets.QApplication.activeModalWidget()
         if w is None:
             return
+        if self.handler is not None:
+            try:
+                if self.handler(w):
+                    return
+            except Exception as e:
+                self.seen.append(f"{w.windowTitle()}: handler error {e}")
         text = w.windowTitle()
         if isinstance(w, QtWidgets.QMessageBox):
             text += ": " + w.text()
@@ -82,6 +90,7 @@ class Replay:
         self.rows = []
         self.info = {}
         self.tutorial = ""
+        self.retries = []          # actions a user would have had to repeat (reported, never hidden)
         self.modals = ModalWatcher()
         self.steps = list(self.plan())
 
@@ -130,6 +139,13 @@ class Replay:
             return None, ""
         self.shell.ribbon.select(tab)
         QtWidgets.QApplication.processEvents()
+        # FreeCAD refreshes command states on a timer after the selection changes;
+        # a user's click comes later than a script's, so wait for the button like a user would
+        for _ in range(20):
+            if b.isEnabled():
+                break
+            qtest().qWait(100)
+        self.info.setdefault("ribbon clicks while disabled", []).extend([] if b.isEnabled() else [label])
         qtest().mouseClick(b, Qt.LeftButton)
         return b, where
 
@@ -190,12 +206,31 @@ class Replay:
         return (exact or [w for w in widgets if name_part.lower() in w.objectName().lower()] or [None])[0]
 
     def set_quantity(self, name_part, value):
-        """Type a value into a task-panel quantity field (e.g. Length)."""
+        """Type a value into a task-panel quantity field (e.g. Length) the way a user does.
+
+        The number is typed in the field's own unit (mm, °). Typed text keeps its precision
+        (3.175 mm stays 3.175); setting the field's rawValue from Python instead rounds it to
+        the Decimals preference (3.17), which once made a 0.125 in shell fail. The features'
+        volume checks are what confirm the value FreeCAD used."""
         w = self._field(QtWidgets.QAbstractSpinBox, name_part)
         if w is None:
             return None
-        w.setProperty("rawValue", float(value))
+        self.type_into(w, value)
         return w.objectName()
+
+    @staticmethod
+    def type_into(w, value):
+        """Replace a quantity field's text with value, typed in the field's unit, then Tab out.
+
+        Some FreeCAD dialogs only take the text when the field finishes editing, as a
+        user's Tab or click elsewhere does."""
+        from .smoke import decode
+        w.setFocus()
+        ed = w.lineEdit()
+        ed.selectAll()
+        qtest().keyClicks(ed, f"{float(value):.6g}")
+        qtest().keyClick(ed, *decode("Tab"))
+        QtWidgets.QApplication.processEvents()
 
     @staticmethod
     def _matches(part, text):
@@ -271,14 +306,36 @@ class Replay:
              self.d_drafting, self.d_sheet, self.d_base_view, self.d_base_view_check, self.d_extra_view,
              self.d_delete_view, self.d_section, self.d_section_dialog, self.d_section_check,
              self.d_section_edges, self.d_back]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D").upper().split(",")
-        for key, steps in (("A", A), ("B", B), ("C", C), ("D", D)):
+        E = [self.e_new, self.e_csys, self.e_csys_ok, self.e_extrude, self.e_plane, self.e_profile, self.e_finish,
+             self.e_extrude_dialog, self.e_end, self.e_end_sketch, self.e_end_finish, self.e_end_dialog,
+             self.e_rename, self.e_width, self.e_width_dialog, self.e_hole, self.e_hole_sketch, self.e_hole_finish,
+             self.e_hole_dialog, self.e_cut, self.e_cut_sketch, self.e_cut_finish, self.e_cut_dialog,
+             self.e_rollback, self.e_rollback_dialog, self.e_fillet, self.e_fillet_finish, self.e_material,
+             self.e_material_check, self.e_measure, self.e_fit, self.e_show]
+        F = [self.f_new, self.f_revolve, self.f_plane, self.f_profile, self.f_finish, self.f_revolve_dialog,
+             self.f_handle, self.f_handle_plane, self.f_handle_sketch, self.f_handle_finish, self.f_handle_dialog,
+             self.f_nozzle, self.f_nozzle_plane, self.f_nozzle_sketch, self.f_nozzle_leave, self.f_nozzle_extrude,
+             self.f_nozzle_dialog, self.f_blend, self.f_blend_dialog, self.f_shell, self.f_shell_dialog,
+             self.f_vent, self.f_vent_sketch, self.f_vent_finish, self.f_vent_dialog, self.f_pattern,
+             self.f_pattern_dialog, self.f_swept, self.f_fit, self.f_show]
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F").upper().split(",")
+        for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F)):
             if key in wanted:
                 yield from steps
 
     # ---------------------------------------------------------- tutorial A
+    def units_step(self):
+        """The books choose inches in NX's New dialog. NXStyle parts are metric: the book's sizes are typed in mm."""
+        doc = App.ActiveDocument
+        shown = App.Units.Quantity("25.4 mm").UserString
+        unit = getattr(doc, "UnitSystem", "")
+        self.step("Units in the New dialog (the book picks inches)", "metric part kept; book sizes typed in mm",
+                  DIFFERS if "mm" in shown else FAIL,
+                  f"FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres "
+                  f"(document: {unit or 'preference'}; 25.4 mm shows as {shown})")
+
     def a_new(self):
-        self.tutorial = "A: The Adjuster (inches)"
+        self.tutorial = "A: The Adjuster (book in inches, typed in mm)"
         before = set(App.listDocuments())
         self.key("Ctrl+N")
         self.wait = 1200
@@ -290,18 +347,7 @@ class Replay:
         self.step("File > New (Ctrl+N), Model template", "Ctrl+N", SAME if new and body else FAIL,
                   f"new document {sorted(new)} with a Body; its datum planes appear when a plane is "
                   "picked (kept hidden otherwise: FreeCAD 1.1.4 hides the part when they stay on)")
-        doc = App.ActiveDocument
-        unit = getattr(doc, "UnitSystem", None)
-        if unit is not None:
-            options = doc.getEnumerationsOfProperty("UnitSystem") if hasattr(doc, "getEnumerationsOfProperty") else []
-            pick = next((o for o in options if "Imperial" in o and "decimal" in o.lower()), None)
-            if pick:
-                doc.UnitSystem = pick
-            self.step("Units: Inches in the New dialog", "Document > Unit system",
-                      DIFFERS, f"set per document in FreeCAD ({doc.UnitSystem}), not in the New dialog")
-        else:
-            self.step("Units: Inches in the New dialog", "-", DIFFERS,
-                      "FreeCAD sets units in Preferences > General > Units, not per new part")
+        self.units_step()
         Gui.Selection.clearSelection()
         self.key("X")
         self.wait = 1500
@@ -381,12 +427,12 @@ class Replay:
         got = self.solid_volume()
         ok = abs(got - want) < 1e-3 * want and not Gui.Control.activeDialog()
         self.step("Extrude: End = Value 2.5, Boolean None, OK", f"typed into '{field}', MB2 = OK",
-                  SAME if ok else FAIL, f"volume {got / IN**3:.4f} in^3, expected {want / IN**3:.4f}")
+                  SAME if ok else FAIL, f"volume {got:.1f} mm^3, expected {want:.1f}")
         self.shot("A1_extrude.png")
         self.wait = 600
 
     def a_face_pick(self):
-        # top face of the vertical leg (normal +Y at y = 2.5 in); the slot is cut down into it.
+        # top face of the vertical leg (normal +Y at y = 63.5 mm); the slot is cut down into it.
         # (NotebookLM's step list leaves the slot's place open; this keeps the part one solid.)
         doc = App.ActiveDocument
         body = self.body()
@@ -455,8 +501,8 @@ class Replay:
         got = self.solid_volume()
         solids = len(self.body().Shape.Solids)
         ok = abs(got - want) < 1e-3 * want and solids == 1 and not Gui.Control.activeDialog()
-        self.step("Slot depth 0.75, OK", f"'{field}' = 0.75 in, MB2 = OK", SAME if ok else FAIL,
-                  f"volume {got / IN**3:.4f} in^3, expected {want / IN**3:.4f}; {solids} solid(s)")
+        self.step("Slot depth 0.75, OK", f"'{field}' = 19.05 mm, MB2 = OK", SAME if ok else FAIL,
+                  f"volume {got:.1f} mm^3, expected {want:.1f}; {solids} solid(s)")
         self.wait = 400
 
     def fit(self):
@@ -701,14 +747,15 @@ class Replay:
                     w.lineEdit().setText(str(int(value)))
                     w.interpretText()
                 else:
-                    w.setProperty("rawValue", float(value))
+                    self.type_into(w, value)
                 return w.objectName()   # no processEvents: callers check the value before a recompute
         return None
 
     def choose(self, option_part, name_part=""):
         """Pick a list entry in whichever task-panel combo offers it (names differ between versions)."""
-        combos = [c for c in self.tasks_dock().findChildren(QtWidgets.QComboBox) if c.isVisible()]
-        combos.sort(key=lambda c: name_part.lower() not in c.objectName().lower())
+        # a dialog that has just opened may not be laid out yet: prefer visible lists, keep the rest
+        combos = self.tasks_dock().findChildren(QtWidgets.QComboBox)
+        combos.sort(key=lambda c: (name_part.lower() not in c.objectName().lower(), not c.isVisible()))
         for c in combos:
             if any(self._matches(option_part, c.itemText(i)) for i in range(c.count())):
                 return self.set_combo(c.objectName(), option_part) if c.objectName() else None
@@ -787,7 +834,7 @@ class Replay:
         solids = len(self.body().Shape.Solids) if self.body() is not None else 0
         ok = abs(got - want) < 1e-3 * max(want, 1e-9) and solids == 1 and not Gui.Control.activeDialog()
         self.step(label, how, SAME if ok else FAIL,
-                  f"volume {got / IN**3:.4f} in^3, expected {want / IN**3:.4f}; {solids} solid(s){extra}")
+                  f"volume {got:.1f} mm^3, expected {want:.1f}; {solids} solid(s){extra}")
         return ok
 
     # ---------------------------------------------------------- tutorial C
@@ -795,20 +842,14 @@ class Replay:
     # 3.00 x 2.00 in is NotebookLM's reading. The upper angled feature's profile
     # is figure-only and is not replayed.
     def c_new(self):
-        self.tutorial = "C: Rod-Guide (inches)"
+        self.tutorial = "C: Rod-Guide (book in inches, typed in mm)"
         self._docs_before = set(App.listDocuments())
         self.key("Ctrl+N")
         self.wait = 1200
 
     def c_extrude(self):
-        doc = App.ActiveDocument
-        self.step("File > New (Ctrl+N), Model template, inches", "Ctrl+N",
+        self.step("File > New (Ctrl+N), Model template", "Ctrl+N",
                   SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
-        if hasattr(doc, "UnitSystem"):
-            opts = doc.getEnumerationsOfProperty("UnitSystem")
-            pick = next((o for o in opts if "Imperial" in o and "decimal" in o.lower()), None)
-            if pick:
-                doc.UnitSystem = pick
         Gui.Selection.clearSelection()
         self.key("X")
         self.wait = 1500
@@ -869,7 +910,7 @@ class Replay:
         r = 0.25
         area = 3.0 * 2.0 - 4 * (r * r - math.pi * r * r / 4) - 4 * math.pi * 0.125 ** 2
         self._c_base = area * 0.75 * IN ** 3
-        self.check_volume("Finish Sketch, Extrude 0.75, OK", f"Ctrl+Q, '{field}' = 0.75 in, MB2 = OK", self._c_base)
+        self.check_volume("Finish Sketch, Extrude 0.75, OK", f"Ctrl+Q, '{field}' = 19.05 mm, MB2 = OK", self._c_base)
         self.wait = 600
 
     def c_datum_angle(self):
@@ -927,9 +968,9 @@ class Replay:
         App.ActiveDocument.recompute()
         z = plane.Placement.Base.z / IN
         self._c_plane = plane
-        self.step("Distance 0.75, OK", f"'{field}' = 0.75 in, MB2 = OK",
+        self.step("Distance 0.75, OK", f"'{field}' = 19.05 mm, MB2 = OK",
                   SAME if abs(z - 1.5) < 1e-6 and not Gui.Control.activeDialog() else FAIL,
-                  f"datum plane at z = {z:.4f} in (top face 0.75 + 0.75)")
+                  f"datum plane at z = {z * IN:.2f} mm (top face 19.05 + 19.05)")
         self.wait = 500
 
     def c_hole(self):
@@ -968,7 +1009,7 @@ class Replay:
         self.mb2_click()
         want = self._c_base - math.pi * 0.125 ** 2 * 0.75 * IN ** 3
         ok = self.check_volume("Hole: Simple, Ø0.25, Through Body, OK",
-                               f"dialog open {open_}; '{dia}' = 0.25 in, '{depth}', MB2 = OK", want)
+                               f"dialog open {open_}; '{dia}' = 6.35 mm, '{depth}', MB2 = OK", want)
         if not ok and hole is not None:
             self.info["C hole state"] = {"Diameter": str(hole.Diameter), "DepthType": hole.DepthType,
                                          "Reversed": getattr(hole, "Reversed", None)}
@@ -994,7 +1035,7 @@ class Replay:
         return sum(w * math.pi * (r1 ** 2 - r0 ** 2) for (w, r0, r1) in rects) * IN ** 3
 
     def d_new(self):
-        self.tutorial = "D: Pulley with drawing (inches)"
+        self.tutorial = "D: Pulley with drawing (book in inches, typed in mm)"
         self._docs_before = set(App.listDocuments())
         self.key("Ctrl+N")
         self.wait = 1200
@@ -1002,12 +1043,6 @@ class Replay:
     def d_revolve(self):
         self.step("File > New (Ctrl+N), Model template", "Ctrl+N",
                   SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
-        doc = App.ActiveDocument
-        if hasattr(doc, "UnitSystem"):
-            pick = next((o for o in doc.getEnumerationsOfProperty("UnitSystem") if "Imperial" in o
-                         and "decimal" in o.lower()), None)
-            if pick:
-                doc.UnitSystem = pick
         Gui.Selection.clearSelection()
         b, where = self.click_ribbon("Revolve")
         self.step("Revolve, nothing selected", f"ribbon '{where} > Revolve'", SAME if b is not None else MISSING, "")
@@ -1303,6 +1338,1201 @@ class Replay:
         self.key("Ctrl+M")
         self.wait = 1500
 
+    # ---------------------------------------------------------- tutorial E
+    # Saddle Bracket (Shih ch. 4): BORN technique, renaming, design changes,
+    # material and physical properties. The book's text gives 2.5 (Symmetric
+    # Value), 0.5, 2.0, Ø0.75, R0.25 and the operations; the profile and cut
+    # sizes are figure-only, so the L-profile below is this replay's own:
+    # 3.00 long, 0.50 base, 0.75 x 2.00 upright, a 1.00 x 0.75 notch.
+    E_PROFILE = [(0, 0), (3.0, 0), (3.0, 0.5), (0.75, 0.5), (0.75, 2.0), (0, 2.0)]   # (X, Z) on the XZ plane
+    E_AREA = 3.0 * 0.5 + 0.75 * 1.5
+
+    def g2s(self, sk, x, y, z):
+        """Global inches -> sketch coordinates (mm)."""
+        p = sk.getGlobalPlacement().inverse().multVec(App.Vector(x * IN, y * IN, z * IN))
+        return p.x, p.y
+
+    def checkbox(self, name_part, state=True):
+        for b in self.tasks_dock().findChildren(QtWidgets.QCheckBox):
+            if name_part.lower() in b.objectName().lower():
+                if b.isChecked() != state:
+                    b.click()
+                QtWidgets.QApplication.processEvents()
+                return b.objectName()
+        return None
+
+    def tree_item(self, label):
+        """The Part Navigator row for label, inside the active document only (other parts have a 'Pad' too)."""
+        # Model indexes, not QTreeWidgetItem wrappers: items are not QObjects, so PySide is not told when
+        # FreeCAD deletes rows, and a reused address can hand back a dead wrapper ("already deleted").
+        doc_label = App.ActiveDocument.Label
+        trees = Gui.getMainWindow().findChildren(QtWidgets.QTreeWidget)
+        trees.sort(key=lambda t: not t.isVisible())      # the Part Navigator the user sees first
+        for tw in trees:
+            m = tw.model()
+            if m is None or m.rowCount() == 0:
+                continue
+            hits = m.match(m.index(0, 0), Qt.DisplayRole, label, -1, Qt.MatchExactly | Qt.MatchRecursive)
+            for idx in hits:
+                p = idx.parent()
+                while p.isValid():
+                    if p.data(Qt.DisplayRole) == doc_label:
+                        return tw, QtCore.QPersistentModelIndex(idx)
+                    p = p.parent()
+        return None, None
+
+    def select_row(self, label):
+        """Make label's Part Navigator row current and focused; returns the tree or None."""
+        tw, pidx = self.tree_item(label)
+        if tw is None or not pidx.isValid():
+            return None
+        if not tw.isVisible():      # the Dialog tab is in front: click the Part Navigator tab first
+            w = tw
+            while w is not None and not isinstance(w, QtWidgets.QDockWidget):
+                w = w.parentWidget()
+            if w is not None:
+                w.raise_()
+            QtWidgets.QApplication.processEvents()
+            self.progress(f"rename: Part Navigator brought to front ({tw.isVisible()})")
+            tw, pidx = self.tree_item(label)
+            if tw is None:
+                return None
+        m = tw.model()
+        tw.setCurrentIndex(m.index(pidx.row(), pidx.column(), pidx.parent()))
+        tw.setFocus()
+        QtWidgets.QApplication.processEvents()
+        return tw
+
+    def rename(self, obj, new):
+        """Part Navigator: select the feature, F2, type the name, Enter (as a user does)."""
+        from .smoke import decode
+        Gui.Selection.clearSelection()     # a selection change can rebuild the rows: settle first, then look up
+        QtWidgets.QApplication.processEvents()
+        editors, attempt = [], 0
+        for attempt in range(3):
+            tw = self.select_row(obj.Label)
+            if tw is None:
+                return f"'{obj.Label}' not in the Part Navigator"
+            qtest().keyClick(tw, *decode("F2"))
+            for _ in range(10):
+                QtWidgets.QApplication.processEvents()
+                editors = [e for e in tw.findChildren(QtWidgets.QLineEdit) if e.isVisible()]
+                if editors:
+                    break
+                qtest().qWait(100)
+            if editors:
+                break
+            self.progress(f"rename '{obj.Label}': no name editor after F2 (try {attempt + 1}); focus "
+                          f"{type(QtWidgets.QApplication.focusWidget()).__name__}")
+        if not editors:
+            return "F2 opened no name editor"
+        if attempt:
+            self.retries.append(f"rename '{obj.Label}': F2 pressed {attempt + 1} times")
+        ed = editors[0]
+        ed.selectAll()
+        qtest().keyClicks(ed, new)
+        qtest().keyClick(ed, *decode("Return"))
+        QtWidgets.QApplication.processEvents()
+        return None if obj.Label == new else f"label is '{obj.Label}'"
+
+
+    def fillet_corner(self, sk, corner, radius):
+        """Sketch fillet at the corner where two lines meet (what the F tool does after two picks)."""
+        lines = [i for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomLineSegment"
+                 and min((g.StartPoint - corner).Length, (g.EndPoint - corner).Length) < 1e-6]
+        if len(lines) != 2:
+            self.info.setdefault("fillet errors", []).append(f"{len(lines)} lines meet at {corner}")
+            return None
+        a, b = (sk.Geometry[i] for i in lines)
+        # a point 2 mm along each line from the corner (the far end minus the corner)
+        pa = corner + (a.StartPoint + a.EndPoint - corner * 2).normalize() * 2.0
+        pb = corner + (b.StartPoint + b.EndPoint - corner * 2).normalize() * 2.0
+        for args in ((lines[0], lines[1], pa, pb, radius, True, False), (lines[0], 2, radius)):
+            try:
+                sk.fillet(*args)
+                return args
+            except Exception as e:
+                self.info.setdefault("fillet errors", []).append(str(e))
+        return None
+
+    def wait_dialog(self, what, timeout_ms=4000):
+        """Wait for FreeCAD's task dialog the way a user waits for it to appear; log if it never does."""
+        t0 = time.monotonic()
+        while not Gui.Control.activeDialog() and (time.monotonic() - t0) * 1000 < timeout_ms:
+            qtest().qWait(100)
+        waited = int((time.monotonic() - t0) * 1000)
+        if not Gui.Control.activeDialog():
+            doc = App.ActiveDocument
+            self.progress(f"{what}: no task dialog after {waited} ms; sketch in edit "
+                          f"{getattr(self.edited_sketch(), 'Name', None)}; objects "
+                          f"{[o.Name for o in doc.Objects][-6:] if doc else None}")
+            return False
+        if waited > 300:
+            self.progress(f"{what}: task dialog appeared after {waited} ms")
+        return True
+
+    def e_volume(self, width, end=True, hole=False, notch=False, fillet=False):
+        v = self.E_AREA * width
+        if fillet:
+            v += (0.25 ** 2 - math.pi * 0.25 ** 2 / 4) * width
+        if end:
+            v += math.pi * (width / 2) ** 2 / 2 * 0.5      # half of the end disc sticks out
+        if hole:
+            v -= math.pi * 0.375 ** 2 * 0.5
+        if notch:
+            v -= 1.0 * 0.75 * 0.75
+        return v * IN ** 3
+
+    def e_new(self):
+        self.tutorial = "E: Saddle Bracket (book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def e_csys(self):
+        self.step("File > New", "Ctrl+N",
+                  SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
+        Gui.Selection.clearSelection()
+        self._csys_where = self.click_dropdown("Datum", "Datum CSYS")
+        self.wait = 1200
+
+    def e_csys_ok(self):
+        dialog = bool(Gui.Control.activeDialog())
+        n_seen = len(self.modals.seen)
+        self.modals.accept = True     # FreeCAD asks whether to keep a datum without references
+        self.mb2_click()
+        qtest().qWait(400)
+        self.modals.accept = False
+        asked = [s for s in self.modals.seen[n_seen:] if "Incompatible" in s]
+        App.ActiveDocument.recompute()
+        cs = self.newest("PartDesign::CoordinateSystem")
+        self.step("BORN: Datum CSYS at the WCS, OK", f"ribbon '{self._csys_where} > Datum > Datum CSYS', MB2 = OK"
+                  + (", Yes to FreeCAD's question" if asked else ""),
+                  DIFFERS if cs is not None and dialog and not Gui.Control.activeDialog() else FAIL,
+                  "a FreeCAD Body already starts with its own origin (the BORN idea built in). "
+                  + ("With nothing selected FreeCAD asks 'no attachment mode fits the references, continue?'; "
+                     "NX places the CSYS at the WCS without asking" if asked else ""))
+        self.wait = 500
+
+    def e_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def e_plane(self):
+        picked = self.pick_in_feature_list("XZ")
+        self.mb2_click()
+        self.step("Extrude (X), XZ plane, OK", "X key, plane row + MB2", SAME if picked else FAIL, f"picked {picked}")
+        self.wait = 1500
+
+    def e_profile(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        pts = [self.g2s(sk, x, 0, z) for (x, z) in self.E_PROFILE]
+        _, tool, n, ended = self.draw_clicks("Z", pts + [pts[0]])
+        P = [App.Vector(u, v, 0) for (u, v) in pts]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % len(P)]) for i in range(len(P))])
+        self.step("Profile (Z): the L-shaped outline, MB2", "Z key + 7 MB1 clicks + MB2; sizes applied",
+                  SAME if tool and n >= 6 and ended else FAIL, f"tool {tool}; {n} curves; ended {ended}")
+        self._e_sketch = sk
+        self.wait = 300
+
+    def e_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def e_extrude_dialog(self):
+        self.wait_dialog("e_extrude_dialog")
+        sym = self.choose("symmetric", "sidesmode") or self.checkbox("midplane")
+        field = self.set_quantity("length", 2.5 * IN)
+        self.info["E extrude dialog widgets"] = self.task_widgets()
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        bb = self.body().Shape.BoundBox
+        ok = self.check_volume("Start = Symmetric Value, distance 2.5, OK", f"'{sym}', '{field}' = 63.5 mm, MB2 = OK",
+                               self.e_volume(2.5, end=False),
+                               f"; width {bb.YMin:.2f} .. {bb.YMax:.2f} mm (NX 1926+ and FreeCAD both "
+                               "treat the symmetric distance as the total)")
+        self._e_base = self.body().Tip
+        if ok and (abs(bb.YMin + 1.25 * IN) > 1e-6 or abs(bb.YMax - 1.25 * IN) > 1e-6):
+            self.rows[-1]["outcome"] = FAIL   # right volume, but not symmetric about the sketch plane
+        if not ok or self.rows[-1]["outcome"] == FAIL:
+            raise RuntimeError("base feature wrong; the rest of the tutorial would measure the wrong part")
+        self.wait = 600
+
+    def e_end(self):
+        base = self._e_base
+        face = self.face_of(base, lambda f: abs(f.normalAt(0, 0).z + 1) < 1e-6 and abs(f.CenterOfMass.z) < 1e-6)
+        self.select_sub(base, face)
+        b, where = self.click_ribbon("Extrude")
+        self.step("Extrude, bottom face as the sketch plane", f"select face + ribbon '{where} > Extrude'",
+                  SAME if b is not None and self.edited_sketch() is not None else FAIL, f"{face}")
+        self.wait = 1500
+
+    def e_end_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on the bottom face")
+        base = self._e_base
+        edge = None
+        for i, e in enumerate(base.Shape.Edges, start=1):
+            a, b = e.Vertexes[0].Point, e.Vertexes[-1].Point
+            if all(abs(p.x - 3.0 * IN) < 1e-6 and abs(p.z) < 1e-6 for p in (a, b)) and abs(a.y - b.y) > 1:
+                edge = f"Edge{i}"
+        # Project Curve: start the tool, MB1 on the edge, MB2
+        b, _ = self.click_ribbon("Project Curve")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        before = len(sk.ExternalGeometry)
+        self.mb1_click(self.screen_point(sk, *self.g2s(sk, 3.0, 0.6, 0)))
+        self.mb2_click(self.screen_point(sk, *self.g2s(sk, 4.5, 2.0, 0)))
+        new = [sub for (_, subs) in sk.ExternalGeometry[before:] for sub in subs]
+        picked = new == [edge]
+        if not picked:
+            for i in reversed(range(before, len(sk.ExternalGeometry))):
+                sk.delExternal(i)
+            if edge:
+                sk.addExternal(base.Name, edge)
+        self.step("Project Curve: the bottom right edge, OK", "ribbon 'Project Curve' + MB1 on the edge + MB2",
+                  SAME if tool and picked else (DIFFERS if edge else FAIL),
+                  f"picked {edge} in the graphics window" if picked else
+                  f"MB1 projected {new or 'nothing'} instead of {edge}; {edge} added through the API")
+        c = self.g2s(sk, 3.0, 0, 0)
+        r = self.g2s(sk, 3.0, 1.25, 0)
+        _, tool, n, ended = self.draw_clicks("O", [c, r])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), 1.25 * IN)])
+        ext = -3   # the first projected curve
+        sk.addConstraint(Sketcher.Constraint("Symmetric", ext, 1, ext, 2, 0, 3))   # centre = edge midpoint
+        sk.addConstraint(Sketcher.Constraint("PointOnObject", ext, 1, 0))          # through the corner
+        App.ActiveDocument.recompute()
+        # FreeCAD 1.1 projects picked edges as defining geometry: the line across the circle
+        # then belongs to the profile and the Pad sees an open wire. NX makes regions from the
+        # circle and its diameter. A FreeCAD user turns the projected line into construction.
+        n_profile = len(sk.Shape.Edges)
+        toggled = False
+        if n_profile > 1:
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, "ExternalEdge1")
+            b, _ = self.click_ribbon("Convert To/From Reference")
+            if b is None:
+                Gui.runCommand("Sketcher_ToggleConstruction")
+            App.ActiveDocument.recompute()
+            Gui.Selection.clearSelection()
+            toggled = len(sk.Shape.Edges) == 1
+        self._e_projection = (n_profile, toggled)
+        self.step("Circle: centre at the edge midpoint, through the top corner", "O key + 2 MB1 clicks + MB2; "
+                  "midpoint and corner as constraints", SAME if tool and n >= 1 and ended else FAIL,
+                  f"solver result {sk.solve()} (0 = solved); NX snaps to the midpoint and corner while "
+                  "drawing, FreeCAD records them as constraints")
+        n_profile, toggled = self._e_projection
+        if n_profile > 1:
+            self.step("Finish the section: circle and projected edge", "select the projected line + ribbon "
+                      "'Convert To/From Reference'", DIFFERS if toggled else FAIL,
+                      f"FreeCAD 1.1 projects a picked edge as defining geometry, so the profile had {n_profile} "
+                      "curves and Extrude would report 'Wire is not closed'. NX builds regions from the circle and "
+                      "its diameter; in FreeCAD the projected line has to become construction geometry first")
+        self.wait = 300
+
+    def e_end_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def e_end_dialog(self):
+        self.wait_dialog("e_end_dialog")
+        rev = self.checkbox("reverse")
+        field = self.set_quantity("length", 0.5 * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        zmin = self.body().Shape.BoundBox.ZMin / IN
+        ok = self.check_volume("Reverse Direction, distance 0.5, Boolean Unite, OK",
+                               f"'{rev}' on, '{field}' = 12.7 mm, MB2 = OK", self.e_volume(2.5),
+                               f"; lowest point z = {zmin * IN:.2f} mm")
+        if not ok:
+            tip = self.body().Tip
+            sk = tip.Profile[0] if getattr(tip, "Profile", None) else None
+            self.info["E circular end state"] = {
+                "dialog open": bool(Gui.Control.activeDialog()), "tip": tip.Name, "tip valid": tip.isValid(),
+                "sketch external": str(getattr(sk, "ExternalGeometry", None)),
+                "sketch geometry": [str(g) for g in getattr(sk, "Geometry", [])]}
+            raise RuntimeError("Circular_End wrong; later steps would measure the wrong part")
+        self._e_end = self.body().Tip
+        self.wait = 600
+
+    def e_rename(self):
+        e1 = self.rename(self._e_base, "Base")
+        e2 = self.rename(self._e_end, "Circular_End")
+        self.step("Rename in the Part Navigator: Base, Circular_End", "select + F2, type, Enter",
+                  DIFFERS if not (e1 or e2) else FAIL,
+                  "NX: click the name twice or MB3 > Rename; FreeCAD: F2 or MB3 > Rename" + (f"; {e1 or e2}" if
+                                                                                          e1 or e2 else ""))
+
+    def e_width(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{self._e_base.Name}.")
+        b, where = self.click_ribbon("Edit Parameters")
+        self._e_where = where
+        self.wait = 1500
+
+    def e_width_dialog(self):
+        self.wait_dialog("e_width_dialog")
+        open_ = bool(Gui.Control.activeDialog())
+        field = self.set_quantity("length", 2.0 * IN)
+        self.mb2_click()
+        self.key("F5")
+        self.check_volume("Design change: Base distance 2.5 -> 2.0, OK, F5",
+                          f"Base selected + ribbon '{self._e_where} > Edit Parameters' (dialog {open_}), "
+                          f"'{field}' = 50.8 mm, MB2 = OK, F5", self.e_volume(2.0),
+                          "; NX edits the value from MB3 > Show Dimensions, FreeCAD reopens the Extrude dialog. "
+                          "Circular_End follows the narrower base (its circle is tied to the projected edge)")
+
+    def e_hole(self):
+        tip = self.body().Tip
+        face = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-6 and abs(f.CenterOfMass.z - 0.5 * IN) < 1e-6)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Hole")
+        self.step("Hole: Simple, Normal to Face, on the top face", f"select face + ribbon '{where} > Hole'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  "FreeCAD's Hole drills at circle centres in a sketch on the face")
+        self.wait = 1500
+
+    def e_hole_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no hole sketch in edit")
+        tip = self.body().Tip
+        arc = next((f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, start=1)     # the end's top arc
+                    if hasattr(e.Curve, "Radius") and e.Curve.Radius > 0.5 * IN
+                    and abs(e.Curve.Center.z - 0.5 * IN) < 1e-6 and abs(e.Curve.Center.x - 3.0 * IN) < 1e-6), None)
+        c = self.g2s(sk, 3.0, 0, 0.5)
+        e = self.g2s(sk, 3.375, 0, 0.5)
+        _, tool, n, ended = self.draw_clicks("O", [c, e])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), 0.375 * IN)])
+        if arc:
+            sk.addExternal(tip.Name, arc)
+            sk.addConstraint(Sketcher.Constraint("Coincident", 0, 3, -3, 3))   # centre on the arc's centre
+        App.ActiveDocument.recompute()
+        self.step("Point: the centre of the top arc", "O key + MB1 clicks + MB2; centre tied to the arc",
+                  DIFFERS if tool and n >= 1 and ended and arc else FAIL,
+                  f"NX picks the arc centre directly; FreeCAD sketches a circle on it ({arc} projected)")
+        self.wait = 300
+
+    def e_hole_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def e_hole_dialog(self):
+        self.wait_dialog("e_hole_dialog")
+        dia = self.set_quantity("diameter", 0.75 * IN)
+        depth = self.choose("through", "depthtype")
+        self.mb2_click()
+        self.check_volume("Diameter 0.75, Depth Limit = Through Body, OK", f"'{dia}' = 19.05 mm, '{depth}', MB2 = OK",
+                          self.e_volume(2.0, hole=True))
+        self.wait = 600
+
+    def e_cut(self):
+        tip = self.body().Tip
+        face = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).x - 1) < 1e-6 and abs(f.CenterOfMass.x - 0.75 * IN) < 1e-6)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude on the right vertical face of the upright", f"select face + ribbon '{where} > "
+                  "Extrude (Subtract)'", DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  f"{face}; subtracting extrude is its own button")
+        self.wait = 1500
+
+    def e_cut_sketch(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no cut sketch in edit")
+        corners = [self.g2s(sk, 0.75, y, z) for (y, z) in ((-0.5, 1.25), (0.5, 1.25), (0.5, 2.0), (-0.5, 2.0))]
+        _, tool, n, ended = self.draw_clicks("R", [corners[0], corners[2]])
+        P = [App.Vector(u, v, 0) for (u, v) in corners]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % 4]) for i in range(4)])
+        self.step("Rectangle at the upper edge, MB2; three dimensions", "R key + 2 MB1 clicks + MB2; sizes applied",
+                  SAME if tool and n >= 4 and ended else FAIL, f"tool {tool}; {n} curves; ended {ended}")
+        self.wait = 300
+
+    def e_cut_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def e_cut_dialog(self):
+        self.wait_dialog("e_cut_dialog")
+        mode = self.choose("to first", "mode")
+        self.info["E cut dialog widgets"] = self.task_widgets()
+        self.mb2_click()
+        ok = self.check_volume("Boolean Subtract, End = Until Next, OK", f"'{mode}', MB2 = OK",
+                               self.e_volume(2.0, hole=True, notch=True), "; FreeCAD calls Until Next 'To first'")
+        self._e_cut = self.body().Tip
+        err = self.rename(self._e_cut, "Rect_Cut") if ok else "skipped"
+        self.step("Rename the cut Rect_Cut", "select + F2, type, Enter", DIFFERS if not err else FAIL, err or "")
+        self.wait = 600
+
+    def e_rollback(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{self._e_cut.Name}.")
+        b, where = self.click_ribbon("Edit Parameters")
+        self._e_where = where
+        self.wait = 1500
+
+    def e_rollback_dialog(self):
+        self.wait_dialog("e_rollback_dialog")
+        mode = self.choose("through all", "mode")
+        self.mb2_click()
+        self.check_volume("Edit with Rollback: End = Through All, OK",
+                          f"Rect_Cut selected + ribbon '{self._e_where} > Edit Parameters', '{mode}', MB2 = OK",
+                          self.e_volume(2.0, hole=True, notch=True),
+                          "; FreeCAD's edit shows the model before the feature, like NX's rollback")
+        self.wait = 600
+
+    def e_fillet(self):
+        sk = self._e_sketch
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{sk.Name}.")
+        self.click_ribbon("Edit Parameters")
+        QtWidgets.QApplication.processEvents()
+        in_edit = self.edited_sketch() is sk
+        self.key("F")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        self.mb2_click(self.screen_point(sk, *self.g2s(sk, 2.0, 0, 1.5)))
+        done = self.fillet_corner(sk, App.Vector(*self.g2s(sk, 0.75, 0, 0.5), 0), 0.25 * IN)
+        App.ActiveDocument.recompute()
+        self.step("Edit the Base sketch: Fillet (F) R0.25 on the inside corner, MB2",
+                  "sketch selected + ribbon 'Edit Parameters', F key; corner filleted at 0.25",
+                  DIFFERS if in_edit and tool and done else FAIL,
+                  "NX: Edit with Rollback > Sketch Section; FreeCAD opens the sketch directly. The radius is "
+                  "typed after picking the corner")
+        self.wait = 300
+
+    def e_fillet_finish(self):
+        self.key("Ctrl+Q")
+        QtWidgets.QApplication.processEvents()
+        self.check_volume("Finish Sketch, OK: the whole part updates", "Ctrl+Q",
+                          self.e_volume(2.0, hole=True, notch=True, fillet=True),
+                          "; later features (Circular_End, hole, Rect_Cut) follow the edited sketch")
+        self.wait = 1200
+
+    def material_dialog(self, w):
+        """Pick Steel in FreeCAD's material dialog and press OK."""
+        views = [v for v in w.findChildren(QtWidgets.QAbstractItemView) if not isinstance(v, QtWidgets.QHeaderView)]
+        best, seen = None, []
+        for v in views:
+            m = v.model()
+            if m is None:
+                continue
+            stack = [QtCore.QModelIndex()]
+            while stack:
+                parent = stack.pop()
+                for r in range(m.rowCount(parent)):
+                    idx = m.index(r, 0, parent)
+                    t = str(m.data(idx) or "")
+                    if m.hasChildren(idx):          # a library or folder, not a material
+                        stack.append(idx)
+                    elif "steel" in t.lower():
+                        seen.append(t)
+                        # a plain carbon steel first ("Steel-Generic"), not stainless or tool steel
+                        rank = (0 if "generic" in t.lower() else 1, len(t))
+                        if best is None or rank < best[3]:
+                            best = (v, idx, t, rank)
+        self.info["E material dialog"] = {"title": w.windowTitle(), "class": type(w).__name__,
+                                          "views": [type(v).__name__ for v in views], "steels": seen[:20],
+                                          "picked": best[2] if best else None}
+        if best is None:
+            return False
+        v, idx = best[0], best[1]
+        v.scrollTo(idx)
+        v.setCurrentIndex(idx)
+        for sig in ("clicked", "activated", "doubleClicked"):
+            try:
+                getattr(v, sig).emit(idx)
+            except Exception:
+                pass
+        QtWidgets.QApplication.processEvents()
+        # OK where there is one; FreeCAD 1.1's material panel applies at once and only has Close
+        for role in (QtWidgets.QDialogButtonBox.Ok, QtWidgets.QDialogButtonBox.Close):
+            for box in w.findChildren(QtWidgets.QDialogButtonBox):
+                b = box.button(role)
+                if b is not None and b.isEnabled():
+                    self.info["E material dialog"]["closed with"] = b.text()
+                    b.click()
+                    self.modals.handler = None
+                    QtWidgets.QApplication.processEvents()
+                    return True
+        return False
+
+    def e_material(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name)
+        self.modals.handler = self.material_dialog
+        b, where = self.click_ribbon("Assign Material")
+        self._e_where = where
+        QtWidgets.QApplication.processEvents()
+        if self.modals.handler is not None:     # not a modal dialog: a task panel or a plain window
+            if Gui.Control.activeDialog():
+                self.material_dialog(self.tasks_dock())
+            else:
+                for w in QtWidgets.QApplication.topLevelWidgets():
+                    if isinstance(w, QtWidgets.QDialog) and w.isVisible() and w.objectName() != "NXInformation":
+                        if self.material_dialog(w):
+                            break
+        self.wait = 1500
+
+    def e_material_check(self):
+        from .commands import density_of
+        self.modals.handler = None
+        name, rho = density_of(self.body())
+        md = self.info.get("E material dialog") or {}
+        still_open = bool(Gui.Control.activeDialog())
+        self.step("Tools > Assign Materials: Steel, select the body, OK",
+                  f"body selected + ribbon '{self._e_where} > Assign Material', '{md.get('picked')}', "
+                  f"{md.get('closed with', 'not closed')}",
+                  (SAME if md.get("closed with") == "OK" else DIFFERS)
+                  if name and "steel" in name.lower() and rho and not still_open else FAIL,
+                  f"material {name}, density {rho} kg/m^3" + ("; the panel applies the choice at once and has "
+                                                               "Close instead of OK" if md.get("closed with") != "OK"
+                                                               else "") + ("; panel still open" if still_open else ""))
+        vo = self.body().ViewObject
+        try:
+            col = vo.ShapeAppearance[0].DiffuseColor[:3]
+        except Exception:
+            col = getattr(vo, "ShapeColor", (0, 0, 0))[:3]
+        # an observation, not an NX comparison (the book's text does not say what NX shows)
+        self.info["E colour after Assign Material"] = (
+            f"diffuse colour {tuple(round(c, 2) for c in col)}" + (": FreeCAD 1.1 also applies the material's "
+                                                                   "appearance, steel renders nearly black"
+                                                                   if sum(col) <= 1.2 else ""))
+
+    def e_measure(self):
+        from . import commands
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name)
+        b, where = self.click_ribbon("Measure Bodies")
+        QtWidgets.QApplication.processEvents()
+        rows = commands.last_measure
+        dlg = Gui.getMainWindow().findChild(QtWidgets.QDialog, "NXInformation")
+        name, rho = commands.density_of(self.body())
+        want = self.body().Shape.Volume * 1e-9 * rho if rho else None
+        got = rows[0]["mass_kg"] if rows else None
+        ok = b is not None and dlg is not None and dlg.isVisible() and got and want and abs(got - want) < 1e-9
+        text = dlg.findChild(QtWidgets.QPlainTextEdit).toPlainText() if dlg else ""
+        self.info["E measure text"] = text
+        ok = ok and "mm³" in text and " kg" in text      # metric part: NX-style mm³ and kg
+        self.step("Analysis > Measure, Solid Body, physical properties in the Information window",
+                  f"body selected + ribbon '{where} > Measure Bodies'", DIFFERS if ok else FAIL,
+                  f"mass {got:.4f} kg from {rho:g} kg/m^3; FreeCAD's own Measure has no "
+                  "mass, so NXStyle adds Measure Bodies" if ok else f"rows {rows}, dialog {dlg is not None}")
+        self.wait = 600
+
+    def e_fit(self):
+        if self.modals.handler is None:
+            dlg = Gui.getMainWindow().findChild(QtWidgets.QDialog, "NXInformation")
+            if dlg is not None:
+                dlg.close()
+        self.fit()
+
+    def e_show(self):
+        self.show("E_saddle_bracket")
+        self.check_drawn("The finished part is shown in the graphics window", "E_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "Saddle-Bracket.FCStd"))
+
+    # ---------------------------------------------------------- tutorial F
+    # Dryer Housing (Shih ch. 12): revolve, extrudes, Edge Blend, Shell, a
+    # pattern leader and a two-direction rectangular pattern. The text gives
+    # R0.25, 0.5, 5.5, R0.15, 0.125, 0.15 and the pattern (5 x -0.58, 10 x
+    # -0.25); every profile is figure-only, so the shapes are this replay's own
+    # simplified housing (a R2.00 x 1.25 drum, a 0.75 wide handle, a R0.75 half
+    # nozzle). Each feature is checked against the same operation done directly
+    # with FreeCAD's Part API, so the check is independent of the UI path.
+    def f_vec(self, x, y, z):
+        return App.Vector(x * IN, y * IN, z * IN)
+
+    def f_check(self, label, how, expected, extra=""):
+        App.ActiveDocument.recompute()
+        ok = self.check_volume(label, how, expected.Volume, extra)
+        self._f_exp = expected
+        return ok
+
+    def faces_where(self, shape, test):
+        out = []
+        for i, f in enumerate(shape.Faces, start=1):
+            try:
+                if test(f):
+                    out.append(f"Face{i}")
+            except Exception:
+                pass
+        return out
+
+    def select_subs(self, obj, subs):
+        doc, body = App.ActiveDocument, self.body()
+        Gui.Selection.clearSelection()
+        for s in subs:
+            Gui.Selection.addSelection(doc.Name, body.Name, f"{obj.Name}.{s}")
+
+    @staticmethod
+    def arc_through(c, p0, pm, p1):
+        """Arc from p0 to p1 through pm around centre c (sketch coordinates)."""
+        import Part
+        a0, am, a1 = (math.atan2(p.y - c.y, p.x - c.x) for p in (p0, pm, p1))
+        r = (p0 - c).Length
+        circ = Part.Circle(c, App.Vector(0, 0, 1), r)
+
+        def ccw(a, b):
+            return (b - a) % (2 * math.pi)
+        if ccw(a0, am) < ccw(a0, a1):
+            return Part.ArcOfCircle(circ, a0, a0 + ccw(a0, a1))
+        return Part.ArcOfCircle(circ, a1, a1 + ccw(a1, a0))
+
+    def f_new(self):
+        self.tutorial = "F: Dryer Housing (book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def f_revolve(self):
+        self.step("File > New, Model template", "Ctrl+N",
+                  SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
+        Gui.Selection.clearSelection()
+        b, where = self.click_ribbon("Revolve")
+        self._f_where = where
+        self.wait = 1500
+
+    def f_plane(self):
+        picked = self.pick_in_feature_list("YZ")
+        self.mb2_click()
+        self.step("Revolve, YZ plane of the datum CSYS", f"ribbon '{self._f_where} > Revolve', plane row + MB2",
+                  SAME if picked else FAIL, f"picked {picked}")
+        self.wait = 1500
+
+    def f_profile(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        pts = [self.g2s(sk, 0, y, z) for (y, z) in ((0, 0), (2.0, 0), (2.0, 1.25), (0, 1.25))]
+        _, tool, n, ended = self.draw_clicks("Z", pts + [pts[0]])
+        P = [App.Vector(u, v, 0) for (u, v) in pts]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % 4]) for i in range(4)])
+        self.key("F")
+        QtWidgets.QApplication.processEvents()
+        ftool = self.nav().sketch_tool_active()
+        self.mb2_click(self.screen_point(sk, *self.g2s(sk, 0, 3.0, 2.0)))
+        done = self.fillet_corner(sk, P[2], 0.25 * IN)
+        App.ActiveDocument.recompute()
+        self.step("Profile, then Fillet R0.25 between the top line and the side", "Z key + MB1 clicks + MB2, F key; "
+                  "sizes applied", DIFFERS if tool and n >= 4 and ended and ftool and done else FAIL,
+                  "the book's profile (an arc and stepped lines) is figure-only; a filleted rectangle stands in. "
+                  "The fillet radius is typed after picking in FreeCAD")
+        self.wait = 300
+
+    def f_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def f_revolve_dialog(self):
+        import Part
+        self.wait_dialog("f_revolve_dialog")
+        axis = self.choose("z axis", "axis")
+        self.mb2_click()
+        cyl = Part.makeCylinder(2.0 * IN, 1.25 * IN)
+        top = [e for e in cyl.Edges if hasattr(e.Curve, "Radius") and abs(e.Curve.Center.z - 1.25 * IN) < 1e-6]
+        ok = self.f_check("Specify Vector = Z axis, 0..360°, OK", f"axis '{axis}', MB2 = OK",
+                          cyl.makeFillet(0.25 * IN, top))
+        if not ok:
+            raise RuntimeError("base revolve wrong")
+        self.wait = 600
+
+    def f_handle(self):
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def f_handle_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.step("Dryer handle: Extrude (X), XY plane", "X key, plane row + MB2", SAME if picked else FAIL,
+                  f"picked {picked}")
+        self.wait = 1500
+
+    def f_handle_sketch(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no handle sketch in edit")
+        corners = [self.g2s(sk, x, y, 0) for (x, y) in ((-0.375, 1.5), (0.375, 1.5), (0.375, 5.0), (-0.375, 5.0))]
+        _, tool, n, ended = self.draw_clicks("R", [corners[0], corners[2]])
+        P = [App.Vector(u, v, 0) for (u, v) in corners]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % 4]) for i in range(4)])
+        self.step("Handle outline, seven dimensions", "R key + 2 MB1 clicks + MB2; sizes applied",
+                  DIFFERS if tool and n >= 4 and ended else FAIL,
+                  "the book's handle (three inclined lines, seven dimensions) is figure-only; a 0.75 x 3.5 bar "
+                  "stands in")
+        self.wait = 300
+
+    def f_handle_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def f_handle_dialog(self):
+        import Part
+        self.wait_dialog("f_handle_dialog")
+        field = self.set_quantity("length", 0.5 * IN)
+        self.mb2_click()
+        box = Part.makeBox(0.75 * IN, 3.5 * IN, 0.5 * IN, self.f_vec(-0.375, 1.5, 0))
+        self.f_check("Boolean Unite, End = 0.5, OK", f"'{field}' = 12.7 mm, MB2 = OK",
+                     self._f_exp.fuse(box).removeSplitter())
+        self.wait = 600
+
+    def f_nozzle(self):
+        Gui.Selection.clearSelection()
+        b, where = self.click_ribbon("Sketch")
+        self._f_where = where
+        self.wait = 1500
+
+    def f_nozzle_plane(self):
+        picked = self.pick_in_feature_list("YZ")
+        self.mb2_click()
+        self.step("Sketch on the YZ plane", f"ribbon '{self._f_where} > Sketch', plane row + MB2",
+                  SAME if picked and self.edited_sketch() is not None else FAIL, f"picked {picked}")
+        self.wait = 1500
+
+    def f_nozzle_sketch(self):
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no nozzle sketch in edit")
+        c, p0, pm, p1 = (App.Vector(*self.g2s(sk, 0, y, z), 0) for (y, z) in ((0, 0), (0.75, 0), (0, 0.75), (-0.75, 0)))
+        self.frame_sketch(sk, c.x, c.y + 0.4 * IN, 3 * IN)
+        self.key("A")
+        QtWidgets.QApplication.processEvents()
+        atool = self.nav().sketch_tool_active()
+        for p in (c, p0, p1):
+            self.mb1_click(self.screen_point(sk, p.x, p.y))
+        self.mb2_click(self.screen_point(sk, c.x + 1.5 * IN, c.y + 1.5 * IN))
+        n_arc = len(sk.Geometry)
+        self.key("L")
+        QtWidgets.QApplication.processEvents()
+        ltool = self.nav().sketch_tool_active()
+        for p in (p1, p0):
+            self.mb1_click(self.screen_point(sk, p.x, p.y))
+        self.mb2_click(self.screen_point(sk, c.x + 1.5 * IN, c.y + 1.5 * IN))
+        import Part
+        self.add_geometry(sk, [self.arc_through(c, p0, pm, p1), Part.LineSegment(p1, p0)])
+        self.step("Arc by centre and endpoints (180°), then a Line closing it", "A key + 3 MB1 clicks + MB2, "
+                  "L key + 2 MB1 clicks + MB2; sizes applied", SAME if atool and ltool and n_arc >= 1 else FAIL,
+                  f"arc tool {atool}, line tool {ltool}; the book projects the bottom edge first (shown in "
+                  "tutorial E); here the arc sits on the bottom line by its coordinates")
+        self._f_nozzle_sketch = sk
+        self.wait = 300
+
+    def f_nozzle_leave(self):
+        self.key("Ctrl+Q")
+        self.wait = 1500
+
+    def f_nozzle_extrude(self):
+        sk = self._f_nozzle_sketch
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{sk.Name}.")
+        b, where = self.click_ribbon("Extrude")
+        self._f_where = where
+        self.wait = 1500
+
+    def f_nozzle_dialog(self):
+        import Part
+        self.wait_dialog("f_nozzle_dialog")
+        rev = self.checkbox("reverse")
+        field = self.set_quantity("length", 5.5 * IN)
+        self.mb2_click()
+        cyl = Part.makeCylinder(0.75 * IN, 5.5 * IN, App.Vector(0, 0, 0), App.Vector(-1, 0, 0))
+        half = cyl.common(Part.makeBox(6 * IN, 2 * IN, 1 * IN, self.f_vec(-6, -1, 0)))
+        ok = self.f_check("Reverse Direction, End 5.5, Boolean Unite, OK",
+                          f"sketch selected + ribbon '{self._f_where} > Extrude', '{rev}' on, '{field}' = 139.7 mm, "
+                          "MB2 = OK", self._f_exp.fuse(half).removeSplitter())
+        xmin = self.body().Shape.BoundBox.XMin / IN
+        if ok and abs(xmin + 5.5) > 1e-6:
+            self.rows[-1]["outcome"] = FAIL
+            self.rows[-1]["detail"] += f"; nozzle went the wrong way (x min {xmin * IN:.2f} mm)"
+        self.wait = 600
+
+    @staticmethod
+    def handle_end_edges(shape):
+        """The handle's outer end edges (top and two sides of the y = 5 face; the bottom one is open)."""
+        end = [f for f in shape.Faces if abs(f.normalAt(0, 0).y - 1) < 1e-6 and abs(f.CenterOfMass.y - 5 * IN) < 1e-6]
+        if not end:
+            return []
+        out = []
+        for e in end[0].Edges:     # after a shell the end face also has inner edges: keep the outer three
+            bb = e.BoundBox
+            side = abs(abs(bb.XMin) - 0.375 * IN) < 1e-6 and abs(abs(bb.XMax) - 0.375 * IN) < 1e-6
+            top = abs(bb.ZMin - 0.5 * IN) < 1e-6 and abs(bb.ZMax - 0.5 * IN) < 1e-6
+            if side or top:
+                out.append(e)
+        return out
+
+    def blend_handle(self, label):
+        tip = self.body().Tip
+        want = self.handle_end_edges(tip.Shape)
+        subs = [f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, start=1) if any(e.isSame(x) for x in want)]
+        self.select_subs(tip, subs)
+        b, where = self.click_ribbon("Edge Blend")
+        self.step(label, f"{len(subs)} edges selected + ribbon '{where} > Edge Blend'",
+                  DIFFERS if b is not None and len(subs) >= 3 else FAIL,
+                  "the book's 13 edges are picked from a figure; the outer edges of the handle's end stand in "
+                  "(FreeCAD's unrefined shape may split one). FreeCAD takes the edges selected before the command")
+        self.wait = 1500
+
+    def blend_dialog(self, what, label, radius=0.15):
+        self.wait_dialog(what)
+        field = self.set_quantity("radius", radius * IN)
+        self.mb2_click()
+        exp = self._f_exp
+        how = f"'{field}' = {radius * IN:g} mm, MB2 = OK"
+        try:
+            reference = exp.makeFillet(radius * IN, self.handle_end_edges(exp))
+        except Exception as e:
+            reference, err = None, str(e)
+        if reference is not None:
+            self.f_check(label, how, reference)
+        else:      # measure instead: a valid round that removes a little material and stays inside the old box
+            App.ActiveDocument.recompute()
+            tip, shape = self.body().Tip, self.body().Shape
+            v0, v1 = exp.Volume, shape.Volume if not shape.isNull() else 0
+            inside = all((a >= b - 0.005 * IN) if k % 2 == 0 else (a <= b + 0.005 * IN)
+                         for k, (a, b) in enumerate(zip(self.tight_box(shape), self.tight_box(exp))))
+            ok = (tip.TypeId == "PartDesign::Fillet" and tip.isValid() and not Gui.Control.activeDialog()
+                  and 0 < v0 - v1 < 0.01 * v0 and inside)
+            self.step(label, how, SAME if ok else FAIL,
+                      f"volume {v1:.1f} mm^3, {v0 - v1:.2f} mm^3 rounded off; inside the "
+                      f"previous box {inside}; feature valid {tip.isValid()}; no Part API reference (it failed: {err})")
+            if not ok:
+                self.cancel_failed("PartDesign::Fillet")
+            self._f_exp = self.body().Shape.copy()
+        self.wait = 600
+
+    def cancel_failed(self, type_id):
+        """What a user does after a feature fails: Cancel its dialog; Ctrl+Z if the broken feature stays."""
+        dock = self.tasks_dock()
+        if Gui.Control.activeDialog():
+            for box in dock.findChildren(QtWidgets.QDialogButtonBox):
+                b = box.button(QtWidgets.QDialogButtonBox.Cancel)
+                if b is not None and b.isVisible():
+                    b.click()
+                    break
+            QtWidgets.QApplication.processEvents()
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+        presses = 0
+        while presses < 3:
+            tip = self.body().Tip
+            if tip.TypeId != type_id or tip.isValid():
+                break
+            self.key("Ctrl+Z")
+            QtWidgets.QApplication.processEvents()
+            presses += 1
+        self.progress(f"cancel_failed {type_id}: Ctrl+Z x{presses}; tip now {self.body().Tip.Name}")
+
+    def f_blend(self):
+        self._f_pre_blend = self._f_exp
+        self.blend_handle("Edge Blend, Circular, select the handle's edges")
+
+    def f_blend_dialog(self):
+        self.blend_dialog("f_blend_dialog", "Radius 1 = 0.15, OK")
+
+    @staticmethod
+    def open_faces(shape):
+        """The housing's open faces: the bottom (z = 0) and the nozzle's end (x = -5.5)."""
+        return [f for f in shape.Faces if (abs(f.normalAt(0, 0).z + 1) < 1e-6 and abs(f.CenterOfMass.z) < 1e-6)
+                or (abs(f.normalAt(0, 0).x + 1) < 1e-6 and abs(f.CenterOfMass.x + 5.5 * IN) < 1e-6)]
+
+    def shell_select(self, label):
+        tip = self.body().Tip
+        bottom = self.faces_where(tip.Shape, lambda f: abs(f.normalAt(0, 0).z + 1) < 1e-6 and abs(f.CenterOfMass.z) < 1e-6)
+        nozzle = self.faces_where(tip.Shape, lambda f: abs(f.normalAt(0, 0).x + 1) < 1e-6
+                                  and abs(f.CenterOfMass.x + 5.5 * IN) < 1e-6)
+        self.select_subs(tip, bottom + nozzle)
+        b, where = self.click_ribbon("Shell")
+        self.step(label, f"bottom {bottom} + nozzle end {nozzle} selected + ribbon '{where} > Shell'",
+                  SAME if b is not None and bottom and len(nozzle) == 1 else FAIL,
+                  "FreeCAD calls Shell 'Thickness'" + (f"; the unrefined bottom is {len(bottom)} faces, all picked"
+                                                       if len(bottom) > 1 else ""))
+        self.wait = 2000
+
+    # (x, y, z) in inches: points 1/16 in inside each wall must be material, points deeper in must be hollow.
+    # Walls: drum side (y = -2), drum top (z = 1.25), nozzle top (z = 0.75), handle top (z = 0.5); the bottom is open.
+    SHELL_SOLID = [(0, -1.9375, 0.6), (0.5, -0.5, 1.1875), (-4.0, 0, 0.6875), (0, 4.0, 0.4375)]
+    SHELL_HOLLOW = [(0, -1.75, 0.6), (0.5, -0.5, 1.0), (-4.0, 0, 0.5), (0, 4.0, 0.3), (0.5, -0.5, 0.0625)]
+
+    @staticmethod
+    def tight_box(shape):
+        try:
+            b = shape.optimalBoundingBox(False, False)   # exact; True measures the mesh and undershoots curves
+        except Exception:
+            b = shape.BoundBox
+        return (b.XMin, b.XMax, b.YMin, b.YMax, b.ZMin, b.ZMax)
+
+    def shell_probe(self, shape):
+        solid = [shape.isInside(self.f_vec(*p), 1e-6, True) for p in self.SHELL_SOLID]
+        hollow = [not shape.isInside(self.f_vec(*p), 1e-6, True) for p in self.SHELL_HOLLOW]
+        return all(solid) and all(hollow), solid, hollow
+
+    def shell_dialog(self, what, label):
+        """Type 0.125, OK. Returns 'ok', 'limit' (FreeCAD refuses) or 'fail'.
+
+        No Part API reference here: Part.makeThickness on this housing returned shapes reaching
+        outside the original part, so the result is measured directly (outer box, probe points)."""
+        self.wait_dialog(what)
+        self.info["F shell dialog widgets"] = self.task_widgets()
+        field = self.set_quantity("value", 0.125 * IN) or self.set_quantity("thickness", 0.125 * IN)
+        box = next((b for b in self.tasks_dock().findChildren(QtWidgets.QCheckBox)
+                    if b.objectName() == "checkReverse"), None)
+        # read the box now: OK closes the dialog and deletes its widgets
+        how = f"'{field}' = 3.175 mm" + (f", '{box.text()}' {'on' if box.isChecked() else 'off'} (default)"
+                                        if box is not None else "") + ", MB2 = OK"
+        self.mb2_click()
+        qtest().qWait(500)
+        App.ActiveDocument.recompute()
+        tip, shape = self.body().Tip, self.body().Shape
+        solid0 = self._f_exp
+        ui_ok = (tip.TypeId == "PartDesign::Thickness" and tip.isValid() and not Gui.Control.activeDialog()
+                 and not shape.isNull() and 0 < shape.Volume < 0.5 * solid0.Volume)
+        if not ui_ok:
+            said = [s for s in self.modals.seen if "thick" in s.lower() or "brep" in s.lower()]
+            err = said[-1] if said else (tip.getStatusString() if hasattr(tip, "getStatusString") else "")
+            self.step(label, how, LIMIT, f"FreeCAD 1.1.4 does not shell the part after the edge blend "
+                      f"(FreeCAD: '{err or 'feature failed'}'); the same faces and thickness work before the blend "
+                      "(next steps). NX shells it in the book's order")
+            self._f_limit_row = len(self.rows) - 1
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+            return "limit"
+        b0, b1 = self.tight_box(solid0), self.tight_box(shape)
+        same_box = all(abs(a - b) < 0.005 * IN for a, b in zip(b0, b1))   # BoundBox of curved faces is not tight
+        probes_ok, solid, hollow = self.shell_probe(shape)
+        ok = same_box and probes_ok and len(shape.Solids) == 1
+        if not same_box:
+            self.progress(f"{what}: boxes in inches, before {[round(v / IN, 4) for v in b0]}, after "
+                          f"{[round(v / IN, 4) for v in b1]}")
+        self.step(label, how, SAME if ok else FAIL,
+                  f"volume {shape.Volume:.1f} mm^3 (solid {solid0.Volume:.1f}); outer box kept "
+                  f"{same_box}; 1.6 mm inside each wall is material {solid}, deeper in is hollow {hollow}")
+        self._f_exp = shape.copy()      # later references build on the measured shell
+        return "ok" if ok else "fail"
+
+    def f_shell(self):
+        self.shell_select("Shell: pick the two flat open faces")
+
+    def f_shell_dialog(self):
+        if self.shell_dialog("f_shell_dialog", "Thickness 0.125, OK") == "limit":
+            # what a FreeCAD user does: undo back to before the blend, shell first, blend afterwards
+            self.steps[0:0] = [self.f_undo, self.f_shell2, self.f_shell2_dialog, self.f_blend2, self.f_blend2_dialog]
+        self.wait = 800
+
+    def f_undo(self):
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+            QtWidgets.QApplication.processEvents()
+        presses = 0
+        doc = App.ActiveDocument
+        while presses < 4 and any(o.TypeId in ("PartDesign::Thickness", "PartDesign::Fillet") for o in doc.Objects):
+            self.key("Ctrl+Z")
+            QtWidgets.QApplication.processEvents()
+            presses += 1
+        left = [o.Name for o in doc.Objects if o.TypeId in ("PartDesign::Thickness", "PartDesign::Fillet")]
+        self._f_exp = self._f_pre_blend
+        self.step("Workaround: undo the shell and the blend", f"Ctrl+Z x{presses}", DIFFERS if not left else FAIL,
+                  f"left over: {left}" if left else "back to the part before the edge blend")
+        self.wait = 800
+
+    def f_shell2(self):
+        self.shell_select("Workaround: Shell first, the same two faces")
+
+    def f_shell2_dialog(self):
+        result = self.shell_dialog("f_shell2_dialog", "Thickness 0.125, OK (before the blend)")
+        row = getattr(self, "_f_limit_row", None)
+        if result != "ok" and row is not None:
+            # the same faces and value fail without the blend too: not a FreeCAD limit of the order
+            self.rows[row]["outcome"] = FAIL
+            self.rows[row]["detail"] += "; but the shell also failed without the blend"
+        self.wait = 800
+
+    def f_blend2(self):
+        self.blend_handle("Workaround: Edge Blend after the shell, the handle's outer end edges")
+
+    def f_blend2_dialog(self):
+        self.blend_dialog("f_blend2_dialog", "Radius 1 = 0.15, OK (after the shell)")
+        if self.rows[-1]["outcome"] == FAIL:
+            # observed: FreeCAD 1.1.4 cannot round these edges of the 0.125 walls at 0.15 either; try smaller
+            self.rows[-1]["outcome"] = LIMIT
+            self.rows[-1]["detail"] += "; FreeCAD 1.1.4 refuses this round on the shelled walls"
+            self.steps[0:0] = [self.f_blend3, self.f_blend3_dialog]
+
+    def f_blend3(self):
+        self.blend_handle("Workaround: Edge Blend again with a smaller radius")
+
+    def f_blend3_dialog(self):
+        self.blend_dialog("f_blend3_dialog", "Radius 1 = 0.10, OK (after the shell)", 0.10)
+        if self.rows[-1]["outcome"] == SAME:
+            self.rows[-1]["outcome"] = DIFFERS
+            self.rows[-1]["detail"] += "; the workaround changes the design: R0.10 instead of the book's R0.15"
+
+    def f_vent(self):
+        tip = self.body().Tip
+        top = self.faces_where(tip.Shape, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-6
+                               and abs(f.CenterOfMass.z - 1.25 * IN) < 1e-6)
+        self.select_subs(tip, top[:1])
+        self.progress(f"f_vent: tip {tip.Name} valid {tip.isValid()}, top faces {top}, dialog open "
+                      f"{bool(Gui.Control.activeDialog())}, selection {Gui.Selection.getSelectionEx()[0].SubElementNames if Gui.Selection.getSelectionEx() else None}")
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Pattern leader: Extrude on the top face, Subtract", f"select {top[:1]} + ribbon '{where} > "
+                  "Extrude (Subtract)'", DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  "the book orients the view to Top first; FreeCAD's sketch opens looking at the face")
+        self.wait = 1500
+
+    VENT = (1.16, 1.125, 0.20, 0.08)        # leader centre x, y and size (x, y), inches
+
+    def f_vent_sketch(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no leader sketch in edit")
+        x, y, w, h = self.VENT
+        corners = [self.g2s(sk, x + dx * w / 2, y + dy * h / 2, 1.25) for (dx, dy) in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        _, tool, n, ended = self.draw_clicks("R", [corners[0], corners[2]])
+        P = [App.Vector(u, v, 0) for (u, v) in corners]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % 4]) for i in range(4)])
+        self.step("Rectangle to the right of the CSYS: the small vent", "R key + 2 MB1 clicks + MB2; sizes applied",
+                  SAME if tool and n >= 4 and ended else FAIL, "the slot size is figure-only: 0.20 x 0.08 here")
+        self.wait = 300
+
+    def f_vent_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def vent_box(self, i=0, j=0):
+        import Part
+        x, y, w, h = self.VENT
+        return Part.makeBox(w * IN, h * IN, 0.15 * IN, self.f_vec(x - 0.58 * i - w / 2, y - 0.25 * j - h / 2, 1.10))
+
+    def f_vent_dialog(self):
+        self.wait_dialog("f_vent_dialog")
+        field = self.set_quantity("length", 0.15 * IN)
+        self.mb2_click()
+        self._f_before_vents = self._f_exp
+        self.f_check("Reverse Direction into the solid, End 0.15, OK", f"'{field}' = 3.81 mm, MB2 = OK",
+                     self._f_exp.cut(self.vent_box()), "; no Reverse needed: the subtracting extrude cuts inwards")
+        self._f_leader = self.body().Tip
+        self.wait = 600
+
+    def f_pattern(self):
+        self.select_sub(self._f_leader, "")
+        b, where = self.click_ribbon("Pattern Feature")
+        self.step("Pattern Feature, Layout = Linear, select the cut, MB2", f"leader selected + ribbon '{where} > "
+                  "Pattern Feature'", DIFFERS if b is not None and Gui.Control.activeDialog() else FAIL,
+                  "FreeCAD's Linear Pattern is the Linear layout of NX's Pattern Feature")
+        self.wait = 1500
+
+    def pattern_dirs(self):
+        """The direction panels of FreeCAD 1.1's pattern dialog, Direction 1 first."""
+        return [w for w in self.tasks_dock().findChildren(QtWidgets.QWidget)
+                if w.objectName() == "PartGui__PatternParametersWidget"]
+
+    def in_panel(self, panel, cls, name_part):
+        ws = [w for w in panel.findChildren(cls) if name_part.lower() in w.objectName().lower()]
+        return ws[0] if ws else None
+
+    def set_direction(self, panel, axis, count, pitch):
+        """Direction n of a rectangular pattern: axis, count and a (signed) NX pitch distance."""
+        got = {}
+        c = self.in_panel(panel, QtWidgets.QComboBox, "direction")
+        if c is not None:      # this panel's own list (both directions use the same widget names)
+            for i in range(c.count()):
+                if self._matches(axis, c.itemText(i)):
+                    c.setCurrentIndex(i)
+                    c.activated.emit(i)
+                    got["axis"] = c.itemText(i)
+                    break
+        m = self.in_panel(panel, QtWidgets.QComboBox, "mode")
+        if m is not None:
+            for i in range(m.count()):
+                if "spacing" in m.itemText(i).lower():
+                    m.setCurrentIndex(i)
+                    m.activated.emit(i)
+                    got["mode"] = m.itemText(i)
+        QtWidgets.QApplication.processEvents()
+        occ = self.in_panel(panel, QtWidgets.QSpinBox, "occurrences")
+        if occ is not None:
+            occ.lineEdit().setText(str(int(count)))
+            occ.interpretText()
+            got["count typed"] = int(count)   # occ.value() is the UIntSpinBox's offset storage, not the count
+        sp = self.in_panel(panel, QtWidgets.QAbstractSpinBox, "spacing")
+        if sp is not None:
+            self.type_into(sp, abs(pitch) * IN)
+            got["spacing"] = abs(pitch)
+        if pitch < 0:
+            rev = self.in_panel(panel, QtWidgets.QToolButton, "reverse") or self.in_panel(
+                panel, QtWidgets.QAbstractButton, "reverse")
+            if rev is not None:
+                rev.click()
+                got["reversed"] = True
+        return got
+
+    def f_pattern_dialog(self):
+        self.wait_dialog("f_pattern_dialog")
+        self.info["F pattern dialog widgets"] = self.task_widgets()
+        panels = self.pattern_dirs()
+        d1 = self.set_direction(panels[0], "x axis", 5, -0.58) if panels else {}
+        enable = None
+        if len(panels) > 1:
+            for b in self.tasks_dock().findChildren(QtWidgets.QCheckBox):
+                if "enable" in b.objectName().lower() or "direction 2" in b.text().lower():
+                    if not b.isChecked():
+                        b.click()
+                    enable = b.objectName() or b.text()
+            QtWidgets.QApplication.processEvents()
+        d2 = self.set_direction(panels[1], "y axis", 10, -0.25) if len(panels) > 1 else {}
+        pat = self.newest("PartDesign::LinearPattern")
+        counts = {p: getattr(pat, p) for p in pat.PropertiesList if p.startswith("Occurrences")} if pat else {}
+        self.progress(f"f_pattern_dialog: {len(panels)} direction panels; d1 {d1}; enable {enable}; d2 {d2}; "
+                      f"counts {counts}")
+        if not pat or any(v > 100 for v in counts.values()):
+            for p in counts:                  # never let a runaway count recompute
+                setattr(pat, p, 2)
+            Gui.Control.closeDialog()
+            raise RuntimeError(f"pattern counts not as typed: {counts}")
+        spacing = {}
+        for p in pat.PropertiesList:
+            if p.startswith("Offset") or "Spacing" in p:
+                v = getattr(pat, p)
+                try:
+                    spacing[p] = round(float(getattr(v, "Value", v)), 4)
+                except (TypeError, ValueError):
+                    spacing[p] = str(v)
+        self.mb2_click()
+        counts = dict(counts, **spacing)
+        boxes = [self.vent_box(i, j) for i in range(5) for j in range(10)]
+        cutter = boxes[0].fuse(boxes[1:])
+        self.f_check("Direction 1: X, Count 5, Pitch -0.58; Use Direction 2: Y, Count 10, Pitch -0.25; OK",
+                     f"X axis {d1}; '{enable}'; Y axis {d2}; MB2 = OK", self._f_before_vents.cut(cutter),
+                     f"; feature counts {counts}; NX's negative pitch is FreeCAD's spacing with Reverse")
+        self.wait = 800
+
+    def f_swept(self):
+        self.step("Swept cut along the rim (section rectangle, Line-Arc guide), Subtract", "-", "skipped",
+                  "the guide curves and section sizes are figure-only")
+
+    def f_fit(self):
+        self.fit()
+
+    def f_show(self):
+        self.show("F_dryer_housing")
+        self.check_drawn("The finished part is shown in the graphics window", "F_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "DryerHousing.FCStd"))
+
     # ------------------------------------------------------------- runner
     def next(self):
         if not self.steps:
@@ -1311,6 +2541,8 @@ class Replay:
         fn = self.steps.pop(0)
         self.wait = 400
         self.progress(fn.__name__)
+        if fn.__name__.endswith("_new"):
+            self.clean_slate()
         try:
             fn()
         except Exception:
@@ -1321,6 +2553,25 @@ class Replay:
             prefix = fn.__name__[:2]
             self.steps = [s for s in self.steps if not s.__name__.startswith(prefix)]
         QtCore.QTimer.singleShot(self.wait, self.next)
+
+    def clean_slate(self):
+        """Before a new tutorial: no dialog or edit mode left over from a previous one that stopped early."""
+        left = []
+        try:
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+                left.append("task dialog")
+            if Gui.ActiveDocument is not None and Gui.ActiveDocument.getInEdit() is not None:
+                Gui.ActiveDocument.resetEdit()
+                left.append("edit mode")
+            dlg = Gui.getMainWindow().findChild(QtWidgets.QDialog, "NXInformation")
+            if dlg is not None and dlg.isVisible():
+                dlg.close()
+            QtWidgets.QApplication.processEvents()
+        except Exception as e:
+            left.append(f"error {e}")
+        if left:
+            self.progress(f"clean slate: closed {left}")
 
     @staticmethod
     def commit_mb():
@@ -1365,6 +2616,7 @@ class Replay:
     def finish(self):
         self.progress("finish")
         self.info["unexpected modal dialogs"] = self.modals.seen
+        self.info["actions repeated"] = self.retries
         self.info["FreeCAD"] = App.Version()[:4]
         with open(os.path.join(OUT, "tutorial.json"), "w", encoding="utf-8") as f:
             json.dump({"steps": self.rows, "info": self.info}, f, indent=1, default=str)
