@@ -2,13 +2,13 @@
 """Strata as NXStyle's data management (the role Teamcenter plays next to NX).
 
 Strata (https://github.com/Foadsf/freecad-strata) is its own add-on: the launcher loads it next to
-NXStyle (``vendor/freecad-strata``, or a copy installed in the NX profile), and this module only
-places it in the NX layout once Strata has started:
+NXStyle (``vendor/freecad-strata``, or a copy installed in the NX profile). NXStyle uses Strata's
+embedding API (freecad-strata 1f71005 and later) and places it in the NX layout:
 
-- its "Versions and history" panel joins the navigators on the left, behind the Part Navigator;
-- the resource bar gets a button for it (Strata's own command, so Strata keeps its toolbar hidden);
-- the ribbon's PLM tab (``ribbons/common.json``) shows Strata's commands;
-- Strata's colour tokens take NX's teal accent.
+- before Strata starts (from NXStyle's InitGui): NXStyle provides the buttons, the panel goes left;
+- once Strata is up (``on_ready``): its panel joins the navigators behind the Part Navigator, the
+  resource bar and the PLM ribbon tab (``ribbons/common.json``) use Strata's own QActions, and
+  Strata's colour tokens take NX's teal.
 
 Strata's engine and UI stay upstream; nothing here copies or patches them.
 """
@@ -18,39 +18,40 @@ import FreeCADGui as Gui
 
 from . import config
 from .qt import QtCore, QtWidgets, Qt
-from .ribbon import command_actions
 
 # NX accent (THEME_TOKENS in shell.py) for Strata's light tokens; dark keeps Strata's own
 NX_TOKENS = {"accent": "#0B6E79", "accent_hover": "#095A63", "accent_soft": "#C7E3E7", "selected": "#C7E3E7"}
-WAIT_MS, TRIES = 250, 80            # Strata installs itself from a zero timer; allow it 20 s
-_state = {"tries": 0}
+_state = {}
 
 
 def enabled():
     return config.get().get("plm", "strata") == "strata"
 
 
-def strata_panel():
+def _boot():
     try:
         import strata.boot
+        return strata.boot
     except ImportError:
         return None
-    return strata.boot.panel()
+
+
+def _embeddable(sb):
+    return sb is not None and all(hasattr(sb, f) for f in ("configure", "on_ready", "actions"))
+
+
+def strata_panel():
+    sb = _boot()
+    return sb.panel() if sb is not None else None
 
 
 def status():
-    """For the smoke test and the Information panel."""
+    """For the smoke test."""
+    sb = _boot()
     p = strata_panel()
-    return {"enabled": enabled(), "loaded": _loaded(), "panel": p is not None, "placed": _state.get("placed", False),
-            "panel_area": _area(p), "resource_button": "action" in _state}
-
-
-def _loaded():
-    try:
-        import strata  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return {"enabled": enabled(), "loaded": sb is not None, "embedding_api": _embeddable(sb),
+            "configured_before_start": _state.get("configured_early", False), "panel": p is not None,
+            "placed": _state.get("placed", False), "panel_area": _area(p), "resource_button": "action" in _state}
 
 
 def _area(dock):
@@ -60,93 +61,70 @@ def _area(dock):
     return {Qt.LeftDockWidgetArea: "left", Qt.RightDockWidgetArea: "right"}.get(a, str(a))
 
 
+def _configure(sb):
+    sb.configure(host_toolbar=True, panel_area="left")
+
+
+def prepare():
+    """From NXStyle's InitGui, before Strata installs itself (it waits for a zero timer): NXStyle
+    provides Strata's buttons, so Strata makes no toolbar of its own and leaves the workbench alone,
+    and its panel is created on the left, where the navigators are."""
+    sb = _boot()
+    if enabled() and _embeddable(sb):
+        _configure(sb)
+        _state["configured_early"] = not sb.is_ready()
+
+
 def attach(shell):
-    """Called once NXStyle's shell is up; waits for Strata, then places it."""
-    if not enabled() or not _loaded():
+    """Called once NXStyle's shell is up."""
+    sb = _boot()
+    if not enabled() or sb is None:
         return
-    _state["shell"] = shell
-    _poll()
+    if not _embeddable(sb):
+        App.Console.PrintWarning("NXStyle: this Strata has no embedding API (freecad-strata 1f71005 or later); "
+                                 "it runs, but outside the NX layout\n")
+        return
+    if not _state.get("configured_early"):
+        _configure(sb)                       # applies live when Strata started first
+    sb.on_ready(lambda: _safe_place(shell, sb))
 
 
-def _poll():
-    p = strata_panel()
-    if p is None:
-        _state["tries"] += 1
-        if _state["tries"] < TRIES:
-            QtCore.QTimer.singleShot(WAIT_MS, _poll)
-        else:
-            App.Console.PrintWarning("NXStyle: Strata is loaded but its panel never appeared\n")
-        return
+def _safe_place(shell, sb):
     try:
-        _place(_state["shell"], p)
+        _place(shell, sb)
     except Exception:
         import traceback
         App.Console.PrintError(f"NXStyle: placing Strata failed\n{traceback.format_exc()}\n")
 
 
-def _theme(panel):
-    try:
-        from strata.ui import theme
-    except ImportError:
-        return
-    theme.LIGHT.update(NX_TOKENS)
-    panel.setStyleSheet(theme.stylesheet())
-    if hasattr(panel, "schedule_refresh"):
-        panel.schedule_refresh()
-
-
-def _resource_action(parent):
-    from .qt import QAction, QtGui
-    info = {}
-    try:
-        info = Gui.Command.get("Strata_Panel").getInfo()
-    except Exception:
-        pass
-    acts = command_actions("Strata_Panel")
-    if acts:
-        icon = acts[0].icon()
-    else:
-        icon = QtGui.QIcon(info.get("pixmap", "")) if info.get("pixmap") else QtGui.QIcon()
-    act = QAction(icon, info.get("menuText") or "Versions and history", parent)
-    act.setObjectName("NXStrataPanel")
-    act.setToolTip("Versions and history (Strata): every save, versions, workspaces, releases")
-    act.triggered.connect(lambda *_: Gui.runCommand("Strata_Panel"))
-    return act
-
-
-def _place(shell, panel):
+def _place(shell, sb):
+    from . import ribbon
+    from strata.ui import theme
     mw = Gui.getMainWindow()
-    # FreeCAD makes a command's QAction when the command first lands in a toolbar or menu; activating
-    # Strata's own workbench once does that (the way NXStyle preloads other workbenches), so the
-    # ribbon's PLM buttons and the resource bar have live actions to mirror
-    if "StrataWorkbench" in Gui.listWorkbenches():
-        shell.preload(["StrataWorkbench"])
-    _theme(panel)
-    # a navigator like the others: left tab strip, behind the Part Navigator (NX opens with that one)
+    panel = sb.panel()
+    theme.set_overrides(light=NX_TOKENS, lanes_light=[NX_TOKENS["accent"]] + list(theme.LANES_LIGHT[1:]))
+    # a navigator like the others: in the left tab strip, behind the Part Navigator (NX opens with that)
     model = mw.findChild(QtWidgets.QDockWidget, "Model")
-    if not panel.isFloating():
-        if model is not None:
-            mw.tabifyDockWidget(model, panel)       # moves it from Strata's right-hand area too
-            model.raise_()
-        else:
-            mw.addDockWidget(Qt.LeftDockWidgetArea, panel)
-        # the move can leave the right-hand area's tab strip on screen, empty, over the Top Border Bar
-        QtCore.QTimer.singleShot(0, shell.hide_stray_tab_bars)
-    # Strata's command on the resource bar. Strata keeps its fallback toolbar hidden while an action
-    # with its command's text sits on a visible toolbar; without one, Strata shows that toolbar every
-    # 2 s and NXStyle hides it again. FreeCAD makes a Python command's QAction only when the command
-    # is first added to a menu or toolbar, so the button gets its own action that runs the command.
-    if getattr(shell, "resource_bar", None) is not None:
-        act = _resource_action(shell.resource_bar)
+    if model is not None and not panel.isFloating():
+        mw.tabifyDockWidget(model, panel)
+        model.raise_()
+    # Strata's own QActions (enabled with the active project) on the resource bar and the PLM tab
+    acts = sb.actions()
+    ribbon.HOST_ACTIONS.update(acts)
+    act = acts.get("Strata_Panel")
+    if act is not None and getattr(shell, "resource_bar", None) is not None:
         shell.resource_bar.addAction(act)
         shell.resource_actions[act.text()] = act
         _state["action"] = act
-    # the PLM ribbon tab needs Strata's commands, which did not exist when the ribbon was first built
     if getattr(shell, "current_app", None):
-        shell.build_ribbon(shell.current_app)
-    # Strata re-activates the workbench while installing, which restores FreeCAD's own shortcuts
-    # and toolbars: take the NX keys back and hide what is not NX's
+        shell.build_ribbon(shell.current_app)   # the PLM buttons now have actions to mirror
+    # FreeCAD's view commands get their default keys (Home, End, Ctrl+Alt+F ...) back while Strata
+    # starts, even with Strata in host mode (measured 2026-10-12; which step does it is not known):
+    # take the NX keys back, as NXStyle does after any late-loading workbench
     shell._reclaim_keys()
-    shell.enforce_ui()
+    if not _state.get("configured_early"):
+        # Strata started before NXStyle could configure it: its toolbar and the moved panel
+        shell.enforce_ui()
+        QtCore.QTimer.singleShot(0, shell.hide_stray_tab_bars)
     _state["placed"] = True
     App.Console.PrintLog("NXStyle: Strata placed as data management\n")

@@ -63,7 +63,14 @@ def resolve(spec, known=None):
     return None
 
 
+# Actions an add-on owns for its commands (e.g. Strata's, from strata.boot.actions()): FreeCAD makes a
+# Python command's own QAction only once the command sits in a toolbar or menu, so these stand in.
+HOST_ACTIONS = {}
+
+
 def command_actions(name):
+    if name in HOST_ACTIONS:
+        return [HOST_ACTIONS[name]]
     try:
         cmd = Gui.Command.get(name)
     except Exception:

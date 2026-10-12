@@ -146,8 +146,13 @@ class Smoke:
         self.check("no empty dock tab strip left on screen (moving the panel)", not stray, stray)
         self.check("resource bar button for Versions and history", st["resource_button"]
                    and "Versions and history" in self.shell.resource_actions, list(self.shell.resource_actions))
+        import strata.boot as sb
+        self.check("Strata set up for NX before it started: no toolbar of its own, panel made on the left",
+                   st["configured_before_start"] and mw.findChild(QtWidgets.QToolBar, "StrataTools") is None
+                   and sb.host_provides_toolbar(), st)
         from .ribbon import CommandButton
-        plm_buttons = {b.command: (b.action is not None, b.isEnabled()) for b in
+        acts = sb.actions()
+        plm_buttons = {b.command: (b.action is acts.get(b.command), b.isEnabled()) for b in
                        self.shell.ribbon.findChildren(CommandButton) if b.command.startswith("Strata_")}
         self.check("PLM ribbon tab with Strata's commands, live and enabled", self.shell.ribbon.has_tab("PLM")
                    and len(plm_buttons) == 5 and all(a for a, _ in plm_buttons.values())

@@ -42,4 +42,10 @@ def schedule():
     # The NX profile is already configured; skip FreeCAD's first-run welcome panel
     App.ParamGet(START).SetBool("FirstStart2024", False)
     release_overlays()
+    try:   # before Strata installs itself (from its own zero timer): NX layout settings for it
+        from . import plm
+        plm.prepare()
+    except Exception:
+        import traceback
+        App.Console.PrintError("NXStyle: preparing Strata failed:\n" + traceback.format_exc() + "\n")
     QtCore.QTimer.singleShot(0, _start)
