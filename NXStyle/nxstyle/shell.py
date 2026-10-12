@@ -629,21 +629,25 @@ class Shell(QtCore.QObject):
         empty document a Body with its origin planes shown, ready to pick."""
         names = set(App.listDocuments())
         new = names - self._known_docs
-        self._known_docs = names
         if not self.cfg.get("new_part_datum", True) or not self.current_app \
                 or self.current_app.get("id") not in ("modeling", "assemblies"):
+            self._known_docs = names
             return
         for name in new:
             doc = App.getDocument(name)
+            gdoc = Gui.getDocument(name)
             if doc.Objects or doc.FileName:
+                self._known_docs.add(name)
                 continue
-            body = doc.addObject("PartDesign::Body", "Body")
-            try:
-                Gui.getDocument(name).ActiveView.setActiveObject("pdbody", body)
-                body.Origin.ViewObject.Visibility = True
-            except Exception:
-                pass
-            doc.recompute()
+            views = gdoc.mdiViewsOfType("Gui::View3DInventor") if gdoc else []
+            if not views or App.ActiveDocument is not doc:
+                continue          # view not ready yet: try again on the next tick
+            # The origin planes stay hidden: in FreeCAD 1.1.4 a visible Body origin
+            # makes the whole Body vanish from the 3D view after a view fit (seen in
+            # plain FreeCAD too). FreeCAD shows the planes while you pick a sketch plane.
+            Gui.runCommand("PartDesign_Body")
+            self._known_docs.add(name)
+        self._known_docs &= names
 
     def _tick(self):
         self._feature_flow()

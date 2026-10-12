@@ -238,10 +238,9 @@ class Replay:
     def a_extrude(self):
         new = set(App.listDocuments()) - self._docs_before
         body = self.body()
-        origin_shown = bool(body and body.Origin.ViewObject.Visibility)
-        self.step("File > New (Ctrl+N), Model template", "Ctrl+N",
-                  SAME if new and body and origin_shown else FAIL,
-                  f"new document {sorted(new)}; Body with origin planes shown = {origin_shown}")
+        self.step("File > New (Ctrl+N), Model template", "Ctrl+N", SAME if new and body else FAIL,
+                  f"new document {sorted(new)} with a Body; its datum planes appear when a plane is "
+                  "picked (kept hidden otherwise: FreeCAD 1.1.4 hides the part when they stay on)")
         doc = App.ActiveDocument
         unit = getattr(doc, "UnitSystem", None)
         if unit is not None:
@@ -338,19 +337,20 @@ class Replay:
         self.wait = 600
 
     def a_face_pick(self):
-        # top face of the horizontal leg (normal +Y at y = 0.75 in)
+        # top face of the vertical leg (normal +Y at y = 2.5 in); the slot is cut down into it.
+        # (NotebookLM's step list leaves the slot's place open; this keeps the part one solid.)
         doc = App.ActiveDocument
         body = self.body()
         tip = body.Tip
         face = None
         for i, f in enumerate(tip.Shape.Faces, start=1):
             n = f.normalAt(0, 0)
-            if abs(n.y - 1) < 1e-6 and abs(f.CenterOfMass.y - 0.75 * IN) < 1e-6:
+            if abs(n.y - 1) < 1e-6 and abs(f.CenterOfMass.y - 2.5 * IN) < 1e-6:
                 face = f"Face{i}"
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection(doc.Name, body.Name, f"{tip.Name}.{face}")
         b, where = self.click_ribbon("Extrude (Subtract)")
-        self.step("Extrude, pick the leg's face as sketch plane, Boolean Subtract",
+        self.step("Extrude, pick the top face as sketch plane, Boolean Subtract",
                   f"select face + ribbon '{where} > Extrude (Subtract)'",
                   DIFFERS if b is not None else MISSING,
                   "FreeCAD has no Boolean option in Extrude: the subtracting extrude is its own button "
@@ -364,8 +364,9 @@ class Replay:
             raise RuntimeError("tutorial A: no sketch on the face")
         self._sk2 = sk
         inv = sk.getGlobalPlacement().inverse()
-        c1 = inv.multVec(App.Vector(1.25 * IN, 0.75 * IN, -0.2 * IN))
-        c2 = inv.multVec(App.Vector(2.25 * IN, 0.75 * IN, 2.7 * IN))
+        # 1.00 in wide (along Z, 0.75 in from the end), across the whole 0.75 in leg
+        c1 = inv.multVec(App.Vector(-0.2 * IN, 2.5 * IN, 0.75 * IN))
+        c2 = inv.multVec(App.Vector(0.95 * IN, 2.5 * IN, 1.75 * IN))
         self.frame_sketch(sk, (c1.x + c2.x) / 2, (c1.y + c2.y) / 2, 4.5 * IN)
         QtWidgets.QApplication.processEvents()
         self.key("R")
@@ -394,18 +395,19 @@ class Replay:
         open_ = bool(Gui.Control.activeDialog()) and pocket is not None
         self.step("Finish Sketch returns to the (subtract) Extrude dialog", "Ctrl+Q",
                   SAME if open_ else FAIL, f"dialog open = {open_}")
-        mode = self.set_combo("mode", "through")
+        field = self.set_quantity("length", 0.75 * IN)
         self.step("Reverse Direction into the solid", "-", DIFFERS,
                   "not needed: FreeCAD's subtracting extrude cuts into the solid by default")
         self.mb2_click()
         QtWidgets.QApplication.processEvents()
         App.ActiveDocument.recompute()
         base = (2.5 * 2.5 - 1.75 * 1.75) * 2.5
-        want = (base - 1.0 * 0.75 * 2.5) * IN ** 3
+        want = (base - 0.75 * 1.0 * 0.75) * IN ** 3
         got = self.solid_volume()
-        ok = abs(got - want) < 1e-3 * want and not Gui.Control.activeDialog()
-        self.step("End = Through All, OK", f"'{mode}' chosen, MB2 = OK", SAME if ok else FAIL,
-                  f"volume {got / IN**3:.4f} in^3, expected {want / IN**3:.4f}")
+        solids = len(self.body().Shape.Solids)
+        ok = abs(got - want) < 1e-3 * want and solids == 1 and not Gui.Control.activeDialog()
+        self.step("Slot depth 0.75, OK", f"'{field}' = 0.75 in, MB2 = OK", SAME if ok else FAIL,
+                  f"volume {got / IN**3:.4f} in^3, expected {want / IN**3:.4f}; {solids} solid(s)")
         self.wait = 400
 
     def fit(self):
@@ -430,34 +432,9 @@ class Replay:
                         row[prop] = f"? {e}"
             rows.append(row)
         self.info[f"display {name}"] = rows
-        self.info[f"camera {name}"] = str(self.view().getCamera())[:400]
-        gdoc = Gui.ActiveDocument
-        vp = gdoc.getInEdit()
-        self.info[f"in edit {name}"] = vp.Object.Name if vp is not None else None
-        try:
-            from pivy import coin
-            scene = self.view().getSceneGraph()
-            found = {}
-            for o in App.ActiveDocument.Objects:
-                vo = getattr(o, "ViewObject", None)
-                if vo is None or not vo.Visibility or o.TypeId.startswith("App::"):
-                    continue
-                sa = coin.SoSearchAction()
-                sa.setNode(vo.RootNode)
-                sa.apply(scene)
-                found[o.Name] = sa.getPath() is not None
-            self.info[f"in scene graph {name}"] = found
-        except Exception as e:
-            self.info[f"in scene graph {name}"] = str(e)
         self.shot(name + ".png")
         try:
             self.view().saveImage(os.path.join(OUT, name + "_3d.png"), 1200, 800, "Current")
-            body = self.body()
-            body.Origin.ViewObject.Visibility = False
-            QtWidgets.QApplication.processEvents()
-            self.view().saveImage(os.path.join(OUT, name + "_3d_no_origin.png"), 1200, 800, "Current")
-            self.shot(name + "_no_origin.png")
-            body.Origin.ViewObject.Visibility = True
         except Exception as e:
             self.info[name] = str(e)
         self.wait = 300

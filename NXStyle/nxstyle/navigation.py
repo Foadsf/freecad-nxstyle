@@ -332,7 +332,6 @@ class NxMouse(QtCore.QObject):
         return False
 
     def _handle(self, t, ev):
-        self.events = getattr(self, "events", 0) + 1
         own = prefs.uses_own_navigation(self.cfg)
         button = ev.button()
         p = pos(ev)
