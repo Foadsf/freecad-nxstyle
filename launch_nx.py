@@ -289,11 +289,35 @@ def build_command(install: Install, files: list[str], passthrough: list[str]) ->
 # --------------------------------------------------------------------------
 # Hidden desktop (Windows): run the self-test without windows on the user's screen
 # --------------------------------------------------------------------------
-def run_on_hidden_desktop(cmd: list[str], env: dict, timeout_s: int) -> int | None:
+# A test run gets a hard memory ceiling. On 2026-10-12 a tutorial replay grew
+# FreeCAD past the whole commit limit (RAM + page file, ~59 GB) within a minute,
+# twice; Windows then could not start dwm, explorer or even WerFault
+# (0xc000012d) and the machine had to be powered off. The 600 s timeout never
+# got a chance. Inside a job object the kernel refuses FreeCAD's allocations
+# beyond the ceiling and the launcher ends the run, so the rest of the machine
+# keeps working.
+HARNESS_MEMORY_GB = 4.0
+STATUS_NO_MEMORY = 0xC0000017      # exit code of a run ended at the memory ceiling
+HARNESS_MUTEX = "Local\\FreeCAD-NXStyle-harness"
+
+
+class HarnessBusy(RuntimeError):
+    """Another smoke/tutorial run is active; runs never overlap."""
+
+
+def run_on_hidden_desktop(cmd: list[str], env: dict, timeout_s: int,
+                          max_memory_gb: float = HARNESS_MEMORY_GB, hidden: bool = True,
+                          stats: dict | None = None) -> int | None:
     """Start cmd on a separate, never-shown Win32 desktop and wait for it.
 
-    Returns the exit code, or None on timeout. The windows exist and paint, but
-    on a desktop nobody is looking at, so they cannot steal focus or block input.
+    Returns the exit code, None on timeout, or STATUS_NO_MEMORY when the run hit
+    max_memory_gb. The windows exist and paint, but on a desktop nobody is
+    looking at, so they cannot steal focus or block input. The process tree runs
+    in a job object: memory ceiling, killed when the launcher exits for any
+    reason, and no crash dialogs. hidden=False runs on the normal desktop with
+    the same limits. stats, if given, receives the peak memory in MB; Windows
+    counts a refused request in that peak, so after a stop it can exceed the limit
+    (measured: an 8 GB commit refused under a 4 GB ceiling reads 8217 MB).
     """
     import ctypes
     from ctypes import wintypes
@@ -303,6 +327,30 @@ def run_on_hidden_desktop(cmd: list[str], env: dict, timeout_s: int) -> int | No
     user32.CreateDesktopW.restype = wintypes.HANDLE
     user32.CreateDesktopW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR, ctypes.c_void_p,
                                       wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p]
+    kernel32.CreateMutexW.restype = wintypes.HANDLE
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR]
+    kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+    kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+    kernel32.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
+                                                   wintypes.DWORD, ctypes.c_void_p]
+    kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    kernel32.ReleaseMutex.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+
+    class BASIC_LIMIT(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                    ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                    ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                    ("SchedulingClass", wintypes.DWORD)]
+
+    class EXTENDED_LIMIT(ctypes.Structure):
+        _fields_ = [("Basic", BASIC_LIMIT), ("IoInfo", ctypes.c_uint64 * 6),
+                    ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
 
     class STARTUPINFOW(ctypes.Structure):
         _fields_ = [("cb", wintypes.DWORD), ("lpReserved", wintypes.LPWSTR), ("lpDesktop", wintypes.LPWSTR),
@@ -317,35 +365,83 @@ def run_on_hidden_desktop(cmd: list[str], env: dict, timeout_s: int) -> int | No
         _fields_ = [("hProcess", wintypes.HANDLE), ("hThread", wintypes.HANDLE),
                     ("dwProcessId", wintypes.DWORD), ("dwThreadId", wintypes.DWORD)]
 
+    # One run at a time: three FreeCADs started side by side were the first of
+    # the two machine-wide memory exhaustions.
+    mutex = kernel32.CreateMutexW(None, False, HARNESS_MUTEX)
+    if not mutex:
+        raise OSError(ctypes.get_last_error(), "CreateMutexW failed")
+    if kernel32.WaitForSingleObject(mutex, 0) not in (0, 0x80):   # WAIT_OBJECT_0, WAIT_ABANDONED
+        kernel32.CloseHandle(mutex)
+        raise HarnessBusy("another NX-style smoke/tutorial run is active; wait for it to finish")
+
+    limit = int(max_memory_gb * 1024 ** 3)
+    job = kernel32.CreateJobObjectW(None, None)
+    if not job:
+        kernel32.ReleaseMutex(mutex)
+        kernel32.CloseHandle(mutex)
+        raise OSError(ctypes.get_last_error(), "CreateJobObjectW failed")
+    info = EXTENDED_LIMIT()
+    # JOB_MEMORY | DIE_ON_UNHANDLED_EXCEPTION (no WerFault dialog) | KILL_ON_JOB_CLOSE
+    info.Basic.LimitFlags = 0x0200 | 0x0400 | 0x2000
+    info.JobMemoryLimit = limit
+    if not kernel32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info)):
+        raise OSError(ctypes.get_last_error(), "SetInformationJobObject failed")
+
+    def peak() -> int:
+        q = EXTENDED_LIMIT()
+        kernel32.QueryInformationJobObject(job, 9, ctypes.byref(q), ctypes.sizeof(q), None)
+        return q.PeakJobMemoryUsed
+
     name = f"NXStyleSmoke{os.getpid()}"
-    desk = user32.CreateDesktopW(name, None, None, 0, 0x10000000, None)  # GENERIC_ALL
-    if not desk:
+    desk = user32.CreateDesktopW(name, None, None, 0, 0x10000000, None) if hidden else None  # GENERIC_ALL
+    if hidden and not desk:
         raise OSError(ctypes.get_last_error(), "CreateDesktopW failed")
     try:
         si = STARTUPINFOW()
         si.cb = ctypes.sizeof(si)
-        si.lpDesktop = f"WinSta0\\{name}"
+        si.lpDesktop = f"WinSta0\\{name}" if hidden else None
         pi = PROCESS_INFORMATION()
         block = "".join(f"{k}={v}\0" for k, v in env.items()) + "\0"
         cmdline = subprocess.list2cmdline(cmd)
+        # Hard-error and GP-fault boxes are inherited settings: none reach the screen.
+        kernel32.SetErrorMode(0x0001 | 0x0002)   # SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX
         ok = kernel32.CreateProcessW(None, ctypes.create_unicode_buffer(cmdline), None, None, False,
-                                     0x00000400,  # CREATE_UNICODE_ENVIRONMENT
+                                     0x00000400 | 0x00000004,  # CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED
                                      ctypes.create_unicode_buffer(block), None,
                                      ctypes.byref(si), ctypes.byref(pi))
         if not ok:
             raise OSError(ctypes.get_last_error(), "CreateProcessW failed")
         try:
-            if kernel32.WaitForSingleObject(pi.hProcess, timeout_s * 1000) != 0:
+            # In the job before its first instruction, so every child is in it too.
+            if not kernel32.AssignProcessToJobObject(job, pi.hProcess):
+                err = ctypes.get_last_error()
                 kernel32.TerminateProcess(pi.hProcess, 3)
-                return None
+                raise OSError(err, "AssignProcessToJobObject failed")
+            kernel32.ResumeThread(pi.hThread)
+            deadline = time.monotonic() + timeout_s
+            while kernel32.WaitForSingleObject(pi.hProcess, 250) != 0:
+                if peak() >= limit - 64 * 1024 ** 2:
+                    kernel32.TerminateJobObject(job, STATUS_NO_MEMORY)
+                    kernel32.WaitForSingleObject(pi.hProcess, 10_000)
+                    break
+                if time.monotonic() > deadline:
+                    kernel32.TerminateJobObject(job, 3)
+                    return None
             code = wintypes.DWORD()
             kernel32.GetExitCodeProcess(pi.hProcess, ctypes.byref(code))
-            return code.value
+            return STATUS_NO_MEMORY if peak() >= limit - 64 * 1024 ** 2 else code.value
         finally:
+            if stats is not None:
+                stats["peak_mb"] = peak() // 1024 ** 2
+                stats["limit_mb"] = limit // 1024 ** 2
             kernel32.CloseHandle(pi.hThread)
             kernel32.CloseHandle(pi.hProcess)
     finally:
-        user32.CloseDesktop(desk)
+        if desk:
+            user32.CloseDesktop(desk)
+        kernel32.CloseHandle(job)          # KILL_ON_JOB_CLOSE: nothing of the run survives
+        kernel32.ReleaseMutex(mutex)
+        kernel32.CloseHandle(mutex)
 
 
 # --------------------------------------------------------------------------
@@ -385,6 +481,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
+    ap.add_argument("--max-memory-gb", type=float, default=HARNESS_MEMORY_GB,
+                    help=f"with --smoke-test/--tutorial on Windows: end the run when FreeCAD uses more "
+                         f"(default {HARNESS_MEMORY_GB:g})")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -425,8 +524,21 @@ def main(argv: list[str] | None = None) -> int:
     print(f"NX profile: {profile.resolve()}")
 
     if harness:
-        if os.name == "nt" and not args.visible:
-            code = run_on_hidden_desktop(cmd, env, timeout_s=600)
+        if os.name == "nt":
+            stats = {}
+            try:
+                code = run_on_hidden_desktop(cmd, env, timeout_s=600, max_memory_gb=args.max_memory_gb,
+                                             hidden=not args.visible, stats=stats)
+            except HarnessBusy as e:
+                print(f"{harness} run refused: {e}", file=sys.stderr)
+                return 5
+            if code == STATUS_NO_MEMORY:
+                # the job's peak counter includes the request it refused
+                print(f"{harness} run stopped: FreeCAD asked for {stats.get('peak_mb', 0)} MB in total, over the "
+                      f"{args.max_memory_gb:g} GB ceiling; the request was refused and the run ended, "
+                      f"the rest of the machine was not affected", file=sys.stderr)
+                return 4
+            print(f"peak memory: {stats.get('peak_mb', 0)} MB of {stats.get('limit_mb', 0)} MB allowed")
             if code is None:
                 print(f"{harness} run timed out", file=sys.stderr)
                 return 3

@@ -83,5 +83,60 @@ class EnvTests(unittest.TestCase):
         self.assertTrue((launch_nx.MODULE_DIR / "InitGui.py").is_file())
 
 
+@unittest.skipUnless(os.name == "nt", "job objects are Windows-only")
+class MemoryCeilingTests(unittest.TestCase):
+    """A runaway test run must stop at its ceiling instead of exhausting the machine."""
+
+    def run_child(self, code, gb=0.5, stats=None):
+        # hidden=False: same job limits; a console child opens no window either way
+        return launch_nx.run_on_hidden_desktop([sys.executable, "-c", code], dict(os.environ), timeout_s=60,
+                                               max_memory_gb=gb, hidden=False, stats=stats)
+
+    def test_runaway_allocation_is_stopped_at_the_ceiling(self):
+        stats = {}
+        code = self.run_child("b = []\nwhile True: b.append(bytearray(64 << 20))", stats=stats)
+        self.assertEqual(code, launch_nx.STATUS_NO_MEMORY)
+        self.assertGreaterEqual(stats["peak_mb"], stats["limit_mb"] - 64)
+
+    def test_single_huge_request_is_refused_not_granted(self):
+        # FreeCAD's runaway on 2026-10-12 asked for ~15 GB at once
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict = Path(tmp) / "verdict.txt"
+            probe = ("import ctypes\nk = ctypes.WinDLL('kernel32')\nk.VirtualAlloc.restype = ctypes.c_void_p\n"
+                     "k.VirtualAlloc.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_uint32]\n"
+                     "p = k.VirtualAlloc(None, 2 << 30, 0x3000, 4)\n"
+                     f"open({str(verdict)!r}, 'w').write('granted' if p else 'refused')")
+            self.assertEqual(self.run_child(probe, gb=0.5), launch_nx.STATUS_NO_MEMORY)
+            self.assertEqual(verdict.read_text(), "refused")
+
+    def test_modest_run_is_left_alone(self):
+        stats = {}
+        self.assertEqual(self.run_child("b = bytearray(50 << 20)", stats=stats), 0)
+        self.assertGreater(stats["peak_mb"], 40)        # the instrument measured the child
+
+    def test_second_concurrent_run_is_refused(self):
+        import ctypes
+        k = ctypes.WinDLL("kernel32", use_last_error=True)
+        k.CreateMutexW.restype = ctypes.c_void_p
+        held = k.CreateMutexW(None, True, launch_nx.HARNESS_MUTEX)
+        try:
+            # a different thread must hold it: a Win32 mutex is re-entrant for its owner
+            import threading
+            result = {}
+
+            def other():
+                try:
+                    self.run_child("pass")
+                except launch_nx.HarnessBusy:
+                    result["busy"] = True
+            t = threading.Thread(target=other)
+            t.start()
+            t.join(30)
+            self.assertTrue(result.get("busy"))
+        finally:
+            k.ReleaseMutex(ctypes.c_void_p(held))
+            k.CloseHandle(ctypes.c_void_p(held))
+
+
 if __name__ == "__main__":
     unittest.main()
