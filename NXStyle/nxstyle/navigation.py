@@ -425,6 +425,64 @@ class NxMouse(QtCore.QObject):
             self.replay(QtCore.QEvent.MouseButtonRelease, Qt.RightButton, self.rmb_pos)
 
 
+class Mb2OkAnywhere(QtCore.QObject):
+    """MB2 click = OK in views that are not 3D views (e.g. TechDraw sheets).
+
+    3D views have their own NxMouse filter; this one only watches for a still
+    middle click inside the document area while a task dialog is open, and
+    never consumes the event, so MB2 drag-to-pan in drawings keeps working.
+    """
+
+    def __init__(self, manager):
+        super().__init__(manager)
+        self.manager = manager
+        self.press = None
+        self.trace = ""
+
+    def _in_document_area(self, w):
+        while w is not None:
+            if isinstance(w, QtWidgets.QMdiArea):
+                return True
+            w = w.parentWidget()
+        return False
+
+    def eventFilter(self, obj, ev):
+        t = ev.type()
+        if t not in (QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonRelease):
+            return False
+        try:
+            if ev.button() != Qt.MiddleButton or not isinstance(obj, QtWidgets.QWidget):
+                return False
+            if id(obj) in self.manager.filters or not self._in_document_area(obj):
+                return False
+            if t == QtCore.QEvent.MouseButtonPress:
+                # an ignored press propagates to the parents and passes this filter again
+                self.press = (obj, global_pos(ev), time.monotonic())
+                self.trace = f"press on {obj.metaObject().className()}"
+                return False
+            if self.press and self._related(self.press[0], obj):
+                moved = (global_pos(ev) - self.press[1]).manhattanLength()
+                quick = time.monotonic() - self.press[2] < 0.6
+                self.press = None
+                if moved <= MOVE_THRESHOLD and quick and config.get().get("mb2_click_is_ok", True):
+                    ok = accept_task_dialog()
+                    self.trace = f"click on {obj.metaObject().className()}: OK pressed {ok}"
+                    if ok:
+                        status("OK (MB2)")
+                else:
+                    self.trace = f"not a click: moved {moved}, quick {quick}"
+        except Exception as e:
+            self.trace = f"error {e}"
+        return False
+
+    @staticmethod
+    def _related(a, b):
+        try:
+            return a is b or a.isAncestorOf(b) or b.isAncestorOf(a)
+        except RuntimeError:   # widget already deleted
+            return False
+
+
 class NavigationManager(QtCore.QObject):
     """Attaches NxMouse to every 3D view, including ones opened later."""
 
@@ -432,6 +490,8 @@ class NavigationManager(QtCore.QObject):
         super().__init__(parent)
         self.filters = {}
         self.mode = None
+        self.mb2_anywhere = Mb2OkAnywhere(self)
+        QtWidgets.QApplication.instance().installEventFilter(self.mb2_anywhere)
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.scan)
         self.timer.start(800)

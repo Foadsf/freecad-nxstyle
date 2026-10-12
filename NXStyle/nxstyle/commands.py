@@ -524,6 +524,9 @@ def register(apps):
                                               "PartDesign_Revolution"),
         "NXStyle_RevolveSubtract": SketchFirstFeature("PartDesign_Groove", "Revolve (Subtract)",
                                                       "Revolve a sketch and subtract it", "PartDesign_Groove"),
+        "NXStyle_Hole": SketchFirstFeature("PartDesign_Hole", "Hole",
+                                           "Hole: pick a face or plane, place the hole centres (circles), "
+                                           "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
     for key in config.BACKGROUNDS:
         table[f"NXStyle_Background_{key}"] = Background(key)

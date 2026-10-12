@@ -66,7 +66,9 @@ This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothi
 python launch_nx.py --tutorial out
 ```
 
-Replays two beginner exercises from NX textbooks through the UI: keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+Replays four exercises from NX textbooks through the UI (`--tutorials C,D` picks some): keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, a circular pattern and a drawing with a section view. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+
+Self-test and tutorial runs are capped at 4 GB of memory (`--max-memory-gb`), run one at a time, and end with exit code 4 if FreeCAD asks for more.
 
 ```bash
 python -m unittest discover -s tests

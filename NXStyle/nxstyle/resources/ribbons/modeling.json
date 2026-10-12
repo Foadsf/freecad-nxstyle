@@ -17,7 +17,7 @@
       {"name": "Feature", "items": [
         {"cmd": ["NXStyle_Extrude", "PartDesign_Pad"], "label": "Extrude", "size": "large"},
         {"cmd": ["NXStyle_Revolve", "PartDesign_Revolution"], "label": "Revolve", "size": "large"},
-        {"cmd": "PartDesign_Hole", "label": "Hole", "size": "large"},
+        {"cmd": ["NXStyle_Hole", "PartDesign_Hole"], "label": "Hole", "size": "large"},
         {"cmd": ["NXStyle_ExtrudeSubtract", "PartDesign_Pocket"], "label": "Extrude (Subtract)"},
         {"cmd": ["NXStyle_RevolveSubtract", "PartDesign_Groove"], "label": "Revolve (Subtract)"},
         {"cmd": "PartDesign_Boolean", "label": "Unite / Subtract"},

@@ -478,6 +478,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
+    ap.add_argument("--tutorials", default="A,B,C,D",
+                    help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
+                         "C Rod-Guide, D Pulley with drawing)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
@@ -504,7 +507,8 @@ def main(argv: list[str] | None = None) -> int:
         out = (args.smoke_test or args.tutorial).resolve()
         out.mkdir(parents=True, exist_ok=True)
         profile = args.profile or Path(tempfile.mkdtemp(prefix=f"nxstyle-{harness}-"))
-        extra = {f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1"}
+        extra = {f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1",
+                 "NXSTYLE_TUTORIALS": args.tutorials}
         reset = True
     else:
         ver = f"{install.version[0]}.{install.version[1]}" if install.version else "unknown"
