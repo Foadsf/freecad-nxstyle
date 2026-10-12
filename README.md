@@ -1,14 +1,20 @@
 # FreeCAD NX-Style
 
-Run your normal, unmodified FreeCAD with a user interface laid out and behaving like Siemens NX: ribbon, Top Border Bar, Resource Bar, NX mouse buttons, NX shortcuts, NX names. There is no fork, no patch, and your usual FreeCAD settings are never touched.
+Run your normal, unmodified FreeCAD with a user interface laid out and behaving like Siemens NX: ribbon, Top Border Bar, Resource Bar, NX mouse buttons, NX shortcuts, NX names. Data management, the job Teamcenter does next to NX, comes from [Strata](https://github.com/Foadsf/freecad-strata): every save recorded, versions, workspaces, releases. There is no fork, no patch, and your usual FreeCAD settings are never touched.
+
+```bash
+git clone --recursive https://github.com/Foadsf/freecad-nxstyle
+```
 
 ```bash
 python launch_nx.py
 ```
 
+Strata is a git submodule (`vendor/freecad-strata`). In a copy cloned without `--recursive`, fetch it with `git submodule update --init`; until then NXStyle starts without it and the launcher says so.
+
 ## How it stays out of your normal FreeCAD
 
-FreeCAD reads its user folders from `FREECAD_USER_HOME`, `FREECAD_USER_DATA` and `FREECAD_USER_TEMP` (the folders must already exist; FreeCAD ignores the variables otherwise). The launcher points them at a private profile: `%LOCALAPPDATA%\FreeCAD-NXStyle\profile-<version>` on Windows, `~/.local/share/freecad-nxstyle/…` on Linux, `~/Library/Application Support/FreeCAD-NXStyle/…` on macOS. It loads the `NXStyle` module from this folder with FreeCAD's `-M` switch. Nothing is installed into FreeCAD or into your normal `%APPDATA%\FreeCAD`. The launcher refuses any profile path that overlaps that folder. Your normal add-ons do not load in the NX profile, by design.
+FreeCAD reads its user folders from `FREECAD_USER_HOME`, `FREECAD_USER_DATA` and `FREECAD_USER_TEMP` (the folders must already exist; FreeCAD ignores the variables otherwise). The launcher points them at a private profile: `%LOCALAPPDATA%\FreeCAD-NXStyle\profile-<version>` on Windows, `~/.local/share/freecad-nxstyle/…` on Linux, `~/Library/Application Support/FreeCAD-NXStyle/…` on macOS. It loads the `NXStyle` module from this folder with FreeCAD's `-M` switch, and Strata from `vendor/freecad-strata` the same way (unless a Strata is already installed in the NX profile's own `Mod` folder, so it never loads twice). Nothing is installed into FreeCAD or into your normal `%APPDATA%\FreeCAD`. The launcher refuses any profile path that overlaps that folder. Your normal add-ons do not load in the NX profile, by design.
 
 Delete the profile folder (or run `--reset-profile`) and it is gone.
 
@@ -16,10 +22,11 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 
 | NX | Here |
 |---|---|
-| Ribbon: File, Home, Assemblies, Curve, Surface, Analysis, View, Render, Tools, Application | Same tabs and groups, with NX command names (Extrude, Edge Blend, Pattern Feature, WAVE Linker, …) driving FreeCAD's real commands. Tooltips also show the FreeCAD name. |
+| Ribbon: File, Home, Assemblies, Curve, Surface, Analysis, View, Render, Tools, Application | Same tabs (plus PLM, see Teamcenter below) and groups, with NX command names (Extrude, Edge Blend, Pattern Feature, WAVE Linker, …) driving FreeCAD's real commands. Tooltips also show the FreeCAD name. |
 | Quick Access Toolbar, Command Finder | Left and right of the tab row. The finder searches NX and FreeCAD names and shows where each command lives. |
 | Top Border Bar | Menu button (all FreeCAD menus), Type Filter that really restricts picking, selection tools |
-| Resource Bar | Part Navigator, History (recent parts), Information, Journal (Python console), Selection |
+| Resource Bar | Part Navigator, History (recent parts), Information, Journal (Python console), Selection, Versions and history (Strata) |
+| Teamcenter (data management) | [Strata](https://github.com/Foadsf/freecad-strata), on by default: every save is recorded with a plain-language entry, versions are named snapshots, workspaces hold alternatives, Compare shows what changed (also in 3D), releases carry a part number, revision letter and approval, and Sync shares a project through a shared folder or a Git server. Its panel sits with the navigators on the left; the PLM ribbon tab has Versions and History, Create Version, Compare, Releases and Sync. Needs `git` on the PATH. |
 | Applications | Modeling (PartDesign), Drafting (TechDraw), Assemblies, Shape Studio, Pre/Post (FEM), Manufacturing (CAM), … Applications without a hand-made ribbon get one generated from their workbench toolbars. |
 | Feature workflow | Extrude (X) or Revolve with nothing selected: pick a plane, sketch, and Finish Sketch (Ctrl+Q) carries straight on into the feature dialog. A new part starts with a Body ready to sketch on. |
 | Sketch task environment | Contextual **Sketch** tab with Finish Sketch, Profile, Rapid Dimension, constraints; MB2 ends the active curve tool |
@@ -35,6 +42,21 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 **Look:** one NX-light theme layered on FreeCAD's own *FreeCAD Light* stylesheet, with a single accent colour and its tints, original line icons on the Resource Bar, the left panels as one tab strip, and document tabs above the graphics window. The colour tokens are listed at the top of `NXStyle/nxstyle/resources/nx_theme.qss`. Set `"theme": "none"` to keep FreeCAD's look.
 
 **Tools › FreeCAD Menus and Toolbars** brings back FreeCAD's own menu bar and toolbars at any time.
+
+## Screenshots
+
+All taken by the tutorial replay and the self-test on a hidden desktop, in FreeCAD 1.1.4 with NXStyle (see [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md) for how each part was built).
+
+![Shaft Support assembly in the Assemblies application: NX constraint names on the ribbon, the assembly in the Part Navigator](docs/tutorial-G-shaft-support.png)
+
+| | |
+|---|---|
+| ![GD&T plate drawing: datums A, B, C, basic dimensions, feature control frames](docs/tutorial-H-gdt-drawing.png) | ![Pulley drawing: right view and section A-A](docs/tutorial-D-drawing.png) |
+| GD&T drawing with NXStyle's Feature Control Frame and Datum Feature Symbol | Drafting: base view and section view |
+| ![Saddle Bracket with renamed features in the Part Navigator](docs/tutorial-E-saddle-bracket.png) | ![Dryer housing: shell, edge blends and a 5 × 10 vent pattern](docs/tutorial-F-dryer-housing.png) |
+| Modeling: renamed features, design changes, material and mass | Shell, Edge Blend and Pattern Feature |
+| ![Gasket with an associative 15 mm offset cut](docs/tutorial-I-gasket.png) | ![Strata's Versions and history panel among the navigators, and the PLM ribbon tab](docs/strata-plm.png) |
+| Sketch Extend, Trim, Fillet and an associative offset | Strata: versions and history, PLM tab |
 
 ## What it is not
 
@@ -54,7 +76,11 @@ python launch_nx.py --freecad "C:\Program Files\FreeCAD 1.1\bin\freecad.exe" par
 python launch_nx.py --reset-profile
 ```
 
-Settings live in `nxstyle.json` inside the profile's `config` folder, which is created on first start. You can change the navigation (`"nx"` = this project's mouse handling on any FreeCAD version, `"native"` = FreeCAD 1.1's own Siemens NX style), labels (`"nx"` or `"freecad"`), units (`"metric"`, the default: millimetres and kilograms, and an imperial schema is switched back; `"freecad"` leaves FreeCAD's choice alone), colours, background, hold delays, and whether the feature dialog floats over the graphics window.
+```bash
+python launch_nx.py --no-strata
+```
+
+Settings live in `nxstyle.json` inside the profile's `config` folder, which is created on first start. You can change the navigation (`"nx"` = this project's mouse handling on any FreeCAD version, `"native"` = FreeCAD 1.1's own Siemens NX style), labels (`"nx"` or `"freecad"`), units (`"metric"`, the default: millimetres and kilograms, and an imperial schema is switched back; `"freecad"` leaves FreeCAD's choice alone), colours, background, hold delays, whether the feature dialog floats over the graphics window, and data management (`"plm": "strata"`, the default, or `"none"`).
 
 Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry can list several candidate names (the first one that exists wins), so one file serves FreeCAD 1.0 and 1.1. Entries marked `"optional": true` exist only in newer FreeCAD versions.
 
@@ -64,13 +90,13 @@ Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry 
 python launch_nx.py --smoke-test out
 ```
 
-This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 49 behaviours. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
+This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 57 behaviours, Strata's start and placement among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
 python launch_nx.py --tutorial out
 ```
 
-Replays eight exercises from NX and GD&T textbooks through the UI (`--tutorials G,H` picks some): keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, and a GD&T drawing. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+Replays eleven exercises from NX, GD&T and engineering-graphics textbooks through the UI (`--tutorials G,H` picks some): keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, a GD&T drawing, sketch Extend/Trim/Fillet and an associative offset, constraints with the solver's degree-of-freedom messages and dimension formulas, and a part driven by a table of expressions. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
 
 Self-test and tutorial runs are capped at 4 GB of memory (`--max-memory-gb`), run one at a time, and end with exit code 4 if FreeCAD asks for more.
 
@@ -88,4 +114,4 @@ Known FreeCAD 1.1.4 issue: a PartDesign Body whose origin planes stay visible di
 
 ## Licence and trademarks
 
-[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Siemens and NX are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.
+[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata is a separate project under the same licence, included as a submodule. Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.

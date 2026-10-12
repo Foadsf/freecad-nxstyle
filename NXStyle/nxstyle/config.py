@@ -47,6 +47,7 @@ DEFAULTS = {
     "default_application": "modeling",
     "new_part_datum": True,            # a new empty part starts with a Body (NX Model template)
     "nx_shortcuts": True,
+    "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
 }
 
 BACKGROUNDS = {

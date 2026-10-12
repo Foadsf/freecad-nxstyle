@@ -85,6 +85,19 @@
         {"cmd": "NXStyle_ToggleNativeUI", "label": "FreeCAD Menus and Toolbars"}
       ]}
     ]},
+    {"name": "PLM", "requires": ["Strata_Panel"], "groups": [
+      {"name": "Versions", "items": [
+        {"cmd": "Strata_Panel", "label": "Versions and History", "size": "large", "optional": true},
+        {"cmd": "Strata_CreateVersion", "label": "Create Version", "size": "large", "optional": true},
+        {"cmd": "Strata_Compare", "label": "Compare", "optional": true}
+      ]},
+      {"name": "Release", "items": [
+        {"cmd": "Strata_Releases", "label": "Releases", "size": "large", "optional": true}
+      ]},
+      {"name": "Team", "items": [
+        {"cmd": "Strata_Sync", "label": "Sync", "size": "large", "optional": true}
+      ]}
+    ]},
     {"name": "Application", "groups": []}
   ]
 }

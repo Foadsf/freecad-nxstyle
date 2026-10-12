@@ -1,0 +1,3 @@
+[submodule "vendor/freecad-strata"]
+	path = vendor/freecad-strata
+	url = https://github.com/Foadsf/freecad-strata

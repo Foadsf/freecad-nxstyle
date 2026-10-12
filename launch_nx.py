@@ -282,8 +282,37 @@ def build_env(paths: dict[str, Path], extra: dict | None = None) -> dict:
     return env
 
 
-def build_command(install: Install, files: list[str], passthrough: list[str]) -> list[str]:
-    return [str(install.exe), "-M", str(MODULE_DIR), *passthrough, *files]
+def build_command(install: Install, files: list[str], passthrough: list[str],
+                  modules: tuple[Path, ...] = ()) -> list[str]:
+    extra = [arg for m in modules for arg in ("-M", str(m))]
+    return [str(install.exe), "-M", str(MODULE_DIR), *extra, *passthrough, *files]
+
+
+# --------------------------------------------------------------------------
+# Strata: data management next to NXStyle (the role Teamcenter plays next to NX)
+# --------------------------------------------------------------------------
+STRATA_DIR = HERE / "vendor" / "freecad-strata"     # git submodule of github.com/Foadsf/freecad-strata
+
+
+def find_strata(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:
+    """The Strata folder to load with -M, or None, and why. One copy only: a Strata the user installed
+    into the NX profile (Addon Manager) is loaded by FreeCAD itself, so the bundled one stays out."""
+    if disabled:
+        return None, "off (--no-strata)"
+    try:
+        cfg = json.loads((profile / "config" / "nxstyle.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        cfg = {}
+    if cfg.get("plm", "strata") != "strata":
+        return None, f"off (nxstyle.json: plm = {cfg.get('plm')!r})"
+    mods = profile / "data" / "Mod"
+    if mods.is_dir():
+        for mod in sorted(mods.iterdir()):
+            if (mod / "strata" / "__init__.py").is_file():
+                return None, f"installed in the NX profile ({mod})"
+    if (STRATA_DIR / "InitGui.py").is_file():
+        return STRATA_DIR, f"bundled ({STRATA_DIR})"
+    return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
 
 
 # --------------------------------------------------------------------------
@@ -478,16 +507,19 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
-                         "G Shaft Support assembly, H GD&T plate drawing)")
+                         "G Shaft Support assembly, H GD&T plate drawing, I Gasket (trim, fillet, "
+                         "offset), J parametric constraints, K spreadsheet-driven plate)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
     ap.add_argument("--max-memory-gb", type=float, default=HARNESS_MEMORY_GB,
                     help=f"with --smoke-test/--tutorial on Windows: end the run when FreeCAD uses more "
                          f"(default {HARNESS_MEMORY_GB:g})")
+    ap.add_argument("--no-strata", action="store_true",
+                    help="start without Strata (versions, releases and sync; on by default)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -516,10 +548,12 @@ def main(argv: list[str] | None = None) -> int:
         profile = args.profile or default_profile_root() / f"profile-{ver}"
         reset = args.reset_profile
 
-    cmd = build_command(install, args.files, passthrough)
+    strata, strata_why = find_strata(profile.resolve(), disabled=args.no_strata)
+    extra["NXSTYLE_STRATA_EXPECTED"] = "1" if strata or "NX profile" in strata_why else "0"
+    cmd = build_command(install, args.files, passthrough, (strata,) if strata else ())
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
-                          "profile": str(profile.resolve()), "command": cmd}, indent=2))
+                          "profile": str(profile.resolve()), "strata": strata_why, "command": cmd}, indent=2))
         return 0
 
     paths = prepare_profile(profile, reset=reset)
@@ -527,6 +561,7 @@ def main(argv: list[str] | None = None) -> int:
     env = build_env(paths, extra)
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")
+    print(f"Strata: {strata_why}")
 
     if harness:
         if os.name == "nt":

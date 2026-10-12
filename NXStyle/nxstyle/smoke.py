@@ -23,6 +23,15 @@ EXPECTED_MODELING_TABS = ["Home", "Assemblies", "Curve", "Surface", "Analysis", 
                           "Application"]
 
 
+def expected_tabs():
+    """With Strata placed, the PLM tab follows Tools."""
+    from . import plm
+    tabs = list(EXPECTED_MODELING_TABS)
+    if plm.status()["placed"]:
+        tabs.insert(tabs.index("Tools") + 1, "PLM")
+    return tabs
+
+
 class Smoke:
     def __init__(self, shell):
         self.shell = shell
@@ -75,10 +84,12 @@ class Smoke:
     # --------------------------------------------------------------- plan
     def plan(self):
         """Yields (callable, delay_ms_after)."""
+        yield self.s_wait_strata, 200
         yield self.s_static, 200
         yield self.s_document, 1500
         yield self.s_gates, 100
         yield self.s_snap, 900
+        yield self.s_strata, 2500
         yield self.s_mouse, 300
         yield self.s_mb2_ok_open, 600
         yield self.s_mb2_ok_click, 600
@@ -102,6 +113,59 @@ class Smoke:
         yield self.s_expressions, 800
         yield self.s_final, 100
 
+    def s_wait_strata(self):
+        """Strata starts from its own timer; the UI checks begin once NXStyle has placed it."""
+        from . import plm
+        from .tutorial import qtest
+        t0 = time.monotonic()
+        if os.environ.get("NXSTYLE_STRATA_EXPECTED", "1") == "1":
+            while not plm.status()["placed"] and time.monotonic() - t0 < 20:
+                qtest().qWait(100)
+        self.info["strata placed after s"] = round(time.monotonic() - t0, 2)
+
+    def s_strata(self):
+        """Strata, on by default: started by FreeCAD (not by this test), placed in the NX layout."""
+        from . import plm
+        st = plm.status()
+        self.info["strata"] = st
+        want = os.environ.get("NXSTYLE_STRATA_EXPECTED", "1") == "1"
+        if not want:
+            self.check("Strata off as asked", not st["panel"], st)
+            return
+        self.check("Strata starts with NXStyle (data management)", st["loaded"] and st["panel"], st)
+        mw = Gui.getMainWindow()
+        p, model = plm.strata_panel(), mw.findChild(QtWidgets.QDockWidget, "Model")
+        tabbed = p is not None and model is not None and p in mw.tabifiedDockWidgets(model)
+        self.check("Strata panel among the left navigators", st["placed"] and st["panel_area"] == "left" and tabbed,
+                   f"area {st['panel_area']}, tabbed with the Part Navigator {tabbed}")
+        self.check("Part Navigator stays in front", self.shell.current_left_tab() == "Part Navigator",
+                   self.shell.current_left_tab())
+        stray = [(t.count(), t.geometry().getRect()) for t in mw.findChildren(QtWidgets.QTabBar)
+                 if t.parentWidget() is mw and t.isVisible() and t.count() < 2
+                 and t.geometry().intersects(mw.rect())]       # Qt parks spare tab bars off-screen
+        self.check("no empty dock tab strip left on screen (moving the panel)", not stray, stray)
+        self.check("resource bar button for Versions and history", st["resource_button"]
+                   and "Versions and history" in self.shell.resource_actions, list(self.shell.resource_actions))
+        from .ribbon import CommandButton
+        plm_buttons = {b.command: (b.action is not None, b.isEnabled()) for b in
+                       self.shell.ribbon.findChildren(CommandButton) if b.command.startswith("Strata_")}
+        self.check("PLM ribbon tab with Strata's commands, live and enabled", self.shell.ribbon.has_tab("PLM")
+                   and len(plm_buttons) == 5 and all(a for a, _ in plm_buttons.values())
+                   and plm_buttons.get("Strata_Panel", (0, 0))[1], plm_buttons)
+        try:
+            from strata.ui import theme
+            accent = theme.LIGHT["accent"]
+        except ImportError:
+            accent = None
+        self.check("Strata takes NX's accent colour", accent == plm.NX_TOKENS["accent"], accent)
+        if p is not None and model is not None:      # pictures for the README: panel in front, PLM tab
+            p.raise_()
+            self.shell.ribbon.select("PLM")
+            QtWidgets.QApplication.processEvents()
+            self.shot("09_strata_plm.png")
+            model.raise_()
+            self.shell.ribbon.select("Home")
+
     def s_static(self):
         sh = self.shell
         profile = os.path.normcase(os.path.abspath(os.environ.get("NXSTYLE_PROFILE", "?")))
@@ -110,7 +174,8 @@ class Smoke:
         self.check("profile isolation", inside, f"profile={profile} dirs={dirs}")
         self.check("setup without errors", not sh.setup_errors, "; ".join(e.splitlines()[-1] for e in sh.setup_errors))
         tabs = sh.ribbon.tab_names()
-        self.check("modeling ribbon tabs", tabs == EXPECTED_MODELING_TABS, tabs)
+        # PLM joins once Strata has started (checked in s_strata)
+        self.check("modeling ribbon tabs", [t for t in tabs if t != "PLM"] == EXPECTED_MODELING_TABS, tabs)
         self.info["missing_ribbon_commands"] = sh.ribbon.missing
         self.check("ribbon commands resolved", not sh.ribbon.missing,
                    f"{len(sh.ribbon.missing)} missing: {sh.ribbon.missing}")
@@ -417,9 +482,18 @@ class Smoke:
         Gui.runCommand("NXStyle_Expressions")
 
     def s_final(self):
+        # sample across Strata's 2 s toolbar timer: hidden at one instant is not "stays hidden"
+        from .tutorial import qtest
+        shown = 0
+        for _ in range(30):
+            fallback = Gui.getMainWindow().findChild(QtWidgets.QToolBar, "StrataTools")
+            shown += bool(fallback is not None and fallback.isVisible())
+            qtest().qWait(100)
+        self.check("Strata's own toolbar stays hidden (no fight with NXStyle)", shown == 0,
+                   f"seen visible in {shown} of 30 samples over 3 s")
         doc = App.ActiveDocument
         self.check("Expressions sheet (Ctrl+E)", doc is not None and doc.getObject("Expressions") is not None)
-        self.check("back to Modeling", self.shell.ribbon.tab_names() == EXPECTED_MODELING_TABS,
+        self.check("back to Modeling", self.shell.ribbon.tab_names() == expected_tabs(),
                    self.shell.ribbon.tab_names())
         self.shell.ribbon.select("Application")
         self.shot("08_application.png", self.shell.ribbon)

@@ -55,6 +55,7 @@
     ]},
     {"include": "common:View"},
     {"include": "common:Tools"},
+    {"include": "common:PLM"},
     {"include": "common:Application"}
   ]
 }

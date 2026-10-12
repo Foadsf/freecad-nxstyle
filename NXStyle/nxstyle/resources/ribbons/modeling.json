@@ -144,6 +144,7 @@
     {"include": "common:View"},
     {"include": "common:Render"},
     {"include": "common:Tools"},
+    {"include": "common:PLM"},
     {"include": "common:Application"}
   ]
 }

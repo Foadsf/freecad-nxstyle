@@ -82,6 +82,53 @@ class EnvTests(unittest.TestCase):
         self.assertEqual(cmd[-1], "a.FCStd")
         self.assertTrue((launch_nx.MODULE_DIR / "InitGui.py").is_file())
 
+    def test_command_adds_extra_modules_after_nxstyle(self):
+        inst = launch_nx.Install(Path("freecad"), (1, 1, 4))
+        cmd = launch_nx.build_command(inst, ["a.FCStd"], [], (Path("strata"),))
+        self.assertEqual(cmd[1:5], ["-M", str(launch_nx.MODULE_DIR), "-M", "strata"])
+        self.assertEqual(cmd[-1], "a.FCStd")
+
+
+class StrataTests(unittest.TestCase):
+    """Strata is on by default, loaded once: a copy in the NX profile wins over the bundled one."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.bundled = root / "vendor" / "freecad-strata"
+        self.bundled.mkdir(parents=True)
+        (self.bundled / "InitGui.py").write_text("")
+        self.profile = root / "profile"
+        self._saved = launch_nx.STRATA_DIR
+        launch_nx.STRATA_DIR = self.bundled
+
+    def tearDown(self):
+        launch_nx.STRATA_DIR = self._saved
+        self.tmp.cleanup()
+
+    def test_bundled_copy_by_default(self):
+        self.assertEqual(launch_nx.find_strata(self.profile)[0], self.bundled)
+
+    def test_profile_install_is_not_loaded_twice(self):
+        pkg = self.profile / "data" / "Mod" / "freecad-strata" / "strata"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        where, why = launch_nx.find_strata(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("NX profile", why)
+
+    def test_switched_off_by_flag_or_config(self):
+        self.assertIsNone(launch_nx.find_strata(self.profile, disabled=True)[0])
+        (self.profile / "config").mkdir(parents=True)
+        (self.profile / "config" / "nxstyle.json").write_text('{"plm": "none"}')
+        self.assertIsNone(launch_nx.find_strata(self.profile)[0])
+
+    def test_missing_submodule_says_how_to_get_it(self):
+        (self.bundled / "InitGui.py").unlink()
+        where, why = launch_nx.find_strata(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("submodule", why)
+
 
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")
 class MemoryCeilingTests(unittest.TestCase):

@@ -160,6 +160,12 @@ class Shell(QtCore.QObject):
         self.watch.timeout.connect(self._tick)
         self.watch.start(300)
         self.enforce_ui()
+        try:
+            from . import plm
+            plm.attach(self)
+        except Exception:
+            import traceback
+            self.setup_errors.append(traceback.format_exc())
         self.ready = True
         App.Console.PrintLog("NXStyle: ready\n")
 
@@ -268,6 +274,8 @@ class Shell(QtCore.QObject):
                 {"tabs": [{"include": "common:View"}, {"include": "common:Tools"},
                           {"include": "common:Application"}]})
         for t in tabs:
+            if t.get("requires") and not any(c in known for c in t["requires"]):
+                continue                     # e.g. the PLM tab without the Strata add-on
             if t["name"] == "Application":
                 groups = self._application_groups()
             elif t.get("groups") is None:
@@ -678,11 +686,24 @@ class Shell(QtCore.QObject):
                 self._apply_theme()
             self._blank_titles()
             self._hide_stale_overlays()
+            self.hide_stray_tab_bars()
         state = (dialog, len(App.listDocuments()))
         if state != self._nav_state:
             if not dialog:
                 self.show_part_navigator()
             self._nav_state = state
+
+    def hide_stray_tab_bars(self):
+        """A dock area's tab strip is only needed for two or more tabbed panels. When panels move
+        (FreeCAD's Tasks/overlay handling, Strata's panel joining the navigators) Qt can leave an
+        empty one painted over the Top Border Bar. Spare ones Qt parks off-screen are left alone."""
+        hidden = []
+        for tb in self.mw.findChildren(QtWidgets.QTabBar):
+            if (tb.parentWidget() is self.mw and tb.isVisible() and tb.count() < 2
+                    and tb.geometry().intersects(self.mw.rect())):
+                hidden.append(tb.geometry().getRect())
+                tb.hide()
+        return hidden
 
     def show_part_navigator(self):
         model = self.mw.findChild(QtWidgets.QDockWidget, "Model")

@@ -45,7 +45,8 @@
         {"cmd": "Sketcher_ConstrainEqual", "label": "Equal"},
         {"cmd": "Sketcher_ConstrainSymmetric", "label": "Symmetric"},
         {"cmd": "Sketcher_ConstrainLock", "label": "Fixed"},
-        {"cmd": "Sketcher_ConstrainBlock", "label": "Block"},
+        {"cmd": "Sketcher_ConstrainBlock", "label": "Fully Fixed"},
+        {"cmd": "Sketcher_ToggleActiveConstraint", "label": "Relax Constraint"},
         {"cmd": ["Sketcher_CompConstrainRadDia", "Sketcher_ConstrainRadius"], "label": "Radius / Diameter"},
         {"cmd": "Sketcher_ConstrainAngle", "label": "Angle"},
         {"cmd": "Sketcher_ConstrainDistance", "label": "Distance"}

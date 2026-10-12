@@ -22,6 +22,7 @@ shows where it was.
 import json
 import math
 import os
+import re
 import time
 import traceback
 
@@ -124,17 +125,22 @@ class Replay:
         k, m = decode(seq)
         qtest().keyClick(target, k, m)
 
-    def ribbon_button(self, label):
+    def ribbon_button(self, label, tab=None):
+        """The button with this NX label; with tab given, that tab is searched first
+        (the Sketch tab's Perpendicular, not the Assemblies tab's)."""
         r = self.shell.ribbon
-        for i in range(r.stack.count()):
+        order = list(range(r.stack.count()))
+        if tab:
+            order.sort(key=lambda i: r.tabs.tabText(i) != tab)
+        for i in order:
             page = r.stack.widget(i)
             for b in page.findChildren(CommandButton):
                 if b.nx_label == label:
                     return b, r.tabs.tabText(i), r.locations.get(b.command, "")
         return None, "", ""
 
-    def click_ribbon(self, label):
-        b, tab, where = self.ribbon_button(label)
+    def click_ribbon(self, label, tab=None):
+        b, tab, where = self.ribbon_button(label, tab)
         if b is None:
             return None, ""
         self.shell.ribbon.select(tab)
@@ -326,8 +332,18 @@ class Replay:
         H = [self.h_new, self.h_part, self.h_drafting, self.h_sheet, self.h_view, self.h_view_check, self.h_side,
              self.h_side_check, self.h_centres, self.h_basic, self.h_hole_note, self.h_datums, self.h_frames,
              self.h_show, self.h_back]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H").upper().split(",")
-        for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H)):
+        J = [self.j_new, self.j_extrude, self.j_plane, self.j_profile, self.j_perpendicular, self.j_dimensions,
+             self.j_fix, self.j_undo_fix, self.j_location, self.j_relax, self.j_height, self.j_circle, self.j_figure,
+             self.j_finish, self.j_extrude_dialog, self.j_relations, self.j_resize1, self.j_resize2, self.j_show]
+        K = [self.k_new, self.k_sheet, self.k_names, self.k_bar, self.k_plane, self.k_profile, self.k_finish,
+             self.k_pad, self.k_hole, self.k_hole_sketch, self.k_hole_finish, self.k_hole_dialog, self.k_pattern,
+             self.k_pattern_dialog, self.k_config_b, self.k_show, self.k_save]
+        I = [self.i_new, self.i_extrude, self.i_plane, self.i_outline, self.i_extend, self.i_trim, self.i_align, self.i_fillets,  # noqa: E741
+             self.i_finish, self.i_extrude_dialog, self.i_cut, self.i_offset, self.i_offset_check, self.i_cut_finish,
+             self.i_cut_dialog, self.i_height, self.i_show, self.i_save]
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K").upper().split(",")
+        for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
+                           ("I", I), ("J", J), ("K", K)):
             if key in wanted:
                 yield from steps
 
@@ -736,8 +752,11 @@ class Replay:
         self.wait = 900
 
     def b_snap(self):
+        def snapped():
+            v = self.view().getViewDirection()
+            return max(abs(v.x), abs(v.y), abs(v.z)) > 0.999
+        ok = self.wait_for("b_snap: view animation", snapped)      # the snap animates; slower under load
         d = self.view().getViewDirection()
-        ok = max(abs(d.x), abs(d.y), abs(d.z)) > 0.999
         self.step("F8 snaps to the nearest standard view", "F8 key", SAME if ok else FAIL, f"view {d}")
         self.check_drawn("The finished part is shown in the graphics window", "B_live_check.png")
         App.ActiveDocument.saveAs(os.path.join(OUT, "FirstPart.FCStd"))
@@ -1329,6 +1348,8 @@ class Replay:
 
     def d_section_edges(self):
         secs = [v for v in self._page.Views if v.TypeId == "TechDraw::DrawViewSection"]
+        if secs:    # TechDraw's worker thread can take longer than the fixed wait when the machine is busy
+            self.wait_for("d_section_edges: hidden-line worker", lambda: len(secs[-1].getVisibleEdges()) > 0, 15000)
         edges = len(secs[-1].getVisibleEdges()) if secs else 0
         if secs:
             s = secs[-1]
@@ -3461,6 +3482,1108 @@ class Replay:
     def h_back(self):
         self.key("Ctrl+M")
         self.wait = 1500
+
+    # ---------------------------------------------------------- tutorial I
+    # The Gasket (Shih ch. 6, millimetres): sketch construction tools (Extend, Quick Trim,
+    # Fillet R20), extrude 5 mm, then an associative offset cut (project the face, offset
+    # 15 mm inwards, subtract through all) and a height change to 150 mm that the offset must
+    # follow. The outline's sizes are figure-only: an 80 mm high left side, an R30 boss whose
+    # centre the book aligns with the top line ("adjust the dimension to 0.0"), here.
+    I_TOP, I_C, I_R = 80.0, (125.0, 80.0), 30.0
+
+    def i_new(self):
+        self.tutorial = "I: The Gasket (millimetres)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def i_extrude(self):
+        self.wait_for("i: new part's Body", lambda: self.body() is not None)
+        self.step("File > New, Model template, millimetres", "Ctrl+N",
+                  SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def i_plane(self):
+        picked = self.pick_in_feature_list("YZ")
+        self.mb2_click()
+        self.step("Extrude (X), YZ plane", "X key, plane row + MB2", SAME if picked else FAIL, f"picked {picked}")
+        self.wait = 1500
+
+    def i_outline(self):
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        self._i_sk = sk
+        top = self.I_TOP
+        (cx, cy), r = self.I_C, self.I_R
+        # the top line stops short of the circle; Extend takes it there next
+        _, tool, n, ended = self.draw_clicks("Z", [(80, top), (0, top), (0, 0), (160, 0)])
+        _, ctool, cn, cended = self.draw_clicks("O", [(cx, cy - 1.5), (cx + r, cy - 1.5)])
+        # the tangent line: from the circle's lower right down to the bottom line
+        a = math.radians(-45)
+        t0 = (cx + r * math.cos(a), cy - 1.5 + r * math.sin(a))
+        t1 = (t0[0] - t0[1], 0.0)                 # along (-1, -1): tangent to the circle at t0
+        _, ltool, ln, lended = self.draw_clicks("L", [t0, t1])
+        kinds = sorted(g.TypeId.split("::")[-1] for g in sk.Geometry)
+        tangent = any(c.Type == "Tangent" for c in sk.Constraints)
+        self.i_dump(sk, "i_outline drawn")
+        self.step("Profile (outline), Circle, Line ending on the bottom line, tangent to the circle",
+                  "Z key + 4 MB1 clicks, O key + 2 clicks, L key + 2 clicks, MB2 after each",
+                  SAME if tool and ctool and ltool and len(sk.Geometry) >= 5 else FAIL,
+                  f"geometry {kinds}; tangent picked up while drawing {tangent}")
+        if not tangent:
+            import Sketcher
+            line = len(sk.Geometry) - 1
+            circ = next(i for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomCircle")
+            try:
+                sk.addConstraint(Sketcher.Constraint("Tangent", line, circ))
+            except Exception as e:
+                self.info["I tangent"] = str(e)
+        App.ActiveDocument.recompute()
+        self.wait = 300
+
+    @staticmethod
+    def i_horizontal(sk, highest):
+        """Index of the highest (or lowest) horizontal line: the drawn sizes are pixel-rounded."""
+        rows = [(g.StartPoint.y, i) for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomLineSegment"
+                and abs(g.StartPoint.y - g.EndPoint.y) < 0.5 and not sk.getConstruction(i)]
+        return (max(rows) if highest else min(rows))[1] if rows else None
+
+    @staticmethod
+    def i_round(sk):
+        return next((i for i, g in enumerate(sk.Geometry) if g.TypeId in ("Part::GeomCircle", "Part::GeomArcOfCircle")
+                     and abs(g.Radius - 20) > 1e-3), None)
+
+    def i_extend(self):
+        """Extend (E): the top line to the circle - pick near its right end, then on the circle."""
+        sk = self._i_sk
+        ti, ci = self.i_horizontal(sk, True), self.i_round(sk)
+        y = sk.Geometry[ti].StartPoint.y
+        c, r = sk.Geometry[ci].Center, sk.Geometry[ci].Radius
+        hit = c.x - math.sqrt(max(r * r - (y - c.y) ** 2, 0.0))           # where the top line meets the circle
+        self.frame_sketch(sk, 90, 70, 100)
+        self.key("E")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        self.mb1_click(self.screen_point(sk, 77.0, y))
+        self.send(QtCore.QEvent.MouseMove, self.screen_point(sk, hit, y), Qt.NoButton, Qt.NoButton)
+        QtWidgets.QApplication.processEvents()
+        self.mb1_click(self.screen_point(sk, hit, y))
+        self.mb2_click(self.screen_point(sk, 30, 40))
+        App.ActiveDocument.recompute()
+        self.i_dump(sk, "i_extend after")
+        g = sk.Geometry[self.i_horizontal(sk, True)]
+        end = max(g.StartPoint.x, g.EndPoint.x)
+        self.step("Extend: the top line up to the circle, MB2", "E key, MB1 near the line's end, MB1 on the circle, "
+                  "MB2", SAME if tool and abs(end - hit) < 0.5 else FAIL,
+                  f"line now ends at x = {end:.3f} (meets the circle at {hit:.3f})")
+
+    def i_trim(self):
+        """Quick Trim (T): the bottom line's end past the slanted line, then the lower part of the circle."""
+        sk = self._i_sk
+        ci = self.i_round(sk)
+        c, r = sk.Geometry[ci].Center, sk.Geometry[ci].Radius
+        slanted = next(g for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomLineSegment"
+                       and abs(g.StartPoint.y - g.EndPoint.y) > 1e-6 and abs(g.StartPoint.x - g.EndPoint.x) > 1e-6)
+        foot = min((slanted.StartPoint, slanted.EndPoint), key=lambda p: p.y).x
+        self.frame_sketch(sk, 100, 50, 150)
+        self.key("T")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        n0 = len(sk.Geometry)
+        self.mb1_click(self.screen_point(sk, 150.0, 0.0))                  # bottom line beyond the slanted line
+        a = math.radians(250)
+        self.mb1_click(self.screen_point(sk, c.x + r * math.cos(a), c.y + r * math.sin(a)))   # lower part of the circle
+        self.mb2_click(self.screen_point(sk, 30, 40))
+        App.ActiveDocument.recompute()
+        self.i_dump(sk, "i_trim after")
+        g = sk.Geometry[self.i_horizontal(sk, False)]
+        right = max(g.StartPoint.x, g.EndPoint.x)
+        arcs = [x for x in sk.Geometry if x.TypeId == "Part::GeomArcOfCircle"]
+        circles = [x for x in sk.Geometry if x.TypeId == "Part::GeomCircle"]
+        closed, _ = self.i_closed(sk)
+        ok = tool and abs(right - foot) < 0.5 and len(arcs) == 1 and not circles and closed
+        self.step("Quick Trim: the bottom line past the slanted line, the lower part of the circle, MB2",
+                  "T key, MB1 on each part to remove, MB2", SAME if ok else FAIL,
+                  f"bottom line now ends at x = {right:.3f} (slanted line at {foot:.3f}); {len(arcs)} arc, "
+                  f"{len(circles)} full circle; outline closed {closed}; geometry {n0} -> {len(sk.Geometry)}")
+
+    def i_align(self):
+        """The book's dimensions (its steps 1-13): the centre in line with the top line (vertical location
+        0), its horizontal location, the radius, the left and bottom edges on the origin. The book's
+        sketch is then fully defined; the sizes are the figure's (as drawn here)."""
+        import Sketcher
+        sk = self._i_sk
+        added = self.i_hv(sk)
+        ti, bi, ci = self.i_horizontal(sk, True), self.i_horizontal(sk, False), self.i_round(sk)
+        lines = [k for k, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomLineSegment" and not sk.getConstruction(k)]
+        left = next(k for k in lines if abs(sk.Geometry[k].StartPoint.x - sk.Geometry[k].EndPoint.x) < 0.5)
+        slanted = next(k for k in lines if k not in (ti, bi, left))
+        before = sk.Geometry[ci].Center.y - sk.Geometry[ti].StartPoint.y
+        c, g = sk.Geometry[ci].Center, sk.Geometry[slanted]
+        d = g.EndPoint - g.StartPoint
+        dims = (("centre on the top line", Sketcher.Constraint("PointOnObject", ci, 3, ti)),
+                ("left edge on the origin", Sketcher.Constraint("PointOnObject", left, 1, -2)),
+                ("bottom edge on the origin", Sketcher.Constraint("PointOnObject", bi, 1, -1)),
+                ("radius", Sketcher.Constraint("Radius", ci, sk.Geometry[ci].Radius)),
+                ("horizontal location of the centre", Sketcher.Constraint("DistanceX", -1, 1, ci, 3, c.x)),
+                ("height of the centre", Sketcher.Constraint("DistanceY", -1, 1, ci, 3, c.y)),
+                ("angle of the slanted line", Sketcher.Constraint("Angle", slanted, math.atan2(d.y, d.x))))
+        made, skipped = [], []
+        for name, con in dims:
+            k = sk.addConstraint(con)
+            if sk.solve() != 0:                  # implied by what is there already: FreeCAD calls it redundant
+                sk.delConstraint(k)
+                skipped.append(name)
+            else:
+                made.append(name)
+        App.ActiveDocument.recompute()
+        ti, ci = self.i_horizontal(sk, True), self.i_round(sk)
+        after = sk.Geometry[ci].Center.y - sk.Geometry[ti].StartPoint.y
+        closed, _ = self.i_closed(sk)
+        dof, fully, msg = self.sk_state(sk)
+        self.info["I dimensions"] = {"made": made, "skipped (implied)": skipped, "H/V": added, "solver": msg}
+        self.step("The book's dimensions: centre in line with the top line (0.0), its horizontal location, the "
+                  "radius, the corner on the origin; horizontal/vertical constraints confirmed; fully defined",
+                  f"constraints: {', '.join(made)}; H/V: {', '.join(added) or 'none'}",
+                  (SAME if fully else DIFFERS) if abs(after) < 1e-6 and closed else FAIL,
+                  f"centre {before:+.3f} -> {after:+.3f} mm from the top line; outline closed {closed}; solver: "
+                  f"'{msg}' ({dof} DoF). NX sets a 0.0 location dimension; FreeCAD has a point-on-object "
+                  "constraint for it" + (f"; implied already: {', '.join(skipped)}" if skipped else ""))
+
+    @staticmethod
+    def i_hv(sk):
+        """The book's step 11: "confirm that proper constraints are applied to the horizontal and vertical lines"."""
+        import Sketcher
+        have = {(c.Type, c.First) for c in sk.Constraints if c.Type in ("Horizontal", "Vertical")}
+        added = []
+        for i, g in enumerate(sk.Geometry):
+            if g.TypeId != "Part::GeomLineSegment" or sk.getConstruction(i):
+                continue
+            d = g.EndPoint - g.StartPoint
+            kind = "Horizontal" if abs(d.y) < 0.5 else "Vertical" if abs(d.x) < 0.5 else None
+            if kind and (kind, i) not in have:
+                k = sk.addConstraint(Sketcher.Constraint(kind, i))
+                if sk.solve() != 0:              # already implied (e.g. a right angle): FreeCAD calls it redundant
+                    sk.delConstraint(k)
+                    added.append(f"{kind} {i} implied")
+                else:
+                    added.append(f"{kind} {i}")
+        App.ActiveDocument.recompute()
+        return added
+
+    def i_closed(self, sk):
+        try:
+            import Part
+            w = Part.Wire(Part.__sortEdges__([e for e in sk.Shape.Edges]))
+            return w.isClosed(), w
+        except Exception as e:
+            return False, str(e)
+
+    def i_corners(self, sk):
+        """Where two outline curves meet at an angle (not tangent): (point, i, pos_i, j, pos_j)."""
+        ends = []
+        for i, g in enumerate(sk.Geometry):
+            if sk.getConstruction(i) or not hasattr(g, "StartPoint"):
+                continue
+            e = g.toShape()
+            for pos, p, par in ((1, g.StartPoint, e.FirstParameter), (2, g.EndPoint, e.LastParameter)):
+                t = e.tangentAt(par)
+                ends.append((p, i, pos, t))
+        out = []
+        for k, (p, i, pi, ti) in enumerate(ends):
+            for (q, j, pj, tj) in ends[k + 1:]:
+                if j != i and (p - q).Length < 1e-4 and abs(abs(ti.normalize().dot(tj.normalize())) - 1) > 1e-6:
+                    out.append((p, i, pi, j, pj))
+        return out
+
+    def i_fillet_at(self, sk, corner, radius):
+        """The F tool's two picks near the corner, one on each curve, then the radius."""
+        p, i, pi, j, pj = corner
+
+        def near(k, pos):
+            e = sk.Geometry[k].toShape()
+            d = min(3.0, e.Length / 3)
+            return e.valueAt(e.getParameterByLength(d if pos == 1 else e.Length - d))
+        try:
+            sk.fillet(i, j, near(i, pi), near(j, pj), radius, True, False)
+            return True
+        except Exception as e:
+            self.info.setdefault("fillet errors", []).append(f"{p}: {e}")
+            return False
+
+    def i_fillets(self):
+        sk = self._i_sk
+        self.key("F")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        self.mb2_click(self.screen_point(sk, 30, 40))
+        made, tried = 0, []
+        for _ in range(8):
+            todo = [c for c in self.i_corners(sk) if all((c[0] - t).Length > 1e-3 for t in tried)]
+            if not todo:
+                break
+            tried.append(todo[0][0])
+            made += self.i_fillet_at(sk, todo[0], 20.0)
+            App.ActiveDocument.recompute()
+        # a fillet replaces its corner, and with it the right angle that held a side vertical: confirm again
+        again = [a for a in self.i_hv(sk) if not a.endswith("implied")]
+        # the same for the corner the first click snapped onto the origin: lock the edges to the axes
+        import Sketcher
+        bi = self.i_horizontal(sk, False)
+        left = next(k for k, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomLineSegment"
+                    and not sk.getConstruction(k) and abs(g.StartPoint.x - g.EndPoint.x) < 1e-6
+                    and abs(g.StartPoint.x) < 0.5)
+        for name, con in (("left edge on the origin", Sketcher.Constraint("PointOnObject", left, 1, -2)),
+                          ("bottom edge on the origin", Sketcher.Constraint("PointOnObject", bi, 1, -1))):
+            k = sk.addConstraint(con)
+            if sk.solve() != 0:
+                sk.delConstraint(k)
+            else:
+                again.append(name)
+        import Sketcher
+        dims = 0
+        for i, g in enumerate(sk.Geometry):
+            if g.TypeId == "Part::GeomArcOfCircle" and abs(g.Radius - 20) < 1e-6 and not any(
+                    c.Type == "Radius" and c.First == i for c in sk.Constraints):
+                k = sk.addConstraint(Sketcher.Constraint("Radius", i, 20.0))
+                if sk.solve() != 0:
+                    sk.delConstraint(k)
+                else:
+                    dims += 1
+        App.ActiveDocument.recompute()
+        closed, _ = self.i_closed(sk)
+        left = self.i_corners(sk)
+        dof, fully, msg = self.sk_state(sk)
+        self.step("Fillet R20 at the corners", "F key; radius 20 at each corner where two curves meet at an angle",
+                  DIFFERS if tool and made == len(tried) and not left and closed and fully else FAIL,
+                  f"{made} fillets of {len(tried)} corners ({', '.join(f'({c.x:.0f}, {c.y:.0f})' for c in tried)}); "
+                  f"outline closed {closed}; constraints re-confirmed after the fillets: {', '.join(again) or 'none'}; "
+                  f"{dims} R20 dimensions added (FreeCAD's sketch fillet constrains tangency, not the radius); "
+                  f"solver '{msg}' ({dof} DoF). "
+                  "The book makes five, the arc-to-slanted-line join being tangent here "
+                  "leaves four; the radius is typed after picking in FreeCAD")
+
+    def i_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def i_extrude_dialog(self):
+        import Part
+        self.wait_dialog("i_extrude_dialog")
+        field = self.set_quantity("length", 5.0)
+        sk = self._i_sk
+        closed, w = self.i_closed(sk)
+        area = Part.Face(w).Area if closed else 0.0
+        self.mb2_click()
+        self.check_volume("Finish Sketch, End 5 mm, OK", f"Ctrl+Q, '{field}' = 5 mm, MB2 = OK", area * 5.0,
+                          f"; outline area {area:.1f} mm^2")
+        self._i_pad = self.body().Tip
+        self._i_area = area
+        self.wait = 600
+
+    def i_cut(self):
+        tip = self.body().Tip
+        front = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).x - 1) < 1e-6 and abs(f.CenterOfMass.x - 5) < 1e-6)
+        self.select_sub(tip, front)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude, Sketch Section on the front face", f"select {front} + ribbon '{where} > Extrude (Subtract)'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  "subtracting extrude is its own button")
+        self._i_front = front
+        self.wait = 1500
+
+    def i_offset(self):
+        """Project Curve: the whole face; Offset Curve 15 mm inwards."""
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on the front face")
+        tip = self.body().Tip
+        face = tip.Shape.getElement(self._i_front)
+        # the face's edges by where they are (isSame is unreliable on 1.1's renamed shapes)
+        edges = [f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, start=1)
+                 if any((e.CenterOfMass - x.CenterOfMass).Length < 1e-6 and abs(e.Length - x.Length) < 1e-6
+                        for x in face.Edges)]
+        for e in edges:
+            sk.addExternal(tip.Name, e)
+        App.ActiveDocument.recompute()
+        n_ext = len(sk.ExternalGeo) - 2                      # the first two are the sketch axes
+        # the projected curves come in as defining geometry (FreeCAD 1.1): select them, Offset Curve
+        Gui.Selection.clearSelection()
+        for k in range(n_ext):
+            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"ExternalEdge{k + 1}")
+        n0, c0 = len(sk.Geometry), len(sk.Constraints)
+        b, where = self.click_ribbon("Offset Curve", tab="Sketch")
+        QtWidgets.QApplication.processEvents()
+        qtest().qWait(300)
+        # NX's "associative" offset: FreeCAD's "Add offset constraint" option
+        box = next((c for c in self.tasks_dock().findChildren(QtWidgets.QCheckBox)
+                    if c.isVisible() and "offset constraint" in c.text().lower()), None)
+        if box is not None and not box.isChecked():
+            qtest().mouseClick(box, Qt.LeftButton)
+        # the offset goes where MB1 clicks: 15 mm inside the longest straight edge of the outline
+        lines = [g for g in sk.ExternalGeo[2:] if g.TypeId == "Part::GeomLineSegment"]
+        far = max(lines, key=lambda g: (g.EndPoint - g.StartPoint).Length)
+        mid = (far.StartPoint + far.EndPoint) * 0.5
+        d = (far.EndPoint - far.StartPoint).normalize()
+        n = App.Vector(-d.y, d.x, 0)
+        import Part
+        c = Part.Compound([g.toShape() for g in sk.ExternalGeo[2:]]).BoundBox.Center
+        if n.dot(App.Vector(c.x, c.y, 0) - mid) < 0:
+            n = n * -1
+        target = mid + n * 15.0
+        self.frame_sketch(sk, target.x, target.y, 200)
+        QtWidgets.QApplication.processEvents()
+        self.mb1_click(self.screen_point(sk, target.x, target.y))
+        qtest().qWait(300)
+        if self.nav().sketch_tool_active():
+            self.key("Escape")
+        App.ActiveDocument.recompute()
+        made = len(sk.Geometry) - n0
+        new_c = [(i, c.Type) for i, c in enumerate(sk.Constraints) if i >= c0]
+        # the click lands on a pixel: type the exact distance into the offset dimension(s), as a user would
+        gap0 = self.i_gap(sk)
+        # FreeCAD's offset constraints on a closed loop include one redundant tangency (measured: removing
+        # any one geometric constraint lets the sketch solve). The solver panel says so; a user picks
+        # Sketch > Select Redundant Constraints and presses Delete.
+        solved = sk.solve()
+        status = self.sk_state(sk)[2]
+        redundant = None
+        if solved != 0:
+            Gui.runCommand("Sketcher_SelectRedundantConstraints")
+            QtWidgets.QApplication.processEvents()
+            sel = Gui.Selection.getSelectionEx()
+            picked = list(sel[0].SubElementNames) if sel else []
+            self.key("Delete")
+            App.ActiveDocument.recompute()
+            redundant = {"solver said": status, "selected": picked, "solve after": sk.solve()}
+            new_c = [(i, c.Type) for i, c in enumerate(sk.Constraints) if i >= c0]
+        typed = []
+        for i, t in new_c:
+            if t == "Distance" and abs(sk.Constraints[i].Value - 15) > 1e-6:
+                desc = (i, round(sk.Constraints[i].Value, 4))
+                try:
+                    sk.setDatum(i, App.Units.Quantity("15 mm"))
+                    typed.append(desc)
+                except Exception as e:
+                    self.info.setdefault("I offset datum errors", []).append(f"{desc}: {e}")
+        App.ActiveDocument.recompute()
+        self.info["I offset tool"] = {"constraint option": box.isChecked() if box else None, "made": made,
+                                      "new constraints": [(i, t) for i, t in new_c], "gap after click": gap0,
+                                      "redundant": redundant, "typed": typed}
+        self._i_cut_sk = sk
+        fixed = redundant is None or redundant["solve after"] == 0
+        self.step("Project Curve (the whole face), Offset 15 mm, Reverse Direction to the inside, OK",
+                  f"{len(edges)} edges projected; ribbon '{where} > Offset Curve', 'Add offset constraint', MB1 "
+                  "15 mm inside" + ("; Select Redundant Constraints + Delete" if redundant else "") +
+                  "; offset dimension typed 15", DIFFERS if made > 0 and fixed and typed else FAIL,
+                  f"{n_ext} projected curves, {made} offset curves; the click gave "
+                  f"{gap0 if gap0 is None else round(gap0, 3)} mm. " +
+                  (f"FreeCAD's own offset constraints left the sketch unsolvable (solver: '{redundant['solver said']}'"
+                   f"; selected {redundant['selected']}); after deleting it the sketch solves "
+                   f"({redundant['solve after'] == 0}). " if redundant else "") +
+                  "NX types the distance and flips the side with Reverse Direction; FreeCAD takes the side and "
+                  "distance from the click, the exact value from its offset dimension")
+
+    @staticmethod
+    def i_profile(sk):
+        return [g.toShape() for i, g in enumerate(sk.Geometry) if not sk.getConstruction(i)]
+
+    def i_gap(self, sk):
+        import Part
+        try:
+            loop = Part.Wire(Part.__sortEdges__(self.i_profile(sk)))
+            outer = Part.Wire(Part.__sortEdges__([g.toShape() for g in sk.ExternalGeo[2:]]))
+            return loop.distToShape(outer)[0]
+        except Exception:
+            return None
+
+    def i_dump(self, sk, tag):
+        rows = []
+        for i, g in enumerate(sk.Geometry):
+            if hasattr(g, "StartPoint"):
+                rows.append(f"{i}:{g.TypeId.split('::')[-1][4:]} ({g.StartPoint.x:.2f},{g.StartPoint.y:.2f})-"
+                            f"({g.EndPoint.x:.2f},{g.EndPoint.y:.2f})")
+            else:
+                rows.append(f"{i}:{g.TypeId.split('::')[-1][4:]}")
+        self.progress(f"{tag}: " + "; ".join(rows))
+
+    def i_offset_check(self):
+        """The inner loop must sit 15 mm inside the outline; turn the projected outline into reference."""
+        import Part
+        sk = self._i_cut_sk
+        gap = self.i_gap(sk)
+        try:
+            closed = Part.Wire(Part.__sortEdges__(self.i_profile(sk))).isClosed()
+        except Exception as e:
+            closed = False
+            self.info["I offset check"] = str(e)
+        profile = len(self.i_profile(sk))
+        edges = len(sk.Shape.Edges)
+        self.step("Offset loop: 15 mm inside the outline; only the inside loop is the section",
+                  f"measured in the sketch; profile edges {edges}, offset curves {profile}: the projected outline "
+                  "is reference geometry, as the book selects only the inside loop",
+                  SAME if closed and gap is not None and abs(gap - 15) < 1e-3 and edges == profile else FAIL,
+                  f"closed {closed}; nearest distance to the projected outline {gap if gap is None else round(gap, 4)} mm")
+
+    def i_cut_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def i_cut_dialog(self):
+        import Part
+        self.wait_dialog("i_cut_dialog")
+        mode = self.choose("through all", "mode")
+        self.mb2_click()
+        prof = self.i_profile(self._i_cut_sk)
+        inner = Part.Face(Part.Wire(Part.__sortEdges__(prof))).Area if prof else 0.0
+        self.check_volume("Boolean Subtract, Reverse Direction, Through All, inner loop only, OK",
+                          f"'{mode}', MB2 = OK", (self._i_area - inner) * 5.0,
+                          "; the projected outline is reference geometry here, so only the inner loop cuts")
+        self.wait = 600
+
+    def i_height(self):
+        """The book: change the overall height to 150 mm; the offset geometry follows."""
+        sk = self._i_sk
+        ci = self.i_round(sk)
+        r = sk.Geometry[ci].Radius
+        h0 = sk.Geometry[ci].Center.y + r - sk.Geometry[self.i_horizontal(sk, False)].StartPoint.y
+        k = next((n for n, c in enumerate(sk.Constraints) if c.Type == "DistanceY" and c.First == -1
+                  and c.Second == ci), None)
+        if k is None:
+            raise RuntimeError("no height dimension on the centre")
+        sk.setDatum(k, App.Units.Quantity(f"{150 - r} mm"))      # the overall height: centre + R
+        App.ActiveDocument.recompute()
+        # the cut's sketch projects the pad's edges: one pass can leave it behind (Refresh, F5, in the GUI)
+        touched = [o.Name for o in App.ActiveDocument.Objects if "Touched" in o.State]
+        if touched:
+            App.ActiveDocument.recompute()
+        self.info["I height"] = {"solve": sk.solve(), "touched after one recompute": touched}
+        self.i_dump(sk, "i_height after")
+        shape = self.body().Shape
+        # exact extents: BoundBox is padded, and optimalBoundingBox() by default reads the display mesh
+        height = shape.optimalBoundingBox(False, False).ZLength
+        front = [f for f in shape.Faces if abs(f.normalAt(0, 0).x - 1) < 1e-6 and abs(f.CenterOfMass.x - 5) < 1e-6]
+        gap = None
+        if front and len(front[0].Wires) > 1:
+            gap = front[0].OuterWire.distToShape([w for w in front[0].Wires if not w.isSame(front[0].OuterWire)][0])[0]
+        self.step("Change the overall height to 150 mm: the offset follows",
+                  f"the centre's height dimension: {h0 - r:.2f} -> {150 - r:.2f} (+ R{r:.2f} = 150)",
+                  SAME if shape.isValid() and gap is not None and abs(gap - 15) < 1e-3
+                  and abs(height - 150) < 1e-3 else FAIL,
+                  f"overall height {h0:.3f} -> {height:.4f} mm; inner loop {gap if gap is None else round(gap, 4)} "
+                  "mm inside the outline")
+
+    def i_show(self):
+        self.fit()
+
+    def i_save(self):
+        self.show("I_gasket")
+        self.check_drawn("The part is shown in the graphics window", "I_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "Gasket.FCStd"))
+
+    # ---------------------------------------------------------- tutorial J
+    # Parametric constraints (Shih ch. 5): a triangle constrained step by step, NX's
+    # "fully constrained" messages compared with FreeCAD's solver panel, then dimensions
+    # driven by formulas (p8/5*1.6, p10/4*1.2, hole = 1/3 of the height) and a size change.
+    # The book's triangle sizes are figure-only; the formulas, 25 x 15, 25 x 20 and the
+    # 3.5 thick plate are in the text (inches, typed in mm).
+    def j_new(self):
+        self.tutorial = "J: Parametric constraints and relations (book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def j_extrude(self):
+        self.wait_for("j: new part's Body", lambda: self.body() is not None)
+        self.step("File > New, Model template", "Ctrl+N",
+                  SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def j_plane(self):
+        picked = self.pick_in_feature_list("YZ")
+        self.mb2_click()
+        self.step("Extrude (X), YZ plane of the datum CSYS", "X key, plane row + MB2", SAME if picked else FAIL,
+                  f"picked {picked}")
+        self.wait = 1500
+
+    # -- sketch helpers
+    def sk_state(self, sk):
+        """(DoF, fully constrained, FreeCAD's solver message as the user reads it)."""
+        sk.solve()
+        msg = []
+        for lab in self.tasks_dock().findChildren(QtWidgets.QLabel):
+            t = lab.text().strip()
+            if lab.isVisible() and t and any(k in t.lower() for k in ("constrain", "dof", "degree")):
+                msg.append(re.sub("<[^>]+>", "", t))
+        return int(sk.DoF), bool(sk.FullyConstrained), " / ".join(dict.fromkeys(msg))
+
+    def datum_dialog(self, value):
+        """Answer FreeCAD's 'Insert length/angle' dialog: type the value, OK."""
+        def handle(w):
+            spins = w.findChildren(QtWidgets.QAbstractSpinBox)
+            if not spins:
+                return False
+            ed = spins[0].lineEdit()
+            ed.selectAll()
+            qtest().keyClicks(ed, f"{float(value):.6g}")
+            for box in w.findChildren(QtWidgets.QDialogButtonBox):
+                b = box.button(QtWidgets.QDialogButtonBox.Ok)
+                if b is not None:
+                    self.info.setdefault("J datum dialogs", []).append(f"{w.windowTitle()}: {value:g}")
+                    b.click()
+                    return True
+            return False
+        return handle
+
+    def sk_constrain(self, sk, label, subs, value=None):
+        """Select sketch elements, click the NX-named constraint button; type a value if asked."""
+        n0 = len(sk.Constraints)
+        Gui.Selection.clearSelection()
+        for s in subs:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, s)
+        QtWidgets.QApplication.processEvents()
+        if value is not None:
+            self.modals.handler = self.datum_dialog(value)
+        b, where = self.click_ribbon(label, tab="Sketch")
+        QtWidgets.QApplication.processEvents()
+        qtest().qWait(200)
+        self.modals.handler = None
+        App.ActiveDocument.recompute()
+        return len(sk.Constraints) - n0, where
+
+    def sk_vertex(self, sk, geo, pos):
+        """FreeCAD's VertexN name of a geometry's start (1) or end (2) point."""
+        n = 0
+        for i, g in enumerate(sk.Geometry):
+            if g.TypeId == "Part::GeomLineSegment":
+                for p in (1, 2):
+                    n += 1
+                    if i == geo and p == pos:
+                        return f"Vertex{n}"
+            elif g.TypeId == "Part::GeomCircle":
+                n += 1                       # the centre
+                if i == geo and pos == 3:
+                    return f"Vertex{n}"
+        return None
+
+    def j_profile(self):
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        pts = [(10.0, 10.0), (110.0, 10.0), (80.0, 60.0)]
+        _, tool, n, ended = self.draw_clicks("Z", pts + [pts[0]])
+        self._j_sk = sk
+        lines = [i for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomLineSegment"]
+        horiz = [c for c in sk.Constraints if c.Type == "Horizontal"]
+        dof, full, msg = self.sk_state(sk)
+        self.step("Profile: a triangle with a horizontal base", "Z key + 4 MB1 clicks + MB2",
+                  SAME if tool and len(lines) == 3 and horiz and ended else FAIL,
+                  f"{len(lines)} lines; implicit constraints {sorted({c.Type for c in sk.Constraints})}; DoF {dof}; "
+                  f"FreeCAD says '{msg}'")
+        self._j_lines = lines
+        self.wait = 300
+
+    def j_perpendicular(self):
+        sk = self._j_sk
+        right, left = self._j_lines[1], self._j_lines[2]
+        d, where = self.sk_constrain(sk, "Perpendicular", [f"Edge{left + 1}", f"Edge{right + 1}"])
+        a, b = sk.Geometry[left], sk.Geometry[right]
+        u = (a.EndPoint - a.StartPoint).normalize()
+        v = (b.EndPoint - b.StartPoint).normalize()
+        dof, full, msg = self.sk_state(sk)
+        self.step("Perpendicular: the two inclined lines, OK", f"both lines selected + ribbon '{where} > "
+                  "Perpendicular'", SAME if d == 1 and abs(u.dot(v)) < 1e-6 else FAIL,
+                  f"angle between them {90 - math.degrees(math.asin(max(-1, min(1, abs(u.dot(v)))))):.3f}° "
+                  f"(90 wanted); DoF {dof}; '{msg}'")
+
+    def j_dimensions(self):
+        sk = self._j_sk
+        base, right = self._j_lines[0], self._j_lines[1]
+        d1, w1 = self.sk_constrain(sk, "Distance", [f"Edge{base + 1}"], 120.0)
+        d2, w2 = self.sk_constrain(sk, "Angle", [f"Edge{base + 1}", f"Edge{right + 1}"], 60.0)
+        g = sk.Geometry[base]
+        length = (g.EndPoint - g.StartPoint).Length
+        dof, full, msg = self.sk_state(sk)
+        self._j_angle = len(sk.Constraints) - 1 if d2 else None
+        self.step("Dimensions: base length, angle to the right line; the triangle still moves", f"line + ribbon "
+                  f"'{w1} > Distance' = 120 mm, two lines + 'Angle' = 60° (typed in FreeCAD's dimension dialog)",
+                  SAME if d1 == 1 and d2 == 1 and abs(length - 120) < 1e-6 and dof == 2 else FAIL,
+                  f"base {length:.3f} mm; DoF {dof} (size fixed, position free, as in the book); '{msg}'")
+
+    def j_fix(self):
+        sk = self._j_sk
+        d, where = self.sk_constrain(sk, "Fully Fixed", [f"Edge{self._j_lines[0] + 1}"])
+        dof, full, msg = self.sk_state(sk)
+        self.step("Fix Curve on one line: fully defined", f"line + ribbon '{where} > Fully Fixed'",
+                  SAME if d == 1 and dof == 0 and full else FAIL,
+                  f"DoF {dof}, fully constrained {full}; NX turns the sketch black and says it is fully "
+                  f"defined, FreeCAD says '{msg}'")
+
+    def j_undo_fix(self):
+        sk = self._j_sk
+        self.key("Ctrl+Z")
+        QtWidgets.QApplication.processEvents()
+        dof, full, msg = self.sk_state(sk)
+        left_corner = self.sk_vertex(sk, self._j_lines[0], 1)
+        d, where = self.sk_constrain(sk, "Coincident", [left_corner, "RootPoint"])
+        dof2, full2, msg2 = self.sk_state(sk)
+        p = sk.Geometry[self._j_lines[0]].StartPoint
+        self.step("Undo, then Coincident: the left corner on the sketch origin", f"Ctrl+Z (DoF back to {dof}); "
+                  f"{left_corner} + origin + ribbon '{where} > Coincident'",
+                  SAME if dof == 2 and d == 1 and dof2 == 0 and p.Length < 1e-6 else FAIL,
+                  f"corner at ({p.x:.3f}, {p.y:.3f}); DoF {dof2}; '{msg2}'")
+
+    def j_location(self):
+        sk = self._j_sk
+        self.key("Ctrl+Z")
+        QtWidgets.QApplication.processEvents()
+        dof, _, _ = self.sk_state(sk)
+        left_corner = self.sk_vertex(sk, self._j_lines[0], 1)
+        d1, w1 = self.sk_constrain(sk, "Distance", [left_corner, "V_Axis"], 25.4)
+        d2, w2 = self.sk_constrain(sk, "Distance", [left_corner, "H_Axis"], 25.4)
+        dof2, full2, msg2 = self.sk_state(sk)
+        p = sk.Geometry[self._j_lines[0]].StartPoint
+        self.step("Undo, then location dimensions from the Y axis and the X axis", f"Ctrl+Z (DoF {dof}); "
+                  f"corner + Y axis, corner + X axis, ribbon '{w2} > Distance', 25.4 each",
+                  SAME if dof == 2 and d1 and d2 and dof2 == 0 else FAIL,
+                  f"corner at ({p.x:.3f}, {p.y:.3f}); DoF {dof2}; '{msg2}'")
+
+    def constraint_index(self, sk, kind, test=lambda c: True):
+        return next((i for i, c in enumerate(sk.Constraints) if c.Type == kind and test(c)), None)
+
+    def j_relax(self):
+        sk = self._j_sk
+        ang = self.constraint_index(sk, "Angle")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"Constraint{ang + 1}")
+        self.key("Delete")
+        QtWidgets.QApplication.processEvents()
+        App.ActiveDocument.recompute()
+        dof1, _, _ = self.sk_state(sk)
+        perp = self.constraint_index(sk, "Perpendicular")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"Constraint{perp + 1}")
+        b, where = self.click_ribbon("Relax Constraint")
+        QtWidgets.QApplication.processEvents()
+        App.ActiveDocument.recompute()
+        relaxed = not sk.Constraints[perp].IsActive
+        dof2, _, _ = self.sk_state(sk)
+        d, w2 = self.sk_constrain(sk, "Vertical", [f"Edge{self._j_lines[1] + 1}"])
+        dof3, full3, msg3 = self.sk_state(sk)
+        self.step("Delete the angle, relax Perpendicular, Vertical on the right line", f"angle + Delete; "
+                  f"Perpendicular + ribbon '{where} > Relax Constraint'; line + '{w2} > Vertical'",
+                  SAME if ang is not None and relaxed and d == 1 and (dof1, dof2, dof3) == (1, 2, 1) else FAIL,
+                  f"DoF after each: {dof1}, {dof2}, {dof3} (the book: one more constraint needed); '{msg3}'")
+
+    def j_height(self):
+        sk = self._j_sk
+        right = self._j_lines[1]
+        d, where = self.sk_constrain(sk, "Distance", [f"Edge{right + 1}"], 72.0)
+        dof, full, msg = self.sk_state(sk)
+        self.step("Vertical dimension: fully constrained", f"right line + ribbon '{where} > Distance' = 72 mm",
+                  SAME if d == 1 and dof == 0 and full else FAIL, f"DoF {dof}; '{msg}'")
+
+    def j_circle(self):
+        import Part
+        sk = self._j_sk
+        c0 = (95.0, 40.0)
+        _, tool, n, ended = self.draw_clicks("O", [c0, (c0[0] + 6, c0[1])])
+        circ = next((i for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomCircle"), None)
+        if circ is None:
+            sk.addGeometry(Part.Circle(App.Vector(*c0, 0), App.Vector(0, 0, 1), 6), False)
+            circ = len(sk.Geometry) - 1
+        d, where = self.sk_constrain(sk, "Tangent", [f"Edge{circ + 1}", f"Edge{self._j_lines[2] + 1}"])
+        dof, _, msg = self.sk_state(sk)
+        self._j_circ = circ
+        self.step("Circle inside, Tangent to the left inclined line", f"O key + 2 MB1 clicks + MB2; circle + line + "
+                  f"ribbon '{where} > Tangent'", SAME if tool and d == 1 and dof == 2 else FAIL,
+                  f"DoF {dof} (centre still slides along the line); '{msg}'")
+
+    def j_figure(self):
+        """'Modify the sketch as shown': the circle located from the right side and the base, with a diameter."""
+        import Sketcher
+        sk = self._j_sk
+        tan = self.constraint_index(sk, "Tangent")
+        if tan is not None:
+            sk.delConstraint(tan)
+        right, base, circ = self._j_lines[1], self._j_lines[0], self._j_circ
+        sk.addConstraint(Sketcher.Constraint("DistanceX", circ, 3, right, 1, 30.0))
+        sk.addConstraint(Sketcher.Constraint("DistanceY", base, 1, circ, 3, 20.0))
+        sk.addConstraint(Sketcher.Constraint("Diameter", circ, 20.0))
+        App.ActiveDocument.recompute()
+        dof, full, msg = self.sk_state(sk)
+        self.step("Match the figure: circle located from the right side and the base, a diameter", "values applied",
+                  DIFFERS if dof == 0 else FAIL, f"DoF {dof}; '{msg}'; the figure's values are not in the text")
+
+    def j_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def j_extrude_dialog(self):
+        self.wait_dialog("j_extrude_dialog")
+        field = self.set_quantity("length", 3.5 * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        sk = self._j_sk
+        ok = self.solid_volume() > 0 and abs(self.body().Shape.BoundBox.XLength - 3.5 * IN) < 1e-6
+        self.step("Extrude, plate thickness 3.5 in", f"Ctrl+Q, '{field}' = 88.9 mm, MB2 = OK", SAME if ok else FAIL,
+                  f"thickness {self.body().Shape.BoundBox.XLength:.3f} mm; sketch {sk.Name}")
+        self.wait = 600
+
+    def j_relations(self):
+        """NX: Edit Annotation > Expression shows p-names; a dimension's value becomes a formula."""
+        sk = self._j_sk
+        idx = {}
+        for i, c in enumerate(sk.Constraints):
+            if c.Type == "DistanceX" and c.First == self._j_circ:
+                idx["hx"] = i
+            elif c.Type == "DistanceY" and c.Second == self._j_circ:
+                idx["vy"] = i
+            elif c.Type == "Diameter":
+                idx["dia"] = i
+            elif c.Type == "Distance" and c.First == self._j_lines[0] and c.FirstPos == 0:
+                idx["width"] = i          # the base line's length (not a point-to-axis distance)
+            elif c.Type == "Distance" and c.First == self._j_lines[1] and c.FirstPos == 0:
+                idx["height"] = i
+        for n, i in idx.items():
+            sk.renameConstraint(i, n)
+        # the book: hx = p8/5*1.6, vy = p10/4*1.2 (p8, p10 the overall sizes); hole = 1/3 of the height
+        exprs = {"hx": "Constraints.width / 5 * 1.6", "vy": "Constraints.height / 4 * 1.2",
+                 "dia": "Constraints.height / 3"}
+        for n, e in exprs.items():
+            sk.setExpression(f"Constraints.{n}", e)
+        App.ActiveDocument.recompute()
+        self.step("Show the dimension names; enter p8/5*1.6 and p10/4*1.2; hole = 1/3 of the height",
+                  "constraints renamed (width, height, hx, vy, dia) and given formulas",
+                  DIFFERS if len(idx) == 5 else FAIL,
+                  f"FreeCAD names a dimension in its properties (NX: p0, p1 ... automatically) and takes a formula "
+                  f"after '=' in the dimension dialog: {exprs}")
+
+    def j_resize(self, w_in, h_in, label):
+        sk = self._j_sk
+        sk.setDatum("width", App.Units.Quantity(f"{w_in * IN} mm"))
+        sk.setDatum("height", App.Units.Quantity(f"{h_in * IN} mm"))
+        App.ActiveDocument.recompute()
+        c = sk.Geometry[self._j_circ]
+        right_x = sk.Geometry[self._j_lines[1]].StartPoint.x
+        base_y = sk.Geometry[self._j_lines[0]].StartPoint.y
+        W, H = w_in * IN, h_in * IN
+        want = (W / 5 * 1.6, H / 4 * 1.2, H / 3)
+        got = (right_x - c.Center.x, c.Center.y - base_y, 2 * c.Radius)
+        ok = all(abs(a - b) < 1e-6 for a, b in zip(want, got)) and self.body().Shape.isValid()
+        self.step(label, f"width = {W:g} mm, height = {H:g} mm",
+                  SAME if ok else FAIL, "circle from the right side, from the base, diameter: "
+                  + ", ".join(f"{g:.3f}" for g in got) + " mm (formulas: " + ", ".join(f"{w:.3f}" for w in want) + ")")
+
+    def j_resize1(self):
+        self.j_resize(25, 15, "Change the triangle to 25 x 15 in: the hole follows")
+
+    def j_resize2(self):
+        self.j_resize(25, 20, "Change it to 25 x 20 in: location and size follow")
+        self.fit()
+
+    def j_show(self):
+        self.show("J_parametric")
+        self.check_drawn("The part is shown in the graphics window", "J_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "Constraints.FCStd"))
+
+    # ---------------------------------------------------------- tutorial K
+    # Parameter-driven part (Leake & Borgerson, Engineering Design Graphics, ch. 7, Fig. 7-30;
+    # second notebook): a flat bar with N equally spaced holes, driven by L, N, D and
+    # hole_spacing = (L - 2 D) / (N - 1). Configuration A: L 48, N 5, D 2; B: L 36, N 8, D 1
+    # (inches). Bar width, thickness and hole size are not given: 2.0 x 0.5 in, Ø0.5 here.
+    K_W, K_T, K_R = 2.0 * 25.4, 0.5 * 25.4, 0.25 * 25.4
+
+    def k_new(self):
+        self.tutorial = "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def type_cell(self, _view, cell, text):
+        """Go to a cell, type its content, Enter (as a user fills in the expression sheet).
+
+        FreeCAD 1.1 draws the table inside a graphics scene that Python cannot walk, so the cell
+        is chosen through the sheet view's own API and the keys go to the focused widget."""
+        from .smoke import decode
+        sv = Gui.ActiveDocument.ActiveView if Gui.ActiveDocument else None
+        if sv is None or not hasattr(sv, "setCurrentIndex"):
+            return False
+        sv.setCurrentIndex(cell)
+        QtWidgets.QApplication.processEvents()
+        # the sheet's content line above the grid (like a formula bar): click it, type, Enter
+        mdi = Gui.getMainWindow().findChild(QtWidgets.QMdiArea)
+        sub = mdi.activeSubWindow() if mdi else None
+        line = next((w for w in (sub.widget().findChildren(QtWidgets.QLineEdit) if sub and sub.widget() else [])
+                     if w.metaObject().className() == "Gui::ExpressionLineEdit" and w.isVisible()), None)
+        if line is None:
+            self.progress(f"type_cell {cell}: no content line in '{sub.windowTitle() if sub else None}'")
+            return False
+        line.setFocus()
+        line.selectAll()
+        qtest().keyClicks(line, text)
+        qtest().keyClick(line, *decode("Return"))
+        QtWidgets.QApplication.processEvents()
+        return True
+
+    def k_sheet(self):
+        self.wait_for("k: new part's Body", lambda: self.body() is not None)
+        self.key("Ctrl+E")
+        QtWidgets.QApplication.processEvents()
+        qtest().qWait(500)
+        doc = App.ActiveDocument
+        sheet = doc.getObject("Expressions")
+        mdi = Gui.getMainWindow().findChild(QtWidgets.QMdiArea)
+        sub = mdi.activeSubWindow() if mdi else None
+        self.progress(f"k_sheet: sheet {getattr(sheet, 'Name', None)}; active window '{sub.windowTitle() if sub else None}'")
+        typed = {}
+        if sheet is not None:
+            # the book's 48 in and 2 in, typed in mm
+            for cell, text in (("A2", "L"), ("B2", "=1219.2 mm"), ("A3", "N"), ("B3", "5"), ("A4", "D"),
+                               ("B4", "=50.8 mm")):
+                self.type_cell(None, cell, text)
+            doc.recompute()
+            typed = {c: str(sheet.getContents(c)) for c in ("A2", "B2", "A3", "B3", "A4", "B4")}
+        self._k_sheet = sheet
+        ok = typed.get("B2", "").replace(" ", "") == "=1219.2mm" and typed.get("B3") == "5"
+        self.step("Tools > Expressions (Ctrl+E): L = 48, N = 5, D = 2 (in)", "Ctrl+E opens NXStyle's Expressions sheet; "
+                  "names and values typed into its cells", DIFFERS if ok else FAIL,
+                  f"cells {typed}; NX lists expressions in a dialog, FreeCAD keeps them in a spreadsheet")
+
+    def k_names(self):
+        """Give the value cells their names. FreeCAD refuses names that are unit symbols."""
+        sheet = self._k_sheet
+        result = {}
+        for cell, name in (("B2", "L"), ("B3", "N"), ("B4", "D")):
+            try:
+                sheet.setAlias(cell, name)
+                result[name] = "ok"
+            except Exception as e:
+                result[name] = str(e)
+        refused = [n for n, r in result.items() if r != "ok"]
+        for n in refused:                                  # the workaround: another name
+            sheet.setAlias({"L": "B2", "N": "B3", "D": "B4"}[n], f"{n}_holes" if n == "N" else f"{n}_")
+        self._k_names = {n: (n if result[n] == "ok" else (f"{n}_holes" if n == "N" else f"{n}_")) for n in result}
+        L, N, D = (self._k_names[k] for k in ("L", "N", "D"))
+        self.type_cell(None, "A5", "hole_spacing")
+        self.type_cell(None, "B5", f"=({L} - 2 * {D}) / ({N} - 1)")
+        sheet.setAlias("B5", "hole_spacing")
+        App.ActiveDocument.recompute()
+        hs = sheet.get("hole_spacing")
+        hs = float(getattr(hs, "Value", hs))
+        self.step("Names L, N, D and the equation hole_spacing = (L - 2D)/(N - 1)", "alias per value cell (cell "
+                  "properties); equation typed into B5", (DIFFERS if refused else SAME) if abs(hs - 11 * IN) < 1e-6
+                  else FAIL, f"hole_spacing = {hs:.3f} mm ({11 * IN:.3f} expected, the book's 11 in); names refused: "
+                  + (", ".join(f"{n} ({result[n]}: a unit symbol, newton)" if n == "N" else f"{n} ({result[n]})"
+                               for n in refused) or "none") + f"; used {self._k_names}")
+
+    def k_bar(self):
+        self.mdi_3d()
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def mdi_3d(self):
+        """Click back to the part's 3D view tab (the sheet window is in front)."""
+        mdi = Gui.getMainWindow().findChild(QtWidgets.QMdiArea)
+        for sub in (mdi.subWindowList() if mdi else []):
+            if sub.widget() is not None and sub.widget().inherits("Gui::View3DInventor") \
+                    and sub.windowTitle().startswith(App.ActiveDocument.Label):
+                mdi.setActiveSubWindow(sub)
+                break
+        QtWidgets.QApplication.processEvents()
+
+    def k_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.step("Create the flat bar: Extrude (X), XY plane", "X key, plane row + MB2", SAME if picked else FAIL,
+                  f"picked {picked}")
+        self.wait = 1500
+
+    def k_profile(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        L = 48 * IN
+        P = [App.Vector(0, 0, 0), App.Vector(L, 0, 0), App.Vector(L, self.K_W, 0), App.Vector(0, self.K_W, 0)]
+        _, tool, n, ended = self.draw_clicks("R", [(0, 0), (L, self.K_W)])
+        sk.deleteAllGeometry()
+        for i in range(4):
+            sk.addGeometry(Part.LineSegment(P[i], P[(i + 1) % 4]), False)
+        for i in range(4):
+            sk.addConstraint(Sketcher.Constraint("Coincident", i, 2, (i + 1) % 4, 1))
+        sk.addConstraint(Sketcher.Constraint("Horizontal", 0))
+        sk.addConstraint(Sketcher.Constraint("Horizontal", 2))
+        sk.addConstraint(Sketcher.Constraint("Vertical", 1))
+        sk.addConstraint(Sketcher.Constraint("Vertical", 3))
+        sk.addConstraint(Sketcher.Constraint("Coincident", 0, 1, -1, 1))
+        i = sk.addConstraint(Sketcher.Constraint("DistanceX", 0, 1, 0, 2, L))
+        sk.renameConstraint(i, "length")
+        sk.addConstraint(Sketcher.Constraint("DistanceY", 1, 1, 1, 2, self.K_W))
+        sk.setExpression("Constraints.length", f"Expressions.{self._k_names['L']}")
+        App.ActiveDocument.recompute()
+        self._k_sk = sk
+        self.step("Rectangle, its length = L", "R key + 2 MB1 clicks + MB2; length tied to the expression",
+                  DIFFERS if tool and int(sk.DoF) == 0 else FAIL,
+                  f"DoF {sk.DoF}; NX types 'L' in the dimension, FreeCAD types '=Expressions.L' (f(x)) in it")
+
+    def k_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def k_pad(self):
+        self.wait_dialog("k_pad")
+        field = self.set_quantity("length", self.K_T)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        want = 48 * IN * self.K_W * self.K_T
+        self.check_volume("Extrude the bar, 0.5 in thick", f"Ctrl+Q, '{field}' = 12.7 mm, MB2 = OK", want)
+        self.wait = 600
+
+    def k_hole(self):
+        tip = self.body().Tip
+        top = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-6 and abs(f.CenterOfMass.z - self.K_T) < 1e-6)
+        self.select_sub(tip, top)
+        b, where = self.click_ribbon("Hole")
+        self.step("Create a hole at one end of the bar", f"top face + ribbon '{where} > Hole'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  "FreeCAD's Hole drills at circle centres in a sketch on the face")
+        self.wait = 1500
+
+    def k_hole_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no hole sketch in edit")
+        tip = self.body().Tip
+        # project the bar's left end (top edge) so the hole is located from it
+        end_i, end_e = next(((i, e) for i, e in enumerate(tip.Shape.Edges, start=1)
+                             if all(abs(v.Point.x) < 1e-6 and abs(v.Point.z - self.K_T) < 1e-6 for v in e.Vertexes)),
+                            (None, None))
+        sk.addExternal(tip.Name, f"Edge{end_i}")
+        c = self.g2s(sk, 2, self.K_W / 2 / IN, self.K_T / IN)
+        _, tool, n, ended = self.draw_clicks("O", [c, (c[0] + self.K_R, c[1])])
+        sk.deleteAllGeometry()
+        sk.addGeometry(Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), self.K_R), False)
+        sk.addConstraint(Sketcher.Constraint("Diameter", 0, 2 * self.K_R))
+        # the projected end runs across the bar: the other sketch axis is along the bar
+        s0 = App.Vector(*self.g2s(sk, end_e.Vertexes[0].Point.x / IN, end_e.Vertexes[0].Point.y / IN, self.K_T / IN), 0)
+        s1 = App.Vector(*self.g2s(sk, end_e.Vertexes[-1].Point.x / IN, end_e.Vertexes[-1].Point.y / IN, self.K_T / IN), 0)
+        across_is_y = abs(s1.y - s0.y) > abs(s1.x - s0.x)
+        along_kind, across_kind = ("DistanceX", "DistanceY") if across_is_y else ("DistanceY", "DistanceX")
+        d_along = (c[0] - s0.x) if across_is_y else (c[1] - s0.y)
+        d_across = (c[1] - s0.y) if across_is_y else (c[0] - s0.x)
+
+        def signed(kind, value):
+            # keep the stored value positive so an expression (D) cannot flip the hole to the other side
+            if value >= 0:
+                return Sketcher.Constraint(kind, -3, 1, 0, 3, value)
+            return Sketcher.Constraint(kind, 0, 3, -3, 1, -value)
+        i = sk.addConstraint(signed(along_kind, d_along))
+        sk.renameConstraint(i, "end_distance")
+        sk.addConstraint(signed(across_kind, d_across))
+        App.ActiveDocument.recompute()
+        self._k_hole_sk = sk
+        self.step("Hole centre at D from the end, on the centre line", "O key + 2 MB1 clicks + MB2; distance from "
+                  "the projected end tied to D", SAME if tool and abs(abs(d_along) - 2 * IN) < 1e-6 else FAIL,
+                  f"DoF {sk.DoF}; {abs(d_along):.3f} mm from the end, {abs(d_across):.3f} mm from the "
+                  "edge")
+
+
+    def k_hole_finish(self):
+        sk = self._k_hole_sk
+        try:
+            sk.setExpression("Constraints.end_distance", f"Expressions.{self._k_names['D']}")
+            App.ActiveDocument.recompute()
+        except Exception as e:
+            self.info["K hole expression"] = str(e)
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def k_hole_dialog(self):
+        self.wait_dialog("k_hole_dialog")
+        dia = self.set_quantity("diameter", 2 * self.K_R)
+        depth = self.choose("through", "depthtype")
+        self.mb2_click()
+        want = (48 * IN * self.K_W - math.pi * self.K_R ** 2) * self.K_T
+        self.check_volume("Hole Ø0.5 through", f"'{dia}' = 12.7 mm, '{depth}', MB2 = OK", want)
+        self._k_hole = self.body().Tip
+        self.wait = 600
+
+    def k_pattern(self):
+        self.select_sub(self._k_hole, "")
+        b, where = self.click_ribbon("Pattern Feature")
+        self._k_where = where
+        self.wait = 1500
+
+    def k_pattern_dialog(self):
+        self.wait_dialog("k_pattern_dialog")
+        panels = self.pattern_dirs()
+        got = self.set_direction(panels[0], "x axis", 5, 11.0) if panels else {}     # configuration A's pitch
+        pat = self.newest("PartDesign::LinearPattern")
+        counts = {p: getattr(pat, p) for p in pat.PropertiesList if p.startswith("Occurrences")} if pat else {}
+        if not pat or any(v > 100 for v in counts.values()):
+            for p in counts:
+                setattr(pat, p, 2)
+            Gui.Control.closeDialog()
+            raise RuntimeError(f"pattern count not as typed: {counts}")
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        pat.setExpression("Occurrences", f"Expressions.{self._k_names['N']}")
+        pat.setExpression("Offset", "Expressions.hole_spacing")
+        App.ActiveDocument.recompute()
+        self._k_pat = pat
+        ok = self.k_check(48, 5, 2)
+        self.step("Rectangular array of the hole: count N, spacing hole_spacing", f"hole + ribbon '{self._k_where} > "
+                  f"Pattern Feature', X axis, {got}; count and spacing tied to N and hole_spacing (f(x))",
+                  DIFFERS if ok[0] else FAIL, ok[1] + "; NX: the array's count and pitch fields take the "
+                  "expression names directly")
+
+    def k_check(self, L, N, D):
+        """Measure the bar: length, hole count, first and last hole centres, pitch; and its volume."""
+        shape = self.body().Shape
+        xs = sorted({round(e.Curve.Center.x, 4) for e in shape.Edges if hasattr(e.Curve, "Radius")
+                     and abs(e.Curve.Radius - self.K_R) < 1e-6 and abs(e.Curve.Center.z - self.K_T) < 1e-6})
+        length = shape.BoundBox.XLength
+        pitch = [round(b - a, 4) for a, b in zip(xs, xs[1:])]
+        want_pitch = (L - 2 * D) / (N - 1) * IN
+        want_vol = (L * IN * self.K_W - N * math.pi * self.K_R ** 2) * self.K_T
+        ok = (abs(length - L * IN) < 1e-4 and len(xs) == N and xs and abs(xs[0] - D * IN) < 1e-4
+              and abs(xs[-1] - (L - D) * IN) < 1e-4 and all(abs(p - want_pitch) < 1e-4 for p in pitch)
+              and abs(shape.Volume - want_vol) < 1e-3 * want_vol)
+        return ok, (f"length {length:.3f} mm, {len(xs)} holes, first at {xs[0] if xs else 0:.3f} mm, last "
+                    f"{xs[-1] if xs else 0:.3f} mm, pitch {pitch[0] if pitch else 0:.4f} mm "
+                    f"({want_pitch:.4f} wanted); volume {shape.Volume:.0f} mm^3 ({want_vol:.0f} wanted)")
+
+    def k_config_b(self):
+        """Configuration B: type L 36, N 8, D 1 into the sheet; the part regenerates."""
+        doc = App.ActiveDocument
+        sheet = self._k_sheet
+        sheet.ViewObject.doubleClicked()
+        QtWidgets.QApplication.processEvents()
+        for cell, text in (("B2", "=914.4 mm"), ("B3", "8"), ("B4", "=25.4 mm")):     # 36 in, 8, 1 in
+            self.type_cell(None, cell, text)
+        doc.recompute()
+        self.mdi_3d()
+        ok, detail = self.k_check(36, 8, 1)
+        self.step("Configuration B: L 36, N 8, D 1", "values typed into the sheet's cells", SAME if ok else FAIL,
+                  detail)
+
+    def k_show(self):
+        self.fit()
+
+    def k_save(self):
+        self.show("K_flat_bar")
+        self.check_drawn("The part is shown in the graphics window", "K_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "FlatBar.FCStd"))
 
     # ------------------------------------------------------------- runner
     def next(self):
