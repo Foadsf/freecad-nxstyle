@@ -2175,6 +2175,86 @@
    "replay": "Ctrl+Shift+D; the sheet updates by itself",
    "outcome": "same",
    "detail": "diameter dimension now Ø15.875 mm; TechDraw keeps the sheet up to date (the page's Keep Updated), NX marks it out of date and asks for Update"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 1,
+   "nx": "Open Grasshopper from Rhino's toolbar; the canvas floats beside the viewports",
+   "replay": "ribbon 'Application › Design > Algorithmic Modeling'",
+   "outcome": "same",
+   "detail": "Katydid's canvas opens as a floating window over the graphics window (floating True); the document is Unnamed"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 2,
+   "nx": "Display > Draw Full Names, so components show 'Sphere', 'Radius' ...",
+   "replay": "-",
+   "outcome": "differs",
+   "detail": "Katydid draws each component's short name on it (Sph, Cyl ...) and shows the full name, every input's name and its type in the tooltip; there is no names/icons switch. Tabs ['Params', 'Maths', 'Sets', 'Vector', 'Curve', 'Surface', 'Transform', 'Intersect', 'Tolerance']"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 3,
+   "nx": "Double-click the canvas, type Sphere, Enter: a preview sphere at the origin",
+   "replay": "double-click + 'Sphere' + Enter",
+   "outcome": "same",
+   "detail": "sphere volume 523.6 mm^3 = R 5 (Katydid's default; Grasshopper's is 1); inputs ['R (Radius)']. Grasshopper's Sphere also has a Base plane (B) input; Katydid's sits at the origin"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 4,
+   "nx": "Reference a Rhino point (Point > Set one Point) into the sphere's Base; drag it with the Gumball",
+   "replay": "stand-in: 'Move' after the sphere, a slider 'X' into its X; the sphere's own preview off",
+   "outcome": "missing",
+   "detail": "sphere centre x = 20.0. Katydid has no Point parameter that follows a FreeCAD point yet (asked for); dragging the slider moves the sphere live, as the Gumball does in Rhino"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 5,
+   "nx": "Number Slider into the sphere's Radius (R); double-click the slider's name for its range: 0 to 10",
+   "replay": "double-click + 'Number Slider'; double-click the slider: Name, Minimum 0, Maximum 10, Value; MB1 drag from the slider to R",
+   "outcome": "same",
+   "detail": "radius 7.5 -> volume 1767.1 mm^3 (expected 1767.1)"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 6,
+   "nx": "Two points (Set Multiple Points) give two spheres; copy the slider and Shift-wire both into R",
+   "replay": "stand-in: a second X slider Shift-wired into Move's X; a second radius slider Shift-wired into R",
+   "outcome": "differs",
+   "detail": "spheres (centre x, radius): [(-20.0, 3.0), (20.0, 7.5)]. Shift + MB1 drag adds a wire, as in Grasshopper; lists pair up item by item"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 7,
+   "nx": "Right-click the sphere's output > Bake...: real Rhino objects",
+   "replay": "ribbon 'Home › Algorithm > Bake' (Katydid's own Bake on the canvas does the same)",
+   "outcome": "same",
+   "detail": "baked ['Move 0', 'Move 1'], volumes [113.1, 1767.1] mm^3; they are ordinary Part features in the Part Navigator and stay when the canvas closes. Baked 2 object(s) into the document"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 8,
+   "nx": "Exercise: Cylinder with sliders 5 for the radius and 8 for the length",
+   "replay": "double-click + 'Cylinder'; two sliders typed 5 and 8; wired to R and L",
+   "outcome": "same",
+   "detail": "volume 628.3 mm^3 (expected 628.3). Grasshopper makes a slider when you type '5' into the search box; Katydid's search finds components only (asked for)"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 9,
+   "nx": "An orange component: an input is missing; its balloon says why",
+   "replay": "a 'Move' with nothing in G",
+   "outcome": "same",
+   "detail": "state warning: ['Input parameter G failed to collect data']; Katydid colours it orange and shows the message in the tooltip (hover the component)"
+  },
+  {
+   "tutorial": "O: Grasshopper basics, sphere and cylinder (Katydid)",
+   "n": 10,
+   "nx": "Save the Rhino model (.3dm) and the Grasshopper definition (.gh), and open both together",
+   "replay": "one save (Save As, named by the replay): the canvas is saved inside the part",
+   "outcome": "differs",
+   "detail": "Katydid_Basics.FCStd holds the parts and the canvas (a Katydid object in the Part Navigator); there is no separate definition file to keep next to it"
   }
  ],
  "info": {

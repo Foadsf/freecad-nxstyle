@@ -31,6 +31,7 @@ import FreeCADGui as Gui
 
 from .qt import QtCore, QtWidgets, Qt, mouse_event
 from .ribbon import CommandButton
+from .tutorial_katydid import KatydidTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
 IN = 25.4
@@ -85,7 +86,7 @@ class ModalWatcher(QtCore.QObject):
             w.close()
 
 
-class Replay:
+class Replay(KatydidTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -356,11 +357,15 @@ class Replay:
         N = [self.n_drafting, self.n_sheet, self.n_base, self.n_top, self.n_b_size, self.n_iso, self.n_csys,
              self.n_text, self.n_feature_params, self.n_smooth, self.n_arrows, self.n_hide_show, self.n_center_marks,
              self.n_radial, self.n_decimals, self.n_change, self.n_update]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K,L,M,N").upper().split(",")
+        O = [self.o_new, self.o_names, self.o_sphere, self.o_point, self.o_radius, self.o_two, self.o_bake,
+             self.o_cylinder, self.o_warning, self.o_save]
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O").upper().split(",")
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
+        if "O" in wanted and "KatydidWorkbench" not in Gui.listWorkbenches():
+            wanted.remove("O")                       # Katydid off (--no-katydid): nothing to replay on
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
-                           ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N)):
+                           ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O)):
             if key in wanted:
                 yield from steps
 

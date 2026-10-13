@@ -232,7 +232,13 @@ def gen_tutorials():
 def import_results(path):
     """Copy a replay's tutorial.json into docs/results/: the steps and the FreeCAD version only."""
     data = json.load(open(path, encoding="utf-8"))
-    keep = {"steps": data["steps"], "info": {"FreeCAD": data.get("info", {}).get("FreeCAD", [])}}
+    steps = data["steps"]
+    # a run of some tutorials (--tutorials O) replaces those tutorials only; the others stay as published
+    if os.path.isfile(RESULTS):
+        new = {s["tutorial"][:1] for s in steps}
+        old = [s for s in json.load(open(RESULTS, encoding="utf-8"))["steps"] if s["tutorial"][:1] not in new]
+        steps = sorted(old + steps, key=lambda s: (s["tutorial"][:1], s["n"]))
+    keep = {"steps": steps, "info": {"FreeCAD": data.get("info", {}).get("FreeCAD", [])}}
     text = json.dumps(keep, indent=1, ensure_ascii=False)
     home = os.path.expanduser("~")
     if home in text or home.replace("\\", "/") in text or home.replace("\\", "\\\\") in text:

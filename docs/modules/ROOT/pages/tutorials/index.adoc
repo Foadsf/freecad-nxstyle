@@ -1,13 +1,14 @@
 = Tutorials
-:description: Fourteen NX textbook exercises, step by step in FreeCAD NX-Style, with what is the same and what differs.
+:description: NX textbook exercises and Grasshopper video tutorials, step by step in FreeCAD NX-Style, with what is the same and what differs.
 include::partial$generated/tutorial-meta.adoc[]
 
-Each tutorial is an exercise from an NX, GD&T or engineering-graphics textbook, done in NX-Style the way the book tells an NX user to work.
-Every page lists the book's steps beside the NX-Style steps, so you can follow along with the book open or without it.
+Tutorials A to N are exercises from NX, GD&T and engineering-graphics textbooks, done in NX-Style the way the book tells an NX user to work.
+Tutorial O and on are Grasshopper video tutorials done on the xref:algorithmic-modeling.adoc[Algorithmic Modeling] canvas (Katydid).
+Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
 
 The step tables are not written by hand.
-The xref:testing.adoc#tutorial-replay[tutorial replay] presses the same keys, clicks the same NX-named ribbon buttons, clicks sketch points with MB1 and accepts dialogs with MB2, then checks each feature by its volume.
-The tables show its last run: FreeCAD {replay-freecad}, {replay-steps} steps, all fourteen tutorials in one session.
+The xref:testing.adoc#tutorial-replay[tutorial replay] presses the same keys, clicks the same NX-named ribbon buttons, clicks sketch points with MB1 and accepts dialogs with MB2, places canvas components by typing their names and drags wires between grips, then checks each result by its volume.
+The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 
 == Before you start
 
@@ -31,6 +32,7 @@ The tables show its last run: FreeCAD {replay-freecad}, {replay-steps} steps, al
 | Assemblies | xref:tutorials/g.adoc[G]
 | Drawings | xref:tutorials/d.adoc[D], xref:tutorials/n.adoc[N]
 | GD&T | xref:tutorials/h.adoc[H]
+| Algorithmic modelling (a Grasshopper-style canvas) | xref:tutorials/o.adoc[O]
 |===
 
 == Results
@@ -46,4 +48,8 @@ include::partial$outcome-legend.adoc[]
 * James Leake and Jacob Borgerson, _Engineering Design Graphics_ (Wiley): tutorial K.
 * Tutorial B is a synthesised first-part exercise.
 
-The pages summarise the exercises; they do not reproduce the books.
+== The videos
+
+* Bastian Wibranek, https://www.youtube.com/watch?v=cN6XuHxrfxU[Rhino 3D and Grasshopper - Basics Tutorial]: tutorial O.
+
+The pages summarise the exercises; they do not reproduce the books or the videos.

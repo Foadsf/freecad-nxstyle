@@ -1,0 +1,97 @@
+= Tutorial O: Grasshopper basics, sphere and cylinder
+:description: The first steps of visual programming on the Katydid canvas: a sphere, sliders, two spheres, Bake, and a cylinder exercise.
+
+[horizontal]
+Video:: Bastian Wibranek, https://www.youtube.com/watch?v=cN6XuHxrfxU[Rhino 3D and Grasshopper - Basics Tutorial] (YouTube)
+Application:: xref:algorithmic-modeling.adoc[Algorithmic Modeling] (Katydid)
+You learn:: Opening the canvas, adding components by name, sliders, wiring, two results from two inputs, Bake, warnings, saving
+Sizes:: Millimetres: a sphere of radius 7.5 and one of 3, 40 mm apart; a cylinder 5 × 8
+
+The video teaches Grasshopper inside Rhino.
+Here the same steps run on Katydid's canvas inside FreeCAD NX-Style: Katydid plays Grasshopper's part, FreeCAD plays Rhino's.
+
+== Step by step
+
+=== 1. Open the canvas
+
+*Application › Algorithmic Modeling*.
+The canvas opens as a floating window over the graphics window, as Grasshopper's floats over Rhino's viewports.
+
+Grasshopper's *Display › Draw Full Names* has no counterpart: Katydid writes each component's short name on it and shows the full name, every input and its type in the tooltip.
+
+=== 2. A sphere
+
+Double-click the empty canvas, type `Sphere` and press kbd:[Enter].
+A red preview sphere appears at the origin in the graphics window: the preview is not a document object yet.
+
+image::tutorial-O-01-sphere.png[A Sphere component and its preview at the origin]
+
+NOTE: Grasshopper's Sphere also has a *Base* (B) input for its position; Katydid's Sphere sits at the origin, so the next step moves it.
+
+=== 3. Move it
+
+In the video a point drawn in Rhino is referenced into the sphere's *Base* (*Set one Point*) and dragged with the Gumball.
+Katydid cannot reference a FreeCAD point yet, so a *Move* after the sphere does the moving:
+
+. Double-click, `Move`, kbd:[Enter].
+. Drag a wire from the sphere's output *S* to Move's *G*.
+. Double-click, `Number Slider`, kbd:[Enter]. Double-click the slider to name it `X` and give it the range −50 to 50, value 20.
+. Wire the slider into Move's *X*.
+. Right-click the sphere and switch its preview off, so only the moved sphere shows.
+
+Drag the slider and the sphere follows, live.
+
+image::tutorial-O-02-move.png[Sphere, Move and an X slider: the sphere 20 mm along X]
+
+=== 4. A slider for the radius
+
+Add a second Number Slider, name it `Radius`, range 0 to 10, and wire it into the sphere's *R*.
+At 7.5 the sphere's volume is 1767.1 mm³, as 4/3 π r³ gives.
+
+image::tutorial-O-03-radius.png[A Radius slider wired into the sphere]
+
+=== 5. Two spheres
+
+The video references two points (*Set Multiple Points*) and copies the radius slider.
+Here a second X slider (−20) goes into Move's *X* and a second radius slider (3) into the sphere's *R*, each wire dragged with kbd:[Shift] held so it is added, not swapped.
+Lists pair up item by item: radius 7.5 at x = 20 and radius 3 at x = −20.
+
+image::tutorial-O-04-two-spheres.png[Two spheres from two radius sliders and two X sliders]
+
+=== 6. Bake
+
+*Home › Algorithm › Bake* (or *Bake* on the canvas) turns what is previewed into ordinary Part features.
+`Move 0` and `Move 1` appear in the Part Navigator and stay when the canvas is closed.
+
+image::tutorial-O-05-bake.png[The two spheres baked into the Part Navigator]
+
+=== 7. Exercise: a cylinder
+
+Clear the canvas, add a *Cylinder* and two sliders, `Radius` 5 and `Length` 8, and wire them into *R* and *L*.
+Its volume is 628.3 mm³ (π r² h).
+The baked spheres stay in the document, grey; the cylinder is still a red preview.
+
+image::tutorial-O-06-cylinder.png[A Cylinder with Radius and Length sliders]
+
+TIP: In Grasshopper, typing `5` into the search box makes a slider at 5. Katydid's search finds components only, so the slider is added and then set.
+
+=== 8. Warnings
+
+A component that misses an input turns orange.
+Add a *Move* with nothing in *G*: it says "Input parameter G failed to collect data" when you hover it.
+Wire the cylinder into *G* and it is grey again.
+
+=== 9. Save
+
+Grasshopper keeps its definition in a `.gh` file beside Rhino's `.3dm`, and both have to be opened together.
+Katydid saves the canvas inside the part: one *Save*, and the `.FCStd` holds the baked spheres and the canvas (the *Katydid* object in the Part Navigator).
+
+image::tutorial-O-07-saved.png[The saved part with its canvas]
+
+== The replay
+
+Every step above is done by the xref:testing.adoc#tutorial-replay[tutorial replay] (`--tutorials O`): it double-clicks the canvas and types each name, drags each wire between grips, types the slider values into the slider's dialog, and checks every result by its volume and position.
+
+include::partial$generated/tutorial-O.adoc[]
+
+include::partial$outcome-legend.adoc[]

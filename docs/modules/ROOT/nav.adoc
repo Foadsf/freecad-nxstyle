@@ -32,6 +32,7 @@
 * xref:tutorials/l.adoc[L: The Locator]
 * xref:tutorials/m.adoc[M: The U-Bracket]
 * xref:tutorials/n.adoc[N: The U-Bracket drawing]
+* xref:tutorials/o.adoc[O: Grasshopper basics (Katydid)]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]
