@@ -180,6 +180,18 @@ class Smoke:
         except ImportError:
             accent = None
         self.check("Strata takes NX's accent colour", accent == plm.NX_TOKENS["accent"], accent)
+        if hasattr(sb, "activate_commands"):          # Strata 0.2.1+: it has keys of its own
+            owners = {k: sorted(Gui.Command.listByShortcut(k)) for k in ("Ctrl+Shift+D", "Ctrl+Shift+Y",
+                                                                      "Ctrl+Shift+H")}
+            # NXStyle's key pass would take D/Y back anyway (measured: same owners with Strata's defaults);
+            # what plm.STRATA_SHORTCUTS changes is Strata's own view, which its Tools menu shows
+            eff = sb.effective_shortcuts() if hasattr(sb, "effective_shortcuts") else {}
+            self.check("Strata's keys leave NX's Ctrl+Shift+D/Y alone (Ctrl+Shift+H still Strata's)",
+                       owners["Ctrl+Shift+D"] == ["NXStyle_App_drafting"]
+                       and owners["Ctrl+Shift+Y"] == ["NXStyle_App_draft"]
+                       and owners["Ctrl+Shift+H"] == ["Strata_Panel"]
+                       and not eff.get("Strata_Compare") and not eff.get("Strata_Sync"),
+                       {"owners": owners, "Strata's own": eff})
         if p is not None and model is not None:      # pictures for the README: panel in front, PLM tab
             p.raise_()
             self.shell.ribbon.select("PLM")

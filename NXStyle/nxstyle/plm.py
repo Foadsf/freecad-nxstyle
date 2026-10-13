@@ -61,8 +61,16 @@ def _area(dock):
     return {Qt.LeftDockWidgetArea: "left", Qt.RightDockWidgetArea: "right"}.get(a, str(a))
 
 
+# Strata 0.2.0+ binds Ctrl+Shift+D (Compare) and Ctrl+Shift+Y (Sync), NX's Drafting and Layout keys;
+# two owners and Qt fires neither. Since freecad-strata 37db86f the host chooses: these two go unbound.
+STRATA_SHORTCUTS = {"Strata_Compare": None, "Strata_Sync": None}
+
+
 def _configure(sb):
-    sb.configure(host_toolbar=True, panel_area="left")
+    try:
+        sb.configure(host_toolbar=True, panel_area="left", shortcuts=STRATA_SHORTCUTS)
+    except TypeError:                         # a Strata before 37db86f has no shortcuts= (and no keys)
+        sb.configure(host_toolbar=True, panel_area="left")
 
 
 def prepare():
@@ -124,7 +132,10 @@ def _place(shell, sb):
         shell.build_ribbon(shell.current_app)   # the PLM buttons now have actions to mirror
     # FreeCAD's view commands get their default keys (Home, End, Ctrl+Alt+F ...) back while Strata
     # starts, even with Strata in host mode (measured 2026-10-12; which step does it is not known):
-    # take the NX keys back, as NXStyle does after any late-loading workbench
+    # take the NX keys back, as NXStyle does after any late-loading workbench. Strata 0.2.0+ binds its
+    # own keys only once its Tools-menu entries exist, which in host mode is activate_commands()
+    if hasattr(sb, "activate_commands"):
+        sb.activate_commands()
     shell._reclaim_keys()
     if not _state.get("configured_early"):
         # Strata started before NXStyle could configure it: its toolbar and the moved panel

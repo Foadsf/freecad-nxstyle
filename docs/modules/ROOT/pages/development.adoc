@@ -94,8 +94,9 @@ The self-test presses every key.
 import strata.boot as sb
 from strata.ui import theme
 
-sb.configure(host_toolbar=True, panel_area="left")
-sb.on_ready(lambda: ribbon.add_actions(sb.actions().values()))
+sb.configure(host_toolbar=True, panel_area="left",
+             shortcuts={"Strata_Compare": None, "Strata_Sync": None})
+sb.on_ready(lambda: ribbon.add_actions(sb.actions().values()))   # plm.py then calls sb.activate_commands()
 theme.set_overrides(light={"accent": "#00838F"})
 ----
 
@@ -103,6 +104,8 @@ theme.set_overrides(light={"accent": "#00838F"})
 * `panel_area="left"`: the panel is made with the navigators.
 * `actions()`: Strata's commands as QActions, enabled with the active project.
 * `theme.set_overrides`: Strata's panels in NX-Style's colours.
+* `shortcuts=` (freecad-strata `37db86f` on): Strata's own keys are Ctrl+Shift+H, V, D, R and Y. D and Y are NX's Drafting and Layout keys, so Compare and Sync get none; NX-Style's key pass would take D and Y back anyway, but Strata's Tools-menu entries would then show keys that do nothing.
+* `activate_commands()`: in host mode Strata binds its keys only when this runs; `plm.py` calls it before NX-Style takes its keys back.
 
 The submodule is pinned; update it with `git submodule update --remote vendor/freecad-strata` and commit the new pin after the self-test passes.
 

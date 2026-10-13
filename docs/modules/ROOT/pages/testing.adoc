@@ -27,7 +27,7 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It checks 68 behaviours, among them:
+It checks 69 behaviours, among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;

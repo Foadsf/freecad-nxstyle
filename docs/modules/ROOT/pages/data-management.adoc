@@ -37,6 +37,11 @@ image::strata-plm.png[Strata's Versions and history panel among the navigators, 
 
 The history is kept in a hidden `.strata` folder in the project; the `.FCStd` files stay ordinary FreeCAD files.
 
+== Keys
+
+kbd:[Ctrl+Shift+H] opens *Versions and history*, kbd:[Ctrl+Shift+V] is *Create Version* and kbd:[Ctrl+Shift+R] is *Releases*.
+Strata's own keys for Compare and Sync (kbd:[Ctrl+Shift+D] and kbd:[Ctrl+Shift+Y]) stay NX's Drafting and Layout here; Compare and Sync are on the PLM tab.
+
 Strata's own {strata}#readme[documentation] covers merging, releases and sharing in detail.
 
 == Without Strata
