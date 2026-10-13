@@ -1,14 +1,15 @@
 = Troubleshooting
-:description: What to do when NX-Style does not start, Strata is missing, or the window does not look right.
+:description: What to do when NX-Style does not start, Strata or Katydid is missing, or the window does not look right.
 
 == First checks
 
-The launcher prints three lines when it starts:
+The launcher prints four lines when it starts:
 
 ----
 FreeCAD 1.1.4: C:\Program Files\FreeCAD 1.1\bin\freecad.exe
 NX profile: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1
 Strata: bundled (...\vendor\freecad-strata)
+Katydid: bundled (...\vendor\Katydid)
 ----
 
 `python launch_nx.py --dry-run` prints the same facts, and the full FreeCAD command, without starting anything.
@@ -35,9 +36,9 @@ FreeCAD 1.1 is recommended: its Siemens NX navigation style and theme editor exi
 A `--profile` folder must not be inside your normal FreeCAD user folder, so that NX-Style can never change it.
 Pick another folder.
 
-== Strata is missing
+== Strata or Katydid is missing
 
-`Strata: not found: run 'git submodule update --init' …`::
+`Strata: not found: run 'git submodule update --init' …` (or `Katydid: not found …`)::
 The copy was cloned without `--recursive`. In the `freecad-nxstyle` folder run:
 +
 [source,bash]
@@ -50,6 +51,9 @@ It was switched off with `--no-strata` or `"plm"` in the xref:settings.adoc[sett
 
 `Strata: installed in the NX profile (…)`::
 A Strata installed with the Add-on Manager in the NX profile is used instead of the bundled one.
+
+`Katydid: off (…)` or `Katydid: installed in the NX profile (…)`::
+The same for Katydid: `--no-katydid` or `"algorithmic_modeling"` in the settings switched it off, or a copy in the NX profile is used instead.
 
 Strata's panel needs `git` on the PATH; see xref:installation.adoc[].
 

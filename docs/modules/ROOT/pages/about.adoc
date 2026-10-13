@@ -4,7 +4,8 @@
 == Licence
 
 FreeCAD NX-Style is free software under the {repo}/blob/main/LICENSE[LGPL-2.1-or-later], the same licence as FreeCAD.
-{strata}[Strata] is a separate project under the same licence, included as a git submodule.
+{strata}[Strata] and https://github.com/Foadsf/Katydid[Katydid] are separate projects under the same licence, included as git submodules.
+Katydid is not affiliated with Robert McNeel & Associates; Grasshopper is their trademark, named only to describe the style of tool.
 
 == Trademarks
 

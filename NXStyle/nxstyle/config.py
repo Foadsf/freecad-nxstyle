@@ -49,6 +49,7 @@ DEFAULTS = {
     "new_part_datum": True,            # a new empty part starts with a Body (NX Model template)
     "nx_shortcuts": True,              # bind the NX keys (see Keyboard shortcuts); false keeps FreeCAD's
     "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
+    "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
 }
 
 BACKGROUNDS = {
@@ -64,11 +65,20 @@ _cfg = None
 
 
 def profile_dir():
-    return os.environ.get("NXSTYLE_PROFILE") or App.getUserConfigDir()
+    """The folder that holds nxstyle.json: the NX profile's config folder, where the launcher and the
+    documentation look too (the launcher sets NXSTYLE_PROFILE to the profile's root)."""
+    root = os.environ.get("NXSTYLE_PROFILE")
+    return os.path.join(root, "config") if root else App.getUserConfigDir()
 
 
 def user_file():
-    return os.path.join(profile_dir(), "nxstyle.json")
+    path = os.path.join(profile_dir(), "nxstyle.json")
+    root = os.environ.get("NXSTYLE_PROFILE")
+    legacy = os.path.join(root, "nxstyle.json") if root else None
+    # NXStyle before 2026-10-13 read nxstyle.json from the profile's root; keep honouring one there
+    if not os.path.isfile(path) and legacy and os.path.isfile(legacy):
+        return legacy
+    return path
 
 
 def _merge(base, over):

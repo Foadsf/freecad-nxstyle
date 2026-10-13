@@ -109,7 +109,11 @@ class Smoke:
         yield self.s_drafting_check, 100
         yield self.s_auto_app, 4000
         yield self.s_auto_check, 100
+        yield self.s_katydid, 3000
+        yield self.s_katydid_check, 2500
+        yield self.s_katydid_shot, 100
         yield self.s_back, 2000
+        yield self.s_katydid_after, 100
         yield self.s_expressions, 800
         yield self.s_final, 100
 
@@ -268,8 +272,12 @@ class Smoke:
         # checked a few seconds in: FreeCAD 1.1 may reload its own stylesheet after start-up
         css = QtWidgets.QApplication.instance().styleSheet()
         base = css.split("/* NXStyle theme */")[0]
-        self.check("NX theme applied over FreeCAD's light theme", self.shell.theme_active() and len(base) > 10000,
-                   f"base {len(base)} chars")
+        from . import config
+        if self.shell.cfg.get("theme", "nx") == "nx":
+            self.check("NX theme applied over FreeCAD's light theme", self.shell.theme_active() and len(base) > 10000,
+                       f"base {len(base)} chars")
+        else:      # a run with "theme": "none" in config/nxstyle.json: proves the settings file is read
+            self.check("theme off as set in nxstyle.json", not self.shell.theme_active(), config.user_file())
         self.check("no unfilled stylesheet placeholders", "@Theme" not in css)
         self.check_units()
         clipped = self.labels_clipped()
@@ -487,8 +495,74 @@ class Smoke:
         self.check("FEM toolbars hidden", not visible, visible)
         self.shot("04_simulation.png")
 
+    def s_katydid(self):
+        """Katydid (github.com/Foadsf/Katydid), on by default: NX's Algorithmic Modeling application."""
+        if self.shell._app("algorithmic_modeling"):
+            self.shell.switch_application("algorithmic_modeling")
+
+    def s_katydid_check(self):
+        want = os.environ.get("NXSTYLE_KATYDID_EXPECTED", "1") == "1"
+        app = self.shell._app("algorithmic_modeling")
+        if not want:
+            self.check("Katydid off as asked", app is None and "KatydidWorkbench" not in Gui.listWorkbenches(), app)
+            return
+        self.check("Algorithmic Modeling application (Katydid) offered", app is not None,
+                   sorted(Gui.listWorkbenches()))
+        if app is None:
+            return
+        r, mw = self.shell.ribbon, Gui.getMainWindow()
+        cmds = {c: c in r.locations for c in ("Katydid_Canvas", "Katydid_Bake")}
+        self.check("Algorithmic Modeling ribbon with Katydid's Canvas and Bake, and the Application tab",
+                   Gui.activeWorkbench().name() == "KatydidWorkbench" and all(cmds.values())
+                   and not [m for m in r.missing if "Katydid" in str(m)] and "Application" in r.tab_names(),
+                   {"commands": cmds, "tabs": r.tab_names()})
+        dock = mw.findChild(QtWidgets.QDockWidget, "KatydidDock")
+        model = mw.findChild(QtWidgets.QDockWidget, "Model")
+        tabbed = dock is not None and model is not None and dock in mw.tabifiedDockWidgets(model)
+        self.check("Katydid canvas opens floating, outside the navigator strip",
+                   dock is not None and dock.isVisible() and dock.isFloating() and not tabbed,
+                   None if dock is None else {"visible": dock.isVisible(), "floating": dock.isFloating(),
+                                              "tabbed": tabbed})
+        visible = [tb.objectName() for tb in self.shell.native_toolbars() if tb.isVisible()]
+        self.check("Katydid's own toolbar hidden under the ribbon", not visible, visible)
+        if dock is not None and hasattr(dock.widget(), "load_attractor_demo"):
+            dock.widget().load_attractor_demo()        # Katydid's own example, for the screenshot
+
+    def s_katydid_shot(self):
+        """The floating canvas is its own window, so the main-window grab misses it: paint both."""
+        mw = Gui.getMainWindow()
+        dock = mw.findChild(QtWidgets.QDockWidget, "KatydidDock")
+        if dock is None or not self.shell._app("algorithmic_modeling"):
+            return
+        if hasattr(dock.widget(), "view"):
+            dock.widget().view.fit_all()
+        QtWidgets.QApplication.processEvents()
+        try:
+            from .qt import QtGui
+            img = mw.grab()
+            canvas = dock.grab()
+            at = mw.mapFromGlobal(dock.mapToGlobal(QtCore.QPoint(0, 0)))
+            p = QtGui.QPainter(img)
+            p.drawPixmap(at, canvas)
+            p.end()
+            img.save(os.path.join(OUT, "05_algorithmic_modeling.png"))
+            self.shot("05_katydid_canvas.png", dock)
+        except Exception as e:
+            self.info["screenshot 05"] = str(e)
+
     def s_back(self):
         self.shell.switch_application("modeling")
+
+    def s_katydid_after(self):
+        if not self.shell._app("algorithmic_modeling"):
+            return
+        r = self.shell.ribbon
+        self.check("back in Modeling after Algorithmic Modeling",
+                   Gui.activeWorkbench().name() == "PartDesignWorkbench" and "NXStyle_Extrude" in r.locations,
+                   r.tab_names())
+        dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "KatydidDock")
+        self.check("Katydid canvas stays open after leaving Algorithmic Modeling (as documented)",
+                   dock is not None and dock.isVisible(), None if dock is None else dock.isVisible())
 
     def s_expressions(self):
         Gui.runCommand("NXStyle_Expressions")

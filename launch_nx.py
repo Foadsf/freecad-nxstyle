@@ -294,15 +294,24 @@ def build_command(install: Install, files: list[str], passthrough: list[str],
 STRATA_DIR = HERE / "vendor" / "freecad-strata"     # git submodule of github.com/Foadsf/freecad-strata
 
 
+def read_settings(profile: Path) -> dict:
+    """The profile's nxstyle.json, as NXStyle reads it: config/nxstyle.json, or an older one in the
+    profile's root when config/ has none (NXStyle before 2026-10-13 kept it there)."""
+    for path in (profile / "config" / "nxstyle.json", profile / "nxstyle.json"):
+        if path.is_file():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                return {}
+    return {}
+
+
 def find_strata(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:
     """The Strata folder to load with -M, or None, and why. One copy only: a Strata the user installed
     into the NX profile (Addon Manager) is loaded by FreeCAD itself, so the bundled one stays out."""
     if disabled:
         return None, "off (--no-strata)"
-    try:
-        cfg = json.loads((profile / "config" / "nxstyle.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        cfg = {}
+    cfg = read_settings(profile)
     if cfg.get("plm", "strata") != "strata":
         return None, f"off (nxstyle.json: plm = {cfg.get('plm')!r})"
     mods = profile / "data" / "Mod"
@@ -312,6 +321,29 @@ def find_strata(profile: Path, disabled: bool = False) -> tuple[Path | None, str
                 return None, f"installed in the NX profile ({mod})"
     if (STRATA_DIR / "InitGui.py").is_file():
         return STRATA_DIR, f"bundled ({STRATA_DIR})"
+    return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
+
+
+# --------------------------------------------------------------------------
+# Katydid: node-based algorithmic modelling (the role of NX's Algorithmic Modeling)
+# --------------------------------------------------------------------------
+KATYDID_DIR = HERE / "vendor" / "Katydid"            # git submodule of github.com/Foadsf/Katydid
+
+
+def find_katydid(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:
+    """The Katydid folder to load with -M, or None, and why; one copy only, as for Strata."""
+    if disabled:
+        return None, "off (--no-katydid)"
+    cfg = read_settings(profile)
+    if cfg.get("algorithmic_modeling", "katydid") != "katydid":
+        return None, f"off (nxstyle.json: algorithmic_modeling = {cfg.get('algorithmic_modeling')!r})"
+    mods = profile / "data" / "Mod"
+    if mods.is_dir():
+        for mod in sorted(mods.iterdir()):
+            if (mod / "katydid" / "__init__.py").is_file():
+                return None, f"installed in the NX profile ({mod})"
+    if (KATYDID_DIR / "InitGui.py").is_file():
+        return KATYDID_DIR, f"bundled ({KATYDID_DIR})"
     return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
 
 
@@ -522,6 +554,8 @@ def main(argv: list[str] | None = None) -> int:
                          f"(default {HARNESS_MEMORY_GB:g})")
     ap.add_argument("--no-strata", action="store_true",
                     help="start without Strata (versions, releases and sync; on by default)")
+    ap.add_argument("--no-katydid", action="store_true",
+                    help="start without Katydid (the node-based Algorithmic Modeling canvas; on by default)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -554,10 +588,13 @@ def main(argv: list[str] | None = None) -> int:
 
     strata, strata_why = find_strata(profile.resolve(), disabled=args.no_strata)
     extra["NXSTYLE_STRATA_EXPECTED"] = "1" if strata or "NX profile" in strata_why else "0"
-    cmd = build_command(install, args.files, passthrough, (strata,) if strata else ())
+    katydid, katydid_why = find_katydid(profile.resolve(), disabled=args.no_katydid)
+    extra["NXSTYLE_KATYDID_EXPECTED"] = "1" if katydid or "NX profile" in katydid_why else "0"
+    cmd = build_command(install, args.files, passthrough, tuple(m for m in (strata, katydid) if m))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
-                          "profile": str(profile.resolve()), "strata": strata_why, "command": cmd}, indent=2))
+                          "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
+                          "command": cmd}, indent=2))
         return 0
 
     paths = prepare_profile(profile, reset=reset)
@@ -566,6 +603,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")
     print(f"Strata: {strata_why}")
+    print(f"Katydid: {katydid_why}")
 
     if harness:
         if os.name == "nt":

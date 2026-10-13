@@ -1,0 +1,42 @@
+= Algorithmic Modeling with Katydid
+:description: A node-based design canvas, the role NX's Algorithmic Modeling plays, from the Katydid add-on.
+:katydid: https://github.com/Foadsf/Katydid
+:katydid-docs: https://foadsf.github.io/Katydid/
+
+NX has a node-based environment, Algorithmic Modeling, for driving geometry from a graph of operations rather than a feature list.
+NX-Style uses {katydid}[Katydid] for that job: a visual programming canvas for FreeCAD, in the style of Grasshopper, with data trees, a live 3D preview, *Bake* into ordinary FreeCAD objects and a tolerance stack-up tab.
+It is on by default.
+
+image::katydid-canvas.png[The Katydid canvas, floating over the NX-Style window]
+
+== Opening it
+
+. *Application › Algorithmic Modeling*.
+. The canvas opens as its own floating window over the graphics window.
+  It floats on purpose: docked, every canvas repaint also redraws the 3D view, which makes dragging a slider about twice as slow.
+. The ribbon shows *Canvas* (bring the window back) and *Bake*, with the usual View, Tools, PLM and Application tabs.
+
+Leaving the application (kbd:[Ctrl+M] for Modeling, for example) keeps the canvas window where it is; close it with its own close button.
+
+== Using the canvas
+
+Double-click the canvas to search for a component, or drag one from the category tabs; drag from an output grip to an input grip to wire them.
+The preview updates in the graphics window while you work, and *Bake* turns the result into FreeCAD objects.
+The canvas is saved inside the part's `.FCStd` file.
+
+Katydid's own {katydid-docs}[documentation] has the quick start, tutorials and the full component reference.
+
+=== Keys
+
+While the canvas has the keyboard focus, kbd:[Delete] removes the selected components and kbd:[Ctrl+Q] switches their preview on and off.
+Everywhere else these keys keep their NX meaning (kbd:[Ctrl+Q] is Finish Sketch).
+
+== Without Katydid
+
+* `python launch_nx.py --no-katydid` starts without it once.
+* `"algorithmic_modeling": "none"` in the xref:settings.adoc[settings] switches it off for good.
+
+The Algorithmic Modeling application then does not appear.
+Katydid is a git submodule (`vendor/Katydid`): a copy cloned without `--recursive` has none until `git submodule update --init` (xref:installation.adoc[]).
+
+A Katydid already installed in the NX profile's own `Mod` folder is used instead of the bundled one, so it never loads twice.

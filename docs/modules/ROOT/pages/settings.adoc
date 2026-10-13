@@ -50,7 +50,11 @@ include::partial$generated/settings.adoc[]
 | FreeCAD 1.1's own NX mouse style | `"navigation": "native"`
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
 | No data management | `"plm": "none"`
+| No Algorithmic Modeling (Katydid) | `"algorithmic_modeling": "none"`
 |===
+
+NOTE: Before 2026-10-13, NX-Style read `nxstyle.json` from the profile's root folder instead of `config`.
+A file left there is still read when `config` has none.
 
 == Starting over
 

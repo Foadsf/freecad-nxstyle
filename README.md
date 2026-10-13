@@ -12,7 +12,7 @@ git clone --recursive https://github.com/Foadsf/freecad-nxstyle
 python launch_nx.py
 ```
 
-Strata is a git submodule (`vendor/freecad-strata`). In a copy cloned without `--recursive`, fetch it with `git submodule update --init`; until then NXStyle starts without it and the launcher says so.
+Strata (`vendor/freecad-strata`) and Katydid (`vendor/Katydid`) are git submodules. In a copy cloned without `--recursive`, fetch them with `git submodule update --init`; until then NXStyle starts without them and the launcher says so.
 
 ## How it stays out of your normal FreeCAD
 
@@ -29,6 +29,7 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Top Border Bar | Menu button (all FreeCAD menus), Type Filter that really restricts picking, selection tools |
 | Resource Bar | Part Navigator, History (recent parts), Information, Journal (Python console), Selection, Versions and history (Strata) |
 | Teamcenter (data management) | [Strata](https://github.com/Foadsf/freecad-strata), on by default: every save is recorded with a plain-language entry, versions are named snapshots, workspaces hold alternatives, Compare shows what changed (also in 3D), releases carry a part number, revision letter and approval, and Sync shares a project through a shared folder or a Git server. Its panel sits with the navigators on the left; the PLM ribbon tab has Versions and History, Create Version, Compare, Releases and Sync. Needs `git` on the PATH. A Strata installed separately joins the NX layout from freecad-strata 1f71005 on (its embedding API); an older one runs beside it. |
+| Algorithmic Modeling | [Katydid](https://github.com/Foadsf/Katydid), on by default: a node-based design canvas with data trees and a live 3D preview, baked into ordinary FreeCAD objects and saved in the `.FCStd`. Application › Algorithmic Modeling opens it; `--no-katydid` or `"algorithmic_modeling": "none"` turns it off. |
 | Applications | Modeling (PartDesign), Drafting (TechDraw), Assemblies, Shape Studio, Pre/Post (FEM), Manufacturing (CAM), … Applications without a hand-made ribbon get one generated from their workbench toolbars. |
 | Feature workflow | Extrude (X) or Revolve with nothing selected: pick a plane, sketch, and Finish Sketch (Ctrl+Q) carries straight on into the feature dialog. A new part starts with a Body ready to sketch on. |
 | Sketch task environment | Contextual **Sketch** tab with Finish Sketch, Profile, Rapid Dimension, constraints; MB2 ends the active curve tool |
@@ -92,7 +93,7 @@ Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry 
 python launch_nx.py --smoke-test out
 ```
 
-This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 60 behaviours, Strata's start and placement among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
+This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 66 behaviours, Strata's start and placement and Katydid's canvas among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
 python launch_nx.py --tutorial out
@@ -118,4 +119,4 @@ Known FreeCAD 1.1.4 issue: a PartDesign Body whose origin planes stay visible di
 
 ## Licence and trademarks
 
-[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata is a separate project under the same licence, included as a submodule. Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.
+[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata and Katydid are separate projects under the same licence, included as submodules. Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.

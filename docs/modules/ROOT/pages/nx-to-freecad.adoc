@@ -21,6 +21,10 @@ include::partial$generated/ribbon-sketch.adoc[]
 
 include::partial$generated/ribbon-drafting.adoc[]
 
+== Algorithmic Modeling
+
+include::partial$generated/ribbon-algorithmic.adoc[]
+
 == Applications
 
 include::partial$generated/applications.adoc[]

@@ -6,6 +6,7 @@
       {"id": "shape_studio", "title": "Shape Studio", "workbench": "SurfaceWorkbench", "ribbon": null},
       {"id": "drafting", "title": "Drafting", "workbench": "TechDrawWorkbench", "ribbon": "drafting.json", "shortcut": "Ctrl+Shift+D", "size": "large"},
       {"id": "assemblies", "title": "Assemblies", "workbench": "AssemblyWorkbench", "ribbon": "modeling.json", "first_tab": "Assemblies"},
+      {"id": "algorithmic_modeling", "title": "Algorithmic Modeling", "workbench": "KatydidWorkbench", "ribbon": "algorithmic.json"},
       {"id": "sheet_metal", "title": "Sheet Metal", "workbench": "SMWorkBench", "ribbon": null},
       {"id": "part", "title": "Basic Modeling (Part)", "workbench": "PartWorkbench", "ribbon": null}
     ]},

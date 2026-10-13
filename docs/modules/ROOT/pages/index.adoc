@@ -45,6 +45,9 @@ All 65 NX key bindings and what each one does here.
 | Keyboard
 | All 65 bindings from {nxtips}[NXtips], each one checked by the self-test. See xref:keyboard-shortcuts.adoc[].
 
+| Algorithmic Modeling
+| xref:algorithmic-modeling.adoc[Katydid]: a node-based design canvas with a live preview, baked into ordinary FreeCAD objects.
+
 | Teamcenter
 | xref:data-management.adoc[Strata]: every save recorded, versions, workspaces, compare, releases, sync.
 

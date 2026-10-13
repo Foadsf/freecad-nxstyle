@@ -10,11 +10,12 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 |===
 | Path | Holds
 
-| `launch_nx.py` | The launcher: finds FreeCAD, prepares the NX profile, starts FreeCAD with `-M NXStyle` (and Strata), runs the test harnesses on a hidden desktop with a memory ceiling. Standard library only.
+| `launch_nx.py` | The launcher: finds FreeCAD, prepares the NX profile, starts FreeCAD with `-M NXStyle` (and Strata and Katydid), runs the test harnesses on a hidden desktop with a memory ceiling. Standard library only.
 | `NXStyle/` | The FreeCAD module. `InitGui.py` hands over to `nxstyle.boot`.
 | `NXStyle/nxstyle/resources/ribbons/` | The ribbons, as JSON.
 | `NXStyle/nxstyle/resources/*.qss` | The NX light theme and the ribbon's stylesheet.
 | `vendor/freecad-strata/` | Strata, as a git submodule.
+| `vendor/Katydid/` | Katydid, as a git submodule.
 | `tests/` | Launcher unit tests.
 | `tools/` | `gen_docs.py` (the generated parts of these docs), `tutorial_table.py`.
 | `docs/` | This site's AsciiDoc sources (Antora), the replay results and the old Markdown notes.
@@ -104,6 +105,17 @@ theme.set_overrides(light={"accent": "#00838F"})
 * `theme.set_overrides`: Strata's panels in NX-Style's colours.
 
 The submodule is pinned; update it with `git submodule update --remote vendor/freecad-strata` and commit the new pin after the self-test passes.
+
+== Katydid [[katydid]]
+
+Katydid is its own project and stays unmodified in `vendor/Katydid`; NX-Style adds no code to it.
+
+* The launcher loads it with `-M`, like Strata (`find_katydid`): off with `--no-katydid` or `"algorithmic_modeling": "none"`, and not loaded twice when a Katydid sits in the NX profile's `Mod` folder.
+* `apps.json` offers it as the *Algorithmic Modeling* application (`KatydidWorkbench`), with its ribbon in `algorithmic.json`.
+* Katydid registers `Katydid_Canvas` and `Katydid_Bake` when its workbench starts, and starting it opens the canvas, so the workbench is not preloaded; switching to the application starts it.
+* The canvas is a floating `QDockWidget` named `KatydidDock`; NX-Style leaves it out of the navigator tab strip.
+
+Update the pin the same way: `git submodule update --remote vendor/Katydid`, then the self-test.
 
 == Rules the code keeps
 

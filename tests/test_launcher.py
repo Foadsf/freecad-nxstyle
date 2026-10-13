@@ -130,6 +130,73 @@ class StrataTests(unittest.TestCase):
         self.assertIn("submodule", why)
 
 
+class KatydidTests(unittest.TestCase):
+    """Katydid is on by default and loaded once, like Strata, and is switched off on its own."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.bundled = root / "vendor" / "Katydid"
+        self.bundled.mkdir(parents=True)
+        (self.bundled / "InitGui.py").write_text("")
+        self.profile = root / "profile"
+        self._saved = launch_nx.KATYDID_DIR
+        launch_nx.KATYDID_DIR = self.bundled
+
+    def tearDown(self):
+        launch_nx.KATYDID_DIR = self._saved
+        self.tmp.cleanup()
+
+    def _config(self, text):
+        (self.profile / "config").mkdir(parents=True, exist_ok=True)
+        (self.profile / "config" / "nxstyle.json").write_text(text)
+
+    def test_bundled_copy_by_default(self):
+        self.assertEqual(launch_nx.find_katydid(self.profile)[0], self.bundled)
+
+    def test_profile_install_is_not_loaded_twice(self):
+        pkg = self.profile / "data" / "Mod" / "Katydid" / "katydid"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        where, why = launch_nx.find_katydid(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("NX profile", why)
+
+    def test_switched_off_by_flag_or_config(self):
+        self.assertIsNone(launch_nx.find_katydid(self.profile, disabled=True)[0])
+        self._config('{"algorithmic_modeling": "none"}')
+        self.assertIsNone(launch_nx.find_katydid(self.profile)[0])
+
+    def test_switches_are_independent(self):
+        # plm off leaves Katydid on, and Katydid off leaves Strata on
+        self._config('{"plm": "none"}')
+        self.assertEqual(launch_nx.find_katydid(self.profile)[0], self.bundled)
+        self._config('{"algorithmic_modeling": "none"}')
+        saved, launch_nx.STRATA_DIR = launch_nx.STRATA_DIR, self.bundled
+        try:
+            self.assertEqual(launch_nx.find_strata(self.profile)[0], self.bundled)
+        finally:
+            launch_nx.STRATA_DIR = saved
+
+    def test_missing_submodule_says_how_to_get_it(self):
+        (self.bundled / "InitGui.py").unlink()
+        where, why = launch_nx.find_katydid(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("submodule", why)
+
+    def test_settings_in_config_win_over_an_old_root_file(self):
+        (self.profile).mkdir(parents=True, exist_ok=True)
+        (self.profile / "nxstyle.json").write_text('{"algorithmic_modeling": "none"}')
+        self.assertIsNone(launch_nx.find_katydid(self.profile)[0])          # old place still honoured
+        self._config('{"algorithmic_modeling": "katydid"}')
+        self.assertEqual(launch_nx.find_katydid(self.profile)[0], self.bundled)
+
+    def test_both_modules_on_the_command_line(self):
+        inst = launch_nx.Install(Path("freecad.exe"), (1, 1, 4))
+        cmd = launch_nx.build_command(inst, [], [], (Path("strata"), Path("katydid")))
+        self.assertEqual(cmd[3:7], ["-M", "strata", "-M", "katydid"])
+
+
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")
 class MemoryCeilingTests(unittest.TestCase):
     """A runaway test run must stop at its ceiling instead of exhausting the machine."""

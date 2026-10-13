@@ -1,0 +1,18 @@
+{
+  "_comment": "NX Algorithmic Modeling (a node-based design canvas) mapped onto the Katydid add-on (github.com/Foadsf/Katydid, bundled as vendor/Katydid). Katydid registers its commands when its workbench starts, which switching to this application does.",
+  "title": "Algorithmic Modeling",
+  "workbench": "KatydidWorkbench",
+  "preload": [],
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "Algorithm", "items": [
+        {"cmd": "Katydid_Canvas", "label": "Canvas", "size": "large"},
+        {"cmd": "Katydid_Bake", "label": "Bake", "size": "large"}
+      ]}
+    ]},
+    {"include": "common:View"},
+    {"include": "common:Tools"},
+    {"include": "common:PLM"},
+    {"include": "common:Application"}
+  ]
+}

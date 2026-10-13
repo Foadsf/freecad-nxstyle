@@ -17,7 +17,7 @@ You need FreeCAD itself, the project folder, and Python to run the launcher.
 | Only to run the launcher; it uses the standard library only. FreeCAD's own Python works too.
 
 | Git
-| To get the project with its submodule, and for xref:data-management.adoc[Strata] (version history), which runs `git` behind the scenes. On Windows, https://git-scm.com/download/win[Git for Windows] puts `git.exe` on the PATH.
+| To get the project with its submodules, and for xref:data-management.adoc[Strata] (version history), which runs `git` behind the scenes. On Windows, https://git-scm.com/download/win[Git for Windows] puts `git.exe` on the PATH.
 |===
 
 NOTE: Linux and macOS are supported by the launcher (it looks for FreeCAD in the usual places) but have not been tested yet.
@@ -25,21 +25,21 @@ The hidden-desktop test mode is Windows-only.
 
 == Get the project
 
-Clone it with its submodule (Strata lives in `vendor/freecad-strata`):
+Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata` and xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid`.
 
 [source,bash]
 ----
 git clone --recursive https://github.com/Foadsf/freecad-nxstyle
 ----
 
-If you cloned without `--recursive`, or downloaded a ZIP of the repository, fetch Strata separately:
+If you cloned without `--recursive`, or downloaded a ZIP of the repository, fetch them separately:
 
 [source,bash]
 ----
 git submodule update --init
 ----
 
-NX-Style still starts without Strata; the launcher then prints `Strata: not found` and how to get it.
+NX-Style still starts without them; the launcher then prints `Strata: not found` or `Katydid: not found` and how to get them.
 
 == Start it
 
@@ -57,6 +57,7 @@ It prints what it used:
 FreeCAD 1.1.4: C:\Users\you\AppData\Local\Programs\FreeCAD 1.1\bin\freecad.exe
 NX profile: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1
 Strata: bundled (...\freecad-nxstyle\vendor\freecad-strata)
+Katydid: bundled (...\freecad-nxstyle\vendor\Katydid)
 ----
 
 Open files directly by naming them:
@@ -86,6 +87,9 @@ python launch_nx.py part.FCStd
 
 | `--no-strata`
 | Starts without Strata. To switch it off for good, set `"plm": "none"` in the xref:settings.adoc[settings].
+
+| `--no-katydid`
+| Starts without Katydid (Algorithmic Modeling). To switch it off for good, set `"algorithmic_modeling": "none"`.
 
 | `--dry-run`
 | Prints the FreeCAD executable, the profile and the command line, and starts nothing.

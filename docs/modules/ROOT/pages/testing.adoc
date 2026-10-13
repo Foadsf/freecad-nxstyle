@@ -15,7 +15,7 @@ python -m unittest discover -s tests
 ruff check --select F,E9 .
 ----
 
-The unit tests cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata it loads, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
+The unit tests cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata and Katydid it loads and where it reads `nxstyle.json`, that every application's ribbon has the Application tab, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
 FreeCAD is not needed.
 GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).
 
@@ -27,13 +27,14 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It checks 60 behaviours, among them:
+It checks 66 behaviours, among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
 * the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;
 * metric units even when the profile was set to US customary;
-* Strata starts and sits with the navigators.
+* Strata starts and sits with the navigators;
+* the Algorithmic Modeling application opens Katydid's canvas, floating, with Canvas, Bake and the Application tab on the ribbon, and the canvas stays open after switching back to Modeling.
 
 It writes `out/smoke.json` and screenshots, and exits non-zero on any failure.
 

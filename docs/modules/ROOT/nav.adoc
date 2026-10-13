@@ -12,6 +12,7 @@
 * xref:modeling.adoc[Modeling]
 * xref:assemblies.adoc[Assemblies]
 * xref:drafting.adoc[Drafting and GD&T]
+* xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
 * xref:settings.adoc[Settings]
 

@@ -1,3 +1,6 @@
 [submodule "vendor/freecad-strata"]
 	path = vendor/freecad-strata
 	url = https://github.com/Foadsf/freecad-strata
+[submodule "vendor/Katydid"]
+	path = vendor/Katydid
+	url = https://github.com/Foadsf/Katydid
