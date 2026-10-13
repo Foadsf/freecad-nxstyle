@@ -1,0 +1,27 @@
+= Tutorial K: Parameter-driven flat bar
+:description: A bar with N equally spaced holes, driven by a table of expressions, then switched to a second configuration.
+
+[horizontal]
+Book:: Leake and Borgerson, _Engineering Design Graphics_, ch. 7, Fig. 7-30
+You learn:: The Expressions table (kbd:[Ctrl+E]), dimensions tied to names, configurations
+Sizes:: L, N and D for two configurations (A: 1219.2 mm, 5 holes, 50.8 mm; B: 914.4 mm, 8 holes, 25.4 mm; the book's 48, 5, 2 and 36, 8, 1 in). Width, thickness and hole size are not given: 50.8 × 12.7 mm and Ø12.7 here.
+
+image::tutorial-K-flat-bar.png[The flat bar in configuration B, eight holes]
+
+== In short
+
+. kbd:[Ctrl+E]: type `L`, `N_holes`, `D` and `hole_spacing = (L - 2*D) / (N_holes - 1)` into the Expressions sheet.
+. Sketch the bar; its length is `=Expressions.L`.
+. The first hole at `D` from the end; *Pattern Feature* with `N_holes` occurrences, `hole_spacing` apart.
+. Type configuration B's values into the same sheet: the bar follows.
+
+== Step by step
+
+include::partial$generated/tutorial-K.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX lists expressions in a dialog; FreeCAD keeps them in a spreadsheet. A dimension refers to a cell as `=Expressions.L`.
+* FreeCAD refuses names that are unit symbols: the book's `N` (the newton) becomes `N_holes`.

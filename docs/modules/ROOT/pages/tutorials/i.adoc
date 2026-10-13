@@ -1,0 +1,30 @@
+= Tutorial I: The Gasket
+:description: Extend, Quick Trim and Fillet in a sketch, a fully defined outline, and an associative 15 mm offset cut.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 6 (a millimetre part)
+You learn:: Quick Extend, Quick Trim, sketch Fillet, fully defining a sketch, Project Curve, Offset Curve, a design change the offset follows
+Sizes:: R20 fillets, a 5 mm plate, a 15 mm offset, the height changed to 150 mm. The outline's sizes are in figures only: an 80 mm left side and an R30 boss here.
+
+image::tutorial-I-gasket.png[The Gasket at 150 mm height, the offset cut 15 mm inside the outline]
+
+== In short
+
+. An outline, a circle and a line tangent to it; kbd:[E] (Extend) and kbd:[T] (Quick Trim).
+. The book's dimensions until the solver says *Fully constrained*.
+. kbd:[F] (Fillet) R20; add the R20 dimensions.
+. Extrude 5 mm.
+. On the front face: *Project Curve*, *Offset Curve* 15 mm inwards, *Extrude (Subtract)* through all with only the inner loop.
+. The design change: the overall height to 150 mm; the offset follows.
+
+== Step by step
+
+include::partial$generated/tutorial-I.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* A sketch fillet does not dimension its radius and removes the constraints that held its corner; put them back.
+* Offset Curve takes the side and the distance from an MB1 click; type the exact distance into its dimension afterwards.
+* With *Add offset constraint* on, FreeCAD 1.1.4 gives the closed loop one redundant constraint. *Sketch › Select Redundant Constraints*, then Delete (I10).

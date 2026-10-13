@@ -25,28 +25,29 @@ DEFAULTS = {
     "units": "metric",                 # "metric": FreeCAD's Standard schema (mm, kg); "freecad": leave units alone
     "labels": "nx",                    # "nx" names (Extrude, Edge Blend) or "freecad" names (Pad, Fillet)
     "hide_menubar": True,              # menus stay reachable from the Menu button
-    "hide_native_toolbars": True,
+    "hide_native_toolbars": True,      # FreeCAD's own toolbars stay hidden (Tools > FreeCAD Menus and Toolbars shows them)
     "floating_task_panel": False,      # True = feature dialogs float over the graphics window like NX
     "stylesheet": "auto",                # FreeCAD's light stylesheet for this version; or a file name
-    "background": "light_gray_gradient",
-    "colors": {
+    "theme": "nx",                     # "nx" = NXStyle's light theme over that stylesheet; "none" = FreeCAD's look
+    "background": "light_gray_gradient",  # white, light, light_gray_gradient, dark_gray_gradient or dark (View > Background)
+    "colors": {                        # preselection, selection, body and edge colours of the graphics window
         "preselection": "#FF2020",
         "selection": "#FF8C00",
         "body": "#A7ADB4",
         "edges": "#1E1E1E",
     },
-    "edge_width": 1,
+    "edge_width": 1,                   # line width of a body's edges, in pixels
     "view_triad": "nx",                # "nx" = lower-left (NXStyle), "freecad" = FreeCAD's lower-right one
-    "zoom_at_cursor": True,
+    "zoom_at_cursor": True,            # the wheel zooms towards the point under the cursor
     "invert_wheel_zoom": True,         # FreeCAD default: wheel forward zooms in
-    "rotate_degrees_per_pixel": 0.4,
-    "zoom_drag_up_zooms_in": True,
+    "rotate_degrees_per_pixel": 0.4,   # MB2 drag: how fast the view turns
+    "zoom_drag_up_zooms_in": True,     # Ctrl+MB2 / MB1+MB2 drag: dragging up zooms in (false: down zooms in)
     "mb2_click_is_ok": True,           # middle click accepts the open feature dialog
-    "mb2_hold_sets_rotation_point_ms": 450,
-    "mb3_hold_radial_menu_ms": 350,
-    "default_application": "modeling",
+    "mb2_hold_sets_rotation_point_ms": 450,  # press and hold MB2 this long on the model to rotate about that point
+    "mb3_hold_radial_menu_ms": 350,    # hold MB3 this long for the radial menu; 0 switches the radial menu off
+    "default_application": "modeling",  # the application NXStyle starts in (an id from ribbons/apps.json)
     "new_part_datum": True,            # a new empty part starts with a Body (NX Model template)
-    "nx_shortcuts": True,
+    "nx_shortcuts": True,              # bind the NX keys (see Keyboard shortcuts); false keeps FreeCAD's
     "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
 }
 

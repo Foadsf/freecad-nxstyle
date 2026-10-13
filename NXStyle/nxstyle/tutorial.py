@@ -5698,9 +5698,11 @@ class Replay:
         vals = {k: round(float(d.getRawValue()) / IN, 3) for k, d in made}
         ok = len(made) == 3 and abs(vals.get("centres", 0) - 2 * self.M_C) < 1e-3 and \
             abs(vals.get("hole", 0) - self.M_HOLE) < 1e-3
-        self.step("Instead: reference dimensions on the top view (5.000, 2.500, Ø0.750)", "cosmetic vertices on the "
-                  "hole centres; ribbon 'Horizontal' (twice) and 'Diameter'", DIFFERS if ok else FAIL,
-                  f"measured (in): {vals}. TechDraw dimensions need vertices at arc centres (as in tutorial H)")
+        mm = {k: round(float(d.getRawValue()), 2) for k, d in made}
+        self.step("Instead: reference dimensions on the top view (5.000, 2.500, Ø0.750 in)", "cosmetic vertices on "
+                  "the hole centres; ribbon 'Horizontal' (twice) and 'Diameter'", DIFFERS if ok else FAIL,
+                  f"measured (mm): {mm}, the book's 127.00, 63.50 and Ø19.05. TechDraw dimensions need vertices at "
+                  "arc centres (as in tutorial H)")
         self.wait = 800
 
     def n_smooth(self):
@@ -5771,7 +5773,7 @@ class Replay:
         val = float(d.getRawValue()) / IN if d is not None else None
         self.step("Radial dimension on the bottom arc of the front view", f"arc selected + ribbon '{where} > Radial'",
                   SAME if val is not None and abs(val - self.M_CIRC) < 1e-3 else FAIL,
-                  f"R{val:.3f} in" if val is not None else "no radial dimension")
+                  f"R{val * IN:.2f} mm (the book's R1.250 in)" if val is not None else "no radial dimension")
         self.wait = 600
 
     def n_decimals(self):
@@ -5806,8 +5808,8 @@ class Replay:
         self.wait_for("n: drawing update", lambda: d is not None and abs(float(d.getRawValue()) / IN - 0.625) < 1e-3,
                       15000)
         val = float(d.getRawValue()) / IN if d is not None else None
-        shown = f"{val:.3f} in" if val is not None else "no dimension"
-        self.step("Drafting: MB3 on the drawing > Update; the diameter shows 0.625",
+        shown = f"Ø{val * IN:.3f} mm" if val is not None else "no dimension"
+        self.step("Drafting: MB3 on the drawing > Update; the diameter shows 0.625 in",
                   "Ctrl+Shift+D; the sheet updates by itself", SAME if val is not None and abs(val - 0.625) < 1e-3
                   else FAIL, f"diameter dimension now {shown}; TechDraw keeps the sheet up to date (the page's Keep "
                   "Updated), NX marks it out of date and asks for Update")

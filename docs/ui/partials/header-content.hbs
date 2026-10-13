@@ -1,0 +1,32 @@
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" href="{{{siteRootPath}}}/index.html">
+        <span class="nx-mark" aria-hidden="true">NX</span>
+        <span class="nx-title">{{site.title}}</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      {{#if env.SITE_SEARCH_PROVIDER}}
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the documentation"{{#if page.home}} autofocus{{/if}}>
+        </div>
+      </div>
+      {{/if}}
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/keyboard-shortcuts.html">Shortcuts</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>

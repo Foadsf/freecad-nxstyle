@@ -1,0 +1,147 @@
+= Installation
+:description: Install FreeCAD NX-Style, start it, update it and remove it.
+
+FreeCAD NX-Style is a launcher and a FreeCAD module.
+You need FreeCAD itself, the project folder, and Python to run the launcher.
+
+== Requirements
+
+[cols="1,3",options="header"]
+|===
+| Needed | Details
+
+| FreeCAD 1.0 or newer
+| Tested on Windows 11 with FreeCAD 1.0.2 (Qt 5.15) and 1.1.4 (Qt 6). Install it from https://www.freecad.org/downloads.php[freecad.org] or your package manager.
+
+| Python 3.8 or newer
+| Only to run the launcher; it uses the standard library only. FreeCAD's own Python works too.
+
+| Git
+| To get the project with its submodule, and for xref:data-management.adoc[Strata] (version history), which runs `git` behind the scenes. On Windows, https://git-scm.com/download/win[Git for Windows] puts `git.exe` on the PATH.
+|===
+
+NOTE: Linux and macOS are supported by the launcher (it looks for FreeCAD in the usual places) but have not been tested yet.
+The hidden-desktop test mode is Windows-only.
+
+== Get the project
+
+Clone it with its submodule (Strata lives in `vendor/freecad-strata`):
+
+[source,bash]
+----
+git clone --recursive https://github.com/Foadsf/freecad-nxstyle
+----
+
+If you cloned without `--recursive`, or downloaded a ZIP of the repository, fetch Strata separately:
+
+[source,bash]
+----
+git submodule update --init
+----
+
+NX-Style still starts without Strata; the launcher then prints `Strata: not found` and how to get it.
+
+== Start it
+
+From the project folder:
+
+[source,bash]
+----
+python launch_nx.py
+----
+
+The launcher finds the newest FreeCAD on the machine, prepares the NX profile and starts FreeCAD with the NX-Style interface.
+It prints what it used:
+
+----
+FreeCAD 1.1.4: C:\Users\you\AppData\Local\Programs\FreeCAD 1.1\bin\freecad.exe
+NX profile: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1
+Strata: bundled (...\freecad-nxstyle\vendor\freecad-strata)
+----
+
+Open files directly by naming them:
+
+[source,bash]
+----
+python launch_nx.py part.FCStd
+----
+
+== Launcher options
+
+[cols="2,5",options="header"]
+|===
+| Option | What it does
+
+| `--list`
+| Lists the FreeCAD installations found, newest first, and exits.
+
+| `--freecad PATH`
+| Uses this FreeCAD executable or installation folder instead of the newest one.
+
+| `--profile DIR`
+| Uses this folder as the NX profile instead of the default one.
+
+| `--reset-profile`
+| Deletes the NX profile before starting, for a clean start.
+
+| `--no-strata`
+| Starts without Strata. To switch it off for good, set `"plm": "none"` in the xref:settings.adoc[settings].
+
+| `--dry-run`
+| Prints the FreeCAD executable, the profile and the command line, and starts nothing.
+
+| `--wait`
+| Waits for FreeCAD to exit (useful in scripts).
+
+| `-- ARGS`
+| Passes everything after `--` to FreeCAD unchanged.
+
+| `--smoke-test OUTDIR`, `--tutorial OUTDIR`
+| Run the self-test or the tutorial replay. See xref:testing.adoc[].
+|===
+
+[#profile]
+== The NX profile
+
+The NX profile is a private set of FreeCAD user folders, one per FreeCAD version:
+
+[cols="1,3",options="header"]
+|===
+| System | Profile folder
+
+| Windows | `%LOCALAPPDATA%\FreeCAD-NXStyle\profile-<version>`
+| Linux | `~/.local/share/freecad-nxstyle/profile-<version>`
+| macOS | `~/Library/Application Support/FreeCAD-NXStyle/profile-<version>`
+|===
+
+Inside it, `config` holds FreeCAD's `user.cfg` and NX-Style's `nxstyle.json` (see xref:settings.adoc[]), `data` holds the add-ons (`Mod`) and macros, and `temp` FreeCAD's temporary files.
+
+Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never read or written.
+That also means your usual FreeCAD add-ons do not load in the NX profile; install the ones you want there with *Tools › Add-on Manager*.
+
+== Update
+
+[source,bash]
+----
+git pull
+----
+
+[source,bash]
+----
+git submodule update --init
+----
+
+Then start the launcher again. The NX profile is kept; new settings get their defaults.
+
+== Uninstall
+
+. Delete the project folder.
+. Delete the NX profile folder (see the table above), or keep it if you might come back.
+
+FreeCAD itself and your normal FreeCAD settings were never changed, so there is nothing else to undo.
+
+== Next
+
+* xref:quick-start.adoc[] -- your first part.
+* xref:user-interface.adoc[] -- a tour of the screen.
+* xref:troubleshooting.adoc[] -- if FreeCAD is not found or something looks wrong.

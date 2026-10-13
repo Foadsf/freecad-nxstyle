@@ -1,0 +1,70 @@
+= Writing these docs
+:description: How this site is built from AsciiDoc with Antora, which parts are generated, and how to preview it.
+
+The site is written in https://docs.asciidoctor.org/asciidoc/latest/[AsciiDoc] and built with https://antora.org/[Antora].
+GitHub Actions builds it on every push to `main` and publishes it to the `gh-pages` branch, which GitHub Pages serves.
+
+== Where things are
+
+[cols="2,4",options="header"]
+|===
+| Path | Holds
+
+| `antora-playbook.yml` | The site: title, URL, UI bundle, search.
+| `docs/antora.yml` | The component: name, title, attributes, navigation file.
+| `docs/modules/ROOT/nav.adoc` | The left-hand menu.
+| `docs/modules/ROOT/pages/` | One `.adoc` file per page.
+| `docs/modules/ROOT/images/` | Screenshots.
+| `docs/modules/ROOT/partials/` | Reused fragments; `generated/` is made by `tools/gen_docs.py`.
+| `docs/results/tutorials.json` | The tutorial replay's results.
+| `docs/ui/` | NX-Style's additions to Antora's default UI: header, footer, `css/nxstyle.css`.
+|===
+
+== Generated parts
+
+Reference tables are generated from the code so they cannot drift from it:
+
+[cols="2,3",options="header"]
+|===
+| Partial | From
+
+| `shortcuts.adoc` | `NXStyle/nxstyle/shortcuts.py` (`TABLE`)
+| `settings.adoc` | `NXStyle/nxstyle/config.py` (`DEFAULTS` and their comments)
+| `ribbon-*.adoc`, `applications.adoc` | `NXStyle/nxstyle/resources/ribbons/*.json`
+| `tutorial-*.adoc`, `tutorial-summary.adoc`, `tutorial-meta.adoc` | `docs/results/tutorials.json`
+|===
+
+They are not committed.
+Change the source and run `python tools/gen_docs.py`; never edit `partials/generated/`.
+
+== Building the site locally
+
+Needs Python 3.8+ and Node.js 18+.
+
+[source,bash]
+----
+npm ci
+----
+
+[source,bash]
+----
+npm run docs
+----
+
+`npm run docs` runs `tools/gen_docs.py` and then Antora.
+The site is in `build/site/`; open `build/site/index.html`, or serve the folder:
+
+[source,bash]
+----
+python -m http.server -d build/site 8000
+----
+
+The build stops on any AsciiDoc warning (a broken cross reference, a missing include or image).
+
+== Style
+
+* One sentence per line in the `.adoc` sources: diffs stay readable.
+* NX names in *bold*, keys with `kbd:[Ctrl+Q]`, settings and files in `monospace`.
+* Sizes in millimetres; a book's inch value only in parentheses after it.
+* Screenshots come from the self-test and the tutorial replay, so they show the current UI. Name them after what they show (`ui-…`, `tutorial-X-…`).
+* Say what differs from NX plainly; no promises about what FreeCAD will do later.

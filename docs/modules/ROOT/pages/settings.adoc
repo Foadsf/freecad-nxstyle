@@ -1,0 +1,57 @@
+= Settings
+:description: Every NX-Style setting, its default and where to change it.
+
+NX-Style reads its settings from `nxstyle.json` in the NX profile's `config` folder (xref:installation.adoc#profile[where the profile is]).
+The file holds only what you change; everything else keeps its default, so new defaults still reach an existing profile.
+
+At every start NX-Style writes `nxstyle.defaults.json` next to it: every setting with its default, for reference.
+
+== Changing a setting
+
+. Close NX-Style.
+. Create `nxstyle.json` in the profile's `config` folder, or open it if it is there.
+. Put in the settings to change, for example:
++
+[source,json]
+----
+{
+  "labels": "freecad",
+  "background": "white",
+  "mb3_hold_radial_menu_ms": 0
+}
+----
+. Start NX-Style again.
+
+A setting that holds several values (`colors`) can be changed one value at a time:
+
+[source,json]
+----
+{ "colors": { "selection": "#E07000" } }
+----
+
+The settings in FreeCAD's own *Preferences* (File › Preferences) are separate and live in the same profile; they never touch your normal FreeCAD's.
+
+== All settings
+
+include::partial$generated/settings.adoc[]
+
+== Common changes
+
+[cols="2,3",options="header"]
+|===
+| To | Set
+
+| See FreeCAD's names on the buttons | `"labels": "freecad"`
+| Keep FreeCAD's keyboard shortcuts | `"nx_shortcuts": false`
+| Keep FreeCAD's units choice | `"units": "freecad"`
+| Feature dialogs float over the graphics window, as in NX | `"floating_task_panel": true`
+| FreeCAD's own look | `"theme": "none"`
+| Start in Drafting | `"default_application": "drafting"`
+| FreeCAD 1.1's own NX mouse style | `"navigation": "native"`
+| No radial menu | `"mb3_hold_radial_menu_ms": 0`
+| No data management | `"plm": "none"`
+|===
+
+== Starting over
+
+`python launch_nx.py --reset-profile` deletes the NX profile, settings and FreeCAD preferences included; the next start makes a fresh one.

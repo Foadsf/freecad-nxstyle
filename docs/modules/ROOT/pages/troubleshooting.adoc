@@ -1,0 +1,77 @@
+= Troubleshooting
+:description: What to do when NX-Style does not start, Strata is missing, or the window does not look right.
+
+== First checks
+
+The launcher prints three lines when it starts:
+
+----
+FreeCAD 1.1.4: C:\Program Files\FreeCAD 1.1\bin\freecad.exe
+NX profile: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1
+Strata: bundled (...\vendor\freecad-strata)
+----
+
+`python launch_nx.py --dry-run` prints the same facts, and the full FreeCAD command, without starting anything.
+
+== The launcher stops
+
+"No FreeCAD found."::
+The launcher looks in the usual install places.
+Run `python launch_nx.py --list` to see what it found, and pass the executable or the install folder with `--freecad`:
++
+[source,bash]
+----
+python launch_nx.py --freecad "C:\Program Files\FreeCAD 1.1\bin\freecad.exe"
+----
+
+"FreeCAD executable not found: …"::
+The path given to `--freecad` does not exist.
+
+"warning: FreeCAD … is older than 1.0 and is not supported"::
+Install FreeCAD 1.0 or newer.
+FreeCAD 1.1 is recommended: its Siemens NX navigation style and theme editor exist only from 1.1.
+
+"Refusing to use … it overlaps the normal FreeCAD folder"::
+A `--profile` folder must not be inside your normal FreeCAD user folder, so that NX-Style can never change it.
+Pick another folder.
+
+== Strata is missing
+
+`Strata: not found: run 'git submodule update --init' …`::
+The copy was cloned without `--recursive`. In the `freecad-nxstyle` folder run:
++
+[source,bash]
+----
+git submodule update --init
+----
+
+`Strata: off (…)`::
+It was switched off with `--no-strata` or `"plm"` in the xref:settings.adoc[settings].
+
+`Strata: installed in the NX profile (…)`::
+A Strata installed with the Add-on Manager in the NX profile is used instead of the bundled one.
+
+Strata's panel needs `git` on the PATH; see xref:installation.adoc[].
+
+== The window looks wrong
+
+FreeCAD's menus and toolbars are back::
+*Tools › FreeCAD Menus and Toolbars* toggles them.
+
+A panel is lost::
+Open it again from the *Resource Bar*.
+If the layout is damaged, start with a fresh profile: `python launch_nx.py --reset-profile`.
+This deletes the NX profile's settings and FreeCAD preferences, not your parts.
+
+The part is in the Part Navigator but not in the 3D view::
+Hide the Body's origin (select *Origin* in the Part Navigator, kbd:[Ctrl+B]). FreeCAD 1.1.4 drops a Body with a visible origin from the view after a fit (xref:known-issues.adoc[]).
+
+Keys do not do what this site says::
+Check `"nx_shortcuts"` in the settings, and whether a sketch is open: some keys work only in a sketch (xref:keyboard-shortcuts.adoc[]).
+
+Units are inches::
+NX-Style switches an imperial schema back to millimetres at start unless `"units": "freecad"` is set.
+
+== Asking for help
+
+Open an issue on {repo}/issues[GitHub] with the launcher's three lines, your FreeCAD version (*Help › About FreeCAD*, *Copy to clipboard*) and what happened.

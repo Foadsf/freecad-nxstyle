@@ -188,7 +188,7 @@ Dimension values are applied through FreeCAD's API, the equivalent of typing the
 | I4 | Extend: the top line up to the circle, MB2 | E key, MB1 near the line's end, MB1 on the circle, MB2 | **same** | line now ends at x = 94.949 (meets the circle at 94.953) |
 | I5 | Quick Trim: the bottom line past the slanted line, the lower part of the circle, MB2 | T key, MB1 on each part to remove, MB2 | **same** | bottom line now ends at x = 88.798 (slanted line at 88.798); 1 arc, 0 full circle; outline closed True; geometry 5 -> 5 |
 | I6 | The book's dimensions: centre in line with the top line (0.0), its horizontal location, the radius, the corner on the origin; horizontal/vertical constraints confirmed; fully defined | constraints: centre on the top line, radius, horizontal location of the centre, height of the centre, angle of the slanted line; H/V: Vertical 1 implied, Horizontal 2 | **same** | centre -1.287 -> -0.000 mm from the top line; outline closed True; solver: 'Fully constrained' (0 DoF). NX sets a 0.0 location dimension; FreeCAD has a point-on-object constraint for it; implied already: left edge on the origin, bottom edge on the origin |
-| I7 | Fillet R20 at the corners | F key; radius 20 at each corner where two curves meet at an angle | **differs** | 4 fillets of 4 corners ((95, 78), (0, 78), (0, 0), (89, -0)); outline closed True; constraints re-confirmed after the fillets: Vertical 1, left edge on the origin, bottom edge on the origin; 4 R20 dimensions added (FreeCAD's sketch fillet constrains tangency, not the radius); solver 'Fully constrained' (0 DoF). The book makes five, the arc-to-slanted-line join being tangent here leaves four; the radius is typed after picking in FreeCAD |
+| I7 | Fillet R20 at the corners | F key; radius 20 at each corner where two curves meet at an angle | **differs** | 4 fillets of 4 corners ((95, 78), (0, 78), (0, 0), (89, 0)); outline closed True; constraints re-confirmed after the fillets: Vertical 1, left edge on the origin, bottom edge on the origin; 4 R20 dimensions added (FreeCAD's sketch fillet constrains tangency, not the radius); solver 'Fully constrained' (0 DoF). The book makes five, the arc-to-slanted-line join being tangent here leaves four; the radius is typed after picking in FreeCAD |
 | I8 | Finish Sketch, End 5 mm, OK | Ctrl+Q, 'lengthEdit' = 5 mm, MB2 = OK | **same** | volume 56106.6 mm^3, expected 56106.6; 1 solid(s); outline area 11221.3 mm^2 |
 | I9 | Extrude, Sketch Section on the front face | select Face11 + ribbon 'Home › Feature > Extrude (Subtract)' | **differs** | subtracting extrude is its own button |
 | I10 | Project Curve (the whole face), Offset 15 mm, Reverse Direction to the inside, OK | 9 edges projected; ribbon 'Sketch › Edit Curve > Offset Curve', 'Add offset constraint', MB1 15 mm inside; Select Redundant Constraints + Delete; offset dimension typed 15 | **differs** | 9 projected curves, 9 offset curves; the click gave 14.802 mm. FreeCAD's own offset constraints left the sketch unsolvable (solver: 'Redundant constraints:'; selected ['Constraint17']); after deleting it the sketch solves (True). NX types the distance and flips the side with Reverse Direction; FreeCAD takes the side and distance from the click, the exact value from its offset dimension |
@@ -280,23 +280,23 @@ Dimension values are applied through FreeCAD's API, the equivalent of typing the
 | M30 | The U-Bracket is shown in the graphics window | render of the graphics window | **same** | 13.1% of the view shows the part |
 | N1 | File > Drafting | Ctrl+Shift+D | **same** | TechDrawWorkbench |
 | N2 | Sheet: Inches, Third Angle, A-8.5X11, scale 1:1, OK | ribbon 'Home › Drawing > New Sheet'; the sheet's template, projection and scale | **differs** | template ANSIA_Landscape.svg, projection Third angle. NX asks in one Sheet dialog; FreeCAD's New Sheet uses the default template, and size, projection and scale are the sheet's properties. Units follow the preferences (mm here) |
-| N3 | Base View: Front; View Style: hidden lines dashed 0.35, visible lines 0.70; place it low on the sheet | body selected + ribbon 'Home › View > Base View', MB2; the view's style properties | **differs** | 16 visible, 0 hidden edges. NX sets the style in the view's Settings dialog; TechDraw has Hard Hidden and the line widths in the view's properties |
+| N3 | Base View: Front; View Style: hidden lines dashed 0.35, visible lines 0.70; place it low on the sheet | body selected + ribbon 'Home › View > Base View', MB2; the view's style properties | **differs** | 16 visible, 34 hidden edges. NX sets the style in the view's Settings dialog; TechDraw has Hard Hidden and the line widths in the view's properties |
 | N4 | Projected Top view above the Front view | a second Base View, direction Top, aligned above | **differs** | as in tutorials D and H: NX drags projected views off the base view; FreeCAD's Projected View is a projection group, so a Base View looking down stands in, lined up with the front view |
 | N5 | MB3 > Edit Sheet: B-11X17 | the sheet's template set to ANSI B | **differs** | template ANSIB_Landscape.svg; the views keep their places. NX changes the size in Edit Sheet; FreeCAD swaps the template |
 | N6 | Base View: Isometric, to the right | body selected + ribbon 'Home › View > Base View', isometric direction | **same** |  |
 | N7 | Hide the Datum Coordinate System and the view's cross hair | - | **same** | nothing to hide: TechDraw draws only the solid, and NXStyle keeps the Body's origin hidden (origin shown: False) |
 | N8 | Drafting Preferences: dimension text Horizontal (ANSI) | Preferences > TechDraw > Dimensions > Standard and Style = ASME Inlined | **differs** | was ASME Inlined |
 | N9 | Command Finder > Feature Parameters: the model's dimensions on the views | - | **missing** | TechDraw has no command that brings a feature's sketch dimensions onto a view; its dimensions are reference dimensions measured from the view (next steps). NX's feature dimensions also drive the model from the drawing |
-| N10 | Instead: reference dimensions on the top view (5.000, 2.500, Ø0.750) | cosmetic vertices on the hole centres; ribbon 'Horizontal' (twice) and 'Diameter' | **differs** | measured (in): {'centres': 5.0, 'to the middle': 2.5, 'hole': 0.75}. TechDraw dimensions need vertices at arc centres (as in tutorial H) |
+| N10 | Instead: reference dimensions on the top view (5.000, 2.500, Ø0.750 in) | cosmetic vertices on the hole centres; ribbon 'Horizontal' (twice) and 'Diameter' | **differs** | measured (mm): {'centres': 127.0, 'to the middle': 63.5, 'hole': 19.05}, the book's 127.00, 63.50 and Ø19.05. TechDraw dimensions need vertices at arc centres (as in tutorial H) |
 | N11 | Isometric view: Settings > Smooth Edges off | the view's Smooth Visible property | **same** | smooth (tangent) edges were shown, as in NX, and are now off |
 | N12 | Edit the diameter dimension: Arrow Out | the dimension's 'FlipArrowheads' property | **differs** | arrow properties: ['ArrowStyle', 'Arrowsize', 'FlipArrowheads'] |
 | N13 | Immediate Hide: the two dimensions in the top view | both selected + Ctrl+B (Hide) | **same** | hidden [True, True] |
 | N14 | Show (Ctrl+Shift+K): the two dimensions back | selected in the Part Navigator + Ctrl+Shift+K | **same** | shown [True, True]; NX picks hidden objects in a list, here they are picked in the Part Navigator |
 | N15 | Center Mark: the two outer arcs and the drill in the top view | 3 arcs selected + ribbon 'Home › Centerline and Hatch > Center Mark' | **same** | center lines 0 -> 0, cosmetic edges 0 -> 6; the book deletes NX's automatic centre lines first: TechDraw adds none by itself |
-| N16 | Radial dimension on the bottom arc of the front view | arc selected + ribbon 'Home › Dimension > Radial' | **same** | R1.250 in |
+| N16 | Radial dimension on the bottom arc of the front view | arc selected + ribbon 'Home › Dimension > Radial' | **same** | R31.75 mm (the book's R1.250 in) |
 | N17 | Edit Settings: the 5 and 2.5 dimensions with 2 decimals and trailing zeros | the dimensions' Format Spec = %.2f | **differs** | NX: Edit Settings > Text > decimals; TechDraw: the format spec (shown in the preferences units) |
 | N18 | Modeling: Base feature > Sketch Section, the diameter 0.750 -> 0.625, Finish Sketch, OK | Ctrl+M; the base sketch's diameter typed (0.625 in = 15.875 mm) | **same** | volume 142208.8 mm^3 (expected 142209.3) |
-| N19 | Drafting: MB3 on the drawing > Update; the diameter shows 0.625 | Ctrl+Shift+D; the sheet updates by itself | **same** | diameter dimension now 0.625 in; TechDraw keeps the sheet up to date (the page's Keep Updated), NX marks it out of date and asks for Update |
+| N19 | Drafting: MB3 on the drawing > Update; the diameter shows 0.625 in | Ctrl+Shift+D; the sheet updates by itself | **same** | diameter dimension now Ø15.875 mm; TechDraw keeps the sheet up to date (the page's Keep Updated), NX marks it out of date and asks for Update |
 
 ## What the replay changed in NXStyle
 
@@ -315,27 +315,27 @@ Dimension values are applied through FreeCAD's API, the equivalent of typing the
 - **Fully Fixed and Relax Constraint (J):** the Sketch tab labels FreeCAD's Block constraint Fully Fixed and its Toggle Active Constraint Relax Constraint, NX's names for what the book does with them.
 - **Measure Bodies (E):** FreeCAD's own Measure has no mass. Analysis > Measure Bodies shows volume, surface area, the assigned material and density, mass and centre of mass in an NX-style Information window, in mm³, mm² and kg as NX reports a millimetre part (for the Saddle Bracket: 86,504.5 mm³, Steel-Generic 7900 kg/m³, 0.6834 kg).
 
-![Tutorial D drawing: right view with the five holes, section A-A beside it](tutorial-D-drawing.png)
+![Tutorial D drawing: right view with the five holes, section A-A beside it](modules/ROOT/images/tutorial-D-drawing.png)
 
-![Tutorial E: the Saddle Bracket after the design changes, features renamed in the Part Navigator](tutorial-E-saddle-bracket.png)
+![Tutorial E: the Saddle Bracket after the design changes, features renamed in the Part Navigator](modules/ROOT/images/tutorial-E-saddle-bracket.png)
 
-![Tutorial F: the simplified dryer housing, shelled, with the 5 × 10 vent pattern](tutorial-F-dryer-housing.png)
+![Tutorial F: the simplified dryer housing, shelled, with the 5 × 10 vent pattern](modules/ROOT/images/tutorial-F-dryer-housing.png)
 
-![Tutorial G: the Shaft Support assembly, cap screws flush in their counterbores](tutorial-G-shaft-support.png)
+![Tutorial G: the Shaft Support assembly, cap screws flush in their counterbores](modules/ROOT/images/tutorial-G-shaft-support.png)
 
-![Tutorial H: the GD&T plate drawing with datums A, B, C, basic dimensions and three feature control frames](tutorial-H-gdt-drawing.png)
+![Tutorial H: the GD&T plate drawing with datums A, B, C, basic dimensions and three feature control frames](modules/ROOT/images/tutorial-H-gdt-drawing.png)
 
-![Tutorial I: the Gasket at 150 mm overall height, the offset cut 15 mm inside the outline](tutorial-I-gasket.png)
+![Tutorial I: the Gasket at 150 mm overall height, the offset cut 15 mm inside the outline](modules/ROOT/images/tutorial-I-gasket.png)
 
-![Tutorial J: the constrained triangle plate after the 25 × 20 size change; the hole follows its formulas](tutorial-J-parametric.png)
+![Tutorial J: the constrained triangle plate after the 25 × 20 size change; the hole follows its formulas](modules/ROOT/images/tutorial-J-parametric.png)
 
-![Tutorial K: the flat bar in configuration B, eight holes driven by the Expressions table](tutorial-K-flat-bar.png)
+![Tutorial K: the flat bar in configuration B, eight holes driven by the Expressions table](modules/ROOT/images/tutorial-K-flat-bar.png)
 
-![Tutorial L: the Locator, a bored boss on a block with a slot running into the hole](tutorial-L-locator.png)
+![Tutorial L: the Locator, a bored boss on a block with a slot running into the hole](modules/ROOT/images/tutorial-L-locator.png)
 
-![Tutorial M: the U-Bracket with the round opening; the rectangular cut is kept, suppressed](tutorial-M-u-bracket.png)
+![Tutorial M: the U-Bracket with the round opening; the rectangular cut is kept, suppressed](modules/ROOT/images/tutorial-M-u-bracket.png)
 
-![Tutorial N: the U-Bracket drawing on a B sheet: front, top and isometric views, center marks, dimensions](tutorial-N-u-bracket-drawing.png)
+![Tutorial N: the U-Bracket drawing on a B sheet: front, top and isometric views, center marks, dimensions](modules/ROOT/images/tutorial-N-u-bracket-drawing.png)
 
 ## Differences that remain (FreeCAD behaviour)
 

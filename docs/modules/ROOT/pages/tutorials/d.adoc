@@ -1,0 +1,31 @@
+= Tutorial D: Pulley with drawing
+:description: A revolved pulley, mirrored, with a circular hole pattern, and its drawing with a section view.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 11
+You learn:: Revolve, Mirror Feature, a pattern leader hole, Circular Pattern, Base View, Section View
+Sizes:: Ø101.6 × 25.4 mm, hub Ø38.1, bore Ø19.05, web 6.35, five Ø12.7 holes on a Ø63.5 pitch circle (the book's Ø4.00 × 1.00 in and so on); NotebookLM's reading of the figures
+
+image::tutorial-D-pulley.png[The pulley]
+
+== In short
+
+. *Revolve* with nothing selected: sketch the half section, kbd:[Ctrl+Q], revolve.
+. Select the feature, then *Mirror Feature*.
+. One hole as the pattern leader, then *Circular Pattern* with 5 occurrences.
+. kbd:[Ctrl+Shift+D]: *New Sheet*, *Base View* (right view), *Section View* through the centre.
+
+image::tutorial-D-drawing.png[The pulley drawing: right view and section A-A]
+
+== Step by step
+
+include::partial$generated/tutorial-D.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* Mirror Feature: select the feature first, then start the command.
+* NX's one Pattern Feature with a Layout list is two buttons here; the axis is chosen in the dialog.
+* Projected View is a projection group: a second Base View stands in for a view dragged off the base view.
+* A new section view lands on its base view and is moved afterwards.

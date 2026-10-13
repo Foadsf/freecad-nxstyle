@@ -1,0 +1,21 @@
+= Tutorial B: First part, cylinder and cone
+:description: A hollow cylinder by Extrude and a cone by Revolve.
+
+[horizontal]
+Source:: A first-part exercise put together from the NX textbooks (NotebookLM credited a university course but cited Shih and Tickoo)
+You learn:: Circle, Extrude, Revolve about a sketch axis
+Sizes:: Hollow cylinder Ø50/Ø30 × 50 mm; cone R25 × 50 mm
+
+image::tutorial-B-first-part.png[Cylinder and cone]
+
+== In short
+
+. kbd:[Ctrl+N], kbd:[X], *XY_Plane*, *MB2*.
+. kbd:[O] twice for the two circles, kbd:[D] for Ø50 and Ø30, kbd:[Ctrl+Q], 50 mm, *MB2*.
+. A new part; *Revolve* with nothing selected; a triangle of R25 × 50 mm with kbd:[Z]; kbd:[Ctrl+Q]; revolve about the sketch's vertical axis, *MB2*.
+
+== Step by step
+
+include::partial$generated/tutorial-B.adoc[]
+
+include::partial$outcome-legend.adoc[]

@@ -1,0 +1,68 @@
+= Your first part in five minutes
+:description: Sketch a rectangle, extrude it and cut a slot, the NX way.
+
+This page builds a small block with a slot, using NX's keys and mouse buttons.
+Every step here is one that the tutorial replay presses and checks (xref:tutorials/a.adoc[Tutorial A]).
+
+Start NX-Style first (xref:installation.adoc[]).
+
+== 1. A new part
+
+Press kbd:[Ctrl+N].
+
+NX-Style's New works like NX's *Model* template: the new part already has a Body, ready to sketch on.
+Units are millimetres.
+
+== 2. Extrude, starting from a sketch
+
+With nothing selected, press kbd:[X] (Extrude).
+
+The *Dialog* panel on the left asks for a sketch plane.
+Click *XY_Plane* in its list (or click the plane in the graphics window) and press *MB2* (the middle mouse button) for OK.
+The Sketch task environment opens, with the contextual *Sketch* tab on the ribbon.
+
+== 3. Draw a rectangle
+
+. Press kbd:[R] (Rectangle).
+. Click two opposite corners with *MB1* in the graphics window.
+. Press *MB2* to end the Rectangle tool.
+
+== 4. Give it sizes
+
+Press kbd:[D] (Rapid Dimension), click an edge, type a value and press kbd:[Enter].
+Do the same for the other side.
+
+NOTE: FreeCAD's dimension tool asks for one value at a time.
+NX's dynamic dimensions while you draw, and its "scale the whole sketch?" prompt, do not exist here.
+
+== 5. Finish the sketch: straight into Extrude
+
+Press kbd:[Ctrl+Q] (Finish Sketch).
+
+As in NX, finishing the sketch carries straight on into the Extrude dialog.
+Type the distance into the length field and press *MB2* for OK.
+
+.The extruded block
+image::quick-start-extrude.png[A block extruded from a sketch]
+
+== 6. Cut a slot into a face
+
+. Click the face to cut into.
+. On the ribbon, click *Home › Feature › Extrude (Subtract)*.
+  The sketch opens on that face.
+. kbd:[R], two clicks, *MB2*; give it its sizes with kbd:[D].
+. kbd:[Ctrl+Q], type the depth, *MB2*.
+
+TIP: FreeCAD's Extrude has no Boolean option: the subtracting extrude is its own button, *Extrude (Subtract)*, and it cuts into the part without a Reverse Direction.
+
+== 7. Look at it and save
+
+* Drag with *MB2* to rotate, *Shift+MB2* to pan, roll the wheel to zoom (xref:mouse.adoc[]).
+* kbd:[Home] gives the trimetric view, kbd:[End] the isometric one, kbd:[Ctrl+F] fits the part in the window.
+* kbd:[Ctrl+S] saves. The file is a FreeCAD `.FCStd` file.
+
+== Next
+
+* xref:user-interface.adoc[] -- what the ribbon, the bars and the navigators hold.
+* xref:tutorials/index.adoc[] -- fourteen textbook exercises, from this one to assemblies and GD&T drawings.
+* xref:keyboard-shortcuts.adoc[] -- every key.

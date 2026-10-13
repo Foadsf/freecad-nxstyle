@@ -1,0 +1,2188 @@
+{
+ "steps": [
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New (Ctrl+N), Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": "new document ['Unnamed'] with a Body; its datum planes appear when a plane is picked (kept hidden otherwise: FreeCAD 1.1.4 hides the part when they stay on)"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Extrude (X) with nothing selected",
+   "replay": "X key",
+   "outcome": "same",
+   "detail": "FreeCAD asks for the sketch plane in the Dialog panel; NX asks in the graphics window"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Pick the XY plane, accept with MB2",
+   "replay": "plane row in the Dialog panel + MB2 click",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane); sketch in edit: Sketch"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Profile (Z), six MB1 clicks for the L outline",
+   "replay": "Z key + MB1 clicks in the graphics window",
+   "outcome": "same",
+   "detail": "tool active True; 6 curves drawn"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "MB2 ends Profile",
+   "replay": "MB2 click",
+   "outcome": "same",
+   "detail": "tool ended = True"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Rapid Dimension (D): 2.5 width, 2.5 height, 0.75 legs",
+   "replay": "D key, values applied",
+   "outcome": "differs",
+   "detail": "D starts FreeCAD's Dimension tool. FreeCAD does not show NX's dynamic dimensions on click, and there is no 'scale the whole sketch to the first dimension?' prompt"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Finish Sketch (Ctrl+Q) returns to the Extrude dialog",
+   "replay": "Ctrl+Q",
+   "outcome": "same",
+   "detail": "Extrude dialog open = True; modals []"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Extrude: End = Value 2.5, Boolean None, OK",
+   "replay": "typed into 'lengthEdit', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 130584.4 mm^3, expected 130584.4"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Extrude, pick the top face as sketch plane, Boolean Subtract",
+   "replay": "select face + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": "FreeCAD has no Boolean option in Extrude: the subtracting extrude is its own button (Home > Feature > Extrude (Subtract))"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Rectangle (R), two MB1 clicks, MB2",
+   "replay": "R key + MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool active True; 4 curves"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Rapid Dimension: 0.50 from edge, 1.00 wide, 0.75 deep",
+   "replay": "values applied",
+   "outcome": "differs",
+   "detail": "as in step 6: same tool, no NX dynamic dimensions"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Finish Sketch returns to the (subtract) Extrude dialog",
+   "replay": "Ctrl+Q",
+   "outcome": "same",
+   "detail": "dialog open = True"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Reverse Direction into the solid",
+   "replay": "-",
+   "outcome": "differs",
+   "detail": "not needed: FreeCAD's subtracting extrude cuts into the solid by default"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Slot depth 0.75, OK",
+   "replay": "'lengthEdit' = 19.05 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 121366.7 mm^3, expected 121366.7; 1 solid(s)"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "The finished part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "26.7% of the view shows the part"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Save (Ctrl+S)",
+   "replay": "Ctrl+S is bound to Save (tested by the self-test); file saved",
+   "outcome": "same",
+   "detail": "saved as Adjuster.FCStd (FreeCAD format, not .prt)"
+  },
+  {
+   "tutorial": "A: The Adjuster (book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Reopened part is shown",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "26.7% of the view shows the part"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 1,
+   "nx": "File > New (Ctrl+N), Model template, mm",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": "new document ['Unnamed']"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 2,
+   "nx": "Extrude (X), pick the XC-YC plane",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 3,
+   "nx": "Circle (O): two circles at the origin, MB2",
+   "replay": "O key + MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool True; 2 circles; ended True"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 4,
+   "nx": "Rapid Dimension: diameters 50 and 30",
+   "replay": "values applied",
+   "outcome": "differs",
+   "detail": "same tool; values typed in FreeCAD's dimension field"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 5,
+   "nx": "Finish Sketch, Extrude 0 to 50 mm, OK",
+   "replay": "Ctrl+Q, 'lengthEdit' = 50, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 62831.9 mm^3, expected 62831.9"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 6,
+   "nx": "Revolve (ribbon)",
+   "replay": "ribbon 'Home › Feature > Revolve'",
+   "outcome": "same",
+   "detail": "nothing selected: sketch first, as with Extrude"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 7,
+   "nx": "Pick the YC-ZC plane",
+   "replay": "plane row + MB2",
+   "outcome": "same",
+   "detail": "picked YZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 8,
+   "nx": "Line (L): right triangle on the axis, MB2",
+   "replay": "L key + MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool True; 3 lines"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 9,
+   "nx": "Rapid Dimension: height 50, radius 25",
+   "replay": "values applied",
+   "outcome": "differs",
+   "detail": "same tool"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 10,
+   "nx": "Finish Sketch returns to Revolve; axis = Z, 0..360 deg",
+   "replay": "Ctrl+Q",
+   "outcome": "same",
+   "detail": "dialog open True; default axis ['V_Axis'] (sketch V axis = Z)"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 11,
+   "nx": "Boolean Unite, OK",
+   "replay": "MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 95556.8 mm^3, expected 95556.8; features in one Body unite automatically"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 12,
+   "nx": "Hold MB2 and drag to rotate",
+   "replay": "MB2 drag",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 13,
+   "nx": "F8 snaps to the nearest standard view",
+   "replay": "F8 key",
+   "outcome": "same",
+   "detail": "view Vector (0.0, 1.0, 0.0)"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 14,
+   "nx": "The finished part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "11.3% of the view shows the part"
+  },
+  {
+   "tutorial": "B: First part, cylinder and cone (mm)",
+   "n": 15,
+   "nx": "Save (Ctrl+S)",
+   "replay": "file saved",
+   "outcome": "same",
+   "detail": "FirstPart.FCStd"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New (Ctrl+N), Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Extrude (X), pick the XY plane",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Rectangle (R) by 2 points around the origin",
+   "replay": "R key + 2 MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool True; 4 curves; ended True"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Sketch Fillet (F), R0.25 on the four corners",
+   "replay": "F key; corners applied as values",
+   "outcome": "differs",
+   "detail": "F starts FreeCAD's sketch fillet; the radius is typed after picking, not before as in NX"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Circle (O): four Ø0.25 circles on the arc centres, Equal Radius",
+   "replay": "O key; values applied",
+   "outcome": "same",
+   "detail": "Equal constraint exists in both"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Finish Sketch, Extrude 0.75, OK",
+   "replay": "Ctrl+Q, 'lengthEdit' = 19.05 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 70669.2 mm^3, expected 70669.2; 1 solid(s)"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Datum Plane, At Angle: front face",
+   "replay": "select face + ribbon 'Home > Datum > Datum Plane'",
+   "outcome": "same",
+   "detail": "the datum is attached to the face; FreeCAD's attachment dialog opens"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Angle -30° about the vertical axis, OK",
+   "replay": "'attachmentOffsetPitch' = -30°, MB2 = OK",
+   "outcome": "differs",
+   "detail": "plane at 30.00° to the face. NX picks the Z axis as hinge; FreeCAD rotates in the attachment offset about the face's own axes"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Extrude the angled upper block on the datum plane (Unite, Symmetric 1.0)",
+   "replay": "-",
+   "outcome": "skipped",
+   "detail": "the profile's dimensions are only in the book's figures"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Datum Plane, At Distance: top face",
+   "replay": "select face + ribbon 'Home > Datum > Datum Plane'",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Distance 0.75, OK",
+   "replay": "'attachmentOffsetZ' = 19.05 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "datum plane at z = 38.10 mm (top face 19.05 + 19.05)"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Hole, placed on the offset datum plane",
+   "replay": "select plane + ribbon 'Home › Feature > Hole'",
+   "outcome": "differs",
+   "detail": "FreeCAD's Hole drills at circle centres in a sketch, so Hole starts a sketch on the plane (NX picks the point directly)"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Place the hole centre at the WCS origin",
+   "replay": "O key + MB1 at the origin + MB2",
+   "outcome": "same",
+   "detail": "tool True; 1 curves; ended True"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Hole: Simple, Ø0.25, Through Body, OK",
+   "replay": "dialog open True; 'Diameter' = 6.35 mm, 'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 70065.9 mm^3, expected 70065.9; 1 solid(s)"
+  },
+  {
+   "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "The finished part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "21.6% of the view shows the part"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New (Ctrl+N), Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Revolve, nothing selected",
+   "replay": "ribbon 'Home › Feature > Revolve'",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Pick the XY plane of the datum CSYS",
+   "replay": "plane row + MB2",
+   "outcome": "same",
+   "detail": "XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Profile (Z): closed half cross-section, MB2",
+   "replay": "Z key + 9 MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool True; 8 curves; ended True"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Rapid Dimension: profile sizes",
+   "replay": "values applied",
+   "outcome": "differs",
+   "detail": "same tool; no dynamic dimensions"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Specify Vector = X axis through the origin, 0..360°, OK",
+   "replay": "axis 'Base X-axis', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 51079.3 mm^3, expected 51079.3; 1 solid(s); NX picks the axis in the graphics window, FreeCAD lists it in the dialog"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Mirror Feature: select the revolved feature, MB2 to proceed",
+   "replay": "feature selected + ribbon 'Home › Pattern > Mirror Feature'",
+   "outcome": "differs",
+   "detail": "selecting first and then starting Mirror Feature replaces NX's 'select, then MB2'"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Plane = the back face (on the YZ plane), OK; Unite",
+   "replay": "plane 'Base YZ-plane', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 102158.6 mm^3, expected 102158.6; 1 solid(s); inside a Body the mirror unites by itself, so NX's separate Unite step is not needed"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Pattern leader: Extrude on the front face of the web, Subtract",
+   "replay": "select face + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": "subtracting extrude is its own button in FreeCAD"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Circle Ø0.50 on the 2.50 pitch circle",
+   "replay": "O key + MB1 clicks + MB2; values applied",
+   "outcome": "same",
+   "detail": "tool True; 1 curves"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Reverse Direction, End = Through All, OK",
+   "replay": "'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 101354.2 mm^3, expected 101354.2; 1 solid(s); no Reverse needed in FreeCAD"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Pattern Feature, Layout = Circular",
+   "replay": "leader selected + ribbon 'Home › Pattern > Circular Pattern'",
+   "outcome": "differs",
+   "detail": "NX has one Pattern Feature with a Layout list; FreeCAD has separate linear and circular buttons"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Axis X, Count and Span: 5 over 360°, OK",
+   "replay": "axis 'Base X-axis', 'spinOccurrences' = 5, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 98136.6 mm^3, expected 98136.6; 1 solid(s)"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "The finished part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "12.6% of the view shows the part"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "File > Drafting (Ctrl+Shift+D)",
+   "replay": "Ctrl+Shift+D",
+   "outcome": "same",
+   "detail": "TechDrawWorkbench"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "New sheet, A-size, 1:1",
+   "replay": "ribbon 'Home › Drawing > New Sheet'",
+   "outcome": "differs",
+   "detail": "FreeCAD's default template Default_Template_A4_Landscape.svg; an ANSI A sheet is one template choice away (Sheet from Template)"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Base View: Right view of the pulley",
+   "replay": "body selected + ribbon 'Home › View > Base View'; dialog closed with MB2",
+   "outcome": "same",
+   "detail": "1 view(s) on the sheet; direction set to Right (+X)"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Add a projected view, select it, Delete key",
+   "replay": "Base View again + Delete key",
+   "outcome": "differs",
+   "detail": "views 2 -> 1. NX drags projected views off the base view; FreeCAD's Projected View is a projection group, so a second Base View stood in for it"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 19,
+   "nx": "Section View through the centre of the base view",
+   "replay": "base view selected + ribbon 'Home › View > Section View', direction 'pbLeft', MB2 = OK",
+   "outcome": "same",
+   "detail": "1 section view(s), 42 visible edges"
+  },
+  {
+   "tutorial": "D: Pulley with drawing (book in inches, typed in mm)",
+   "n": 20,
+   "nx": "Drag the section to the right of the base view, MB1 to place",
+   "replay": "X/Y of the section set",
+   "outcome": "differs",
+   "detail": "FreeCAD places the section on top of the base view; it is moved afterwards (placed at x = 224.7 mm, base at 148.5 mm)"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "BORN: Datum CSYS at the WCS, OK",
+   "replay": "ribbon 'Home > Datum > Datum CSYS', MB2 = OK, Yes to FreeCAD's question",
+   "outcome": "differs",
+   "detail": "a FreeCAD Body already starts with its own origin (the BORN idea built in). With nothing selected FreeCAD asks 'no attachment mode fits the references, continue?'; NX places the CSYS at the WCS without asking"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Extrude (X), XZ plane, OK",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Profile (Z): the L-shaped outline, MB2",
+   "replay": "Z key + 7 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "tool True; 6 curves; ended True"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Start = Symmetric Value, distance 2.5, OK",
+   "replay": "'Symmetric', 'lengthEdit' = 63.5 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 107540.1 mm^3, expected 107540.1; 1 solid(s); width -31.75 .. 31.75 mm (NX 1926+ and FreeCAD both treat the symmetric distance as the total)"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Extrude, bottom face as the sketch plane",
+   "replay": "select face + ribbon 'Home › Feature > Extrude'",
+   "outcome": "same",
+   "detail": "Face1"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Project Curve: the bottom right edge, OK",
+   "replay": "ribbon 'Project Curve' + MB1 on the edge + MB2",
+   "outcome": "same",
+   "detail": "picked Edge2 in the graphics window"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Circle: centre at the edge midpoint, through the top corner",
+   "replay": "O key + 2 MB1 clicks + MB2; midpoint and corner as constraints",
+   "outcome": "same",
+   "detail": "solver result 0 (0 = solved); NX snaps to the midpoint and corner while drawing, FreeCAD records them as constraints"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Finish the section: circle and projected edge",
+   "replay": "select the projected line + ribbon 'Convert To/From Reference'",
+   "outcome": "differs",
+   "detail": "FreeCAD 1.1 projects a picked edge as defining geometry, so the profile had 2 curves and Extrude would report 'Wire is not closed'. NX builds regions from the circle and its diameter; in FreeCAD the projected line has to become construction geometry first"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Reverse Direction, distance 0.5, Boolean Unite, OK",
+   "replay": "'checkBoxReversed' on, 'lengthEdit' = 12.7 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 127650.1 mm^3, expected 127650.1; 1 solid(s); lowest point z = -0.00 mm"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Rename in the Part Navigator: Base, Circular_End",
+   "replay": "select + F2, type, Enter",
+   "outcome": "differs",
+   "detail": "NX: click the name twice or MB3 > Rename; FreeCAD: F2 or MB3 > Rename"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Design change: Base distance 2.5 -> 2.0, OK, F5",
+   "replay": "Base selected + ribbon 'Home › Edit Feature > Edit Parameters' (dialog True), 'lengthEdit' = 50.8 mm, MB2 = OK, F5",
+   "outcome": "same",
+   "detail": "volume 98902.5 mm^3, expected 98902.5; 1 solid(s); NX edits the value from MB3 > Show Dimensions, FreeCAD reopens the Extrude dialog. Circular_End follows the narrower base (its circle is tied to the projected edge)"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Hole: Simple, Normal to Face, on the top face",
+   "replay": "select face + ribbon 'Home › Feature > Hole'",
+   "outcome": "differs",
+   "detail": "FreeCAD's Hole drills at circle centres in a sketch on the face"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Point: the centre of the top arc",
+   "replay": "O key + MB1 clicks + MB2; centre tied to the arc",
+   "outcome": "differs",
+   "detail": "NX picks the arc centre directly; FreeCAD sketches a circle on it (Edge19 projected)"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Diameter 0.75, Depth Limit = Through Body, OK",
+   "replay": "'Diameter' = 19.05 mm, 'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 95282.7 mm^3, expected 95282.7; 1 solid(s)"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Extrude on the right vertical face of the upright",
+   "replay": "select face + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": "Face5; subtracting extrude is its own button"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Rectangle at the upper edge, MB2; three dimensions",
+   "replay": "R key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "tool True; 4 curves; ended True"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Boolean Subtract, End = Until Next, OK",
+   "replay": "'To first', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 86064.9 mm^3, expected 86064.9; 1 solid(s); FreeCAD calls Until Next 'To first'"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 19,
+   "nx": "Rename the cut Rect_Cut",
+   "replay": "select + F2, type, Enter",
+   "outcome": "differs",
+   "detail": ""
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 20,
+   "nx": "Edit with Rollback: End = Through All, OK",
+   "replay": "Rect_Cut selected + ribbon 'Home › Edit Feature > Edit Parameters', 'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 86064.9 mm^3, expected 86064.9; 1 solid(s); FreeCAD's edit shows the model before the feature, like NX's rollback"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 21,
+   "nx": "Edit the Base sketch: Fillet (F) R0.25 on the inside corner, MB2",
+   "replay": "sketch selected + ribbon 'Edit Parameters', F key; corner filleted at 0.25",
+   "outcome": "differs",
+   "detail": "NX: Edit with Rollback > Sketch Section; FreeCAD opens the sketch directly. The radius is typed after picking the corner"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 22,
+   "nx": "Finish Sketch, OK: the whole part updates",
+   "replay": "Ctrl+Q",
+   "outcome": "same",
+   "detail": "volume 86504.5 mm^3, expected 86504.5; 1 solid(s); later features (Circular_End, hole, Rect_Cut) follow the edited sketch"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 23,
+   "nx": "Tools > Assign Materials: Steel, select the body, OK",
+   "replay": "body selected + ribbon 'View › Visualization > Assign Material', 'Steel-Generic', Close",
+   "outcome": "differs",
+   "detail": "material Steel-Generic, density 7900.0 kg/m^3; the panel applies the choice at once and has Close instead of OK"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 24,
+   "nx": "Analysis > Measure, Solid Body, physical properties in the Information window",
+   "replay": "body selected + ribbon 'Analysis › Measure > Measure Bodies'",
+   "outcome": "differs",
+   "detail": "mass 0.6834 kg from 7900 kg/m^3; FreeCAD's own Measure has no mass, so NXStyle adds Measure Bodies"
+  },
+  {
+   "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
+   "n": 25,
+   "nx": "The finished part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "21.7% of the view shows the part"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New, Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Revolve, YZ plane of the datum CSYS",
+   "replay": "ribbon 'Home › Feature > Revolve', plane row + MB2",
+   "outcome": "same",
+   "detail": "picked YZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Profile, then Fillet R0.25 between the top line and the side",
+   "replay": "Z key + MB1 clicks + MB2, F key; sizes applied",
+   "outcome": "differs",
+   "detail": "the book's profile (an arc and stepped lines) is figure-only; a filleted rectangle stands in. The fillet radius is typed after picking in FreeCAD"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Specify Vector = Z axis, 0..360°, OK",
+   "replay": "axis 'Base Z-axis', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 254722.5 mm^3, expected 254722.5; 1 solid(s)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Dryer handle: Extrude (X), XY plane",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Handle outline, seven dimensions",
+   "replay": "R key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "differs",
+   "detail": "the book's handle (three inclined lines, seven dimensions) is figure-only; a 0.75 x 3.5 bar stands in"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Boolean Unite, End = 0.5, OK",
+   "replay": "'lengthEdit' = 12.7 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 273230.4 mm^3, expected 273230.4; 1 solid(s)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Sketch on the YZ plane",
+   "replay": "ribbon 'Home › Direct Sketch > Sketch', plane row + MB2",
+   "outcome": "same",
+   "detail": "picked YZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Arc by centre and endpoints (180°), then a Line closing it",
+   "replay": "A key + 3 MB1 clicks + MB2, L key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "arc tool True, line tool True; the book projects the bottom edge first (shown in tutorial E); here the arc sits on the bottom line by its coordinates"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Reverse Direction, End 5.5, Boolean Unite, OK",
+   "replay": "sketch selected + ribbon 'Home › Feature > Extrude', 'checkBoxReversed' on, 'lengthEdit' = 139.7 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 324426.0 mm^3, expected 324425.9; 1 solid(s)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Edge Blend, Circular, select the handle's edges",
+   "replay": "4 edges selected + ribbon 'Home › Feature > Edge Blend'",
+   "outcome": "differs",
+   "detail": "the book's 13 edges are picked from a figure; the outer edges of the handle's end stand in (FreeCAD's unrefined shape may split one). FreeCAD takes the edges selected before the command"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Radius 1 = 0.15, OK",
+   "replay": "'filletRadius' = 3.81 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 324249.4 mm^3, expected 324249.3; 1 solid(s)"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Shell: pick the two flat open faces",
+   "replay": "bottom ['Face2'] + nozzle end ['Face9'] selected + ribbon 'Home › Feature > Shell'",
+   "outcome": "same",
+   "detail": "FreeCAD calls Shell 'Thickness'"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Thickness 0.125, OK",
+   "replay": "'Value' = 3.175 mm, 'Make thickness inwards' on (default), MB2 = OK",
+   "outcome": "limit",
+   "detail": "FreeCAD 1.1.4 does not shell the part after the edge blend (FreeCAD: 'Input error: Failed to make thick solid'); the same faces and thickness work before the blend (next steps). NX shells it in the book's order"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Workaround: undo the shell and the blend",
+   "replay": "Ctrl+Z x2",
+   "outcome": "differs",
+   "detail": "back to the part before the edge blend"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Workaround: Shell first, the same two faces",
+   "replay": "bottom ['Face10'] + nozzle end ['Face9'] selected + ribbon 'Home › Feature > Shell'",
+   "outcome": "same",
+   "detail": "FreeCAD calls Shell 'Thickness'"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Thickness 0.125, OK (before the blend)",
+   "replay": "'Value' = 3.175 mm, 'Make thickness inwards' on (default), MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 75365.9 mm^3 (solid 324425.9); outer box kept True; 1.6 mm inside each wall is material [True, True, True, True], deeper in is hollow [True, True, True, True, True]"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Workaround: Edge Blend after the shell, the handle's outer end edges",
+   "replay": "4 edges selected + ribbon 'Home › Feature > Edge Blend'",
+   "outcome": "differs",
+   "detail": "the book's 13 edges are picked from a figure; the outer edges of the handle's end stand in (FreeCAD's unrefined shape may split one). FreeCAD takes the edges selected before the command"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 19,
+   "nx": "Radius 1 = 0.15, OK (after the shell)",
+   "replay": "'filletRadius' = 3.81 mm, MB2 = OK",
+   "outcome": "limit",
+   "detail": "volume 75352.7 mm^3, 13.24 mm^3 rounded off; inside the previous box True; feature valid False; no Part API reference (it failed: class StdFail_NotDone BRep_API: command not done); FreeCAD 1.1.4 refuses this round on the shelled walls"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 20,
+   "nx": "Workaround: Edge Blend again with a smaller radius",
+   "replay": "4 edges selected + ribbon 'Home › Feature > Edge Blend'",
+   "outcome": "differs",
+   "detail": "the book's 13 edges are picked from a figure; the outer edges of the handle's end stand in (FreeCAD's unrefined shape may split one). FreeCAD takes the edges selected before the command"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 21,
+   "nx": "Radius 1 = 0.10, OK (after the shell)",
+   "replay": "'filletRadius' = 2.54 mm, MB2 = OK",
+   "outcome": "differs",
+   "detail": "volume 75284.3 mm^3, expected 75284.3; 1 solid(s); the workaround changes the design: R0.10 instead of the book's R0.15"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 22,
+   "nx": "Pattern leader: Extrude on the top face, Subtract",
+   "replay": "select ['Face26'] + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": "the book orients the view to Top first; FreeCAD's sketch opens looking at the face"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 23,
+   "nx": "Rectangle to the right of the CSYS: the small vent",
+   "replay": "R key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "the slot size is figure-only: 0.20 x 0.08 here"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 24,
+   "nx": "Reverse Direction into the solid, End 0.15, OK",
+   "replay": "'lengthEdit' = 3.81 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 75251.5 mm^3, expected 75251.5; 1 solid(s); no Reverse needed: the subtracting extrude cuts inwards"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 25,
+   "nx": "Pattern Feature, Layout = Linear, select the cut, MB2",
+   "replay": "leader selected + ribbon 'Home › Pattern > Pattern Feature'",
+   "outcome": "differs",
+   "detail": "FreeCAD's Linear Pattern is the Linear layout of NX's Pattern Feature"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 26,
+   "nx": "Direction 1: X, Count 5, Pitch -0.58; Use Direction 2: Y, Count 10, Pitch -0.25; OK",
+   "replay": "X axis {'axis': 'Base X-axis', 'mode': 'Spacing', 'count typed': 5, 'spacing': 0.58, 'reversed': True}; 'enableCheckbox'; Y axis {'axis': 'Base Y-axis', 'mode': 'Spacing', 'count typed': 10, 'spacing': 0.25, 'reversed': True}; MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 73645.6 mm^3, expected 73645.6; 1 solid(s); feature counts {'Occurrences': 5, 'Occurrences2': 10, 'Offset': 14.732, 'Offset2': 6.35, 'SpacingPattern': '[14.732]', 'SpacingPattern2': '[6.35]', 'Spacings': '[-1.0, -1.0, -1.0, -1.0]', 'Spacings2': '[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]'}; NX's negative pitch is FreeCAD's spacing with Reverse"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 27,
+   "nx": "Swept cut along the rim (section rectangle, Line-Arc guide), Subtract",
+   "replay": "-",
+   "outcome": "skipped",
+   "detail": "the guide curves and section sizes are figure-only"
+  },
+  {
+   "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
+   "n": 28,
+   "nx": "The finished part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "8.3% of the view shows the part"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 1,
+   "nx": "Create the parts Collar, Bearing, Base-Plate, Cap-Screw and save them",
+   "replay": "modelled by script (the book's sizes are figure-only; earlier tutorials cover modelling)",
+   "outcome": "same",
+   "detail": "Base-Plate 58995 mm^3, Bearing 41202 mm^3, Collar 2939 mm^3, Cap-Screw 1999 mm^3"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 2,
+   "nx": "File > New, Assembly template, name Shaft-Support",
+   "replay": "ribbon 'Application › Design > Assemblies', Ctrl+N; saved as Shaft-Support",
+   "outcome": "differs",
+   "detail": "NXStyle's Assembly template starts the document with an empty Assembly (like NX's); NX names the file in the New dialog, FreeCAD on the first save"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 3,
+   "nx": "Add Component: Base-Plate at the origin; Yes to the Fixed constraint",
+   "replay": "ribbon 'Assemblies › Assembly > Add Component', click Base-Plate in the list, Yes, MB2 = OK",
+   "outcome": "same",
+   "detail": "grounded True; FreeCAD asks 'Ground Part?' like NX's question about the Fixed constraint"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 4,
+   "nx": "Add Component: Bearing, placed with Move",
+   "replay": "ribbon 'Assemblies › Assembly > Add Component', click Bearing, MB2",
+   "outcome": "differs",
+   "detail": "FreeCAD places it beside the last part; NX lets you drag it to a spot first"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 5,
+   "nx": "Touch Align: Bearing bottom face to the Base-Plate top face",
+   "replay": "ribbon 'Assemblies › Assembly Constraints > Touch Align', Face5 + Face3, MB2 = OK",
+   "outcome": "same",
+   "detail": "joint Distance; Bearing now from z = 0.000 mm"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 6,
+   "nx": "Touch Align: the right hole axes (Bearing counterbore hole, Base-Plate hole)",
+   "replay": "ribbon 'Assemblies › Assembly Constraints > Align Axes', Face12 + Face8, MB2 = OK",
+   "outcome": "same",
+   "detail": "hole axes coincide True; rotated 25° about that axis and solved: it stays (still free to rotate, as the book says). NX's Show Degrees of Freedom has no FreeCAD equivalent: the replay moves the part and solves"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 7,
+   "nx": "Touch Align: the left hole axes; Move: it cannot move",
+   "replay": "ribbon 'Assemblies › Assembly Constraints > Align Axes', Face10 + Face7, MB2 = OK",
+   "outcome": "same",
+   "detail": "rotated 25° and solved: back in place True (fully constrained, as in the book)"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 8,
+   "nx": "Add Component: Collar, Constrain, Touch Align on the boss's top face",
+   "replay": "ribbon 'Assemblies › Assembly > Add Component' + 'Assemblies › Assembly Constraints > Touch Align', Face2 + Face15",
+   "outcome": "same",
+   "detail": "Collar from z = 35.000 mm"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 9,
+   "nx": "Touch Align: the outer cylinders of Collar and Bearing",
+   "replay": "ribbon 'Assemblies › Assembly Constraints > Align Axes', Face1 + Face7",
+   "outcome": "same",
+   "detail": "centred True; still free to rotate True"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 10,
+   "nx": "Parallel: Collar to the Base-Plate front face",
+   "replay": "ribbon 'Assemblies › Assembly Constraints > Parallel', Face3 (the collar's flat) + Face2",
+   "outcome": "limit",
+   "detail": "joint made, solver 'converged', but the collar did not turn (flat normal Vector (1.0, 0.0, -0.0)). FreeCAD 1.1.4's solver drops a Parallel constraint whose faces start exactly perpendicular ('ParallelAxesJoint ... constraint(s) removed: RedundantConstraintDirectionCosineConstraintIzJy'); reproduced without NXStyle; the same joint works when the faces start 20° apart. The book uses the Collar's datum plane (Replace Reference Set > Entire Part); here the flat on the collar stands in"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 11,
+   "nx": "Workaround: delete the joint, turn the Collar 20°, Parallel again",
+   "replay": "joint selected + Delete (gone), Collar turned, ribbon 'Assemblies › Assembly Constraints > Parallel'",
+   "outcome": "differs",
+   "detail": "flat normal now (-0.000, 1.000, 0.000); rotated 30° and solved: back True. NX drags the part with Move Component; here it is turned by its placement"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 12,
+   "nx": "Add Component: Cap-Screw, Align/Lock on the right hole axis",
+   "replay": "ribbon 'Assemblies › Assembly > Add Component' + 'Assemblies › Assembly Constraints > Align/Lock', Face4 + Face12",
+   "outcome": "same",
+   "detail": "on the axis True; slides along it True; turns False (the book: one DOF, along the axis)"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 13,
+   "nx": "Touch Align: the head on the counterbore's seat",
+   "replay": "'Assemblies › Assembly Constraints > Touch Align', Face2 + Face16",
+   "outcome": "same",
+   "detail": "head underside at z = 15.000 mm; moved 7 mm and solved: back True"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 14,
+   "nx": "Add Component: Cap-Screw, Align/Lock on the left hole axis",
+   "replay": "ribbon 'Assemblies › Assembly > Add Component' + 'Assemblies › Assembly Constraints > Align/Lock', Face4 + Face10",
+   "outcome": "same",
+   "detail": "on the axis True; slides along it True; turns False (the book: one DOF, along the axis)"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 15,
+   "nx": "Touch Align: the head on the counterbore's seat",
+   "replay": "'Assemblies › Assembly Constraints > Touch Align', Face2 + Face16",
+   "outcome": "same",
+   "detail": "head underside at z = 15.000 mm; moved 7 mm and solved: back True"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 16,
+   "nx": "Exploded view: New Explosion, Collar 1.5 in and a Cap-Screw 2.0 in up; Auto-explode",
+   "replay": "-",
+   "outcome": "skipped",
+   "detail": "FreeCAD 1.1's New Explosion moves parts only by dragging a 3D handle (no distance field like NX's); the replay does not drag 3D handles"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 17,
+   "nx": "Edit the Bearing: hole Ø0.25 in (6.35 mm), save; the assembly updates",
+   "replay": "Bearing document: the bore's Radius in its properties, recompute, save",
+   "outcome": "differs",
+   "detail": "cylinder radii in the assembly's Bearing [3.175, 4.0, 6.5, 12.0]; NX: Open in Window, double-click the hole, edit the sketch value. The replay's parts are scripted, so the value is a property here"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 18,
+   "nx": "Parts List",
+   "replay": "ribbon 'Assemblies › Reports > Bill of Materials', MB2 = OK",
+   "outcome": "differs",
+   "detail": "spreadsheet rows 5; Cap-Screw row ['4', 'Cap-Screw', '', '2', '', 'quantity 2']; NX puts the parts list on the drawing, FreeCAD makes a spreadsheet (a drawing can show it as a Tabular Note)"
+  },
+  {
+   "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
+   "n": 19,
+   "nx": "The assembly is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "20.0% of the view shows the part"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "The plate: 101.6 x 101.6 x 12.7 mm, 4 holes on a 50.8 mm square",
+   "replay": "modelled by script (the exercise is the drawing)",
+   "outcome": "same",
+   "detail": "volume 124001.7 mm^3; back face (z = 0) is datum A, bottom edge (y = 0) B, left edge (x = 0) C"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "File > Drafting, New Sheet",
+   "replay": "Ctrl+Shift+D + ribbon 'Home › Drawing > New Sheet'",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Drafting Preferences: ASME standard",
+   "replay": "Preferences > TechDraw > Dimensions > Standard and Style = ASME Inlined",
+   "outcome": "differs",
+   "detail": "was ISO Oriented; NX sets the drafting standard in Drafting Preferences"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Base View: the plate's face, scale 1:1",
+   "replay": "body selected + ribbon 'Home › View > Base View', MB2 on the sheet",
+   "outcome": "same",
+   "detail": "direction set to look at the face (the book's front view)"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Projected view to the right: the plate's edge, back face A",
+   "replay": "second Base View, MB2",
+   "outcome": "differs",
+   "detail": "as in tutorial D, a second Base View stands in for a view projected off the base view"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Arc centres for the dimensions",
+   "replay": "cosmetic vertex on each hole centre",
+   "outcome": "differs",
+   "detail": "4 holes, 4 cosmetic vertices, found as ['Vertex6', 'Vertex9', 'Vertex12', 'Vertex15']; NX snaps dimensions to arc centres, TechDraw needs vertices there first"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Basic dimension 25.4 (C to the hole)",
+   "replay": "two vertices + ribbon 'Home › Dimension > Horizontal', then basic",
+   "outcome": "differs",
+   "detail": "measured 25.4; NX: Basic is a Tolerance type in the dimension dialog, TechDraw: the Theoretical Exact property draws the box"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Basic dimension 50.8 (hole spacing)",
+   "replay": "two vertices + ribbon 'Home › Dimension > Horizontal', then basic",
+   "outcome": "differs",
+   "detail": "measured 50.800000000000004; NX: Basic is a Tolerance type in the dimension dialog, TechDraw: the Theoretical Exact property draws the box"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Basic dimension 25.4 (B to the hole)",
+   "replay": "two vertices + ribbon 'Home › Dimension > Vertical', then basic",
+   "outcome": "differs",
+   "detail": "measured 25.4; NX: Basic is a Tolerance type in the dimension dialog, TechDraw: the Theoretical Exact property draws the box"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Basic dimension 50.8 (hole spacing)",
+   "replay": "two vertices + ribbon 'Home › Dimension > Vertical', then basic",
+   "outcome": "differs",
+   "detail": "measured 50.800000000000004; NX: Basic is a Tolerance type in the dimension dialog, TechDraw: the Theoretical Exact property draws the box"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Hole note: 4X Ø12.954-13.716 (.510-.540 in)",
+   "replay": "hole edge + ribbon 'Home › Dimension > Diameter'; 4X and ±0.381 in the dimension's properties",
+   "outcome": "differs",
+   "detail": "diameter 13.335; FreeCAD shows Ø13.335 ±0.381 (NX can also show the limits 13.716/12.954)"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Datum Feature Symbol A on the back face (right edge of the edge view)",
+   "replay": "edge Edge2 + ribbon 'Home › Annotation > Datum Feature Symbol', 'A', MB2 = OK",
+   "outcome": "differs",
+   "detail": "triangle 0.0 mm from the edge; editable letter ['A']; FreeCAD 1.1 has no datum feature symbol, NXStyle adds NX's"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Datum Feature Symbol B on the bottom edge",
+   "replay": "edge Edge0 + ribbon 'Home › Annotation > Datum Feature Symbol', 'B', MB2 = OK",
+   "outcome": "differs",
+   "detail": "triangle 0.0 mm from the edge; editable letter ['B']; FreeCAD 1.1 has no datum feature symbol, NXStyle adds NX's"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Datum Feature Symbol C on the left edge",
+   "replay": "edge Edge3 + ribbon 'Home › Annotation > Datum Feature Symbol', 'C', MB2 = OK",
+   "outcome": "differs",
+   "detail": "triangle 0.0 mm from the edge; editable letter ['C']; FreeCAD 1.1 has no datum feature symbol, NXStyle adds NX's"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Flatness 0.051 on datum A (.002 in, Prob. 12-3)",
+   "replay": "selection + ribbon 'Home › Annotation > Feature Control Frame'; dialog filled; MB2 = OK",
+   "outcome": "differs",
+   "detail": "frame 'flatness | 0.051'; editable values ['0.051']; FreeCAD 1.1 has only fixed GD&T pictures, NXStyle adds NX's Feature Control Frame dialog"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Perpendicularity 0.102 to A on datum B (.004 in)",
+   "replay": "selection + ribbon 'Home › Annotation > Feature Control Frame'; dialog filled; MB2 = OK",
+   "outcome": "differs",
+   "detail": "frame 'perpendicularity | 0.102 | A'; editable values ['0.102', 'A']; FreeCAD 1.1 has only fixed GD&T pictures, NXStyle adds NX's Feature Control Frame dialog"
+  },
+  {
+   "tutorial": "H: GD&T plate drawing (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Position Ø0.254 (M) to A, B, C under the hole note (.010 in at MMC)",
+   "replay": "selection + ribbon 'Home › Annotation > Feature Control Frame'; dialog filled; MB2 = OK",
+   "outcome": "differs",
+   "detail": "frame 'position | Ø0.254 (M) | A | B | C'; editable values ['0.254', 'A', 'B', 'C']; FreeCAD 1.1 has only fixed GD&T pictures, NXStyle adds NX's Feature Control Frame dialog"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 1,
+   "nx": "File > New, Model template, millimetres",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 2,
+   "nx": "Extrude (X), YZ plane",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked YZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 3,
+   "nx": "Profile (outline), Circle, Line ending on the bottom line, tangent to the circle",
+   "replay": "Z key + 4 MB1 clicks, O key + 2 clicks, L key + 2 clicks, MB2 after each",
+   "outcome": "same",
+   "detail": "geometry ['GeomCircle', 'GeomLineSegment', 'GeomLineSegment', 'GeomLineSegment', 'GeomLineSegment']; tangent picked up while drawing True"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 4,
+   "nx": "Extend: the top line up to the circle, MB2",
+   "replay": "E key, MB1 near the line's end, MB1 on the circle, MB2",
+   "outcome": "same",
+   "detail": "line now ends at x = 94.949 (meets the circle at 94.953)"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 5,
+   "nx": "Quick Trim: the bottom line past the slanted line, the lower part of the circle, MB2",
+   "replay": "T key, MB1 on each part to remove, MB2",
+   "outcome": "same",
+   "detail": "bottom line now ends at x = 88.798 (slanted line at 88.798); 1 arc, 0 full circle; outline closed True; geometry 5 -> 5"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 6,
+   "nx": "The book's dimensions: centre in line with the top line (0.0), its horizontal location, the radius, the corner on the origin; horizontal/vertical constraints confirmed; fully defined",
+   "replay": "constraints: centre on the top line, radius, horizontal location of the centre, height of the centre, angle of the slanted line; H/V: Vertical 1 implied, Horizontal 2",
+   "outcome": "same",
+   "detail": "centre -1.287 -> -0.000 mm from the top line; outline closed True; solver: 'Fully constrained' (0 DoF). NX sets a 0.0 location dimension; FreeCAD has a point-on-object constraint for it; implied already: left edge on the origin, bottom edge on the origin"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 7,
+   "nx": "Fillet R20 at the corners",
+   "replay": "F key; radius 20 at each corner where two curves meet at an angle",
+   "outcome": "differs",
+   "detail": "4 fillets of 4 corners ((95, 78), (0, 78), (0, 0), (89, 0)); outline closed True; constraints re-confirmed after the fillets: Vertical 1, left edge on the origin, bottom edge on the origin; 4 R20 dimensions added (FreeCAD's sketch fillet constrains tangency, not the radius); solver 'Fully constrained' (0 DoF). The book makes five, the arc-to-slanted-line join being tangent here leaves four; the radius is typed after picking in FreeCAD"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 8,
+   "nx": "Finish Sketch, End 5 mm, OK",
+   "replay": "Ctrl+Q, 'lengthEdit' = 5 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 56106.6 mm^3, expected 56106.6; 1 solid(s); outline area 11221.3 mm^2"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 9,
+   "nx": "Extrude, Sketch Section on the front face",
+   "replay": "select Face11 + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": "subtracting extrude is its own button"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 10,
+   "nx": "Project Curve (the whole face), Offset 15 mm, Reverse Direction to the inside, OK",
+   "replay": "9 edges projected; ribbon 'Sketch › Edit Curve > Offset Curve', 'Add offset constraint', MB1 15 mm inside; Select Redundant Constraints + Delete; offset dimension typed 15",
+   "outcome": "differs",
+   "detail": "9 projected curves, 9 offset curves; the click gave 14.802 mm. FreeCAD's own offset constraints left the sketch unsolvable (solver: 'Redundant constraints:'; selected ['Constraint17']); after deleting it the sketch solves (True). NX types the distance and flips the side with Reverse Direction; FreeCAD takes the side and distance from the click, the exact value from its offset dimension"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 11,
+   "nx": "Offset loop: 15 mm inside the outline; only the inside loop is the section",
+   "replay": "measured in the sketch; profile edges 9, offset curves 9: the projected outline is reference geometry, as the book selects only the inside loop",
+   "outcome": "same",
+   "detail": "closed True; nearest distance to the projected outline 15.0 mm"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 12,
+   "nx": "Boolean Subtract, Reverse Direction, Through All, inner loop only, OK",
+   "replay": "'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 29310.1 mm^3, expected 29310.1; 1 solid(s); the projected outline is reference geometry here, so only the inner loop cuts"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 13,
+   "nx": "Change the overall height to 150 mm: the offset follows",
+   "replay": "the centre's height dimension: 78.39 -> 119.99 (+ R30.01 = 150)",
+   "outcome": "same",
+   "detail": "overall height 108.398 -> 150.0000 mm; inner loop 15.0 mm inside the outline"
+  },
+  {
+   "tutorial": "I: The Gasket (millimetres)",
+   "n": 14,
+   "nx": "The part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "5.2% of the view shows the part"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New, Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Extrude (X), YZ plane of the datum CSYS",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked YZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Profile: a triangle with a horizontal base",
+   "replay": "Z key + 4 MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "3 lines; implicit constraints ['Coincident', 'Horizontal']; DoF 5; FreeCAD says 'Under-constrained: / 5 Degrees of Freedom'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Perpendicular: the two inclined lines, OK",
+   "replay": "both lines selected + ribbon 'Sketch › Constraints > Perpendicular'",
+   "outcome": "same",
+   "detail": "angle between them 90.000° (90 wanted); DoF 4; 'Under-constrained: / 4 Degrees of Freedom'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Dimensions: base length, angle to the right line; the triangle still moves",
+   "replay": "line + ribbon 'Sketch › Constraints > Distance' = 120 mm, two lines + 'Angle' = 60° (typed in FreeCAD's dimension dialog)",
+   "outcome": "same",
+   "detail": "base 120.000 mm; DoF 2 (size fixed, position free, as in the book); 'Under-constrained: / 2 Degrees of Freedom'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Fix Curve on one line: fully defined",
+   "replay": "line + ribbon 'Sketch › Constraints > Fully Fixed'",
+   "outcome": "same",
+   "detail": "DoF 0, fully constrained True; NX turns the sketch black and says it is fully defined, FreeCAD says 'Fully constrained'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Undo, then Coincident: the left corner on the sketch origin",
+   "replay": "Ctrl+Z (DoF back to 2); Vertex1 + origin + ribbon 'Sketch › Constraints > Coincident'",
+   "outcome": "same",
+   "detail": "corner at (0.000, 0.000); DoF 0; 'Fully constrained'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Undo, then location dimensions from the Y axis and the X axis",
+   "replay": "Ctrl+Z (DoF 2); corner + Y axis, corner + X axis, ribbon 'Sketch › Constraints > Distance', 25.4 each",
+   "outcome": "same",
+   "detail": "corner at (25.400, 25.400); DoF 0; 'Fully constrained'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Delete the angle, relax Perpendicular, Vertical on the right line",
+   "replay": "angle + Delete; Perpendicular + ribbon 'Sketch › Constraints > Relax Constraint'; line + 'Sketch › Constraints > Vertical'",
+   "outcome": "same",
+   "detail": "DoF after each: 1, 2, 1 (the book: one more constraint needed); 'Under-constrained: / 1 Degrees of Freedom'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Vertical dimension: fully constrained",
+   "replay": "right line + ribbon 'Sketch › Constraints > Distance' = 72 mm",
+   "outcome": "same",
+   "detail": "DoF 0; 'Fully constrained'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Circle inside, Tangent to the left inclined line",
+   "replay": "O key + 2 MB1 clicks + MB2; circle + line + ribbon 'Sketch › Constraints > Tangent'",
+   "outcome": "same",
+   "detail": "DoF 2 (centre still slides along the line); 'Under-constrained: / 2 Degrees of Freedom'"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Match the figure: circle located from the right side and the base, a diameter",
+   "replay": "values applied",
+   "outcome": "differs",
+   "detail": "DoF 0; 'Fully constrained'; the figure's values are not in the text"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Extrude, plate thickness 3.5 in",
+   "replay": "Ctrl+Q, 'lengthEdit' = 88.9 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "thickness 88.900 mm; sketch Sketch"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Show the dimension names; enter p8/5*1.6 and p10/4*1.2; hole = 1/3 of the height",
+   "replay": "constraints renamed (width, height, hx, vy, dia) and given formulas",
+   "outcome": "differs",
+   "detail": "FreeCAD names a dimension in its properties (NX: p0, p1 ... automatically) and takes a formula after '=' in the dimension dialog: {'hx': 'Constraints.width / 5 * 1.6', 'vy': 'Constraints.height / 4 * 1.2', 'dia': 'Constraints.height / 3'}"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Change the triangle to 25 x 15 in: the hole follows",
+   "replay": "width = 635 mm, height = 381 mm",
+   "outcome": "same",
+   "detail": "circle from the right side, from the base, diameter: 203.200, 114.300, 127.000 mm (formulas: 203.200, 114.300, 127.000)"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Change it to 25 x 20 in: location and size follow",
+   "replay": "width = 635 mm, height = 508 mm",
+   "outcome": "same",
+   "detail": "circle from the right side, from the base, diameter: 203.200, 152.400, 169.333 mm (formulas: 203.200, 152.400, 169.333)"
+  },
+  {
+   "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "The part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "6.4% of the view shows the part"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Tools > Expressions (Ctrl+E): L = 48, N = 5, D = 2 (in)",
+   "replay": "Ctrl+E opens NXStyle's Expressions sheet; names and values typed into its cells",
+   "outcome": "differs",
+   "detail": "cells {'A2': \"'L\", 'B2': '=1219.2 mm', 'A3': \"'N\", 'B3': '5', 'A4': \"'D\", 'B4': '=50.8 mm'}; NX lists expressions in a dialog, FreeCAD keeps them in a spreadsheet"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Names L, N, D and the equation hole_spacing = (L - 2D)/(N - 1)",
+   "replay": "alias per value cell (cell properties); equation typed into B5",
+   "outcome": "differs",
+   "detail": "hole_spacing = 279.400 mm (279.400 expected, the book's 11 in); names refused: N (Invalid alias: a unit symbol, newton); used {'L': 'L', 'N': 'N_holes', 'D': 'D'}"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Create the flat bar: Extrude (X), XY plane",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Rectangle, its length = L",
+   "replay": "R key + 2 MB1 clicks + MB2; length tied to the expression",
+   "outcome": "differs",
+   "detail": "DoF 0; NX types 'L' in the dimension, FreeCAD types '=Expressions.L' (f(x)) in it"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Extrude the bar, 0.5 in thick",
+   "replay": "Ctrl+Q, 'lengthEdit' = 12.7 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 786579.1 mm^3, expected 786579.1; 1 solid(s)"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Create a hole at one end of the bar",
+   "replay": "top face + ribbon 'Home › Feature > Hole'",
+   "outcome": "differs",
+   "detail": "FreeCAD's Hole drills at circle centres in a sketch on the face"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Hole centre at D from the end, on the centre line",
+   "replay": "O key + 2 MB1 clicks + MB2; distance from the projected end tied to D",
+   "outcome": "same",
+   "detail": "DoF 0; 50.800 mm from the end, 25.400 mm from the edge"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Hole Ø0.5 through",
+   "replay": "'Diameter' = 12.7 mm, 'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 784970.3 mm^3, expected 784970.3; 1 solid(s)"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Rectangular array of the hole: count N, spacing hole_spacing",
+   "replay": "hole + ribbon 'Home › Pattern > Pattern Feature', X axis, {'axis': 'Base X-axis', 'mode': 'Spacing', 'count typed': 5, 'spacing': 11.0}; count and spacing tied to N and hole_spacing (f(x))",
+   "outcome": "differs",
+   "detail": "length 1219.200 mm, 5 holes, first at 50.800 mm, last 1168.400 mm, pitch 279.4000 mm (279.4000 wanted); volume 778535 mm^3 (778535 wanted); NX: the array's count and pitch fields take the expression names directly"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Configuration B: L 36, N 8, D 1",
+   "replay": "values typed into the sheet's cells",
+   "outcome": "same",
+   "detail": "length 914.400 mm, 8 holes, first at 25.400 mm, last 889.000 mm, pitch 123.3714 mm (123.3714 wanted); volume 577064 mm^3 (577064 wanted)"
+  },
+  {
+   "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
+   "n": 11,
+   "nx": "The part is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "2.9% of the view shows the part"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 1,
+   "nx": "File > New, Millimeters, Blank template, name Locator",
+   "replay": "Ctrl+N",
+   "outcome": "differs",
+   "detail": "NXStyle's New is NX's Model template (a part with a Body to sketch on); there is no Blank template, so the part is in Modeling already; the name is given at the first save"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 2,
+   "nx": "File > Applications > Modeling",
+   "replay": "ribbon 'Application › Design > Modeling'",
+   "outcome": "same",
+   "detail": "application modeling; the new part stays the active one: True (Unnamed : 1[*])"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 3,
+   "nx": "Extrude, Sketch Section, the default XY plane, OK",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 4,
+   "nx": "Rectangle (R): two corners, MB2",
+   "replay": "R key + 2 MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool True; 4 curves; ended True"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 5,
+   "nx": "Dimensions 75 and 50 ('scale the sketch?': Yes)",
+   "replay": "values applied",
+   "outcome": "differs",
+   "detail": "DoF 0; FreeCAD has no prompt to scale the whole sketch to the first dimension; the corner is put on the origin here (the book leaves the rectangle where it was drawn)"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 6,
+   "nx": "Finish Sketch, distance 15, OK",
+   "replay": "Ctrl+Q, 'lengthEdit' = 15 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 56250.0 mm^3, expected 56250.0; 1 solid(s)"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 7,
+   "nx": "Extrude, the bottom face as the sketch plane",
+   "replay": "select Face5 + ribbon 'Home › Feature > Extrude'",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 8,
+   "nx": "More > Project Curve: the bottom left edge, OK",
+   "replay": "ribbon 'Project Curve' + MB1 on each edge + MB2",
+   "outcome": "same",
+   "detail": "1 of 1 edges picked in the graphics window"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 9,
+   "nx": "Circle: centre on the edge's midpoint, through the left corner, MB2",
+   "replay": "O key + 2 MB1 clicks + MB2; midpoint and corner as constraints",
+   "outcome": "same",
+   "detail": "DoF 0; the book: no dimension needed, the circle is defined by the midpoint and the corner. NX snaps while drawing, FreeCAD records the same as constraints"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 10,
+   "nx": "(FreeCAD) the projected edge to reference",
+   "replay": "ribbon 'Convert To/From Reference'",
+   "outcome": "differs",
+   "detail": "profile edges 2 -> 1. FreeCAD 1.1 projects a picked edge as defining geometry, which would leave an open wire; NX makes regions"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 11,
+   "nx": "End 40, Boolean Unite, Flip (upward), OK",
+   "replay": "'lengthEdit' = 40 mm, 'checkBoxReversed' on, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 120063.6 mm^3, expected 120063.6; 1 solid(s); height 0.0 .. 40.0 mm. Features in a Body unite by themselves (no Boolean option)"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 12,
+   "nx": "Extrude, the top face of the cylinder",
+   "replay": "select Face6 + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": "the subtracting extrude is its own button"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 13,
+   "nx": "Circle on the sketch origin, MB2; diameter 30",
+   "replay": "O key + 2 MB1 clicks + MB2; diameter applied",
+   "outcome": "differs",
+   "detail": "centre tied to the cylinder's edge (Edge10): the sketch origin is not at the centre; DoF 0"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 14,
+   "nx": "Boolean Subtract, Through All, Flip (downward), OK",
+   "replay": "'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 91789.3 mm^3, expected 91789.3; 1 solid(s); FreeCAD's subtracting extrude goes into the part without a flip"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 15,
+   "nx": "Hole (a placed feature): Simple, a point on the base's top face",
+   "replay": "select Face5 + ribbon 'Home › Feature > Hole'",
+   "outcome": "differs",
+   "detail": "FreeCAD's Hole drills at circle centres in a sketch on the face: not placed without a sketch"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 16,
+   "nx": "Location dimensions 25 and 30",
+   "replay": "O key + 2 MB1 clicks + MB2; centre placed by values",
+   "outcome": "differs",
+   "detail": "centre at (50, 25): 25 from the right edge, on the slot's centre line. NX adds the two location dimensions by itself"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 17,
+   "nx": "Diameter 20, Depth Limit = Through Body, OK",
+   "replay": "'Diameter' = 20 mm, 'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 87076.9 mm^3, expected 87076.9; 1 solid(s)"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 18,
+   "nx": "Extrude, the right vertical face of the base",
+   "replay": "select Face3 + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": ""
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 19,
+   "nx": "More > Project Curve: the top and bottom edges, OK",
+   "replay": "ribbon 'Project Curve' + MB1 on each edge + MB2",
+   "outcome": "same",
+   "detail": "2 of 2 edges picked in the graphics window"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 20,
+   "nx": "Rectangle aligned to the top and bottom edges; dimensions 15 and 20",
+   "replay": "R key + 2 MB1 clicks + MB2; on the projected edges; values applied",
+   "outcome": "same",
+   "detail": "15 from the front edge, 20 wide, full height; DoF 12"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 21,
+   "nx": "(FreeCAD) the projected edges to reference",
+   "replay": "ribbon 'Convert To/From Reference'",
+   "outcome": "differs",
+   "detail": "profile edges 6 -> 4"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 22,
+   "nx": "Subtract, End = Until Next (into the hole), OK",
+   "replay": "'To first' (FreeCAD's Until Next), MB2 = OK",
+   "outcome": "limit",
+   "detail": "removed 300.0 mm^3 of the 5143.8 the slot holds: FreeCAD 1.1.4's 'To first' stops 1 mm into the part instead of at the hole's wall (measured headless too, the same with 'Up to face' on the hole's face); NX stops at the next face. Workaround next"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 23,
+   "nx": "Workaround: the slot's depth = 25 (to the hole's axis)",
+   "replay": "slot selected + ribbon 'Home › Edit Feature > Edit Parameters', 'Dimension', 'lengthEdit' = 25 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 81933.1 mm^3, expected 81933.1; 1 solid(s); the same part as NX's Until Next here, because the slot is as wide as the hole and on its centre line"
+  },
+  {
+   "tutorial": "L: The Locator (millimetres)",
+   "n": 24,
+   "nx": "The finished Locator is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "22.5% of the view shows the part"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > New, Model template, name U-Bracket",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": "named at the first save"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Extrude, the XY plane of the WCS",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Profile: two horizontal lines and two tangent arcs, MB2 twice",
+   "replay": "Z key + MB1 clicks + MB2; the arcs and sizes applied",
+   "outcome": "differs",
+   "detail": "4 curves clicked; NX switches Profile to an arc by dragging MB1, FreeCAD's polyline by pressing M while drawing"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Two circles on the arcs' centres; dimensions (Equal Radius if needed)",
+   "replay": "O key + 2 MB1 clicks + MB2, twice; centres, Equal and the sizes applied",
+   "outcome": "same",
+   "detail": "solver 'Fully constrained' (0 DoF); R1.00 ends 5.00 apart, Ø0.75 holes, centred on the origin"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Extrude 0.5 in, OK",
+   "replay": "Ctrl+Q, 'lengthEdit' = 12.7 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 100436.5 mm^3, expected 100436.5; 1 solid(s)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Extrude, the XZ plane of the datum coordinate system",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XZ-plane (Base plane)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Arc: centre on the sketch origin, end points on the edge; Line closing it; one radius dimension: fully constrained",
+   "replay": "A key + 3 MB1 clicks + MB2, L key + 2 clicks + MB2; R1.75",
+   "outcome": "same",
+   "detail": "solver 'Fully constrained' (0 DoF); the book asks why one dimension is enough: the centre and the end points sit on the datum axes"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Limits: Start -1.25, End 1.25, Boolean Unite, OK",
+   "replay": "'Two sided', 'lengthEdit' = 'lengthEdit2' = 31.75 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 240949.5 mm^3, expected 240949.5; 1 solid(s); across -31.75 .. 31.75 mm. NX's two limits are FreeCAD's 'Two sided' (a length each way); features in a Body unite by themselves"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Extrude, the front vertical face",
+   "replay": "select Face7 + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": ""
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Rectangle, dimensions 2.0 x 1.0",
+   "replay": "R key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "centred on the body, on the base plane"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Subtract, Through All both ways, OK",
+   "replay": "'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 159014.2 mm^3, expected 159014.2; 1 solid(s); from the front face one way is all of it"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Extrude, the underside face of the cut",
+   "replay": "select Face15 + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": ""
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "More > Project Curve: the datum origin; Circle Ø0.25 on it",
+   "replay": "the origin point projected (API: it is hidden in the view); O key + 2 clicks + MB2; Ø applied",
+   "outcome": "differs",
+   "detail": "origin projected: True; NX picks the datum origin in the graphics window, FreeCAD's origin point is hidden unless the Body's origin is shown"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Subtract, Through All, OK",
+   "replay": "'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 158411.0 mm^3, expected 158411.8; 1 solid(s)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Rename the features: Base, Main-Body, Rect-Cut, CenterDrill",
+   "replay": "select + F2, type, Enter (4 times)",
+   "outcome": "differs",
+   "detail": "NX: click the name twice; FreeCAD: F2"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Part Navigator > Dependencies: the parents of CenterDrill",
+   "replay": "the feature's links (sketch attachment, base feature)",
+   "outcome": "differs",
+   "detail": "sketched on ['Rect-Cut'], cut from Rect-Cut: Rect-Cut is its parent, as in the book. FreeCAD shows these in the feature's properties (Attachment, Base Feature) rather than a Dependencies panel"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Suppress Rect-Cut: NX warns that CenterDrill cannot be placed",
+   "replay": "Rect-Cut selected + ribbon 'Home › Edit Feature > Suppress'",
+   "outcome": "differs",
+   "detail": "Rect-Cut suppressed True; FreeCAD cannot place the child either: its sketch says 'AttachEngine3D: subshape not found Pocket.Face15'. No message box: the error marks the sketch in the Part Navigator, and the part keeps its last shape (volume 158411.0 mm^3). NXStyle's Suppress is new: FreeCAD 1.1 has the property but no command (its Freeze is different)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 19,
+   "nx": "Suppress CenterDrill as well: the part shows the plate and the body only",
+   "replay": "CenterDrill selected + ribbon 'Home › Edit Feature > Suppress'",
+   "outcome": "limit",
+   "detail": "volume 158411.0 mm^3 (the plate and the body: 240949.5). FreeCAD 1.1.4 still recomputes the suppressed drill's sketch, which cannot find its face, and stops there: Body, Sketch003, CenterDrill stay out of date. NX leaves a suppressed child alone. Unsuppressing the parent (the book's next steps) brings the model back"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 20,
+   "nx": "Unsuppress CenterDrill: NX brings its parent Rect-Cut back too",
+   "replay": "CenterDrill selected + ribbon 'Home › Edit Feature > Suppress' (a toggle)",
+   "outcome": "differs",
+   "detail": "Rect-Cut back by itself: False. FreeCAD unsuppresses only the selected feature"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 21,
+   "nx": "Unsuppress Rect-Cut too: both back",
+   "replay": "Rect-Cut selected + ribbon 'Suppress'",
+   "outcome": "same",
+   "detail": "volume 158411.0 mm^3, expected 158411.8; 1 solid(s)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 22,
+   "nx": "Delete CenterDrill (MB3 > Delete)",
+   "replay": "CenterDrill selected + Delete key; its sketch deleted too",
+   "outcome": "same",
+   "detail": "volume 159014.2 mm^3, expected 159014.2; 1 solid(s); feature gone True; FreeCAD keeps the feature's sketch (True), NX removes it"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 23,
+   "nx": "A different approach (BORN): Extrude on the datum XY plane",
+   "replay": "XY plane selected + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": ""
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 24,
+   "nx": "Circle Ø0.25 on the datum origin",
+   "replay": "O key + 2 MB1 clicks + MB2; on the origin, Ø applied",
+   "outcome": "same",
+   "detail": "DoF 0"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 25,
+   "nx": "Subtract, Through All, OK",
+   "replay": "'Through all', 'checkBoxReversed' on (up from the plane), MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 158411.0 mm^3, expected 158411.8; 1 solid(s); FreeCAD cuts away from the plane's normal by default, so it is reversed to go up"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 26,
+   "nx": "Dependencies: the new drill's parents are the XY plane and the base; Suppress Rect-Cut: the drill stays",
+   "replay": "Rect-Cut selected + ribbon 'Home › Edit Feature > Suppress'",
+   "outcome": "same",
+   "detail": "sketched on ['Origin']; drill valid True; volume 239541.9 mm^3 (expected 239542.7). In FreeCAD each feature is cut from the one before (Rect-Cut); a suppressed feature passes its input on, so that link does not break"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 27,
+   "nx": "Extrude, the front vertical face (circular cut)",
+   "replay": "select Face8 + ribbon 'Home › Feature > Extrude (Subtract)'",
+   "outcome": "differs",
+   "detail": ""
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 28,
+   "nx": "Circle R1.25 centred on the datum origin",
+   "replay": "O key + 2 MB1 clicks + MB2; R applied",
+   "outcome": "same",
+   "detail": "the book's text says 'rectangle', its figure and the design change a circle of radius 1.25"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 29,
+   "nx": "Subtract, Through All, OK: the bracket with a round opening",
+   "replay": "'Through all', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 139996.8 mm^3, expected 139997.2; 1 solid(s); two design options now live in one model (Rect-Cut suppressed)"
+  },
+  {
+   "tutorial": "M: The U-Bracket, parent/child relations (book in inches, typed in mm)",
+   "n": 30,
+   "nx": "The U-Bracket is shown in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "13.1% of the view shows the part"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 1,
+   "nx": "File > Drafting",
+   "replay": "Ctrl+Shift+D",
+   "outcome": "same",
+   "detail": "TechDrawWorkbench"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Sheet: Inches, Third Angle, A-8.5X11, scale 1:1, OK",
+   "replay": "ribbon 'Home › Drawing > New Sheet'; the sheet's template, projection and scale",
+   "outcome": "differs",
+   "detail": "template ANSIA_Landscape.svg, projection Third angle. NX asks in one Sheet dialog; FreeCAD's New Sheet uses the default template, and size, projection and scale are the sheet's properties. Units follow the preferences (mm here)"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Base View: Front; View Style: hidden lines dashed 0.35, visible lines 0.70; place it low on the sheet",
+   "replay": "body selected + ribbon 'Home › View > Base View', MB2; the view's style properties",
+   "outcome": "differs",
+   "detail": "16 visible, 34 hidden edges. NX sets the style in the view's Settings dialog; TechDraw has Hard Hidden and the line widths in the view's properties"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Projected Top view above the Front view",
+   "replay": "a second Base View, direction Top, aligned above",
+   "outcome": "differs",
+   "detail": "as in tutorials D and H: NX drags projected views off the base view; FreeCAD's Projected View is a projection group, so a Base View looking down stands in, lined up with the front view"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 5,
+   "nx": "MB3 > Edit Sheet: B-11X17",
+   "replay": "the sheet's template set to ANSI B",
+   "outcome": "differs",
+   "detail": "template ANSIB_Landscape.svg; the views keep their places. NX changes the size in Edit Sheet; FreeCAD swaps the template"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Base View: Isometric, to the right",
+   "replay": "body selected + ribbon 'Home › View > Base View', isometric direction",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Hide the Datum Coordinate System and the view's cross hair",
+   "replay": "-",
+   "outcome": "same",
+   "detail": "nothing to hide: TechDraw draws only the solid, and NXStyle keeps the Body's origin hidden (origin shown: False)"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Drafting Preferences: dimension text Horizontal (ANSI)",
+   "replay": "Preferences > TechDraw > Dimensions > Standard and Style = ASME Inlined",
+   "outcome": "differs",
+   "detail": "was ASME Inlined"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Command Finder > Feature Parameters: the model's dimensions on the views",
+   "replay": "-",
+   "outcome": "missing",
+   "detail": "TechDraw has no command that brings a feature's sketch dimensions onto a view; its dimensions are reference dimensions measured from the view (next steps). NX's feature dimensions also drive the model from the drawing"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Instead: reference dimensions on the top view (5.000, 2.500, Ø0.750 in)",
+   "replay": "cosmetic vertices on the hole centres; ribbon 'Horizontal' (twice) and 'Diameter'",
+   "outcome": "differs",
+   "detail": "measured (mm): {'centres': 127.0, 'to the middle': 63.5, 'hole': 19.05}, the book's 127.00, 63.50 and Ø19.05. TechDraw dimensions need vertices at arc centres (as in tutorial H)"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Isometric view: Settings > Smooth Edges off",
+   "replay": "the view's Smooth Visible property",
+   "outcome": "same",
+   "detail": "smooth (tangent) edges were shown, as in NX, and are now off"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Edit the diameter dimension: Arrow Out",
+   "replay": "the dimension's 'FlipArrowheads' property",
+   "outcome": "differs",
+   "detail": "arrow properties: ['ArrowStyle', 'Arrowsize', 'FlipArrowheads']"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Immediate Hide: the two dimensions in the top view",
+   "replay": "both selected + Ctrl+B (Hide)",
+   "outcome": "same",
+   "detail": "hidden [True, True]"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Show (Ctrl+Shift+K): the two dimensions back",
+   "replay": "selected in the Part Navigator + Ctrl+Shift+K",
+   "outcome": "same",
+   "detail": "shown [True, True]; NX picks hidden objects in a list, here they are picked in the Part Navigator"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Center Mark: the two outer arcs and the drill in the top view",
+   "replay": "3 arcs selected + ribbon 'Home › Centerline and Hatch > Center Mark'",
+   "outcome": "same",
+   "detail": "center lines 0 -> 0, cosmetic edges 0 -> 6; the book deletes NX's automatic centre lines first: TechDraw adds none by itself"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Radial dimension on the bottom arc of the front view",
+   "replay": "arc selected + ribbon 'Home › Dimension > Radial'",
+   "outcome": "same",
+   "detail": "R31.75 mm (the book's R1.250 in)"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Edit Settings: the 5 and 2.5 dimensions with 2 decimals and trailing zeros",
+   "replay": "the dimensions' Format Spec = %.2f",
+   "outcome": "differs",
+   "detail": "NX: Edit Settings > Text > decimals; TechDraw: the format spec (shown in the preferences units)"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Modeling: Base feature > Sketch Section, the diameter 0.750 -> 0.625, Finish Sketch, OK",
+   "replay": "Ctrl+M; the base sketch's diameter typed (0.625 in = 15.875 mm)",
+   "outcome": "same",
+   "detail": "volume 142208.8 mm^3 (expected 142209.3)"
+  },
+  {
+   "tutorial": "N: The U-Bracket drawing, associative (book in inches, typed in mm)",
+   "n": 19,
+   "nx": "Drafting: MB3 on the drawing > Update; the diameter shows 0.625 in",
+   "replay": "Ctrl+Shift+D; the sheet updates by itself",
+   "outcome": "same",
+   "detail": "diameter dimension now Ø15.875 mm; TechDraw keeps the sheet up to date (the page's Keep Updated), NX marks it out of date and asks for Update"
+  }
+ ],
+ "info": {
+  "FreeCAD": [
+   "1",
+   "1",
+   "4",
+   "20260928 (Git shallow)"
+  ]
+ }
+}

@@ -1,0 +1,30 @@
+= Tutorial L: The Locator
+:description: Constructive solid geometry with sketched and placed features: block, boss, bore, hole and slot.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 3 (a millimetre part)
+You learn:: Unite and subtract with Extrude, Project Curve, Hole, Until Next
+Sizes:: A 75 × 50 × 15 mm block; an R25 boss 40 mm high; a Ø30 bore; a Ø20 hole; a 20 mm slot. The text gives every size; the hole's and the slot's positions are in figures: the hole 25 mm from the right edge on the slot's centre line, the slot 15 mm from the front edge.
+
+image::tutorial-L-locator.png[The Locator]
+
+== In short
+
+. kbd:[Ctrl+N], kbd:[X], *XY_Plane*; kbd:[R], 75 × 50, kbd:[Ctrl+Q], 15 mm.
+. The bottom face, Extrude; *Project Curve* on an edge; a circle through its midpoint and corner; the projected edge to reference; 40 mm.
+. The cylinder's top face, *Extrude (Subtract)*: Ø30 through all.
+. *Hole*: Ø20 through all.
+. The right face, Extrude (Subtract): the 20 mm slot, *To first* (Until Next).
+
+== Step by step
+
+include::partial$generated/tutorial-L.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX-Style's New is already the Model template; there is no Blank template to switch from.
+* A projected edge is defining geometry: turn it into reference geometry before extruding.
+* Hole drills at circle centres in a sketch; NX adds the location dimensions itself.
+* *To first* into the hole stops 1 mm into the part in FreeCAD 1.1.4 (L22); the workaround is a 25 mm depth, to the hole's axis (L23).

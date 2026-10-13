@@ -1,0 +1,31 @@
+= Tutorial A: The Adjuster
+:description: An L-shaped part from a sketch, extruded, with a slot cut into it.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 2
+You learn:: New part, Extrude from a sketch, Profile, Rapid Dimension, Extrude (Subtract)
+Sizes:: A 63.5 × 63.5 mm L outline with 19.05 mm legs, extruded 63.5 mm; a 25.4 mm wide, 19.05 mm deep slot (the book's 2.5, 0.75 and 1.00 in)
+
+image::tutorial-A-adjuster.png[The Adjuster]
+
+== In short
+
+. kbd:[Ctrl+N], then kbd:[X] with nothing selected; pick *XY_Plane*, *MB2*.
+. kbd:[Z] (Profile): six MB1 clicks for the L, *MB2* to end it.
+. kbd:[D]: the widths, heights and leg thicknesses.
+. kbd:[Ctrl+Q]: the Extrude dialog opens; 63.5 mm, *MB2*.
+. Select the top face, *Home › Feature › Extrude (Subtract)*; kbd:[R], two clicks, *MB2*; dimension the slot; kbd:[Ctrl+Q]; 19.05 mm, *MB2*.
+
+The step list came from the book's chapter by way of NotebookLM; its slot placement was ambiguous, so the slot is cut into the top of the vertical leg and the part stays one solid.
+
+== Step by step
+
+include::partial$generated/tutorial-A.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* Units are a preference, not a choice in the New dialog; NX-Style parts are in millimetres.
+* No dynamic dimensions while you draw and no "scale the whole sketch?" prompt.
+* Subtracting is its own button, *Extrude (Subtract)*; Extrude has no Boolean option.

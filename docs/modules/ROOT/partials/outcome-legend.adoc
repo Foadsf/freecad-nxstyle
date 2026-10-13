@@ -1,0 +1,11 @@
+[cols="1,4",options="header",role="legend"]
+|===
+| Result | Means
+
+| [.outcome.same]#same# | The book's NX steps work as written.
+| [.outcome.differs]#differs# | It works, but the FreeCAD way is different; the notes say how.
+| [.outcome.limit]#limit# | The book's way fails in FreeCAD itself; a workaround follows in the next steps.
+| [.outcome.missing]#missing# | FreeCAD has no such function; a stand-in follows.
+| [.outcome.skipped]#skipped# | Not replayed; the notes give the reason.
+| [.outcome.failed]#FAILED# | Did not work.
+|===

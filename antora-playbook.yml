@@ -1,0 +1,32 @@
+# Builds the documentation site: npm ci && npm run docs (tools/gen_docs.py, then Antora)
+# The site is written to build/site; the docs workflow publishes it to the gh-pages branch.
+site:
+  title: FreeCAD NX-Style
+  url: https://foadsf.github.io/freecad-nxstyle
+  start_page: nxstyle::index.adoc
+  robots: allow
+content:
+  sources:
+  - url: .
+    branches: HEAD
+    start_path: docs
+    edit_url: 'https://github.com/Foadsf/freecad-nxstyle/edit/main/{path}'
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+  supplemental_files: ./docs/ui
+antora:
+  extensions:
+  - require: '@antora/lunr-extension'
+    index_latest_only: true
+asciidoc:
+  attributes:
+    page-pagination: ''
+output:
+  clean: true
+  dir: ./build/site
+runtime:
+  fetch: false
+  log:
+    failure_level: warn

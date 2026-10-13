@@ -1,0 +1,31 @@
+= Tutorial G: Shaft Support assembly
+:description: Add Component, NX's constraints with their degree-of-freedom results, a part edit and the parts list.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 14
+You learn:: Assembly template, Add Component, Touch Align, Align Axes, Parallel, Align/Lock, degrees of freedom, parts list
+Sizes:: The four parts' sizes are in figures only; the parts here are metric ones of this project's own, built to fit the book's constraint sequence.
+
+image::tutorial-G-shaft-support.png[The Shaft Support assembly]
+
+== In short
+
+. *Application › Assemblies*, kbd:[Ctrl+N]: the document starts with an empty Assembly.
+. *Add Component*: the Base-Plate, *Yes* to grounding it.
+. The Bearing: *Touch Align* on its bottom face, *Align Axes* on both holes. After the first axis it can still turn; after the second it cannot.
+. The Collar: Touch Align, Align Axes, *Parallel*.
+. Two Cap-Screws: *Align/Lock* on the hole axis, Touch Align on the counterbore's seat.
+. A change to the Bearing reaches the assembly; *Reports › Bill of Materials* lists the parts.
+
+== Step by step
+
+include::partial$generated/tutorial-G.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* There is no *Show Degrees of Freedom*: the replay moves a part, solves, and checks whether it stays or snaps back.
+* A Parallel joint between faces that start exactly perpendicular is dropped by FreeCAD 1.1.4's solver; delete it, turn the part a little, apply it again (G11).
+* *New Explosion* moves parts only by dragging a 3D handle, so G16 is skipped.
+* The parts list is a spreadsheet rather than a table on the drawing.

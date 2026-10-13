@@ -1,0 +1,57 @@
+= Known issues
+:description: FreeCAD limits met while replaying the tutorials, with workarounds, and issues that are fixed.
+
+These are FreeCAD 1.1.4 behaviours, observed in the UI and reproduced where noted.
+NX-Style cannot change them; each has a workaround.
+
+== FreeCAD limits
+
+Until Next into a hole (Tutorial L)::
+A subtracting extrude with End = *To first* (FreeCAD's Until Next) stops 1 mm into the part instead of at the hole's wall.
+*Up to face* with the hole's own face does the same (both measured headless too).
+*Workaround:* give the depth as a value; in xref:tutorials/l.adoc[Tutorial L] 25 mm, to the hole's axis.
+
+A suppressed child of a suppressed parent (Tutorial M)::
+After a parent feature is suppressed, a sketch on its face cannot find the face ("subshape not found").
+Suppressing that child as well still leaves the part out of date.
+*Workaround:* unsuppress the parent, or sketch the child on a datum plane so it does not depend on the parent (xref:tutorials/m.adoc[Tutorial M]).
+
+Offset constraints on a closed loop (Tutorial I)::
+With *Add offset constraint* on, Offset Curve gives a closed loop one redundant constraint; the sketch does not solve and the extrude fails.
+*Workaround:* *Sketch › Select Redundant Constraints*, then Delete.
+
+Shell after Edge Blend (Tutorial F)::
+With edges rounded first, *Shell* fails ("Failed to make thick solid"); the same faces and thickness work when the shell comes first.
+*Workaround:* undo, shell, then round.
+
+Edge Blend on thin walls (Tutorial F)::
+Rounding a handle's outer edges at 3.81 mm on 3.175 mm walls fails ("BRep_API: command not done"); 2.54 mm works.
+
+Parallel from a perpendicular start (Tutorial G)::
+A Parallel joint between faces that start exactly perpendicular is accepted, the solver reports success, but the part does not turn: the solver removes part of the constraint as redundant.
+Reproduced in plain FreeCAD 1.1.4 with two boxes.
+*Workaround:* delete the joint, turn the part a little, apply Parallel again.
+
+Body origin and view fit::
+In plain FreeCAD 1.1.4, a Body whose origin planes stay visible disappears from the 3D view after a view fit.
+NX-Style therefore keeps the origin hidden; FreeCAD shows it while you pick a sketch plane.
+
+== Fixed in NX-Style
+
+Switching application kept the wrong part::
+File › New followed by *Application › Modeling* sent the next feature into the part opened before.
+Switching application now keeps the active window.
+
+Suppress ran Freeze::
+On FreeCAD 1.1.4 the ribbon's Suppress ran FreeCAD's Freeze; it is now NX-Style's own Suppress (the feature's Suppressed property).
+
+Empty tab strip over the Top Border Bar::
+Qt could leave an empty tab strip painted over *Menu* and the Type Filter after a panel moved; NX-Style hides such strips and the self-test checks for them.
+
+MB2 rotate turning into zoom::
+A stale modifier state after kbd:[Ctrl] shortcuts could turn MB2 rotate into zoom; MB2 now reads kbd:[Shift] and kbd:[Ctrl] from the mouse event.
+
+== Reporting an issue
+
+Open an issue on {repo}/issues[GitHub] with your FreeCAD version (*Help › About FreeCAD*, *Copy to clipboard*), what you did and what happened.
+xref:troubleshooting.adoc[] lists what to try first.

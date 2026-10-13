@@ -1,0 +1,28 @@
+= Tutorial C: Rod-Guide
+:description: A filleted block with holes, an At Angle datum plane, an offset datum plane and a hole drilled from it.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 9
+You learn:: Datum planes (At Angle, offset), Hole on a datum plane, Edge Blend
+Sizes:: A 76.2 × 50.8 × 19.05 mm block (the book's 3.00 × 2.00 × 0.75 in) with four holes. The book's sizes appear only in figures; these are NotebookLM's reading of them.
+
+image::tutorial-C-rod-guide.png[The Rod-Guide]
+
+== In short
+
+. The block by Extrude; four holes; Edge Blend on the corners.
+. *Feature › Datum › Datum Plane* at an angle to a face, then one offset from it.
+. Select the offset datum plane, click *Hole*: a sketch opens on the plane; place the centre, kbd:[Ctrl+Q], and the Hole dialog opens.
+
+The angled upper block (C9) is skipped: its profile is in a figure only.
+
+== Step by step
+
+include::partial$generated/tutorial-C.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* FreeCAD's At Angle plane turns about the face's own axes in the attachment offset; NX lets you pick the hinge axis.
+* Hole drills at circle centres in a sketch; NX places hole points directly.

@@ -1,0 +1,26 @@
+= NX command to FreeCAD command
+:description: Every ribbon button, its NX name and the FreeCAD command it runs.
+
+Each NX-Style button carries NX's name and runs a real FreeCAD command.
+Hover a button to see the FreeCAD command and its key; the xref:user-interface.adoc#quick-access-toolbar-and-command-finder[Command Finder] searches both names.
+
+Where a cell lists several FreeCAD commands (`A` or `B`), the first one that exists in your FreeCAD version is used, so one ribbon serves FreeCAD 1.0 and 1.1.
+Buttons marked _when available_ are left off the ribbon when the command is not there: a newer FreeCAD's command, or Strata's when Strata is off.
+
+These tables are generated from the ribbon files in `NXStyle/nxstyle/resources/ribbons/`.
+
+== Modeling
+
+include::partial$generated/ribbon-modeling.adoc[]
+
+== Sketch (contextual tab)
+
+include::partial$generated/ribbon-sketch.adoc[]
+
+== Drafting
+
+include::partial$generated/ribbon-drafting.adoc[]
+
+== Applications
+
+include::partial$generated/applications.adoc[]

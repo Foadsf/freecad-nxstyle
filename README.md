@@ -2,6 +2,8 @@
 
 Run your normal, unmodified FreeCAD with a user interface laid out and behaving like Siemens NX: ribbon, Top Border Bar, Resource Bar, NX mouse buttons, NX shortcuts, NX names. Data management, the job Teamcenter does next to NX, comes from [Strata](https://github.com/Foadsf/freecad-strata): every save recorded, versions, workspaces, releases. There is no fork, no patch, and your usual FreeCAD settings are never touched.
 
+**Documentation: [foadsf.github.io/freecad-nxstyle](https://foadsf.github.io/freecad-nxstyle)**: installation, a five-minute first part, fourteen step-by-step tutorials, every keyboard shortcut and every setting.
+
 ```bash
 git clone --recursive https://github.com/Foadsf/freecad-nxstyle
 ```
@@ -47,15 +49,15 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 
 All taken by the tutorial replay and the self-test on a hidden desktop, in FreeCAD 1.1.4 with NXStyle (see [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md) for how each part was built).
 
-![Shaft Support assembly in the Assemblies application: NX constraint names on the ribbon, the assembly in the Part Navigator](docs/tutorial-G-shaft-support.png)
+![Shaft Support assembly in the Assemblies application: NX constraint names on the ribbon, the assembly in the Part Navigator](docs/modules/ROOT/images/tutorial-G-shaft-support.png)
 
 | | |
 |---|---|
-| ![GD&T plate drawing: datums A, B, C, basic dimensions, feature control frames](docs/tutorial-H-gdt-drawing.png) | ![Pulley drawing: right view and section A-A](docs/tutorial-D-drawing.png) |
+| ![GD&T plate drawing: datums A, B, C, basic dimensions, feature control frames](docs/modules/ROOT/images/tutorial-H-gdt-drawing.png) | ![Pulley drawing: right view and section A-A](docs/modules/ROOT/images/tutorial-D-drawing.png) |
 | GD&T drawing with NXStyle's Feature Control Frame and Datum Feature Symbol | Drafting: base view and section view |
-| ![Saddle Bracket with renamed features in the Part Navigator](docs/tutorial-E-saddle-bracket.png) | ![Dryer housing: shell, edge blends and a 5 × 10 vent pattern](docs/tutorial-F-dryer-housing.png) |
+| ![Saddle Bracket with renamed features in the Part Navigator](docs/modules/ROOT/images/tutorial-E-saddle-bracket.png) | ![Dryer housing: shell, edge blends and a 5 × 10 vent pattern](docs/modules/ROOT/images/tutorial-F-dryer-housing.png) |
 | Modeling: renamed features, design changes, material and mass | Shell, Edge Blend and Pattern Feature |
-| ![Gasket with an associative 15 mm offset cut](docs/tutorial-I-gasket.png) | ![Strata's Versions and history panel among the navigators, and the PLM ribbon tab](docs/strata-plm.png) |
+| ![Gasket with an associative 15 mm offset cut](docs/modules/ROOT/images/tutorial-I-gasket.png) | ![Strata's Versions and history panel among the navigators, and the PLM ribbon tab](docs/modules/ROOT/images/strata-plm.png) |
 | Sketch Extend, Trim, Fillet and an associative offset | Strata: versions and history, PLM tab |
 
 ## What it is not

@@ -1,0 +1,15 @@
+name: nxstyle
+title: FreeCAD NX-Style
+version: ~
+start_page: index.adoc
+asciidoc:
+  attributes:
+    repo: https://github.com/Foadsf/freecad-nxstyle
+    strata: https://github.com/Foadsf/freecad-strata
+    nxtips: https://github.com/Foadsf/NXtips
+    experimental: ''
+    icons: font
+    sectanchors: ''
+    hide-uri-scheme: ''
+nav:
+- modules/ROOT/nav.adoc

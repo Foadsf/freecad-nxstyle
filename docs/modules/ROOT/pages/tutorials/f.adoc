@@ -1,0 +1,31 @@
+= Tutorial F: Dryer Housing
+:description: Revolve, extrudes, Shell, Edge Blend and a two-direction rectangular pattern of vents.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 12
+You learn:: Shell, Edge Blend, a pattern leader, Pattern Feature in two directions
+Sizes:: The text gives R6.35, 12.7, 139.7, R3.81, 3.175 and 3.81 mm and the pattern (5 × −14.73 mm, 10 × −6.35 mm), the book's inch values typed in mm. Every profile is in figures only, so the housing is a simplified one: an R50.8 × 31.75 mm drum, a 19.05 mm wide handle, an R19.05 half nozzle.
+
+image::tutorial-F-dryer-housing.png[The dryer housing, shelled, with the 5 × 10 vent pattern]
+
+== In short
+
+. The drum by Revolve, the handle and the nozzle by Extrude.
+. *Shell* (3.175 mm walls), then *Edge Blend* on the handle.
+. A vent as the pattern leader; *Pattern Feature* with Direction 2 ticked: 5 × 10.
+
+The swept cut along the rim (F27) is skipped: its guide and section are in figures only.
+
+== Step by step
+
+include::partial$generated/tutorial-F.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== FreeCAD limits met here
+
+* With the handle's edges rounded first, as the book does, *Shell* fails in FreeCAD 1.1.4. Shell first, then round.
+* Rounding the handle's outer edges at the book's R3.81 mm on 3.175 mm walls fails; R2.54 mm works.
+* NX's negative pitch is FreeCAD's spacing with *Reverse*.
+
+See xref:known-issues.adoc[].

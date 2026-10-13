@@ -1,0 +1,80 @@
+= Sketching
+:description: NX's sketch task environment in FreeCAD's Sketcher: keys, the Sketch tab, constraints and what differs.
+
+image::ui-sketch.png[The Sketch tab while a sketch is edited]
+
+== Starting a sketch
+
+As in NX, you usually start a feature, not a sketch:
+
+* With nothing selected, kbd:[X] (Extrude), *Revolve* or *Hole* asks for a plane or face, then opens a sketch on it.
+* With a face or datum plane selected, the sketch opens on it at once.
+* kbd:[Ctrl+Q] (*Finish Sketch*) carries straight on into the feature's dialog.
+
+*Home › Direct Sketch › Sketch* makes a sketch on its own, as NX's Sketch command does.
+
+== The Sketch tab
+
+While a sketch is open, the contextual *Sketch* tab comes to the front.
+It holds the Sketch, Curve, Edit Curve and Constraints groups with NX's names; xref:nx-to-freecad.adoc[] lists them.
+
+== Keys
+
+[cols="1,2,3",options="header"]
+|===
+| Key | NX command | FreeCAD tool
+
+| kbd:[Z] | Profile | Polyline (press kbd:[M] while drawing to switch to arcs; NX drags MB1)
+| kbd:[R] | Rectangle | Rectangle
+| kbd:[L] | Line | Line
+| kbd:[A] | Arc | Arc (centre and two end points)
+| kbd:[O] | Circle | Circle
+| kbd:[P] | Polygon | Regular polygon
+| kbd:[S] | Studio Spline | B-spline
+| kbd:[T] | Quick Trim | Trim
+| kbd:[E] | Quick Extend | Extend
+| kbd:[F] | Fillet | Fillet (pick the two curves, then the radius)
+| kbd:[D] | Rapid Dimension | Dimension
+| kbd:[C] | Geometric Constraints | Coincident (FreeCAD applies one constraint type per tool)
+| kbd:[Shift+F8] | Orient View to Sketch | View sketch
+| kbd:[Ctrl+Q] | Finish Sketch | Leave sketch
+|===
+
+*MB2* ends the active curve tool, as in NX (kbd:[Esc] does the same).
+
+== Constraints and degrees of freedom
+
+NX's status line says when a sketch is fully defined; FreeCAD's Dialog panel says the same:
+
+* *Under-constrained: N Degrees of Freedom* while something can still move;
+* *Fully constrained* when nothing can.
+
+xref:tutorials/j.adoc[Tutorial J] follows the book's triangle constraint by constraint, and the state matches the book's at every step.
+
+* *Fully Fixed* on the Sketch tab is FreeCAD's Block constraint; *Relax Constraint* switches a constraint off without deleting it (FreeCAD's Toggle Active Constraint).
+* Dimensions get names in their properties (NX numbers them p0, p1 …). A dimension takes a formula after `=`, for example `=Constraints.width / 5 * 1.6`, or a value from the Expressions table, `=Expressions.L` (xref:tutorials/k.adoc[Tutorial K]).
+
+== Things that work differently
+
+Project Curve::
+FreeCAD 1.1 projects a picked edge as *defining* geometry: it becomes part of the profile.
+A circle drawn across a projected edge then fails to extrude ("Wire is not closed") until the projected edge is turned into reference geometry with *Convert To/From Reference*.
+NX makes regions from the circle and the edge.
+
+Fillet::
+FreeCAD's sketch fillet makes the arc tangent but does not dimension its radius, so a later change can grow it.
+Add a radius dimension to keep it.
+A fillet also removes its corner, and with it what held the corner (a right angle, a snap to the origin); put back the horizontal, vertical or on-origin constraint it held.
+
+Offset Curve::
+FreeCAD takes the side and the distance from an MB1 click; type the exact distance into the offset dimension afterwards.
+With *Add offset constraint* on, FreeCAD 1.1.4 gives a closed loop one redundant constraint, so the sketch does not solve.
+Use *Sketch › Select Redundant Constraints* and delete it (see xref:known-issues.adoc[]).
+
+Dynamic dimensions::
+NX shows a sketch's dimensions while you draw and offers to scale the whole sketch to the first one; FreeCAD's dimension tool asks for one value at a time.
+
+== See also
+
+* xref:tutorials/i.adoc[Tutorial I] -- Extend, Quick Trim, Fillet and an associative offset.
+* xref:tutorials/j.adoc[Tutorial J] -- constraints, degrees of freedom and formulas.

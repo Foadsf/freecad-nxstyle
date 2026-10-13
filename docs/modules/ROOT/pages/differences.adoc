@@ -1,0 +1,59 @@
+= What differs from NX
+:description: What NX-Style can match, what stays FreeCAD's, and the differences you will meet in daily work.
+
+NX-Style matches NX's layout, names, colours, mouse and keys.
+It cannot make FreeCAD identical to NX: icons, feature dialogs and modelling semantics stay FreeCAD's, and no Siemens assets are used.
+This page lists the differences found by working through the xref:tutorials/index.adoc[tutorials].
+
+== Parts and units
+
+* Units are a preference, not a choice in the New dialog. NX-Style makes them metric (FreeCAD's Standard schema: mm, kg) and switches an imperial schema back; `"units": "freecad"` leaves FreeCAD's choice alone.
+* Typed values keep their precision (3.175 mm stays 3.175).
+* Files are `.FCStd`, not `.prt`. A new part is named at its first save.
+
+== Sketching
+
+* FreeCAD asks for the sketch plane in the Dialog panel; clicking the plane in the graphics window also works.
+* No dynamic dimensions while you draw, and no "scale the whole sketch to the first dimension?" prompt.
+* Project Curve makes defining geometry; turn it into reference geometry before extruding a region across it.
+* A sketch fillet does not dimension its radius, and removes the constraints that held its corner.
+* Offset Curve takes side and distance from an MB1 click; type the exact distance afterwards.
+* FreeCAD names a dimension in its properties and takes a formula after `=`; NX numbers dimensions p0, p1 ….
+
+== Features
+
+* Extrude has no Boolean option: subtracting is its own button, *Extrude (Subtract)*; features in one Body unite by themselves.
+* Hole drills at circle centres in a sketch; NX places hole points directly and adds their location dimensions.
+* At Angle datum planes turn about the face's own axes; NX lets you pick the hinge axis.
+* Datum CSYS with nothing selected asks whether to continue; a Body already has its own origin.
+* Mirror Feature: select the feature first, then the command.
+* Patterns are separate buttons (Pattern Feature for linear, Circular Pattern, Multi-Transform); NX's negative pitch is spacing with *Reverse*; Direction 2 is a tick box.
+* Design changes reopen the feature's dialog (*Edit Parameters*) rather than editing a dimension shown on the model.
+* Parent/child links are properties (Attachment, Base Feature), not a Dependencies panel. Unsuppressing a child does not bring its parent back.
+* Expressions live in a spreadsheet (kbd:[Ctrl+E]); a dimension uses `=Expressions.name`. Names that are unit symbols (`N`, the newton) are refused.
+* Assign Material applies at once and closes with *Close*; FreeCAD 1.1 gives the body the material's colour.
+
+== Assemblies
+
+* One FreeCAD joint can do the work of two NX constraints (Touch Align plus an axis).
+* No *Show Degrees of Freedom*; drag the part to see what moves.
+* New Explosion moves parts by dragging a 3D handle only.
+* The parts list is a spreadsheet (Bill of Materials), not a table on the drawing.
+* NX names a new assembly in the New dialog, FreeCAD at the first save.
+
+== Drawings
+
+* Sheet size, projection and scale are the sheet's template and properties, not a Sheet dialog. FreeCAD's default sheet is A4.
+* Projected View is a projection group; a second Base View stands in for a view dragged off the base view.
+* A new section view lands on top of its base view and is moved afterwards.
+* Dimensions need vertices: add cosmetic vertices on hole centres first.
+* A basic dimension is the *Theoretical Exact* property; hole limits show as a value ± tolerance.
+* No *Feature Parameters*: reference dimensions measured from the view stand in.
+* View styles, smooth edges and arrowheads are view and dimension properties.
+* The sheet updates by itself; NX marks it out of date.
+
+== What cannot be matched
+
+* NX's icons are Siemens' and are not copied; NX-Style uses FreeCAD's icons and its own line icons.
+* Synchronous modelling goes no further than *Delete Face* (FreeCAD's Defeaturing).
+* Feature dialogs are FreeCAD's task panels, in the Dialog tab (or floating, with `floating_task_panel`).

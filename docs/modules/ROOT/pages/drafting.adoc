@@ -1,0 +1,99 @@
+= Drafting
+:description: Drawings in the Drafting application: sheets, views, dimensions, GD&T and associative updates.
+
+The *Drafting* application is FreeCAD's TechDraw workbench with NX's ribbon.
+kbd:[Ctrl+Shift+D] switches to it.
+
+image::ui-drafting.png[The Drafting application with its Home tab]
+
+== Sheets
+
+*Home › Drawing › New Sheet* makes a sheet from the default template.
+NX asks for the size, projection and scale in one Sheet dialog; in FreeCAD they are the sheet's properties:
+
+[cols="1,2",options="header"]
+|===
+| NX Sheet dialog | FreeCAD sheet property
+
+| Size (A-8.5X11, B-11X17 …) | `Template`: pick an SVG, for example `ANSIA_Landscape.svg` or `ANSIB_Landscape.svg` from FreeCAD's `Mod/TechDraw/Templates` folder. *Sheet from Template* asks for one.
+| Projection | `ProjectionType`: First angle or Third angle
+| Scale | `Scale`
+|===
+
+Changing the template later keeps the views where they are, as NX's *Edit Sheet* does.
+FreeCAD's default sheet is A4.
+
+== Views
+
+[cols="1,3",options="header"]
+|===
+| NX | Here
+
+| Base View | Select the body, click *Base View*, press *MB2*. The view's direction is a property.
+| Projected View | FreeCAD's Projected View is a *projection group*. To place views one by one as NX does, make a second Base View with the direction you need and line it up.
+| Section View | Select the base view, click *Section View*, pick the direction in the dialog, *MB2*. The new view lands on the base view; move it afterwards.
+| Detail View | *Detail View* magnifies an area of a selected view.
+|===
+
+*MB2* presses OK in the open drawing dialog, as in the graphics window; MB2 drag still pans the sheet.
+
+View style::
+Hidden lines (*Hard Hidden*), line widths and smooth edges (*Smooth Visible*) are view properties; NX sets them in the view's Settings dialog.
+
+== Dimensions
+
+The Dimension group has Rapid Dimension, Linear, Horizontal, Vertical, Radial, Diameter and Angular.
+
+* TechDraw dimensions attach to vertices, edges and circles.
+  To dimension to a hole's centre, add a *cosmetic vertex* there first; NX snaps to arc centres.
+* A basic dimension is the dimension's *Theoretical Exact* property; it draws the box.
+* Tolerances and a count such as `4X` go in the dimension's properties.
+* Decimals are the dimension's *Format Spec* (`%.2f` for two).
+* Arrows out (NX's *Arrow Out*) is the dimension's *FlipArrowheads* property.
+* The drafting standard (ISO, ASME) is in *Preferences › TechDraw › Dimensions › Standard and Style*. Set *ASME Inlined* for ANSI's horizontal text.
+
+TechDraw has no *Feature Parameters*: it cannot bring a feature's sketch dimensions onto a view.
+Its dimensions are reference dimensions measured from the view; they follow the model but do not drive it.
+
+== GD&T
+
+FreeCAD 1.1 has only fixed GD&T pictures.
+NX-Style adds NX's two dialogs on *Home › Annotation*:
+
+Datum Feature Symbol::
+Select a view edge, click *Datum Feature Symbol*, type the letter, *MB2*.
+The symbol sits against the edge, outside the view.
+
+Feature Control Frame::
+Select a dimension or an edge, click *Feature Control Frame*, then choose the characteristic, the Ø zone, the tolerance, the material condition and up to three datums with their modifiers.
+A frame for a dimension goes under it.
+
+The tolerance and the datum letters stay editable afterwards, as the symbol's editable texts.
+
+image::tutorial-H-gdt-drawing.png[GD&T plate drawing: datums A, B and C, basic dimensions and three feature control frames]
+
+== Center marks, notes, hatches
+
+* *Center Mark* draws centre lines for the selected circles; TechDraw adds none by itself.
+* Note, ID Symbol (Balloon), Leader, Weld Symbol and Surface Finish are on the Annotation group.
+* *Hatch* and *Crosshatch* fill faces and sections.
+
+== Hide and show
+
+kbd:[Ctrl+B] hides the selection on the sheet as in the model.
+To show hidden items again, select them in the Part Navigator and press kbd:[Ctrl+Shift+K]; NX picks them from a list.
+
+== Associativity
+
+Change the model in Modeling (kbd:[Ctrl+M]) and come back with kbd:[Ctrl+Shift+D]: the sheet has updated by itself (the sheet's *Keep Updated*).
+NX marks the drawing out of date and asks for *Update*.
+
+== Export
+
+*Export PDF*, *Export SVG*, *Export DXF* and *Print* are on the Home tab.
+
+== See also
+
+* xref:tutorials/d.adoc[Tutorial D] -- base and section views.
+* xref:tutorials/h.adoc[Tutorial H] -- a GD&T drawing with datums and feature control frames.
+* xref:tutorials/n.adoc[Tutorial N] -- sheet sizes, view styles, center marks and an associative change.

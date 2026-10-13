@@ -1,0 +1,84 @@
+= FreeCAD NX-Style
+:description: Run your normal FreeCAD with a user interface that looks and behaves like Siemens NX.
+:page-role: home
+
+[.lead]
+FreeCAD NX-Style runs your normal, unmodified FreeCAD with a user interface laid out and behaving like Siemens NX: the ribbon, the Top Border Bar and the Resource Bar, NX's mouse buttons and keyboard shortcuts, and NX's command names.
+There is no fork and no patch, and your usual FreeCAD settings are never touched.
+
+image::ui-modeling.png[The Modeling application: NX ribbon, Top Border Bar, Resource Bar with the Part Navigator, and the graphics window]
+
+[.nx-cards]
+* *xref:installation.adoc[Install]* +
+Get FreeCAD 1.0 or newer, clone the project and start it with one command.
+* *xref:quick-start.adoc[Quick start]* +
+Sketch and extrude your first part the NX way in five minutes.
+* *xref:tutorials/index.adoc[Tutorials]* +
+Fourteen textbook exercises, step by step, checked by the replay.
+* *xref:keyboard-shortcuts.adoc[Shortcuts]* +
+All 65 NX key bindings and what each one does here.
+
+== What you get
+
+[cols="1,3",options="header"]
+|===
+| In NX | In FreeCAD NX-Style
+
+| Ribbon with File, Home, Assemblies, Curve, Surface, Analysis, View, Render, Tools, Application
+| The same tabs and groups with NX's command names (Extrude, Edge Blend, Pattern Feature, WAVE Linker, …), driving FreeCAD's real commands. Tooltips also give the FreeCAD name. See xref:user-interface.adoc[].
+
+| Quick Access Toolbar, Command Finder
+| Left and right of the tab row. The finder searches NX and FreeCAD names and tells you where each command lives.
+
+| Top Border Bar
+| Menu button (every FreeCAD menu), a Type Filter that really restricts what you can pick, and selection tools.
+
+| Resource Bar
+| Part Navigator, History, Information, Journal (Python console), Selection, and Versions and history.
+
+| Applications
+| Modeling, Drafting, Assemblies, Shape Studio, Pre/Post, Manufacturing and more, each FreeCAD workbench behind an NX application.
+
+| Mouse
+| MB2 rotates, Shift+MB2 or MB2+MB3 pans, Ctrl+MB2 or MB1+MB2 zooms, *MB2 click is OK*, *hold MB3 for the radial menu*. See xref:mouse.adoc[].
+
+| Keyboard
+| All 65 bindings from {nxtips}[NXtips], each one checked by the self-test. See xref:keyboard-shortcuts.adoc[].
+
+| Teamcenter
+| xref:data-management.adoc[Strata]: every save recorded, versions, workspaces, compare, releases, sync.
+
+| Drafting GD&T
+| Feature Control Frame and Datum Feature Symbol dialogs that FreeCAD does not have. See xref:drafting.adoc[].
+
+| Units
+| Metric by default (mm, kg).
+|===
+
+== How it stays out of your normal FreeCAD
+
+FreeCAD reads its user folders from three environment variables, `FREECAD_USER_HOME`, `FREECAD_USER_DATA` and `FREECAD_USER_TEMP`.
+The launcher points them at a private *NX profile* and loads the NX-Style module from the project folder with FreeCAD's `-M` switch.
+Nothing is installed into FreeCAD or into your normal FreeCAD settings folder, and the launcher refuses any profile path that overlaps it.
+Delete the profile folder (or start with `--reset-profile`) and it is gone.
+The details are in xref:installation.adoc#profile[].
+
+== What it is not
+
+It is not identical to NX, and cannot be.
+Icons, feature dialogs and modelling semantics stay FreeCAD's: a subtracting extrude is FreeCAD's Pocket, and there is no synchronous modelling beyond Defeaturing.
+xref:differences.adoc[] lists what works differently, and xref:known-issues.adoc[] what FreeCAD itself cannot do yet.
+
+== A few pictures
+
+.The Sketch task environment: the contextual Sketch tab, NX's curve and constraint names
+image::ui-sketch.png[Sketch tab]
+
+.Drafting with NX's GD&T dialogs: datums A, B, C, basic dimensions and feature control frames
+image::tutorial-H-gdt-drawing.png[GD&T drawing]
+
+.An assembly with NX's constraint names
+image::tutorial-G-shaft-support.png[Shaft Support assembly]
+
+.Data management: Strata's Versions and history among the navigators, and the PLM ribbon tab
+image::strata-plm.png[Strata panel and PLM tab]

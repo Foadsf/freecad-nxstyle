@@ -1,0 +1,31 @@
+= Tutorial M: The U-Bracket, parent/child relations
+:description: Features that depend on each other: Suppress and Unsuppress, deleting a child, and the BORN technique to cut a dependency.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 7
+You learn:: Parent/child relations, renaming, Suppress and Unsuppress, sketching on the datum plane to drop a dependency
+Sizes:: A plate with two Ø19.05 holes, a half-round body across it (−31.75 to 31.75 mm), a 50.8 × 25.4 mm cut under it and a Ø6.35 drill (the book's 0.75, 1.25, 2.0 × 1.0 and 0.25 in). The plate's end radius (R25.4) and the body's radius (R44.45) are NotebookLM's reading of the figures.
+
+image::tutorial-M-u-bracket.png[The U-Bracket with the round opening; the rectangular cut is kept, suppressed]
+
+== In short
+
+. The plate with its holes; the half-round body, extruded *Two sided*.
+. The rectangular cut (Rect-Cut) under it, and the drill sketched on the cut's face.
+. kbd:[F2]: name the features.
+. Select Rect-Cut, *Home › Edit Feature › Suppress*: the drill's sketch loses its face.
+. Unsuppress; delete the drill and sketch it again on the datum XY plane: it no longer depends on the cut.
+. Suppress the rectangular cut and make an R31.75 round opening instead.
+
+== Step by step
+
+include::partial$generated/tutorial-M.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* FreeCAD keeps a feature's links in its properties (Attachment, Base Feature) rather than a Dependencies panel.
+* A suppressed feature passes its input on; a sketch attached to its face loses that face.
+* Suppressing the child as well still leaves the part out of date in FreeCAD 1.1.4 (M19); unsuppressing the parent brings it back.
+* Unsuppressing a child does not bring its parent back (NX does). Deleting a feature keeps its sketch.

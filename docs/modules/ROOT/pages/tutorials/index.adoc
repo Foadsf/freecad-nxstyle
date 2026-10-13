@@ -1,0 +1,49 @@
+= Tutorials
+:description: Fourteen NX textbook exercises, step by step in FreeCAD NX-Style, with what is the same and what differs.
+include::partial$generated/tutorial-meta.adoc[]
+
+Each tutorial is an exercise from an NX, GD&T or engineering-graphics textbook, done in NX-Style the way the book tells an NX user to work.
+Every page lists the book's steps beside the NX-Style steps, so you can follow along with the book open or without it.
+
+The step tables are not written by hand.
+The xref:testing.adoc#tutorial-replay[tutorial replay] presses the same keys, clicks the same NX-named ribbon buttons, clicks sketch points with MB1 and accepts dialogs with MB2, then checks each feature by its volume.
+The tables show its last run: FreeCAD {replay-freecad}, {replay-steps} steps, all fourteen tutorials in one session.
+
+== Before you start
+
+* Install and start NX-Style (xref:installation.adoc[]), and try xref:quick-start.adoc[] first.
+* Parts are metric. The books work in inches; their sizes are typed in millimetres (2.5 in = 63.5 mm).
+* Where a book gives a size only in a figure, the tutorial page says so and gives the size used here.
+
+== Which one to start with
+
+[cols="1,3",options="header"]
+|===
+| You want to learn | Tutorials
+
+| Sketch, extrude, revolve | xref:tutorials/a.adoc[A], xref:tutorials/b.adoc[B], xref:tutorials/l.adoc[L]
+| Datum planes and holes | xref:tutorials/c.adoc[C], xref:tutorials/e.adoc[E]
+| Patterns, mirror, shell, edge blend | xref:tutorials/d.adoc[D], xref:tutorials/f.adoc[F]
+| Sketch constraints, trim, offset | xref:tutorials/i.adoc[I], xref:tutorials/j.adoc[J]
+| Formulas and expressions | xref:tutorials/j.adoc[J], xref:tutorials/k.adoc[K]
+| Design changes, parent/child, suppress | xref:tutorials/e.adoc[E], xref:tutorials/m.adoc[M]
+| Materials and mass | xref:tutorials/e.adoc[E]
+| Assemblies | xref:tutorials/g.adoc[G]
+| Drawings | xref:tutorials/d.adoc[D], xref:tutorials/n.adoc[N]
+| GD&T | xref:tutorials/h.adoc[H]
+|===
+
+== Results
+
+include::partial$generated/tutorial-summary.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== The books
+
+* Randy H. Shih, _Parametric Modeling with Siemens NX_ (SDC Publications): tutorials A, C–G and I–N.
+* Gene R. Cogorno, _Geometric Dimensioning and Tolerancing for Mechanical Design_, 3rd ed. (McGraw-Hill): tutorial H.
+* James Leake and Jacob Borgerson, _Engineering Design Graphics_ (Wiley): tutorial K.
+* Tutorial B is a synthesised first-part exercise.
+
+The pages summarise the exercises; they do not reproduce the books.

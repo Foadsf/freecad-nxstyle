@@ -1,0 +1,103 @@
+= Testing
+:description: The unit tests, the self-test and the tutorial replay: what each checks and how to run it.
+
+Three levels of tests, from seconds to about half an hour.
+
+== Unit tests and lint
+
+[source,bash]
+----
+python -m unittest discover -s tests
+----
+
+[source,bash]
+----
+ruff check --select F,E9 .
+----
+
+The unit tests cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata it loads, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
+FreeCAD is not needed.
+GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).
+
+== Self-test
+
+[source,bash]
+----
+python launch_nx.py --smoke-test out
+----
+
+This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
+It checks 60 behaviours, among them:
+
+* every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key;
+* MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
+* the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;
+* metric units even when the profile was set to US customary;
+* Strata starts and sits with the navigators.
+
+It writes `out/smoke.json` and screenshots, and exits non-zero on any failure.
+
+== Tutorial replay [[tutorial-replay]]
+
+[source,bash]
+----
+python launch_nx.py --tutorial out
+----
+
+The replay works through the fourteen xref:tutorials/index.adoc[tutorials] the way the books tell an NX user to: the same keys, the NX-named ribbon buttons, MB1 clicks on sketch points in the graphics window, MB2 to end tools and accept dialogs.
+Dimension values are applied through FreeCAD's API, the equivalent of typing them into Rapid Dimension; everything else is real UI input.
+
+Each feature is checked by its volume against the same operation done directly with FreeCAD's Part API, and the final part must be drawn in the graphics window.
+`--tutorials G,H` picks some; N runs M first.
+
+The replay writes `out/tutorial.json`, a `progress.log` and screenshots.
+Exit code 1 means a step FAILED.
+
+== Hidden desktop and memory ceiling
+
+On Windows both runs use a hidden desktop, so nothing appears on your screen; `--visible` shows FreeCAD instead.
+
+Every run is capped at 4 GB of memory (`--max-memory-gb`) inside a Windows job object.
+FreeCAD's allocations beyond the ceiling are refused and the run ends with exit code 4, so a runaway cannot take the machine down.
+Run one at a time.
+
+[cols="1,3",options="header"]
+|===
+| Exit code | Means
+
+| 0 | Passed
+| 1 | A check or step failed
+| 2 | No result: FreeCAD crashed or NX-Style failed to load
+| 3 | Timed out
+| 4 | Stopped at the memory ceiling
+| 5 | Refused to start, for example because another test run is going
+|===
+
+== Testing a second start
+
+Each run uses a fresh throwaway profile.
+To test what a second start sees, give both runs the same `--profile DIR`; it is kept between runs.
+
+[source,bash]
+----
+python launch_nx.py --smoke-test out1 --profile p
+----
+
+[source,bash]
+----
+python launch_nx.py --smoke-test out2 --profile p
+----
+
+== From results to the docs
+
+The tutorial pages' step tables come from `docs/results/tutorials.json`: a replay's steps and the FreeCAD version, nothing else.
+After a full replay that should be published:
+
+[source,bash]
+----
+python tools/gen_docs.py --results out/tutorial.json
+----
+
+It refuses results that name a folder in your home directory, since they are published.
+`python tools/tutorial_table.py out/tutorial.json` prints the result counts per tutorial and updates the table in `docs/TUTORIAL-REPLAY.md`.
+See xref:writing-docs.adoc[] for building the site.

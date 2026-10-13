@@ -1,0 +1,31 @@
+= Tutorial H: GD&T plate drawing
+:description: A drawing with datum features A, B and C, basic dimensions and three feature control frames.
+
+[horizontal]
+Book:: Cogorno, _Geometric Dimensioning and Tolerancing for Mechanical Design_, 3rd ed., ch. 12.2 and ch. 8 (Prob. 12-3)
+You learn:: Datum Feature Symbol, Feature Control Frame, basic dimensions, a hole note with limits, the ASME standard
+Sizes:: A 101.6 × 101.6 × 12.7 mm plate (its size is in a figure only) with 4X Ø12.954–13.716 holes; basic 25.4 and 50.8 mm from B and C. The book's inch values are converted exactly: Ø0.254 position, 0.102 perpendicularity, 0.051 flatness.
+
+image::tutorial-H-gdt-drawing.png[The GD&T plate drawing]
+
+== In short
+
+. kbd:[Ctrl+Shift+D], *New Sheet*; set *Preferences › TechDraw › Dimensions › Standard and Style* to *ASME Inlined*.
+. *Base View* of the plate's face; a second Base View for its edge.
+. A cosmetic vertex on each hole centre, then *Horizontal* and *Vertical* dimensions; tick *Theoretical Exact* for basic ones.
+. *Diameter* on a hole: 4X and ±0.381 in its properties.
+. Select an edge, *Datum Feature Symbol*: A on the back face, B on the bottom edge, C on the left edge.
+. *Feature Control Frame*: flatness 0.051 on A; perpendicularity 0.102 to A on B; position Ø0.254 at MMC to A|B|C under the hole note.
+
+== Step by step
+
+include::partial$generated/tutorial-H.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* FreeCAD 1.1 has only fixed GD&T pictures; NX-Style adds NX's two dialogs, with values that stay editable.
+* TechDraw dimensions need vertices at hole centres; NX snaps to arc centres.
+* The hole limits show as Ø13.335 ±0.381; NX can also show them as limits.
+* TechDraw's default standard (ISO Oriented) writes a hole note along its leader; ASME is a preference.

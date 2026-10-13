@@ -1,0 +1,25 @@
+= Keyboard shortcuts
+:description: All NX key bindings in FreeCAD NX-Style and the FreeCAD command each one runs.
+
+The NX bindings follow {nxtips}[Foadsf/NXtips] (NX's default keys with their NX command IDs), plus kbd:[Ctrl+T] (Move Object) and kbd:[Ctrl+Q] (Finish Sketch) from the NX textbooks.
+
+Every key below is pressed by the xref:testing.adoc[self-test] through Qt's real shortcut system, and must reach its FreeCAD command with no other action holding the same key.
+Keys marked *sketch edit* work while a sketch is open for editing.
+
+NOTE: NXtips binds kbd:[F4] to Touch Mode, while two textbooks give kbd:[F4] as Repeat Command.
+NX-Style follows NXtips; Repeat Command is on the Quick Access Toolbar.
+
+TIP: FreeCAD's own shortcuts that do not clash with these keep working, even with FreeCAD's menus and toolbars hidden.
+To keep FreeCAD's keys instead of NX's, set `"nx_shortcuts": false` in the xref:settings.adoc[settings].
+
+include::partial$generated/shortcuts.adoc[]
+
+== Keys FreeCAD gives up
+
+[cols="1,3",options="header"]
+|===
+| FreeCAD command | Now
+
+| Quit | kbd:[Ctrl+Q] is Finish Sketch; kbd:[Alt+F4] still quits.
+| Close window | On kbd:[Ctrl+F4] (kbd:[Ctrl+W] is Show and Hide).
+|===

@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 /profile/
 /out/
+# documentation build (npm run docs)
+node_modules/
+/build/
+docs/modules/ROOT/partials/generated/

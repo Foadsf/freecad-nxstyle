@@ -1,0 +1,24 @@
+= About
+:description: Licence, trademarks, sources and how to contribute.
+
+== Licence
+
+FreeCAD NX-Style is free software under the {repo}/blob/main/LICENSE[LGPL-2.1-or-later], the same licence as FreeCAD.
+{strata}[Strata] is a separate project under the same licence, included as a git submodule.
+
+== Trademarks
+
+Siemens, NX and Teamcenter are trademarks of Siemens.
+This project is not affiliated with or endorsed by Siemens, and uses no Siemens software, icons or documentation text.
+NX command names are used only to say which FreeCAD command does the same job.
+
+== Sources
+
+* NX key bindings: {nxtips}[Foadsf/NXtips].
+* NX layout, commands and behaviour: the NX textbooks listed on xref:tutorials/index.adoc[], checked against Siemens' and FreeCAD's own sources where possible.
+* FreeCAD facts: FreeCAD 1.0.2 and 1.1.4, measured on Windows 11, and FreeCAD's source code.
+
+== Contributing
+
+Issues and pull requests are welcome on {repo}[GitHub].
+Before a pull request, run the checks in xref:testing.adoc[]; for documentation changes see xref:writing-docs.adoc[].

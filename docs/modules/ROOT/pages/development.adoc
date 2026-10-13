@@ -1,0 +1,113 @@
+= Development
+:description: How NX-Style is built: the launcher, the module, the ribbon files, shortcuts and the Strata embedding.
+
+NX-Style changes nothing in FreeCAD.
+It is a FreeCAD module that rebuilds the main window at start, plus a launcher that gives it a private profile.
+
+== Repository layout
+
+[cols="2,5",options="header"]
+|===
+| Path | Holds
+
+| `launch_nx.py` | The launcher: finds FreeCAD, prepares the NX profile, starts FreeCAD with `-M NXStyle` (and Strata), runs the test harnesses on a hidden desktop with a memory ceiling. Standard library only.
+| `NXStyle/` | The FreeCAD module. `InitGui.py` hands over to `nxstyle.boot`.
+| `NXStyle/nxstyle/resources/ribbons/` | The ribbons, as JSON.
+| `NXStyle/nxstyle/resources/*.qss` | The NX light theme and the ribbon's stylesheet.
+| `vendor/freecad-strata/` | Strata, as a git submodule.
+| `tests/` | Launcher unit tests.
+| `tools/` | `gen_docs.py` (the generated parts of these docs), `tutorial_table.py`.
+| `docs/` | This site's AsciiDoc sources (Antora), the replay results and the old Markdown notes.
+|===
+
+== The module
+
+[cols="2,5",options="header"]
+|===
+| File | Does
+
+| `boot.py` | Waits until FreeCAD's main window is shown, then builds the shell.
+| `shell.py` | The NX window around FreeCAD's: ribbon row, Top Border Bar, Resource Bar, navigators, cue line, application switching.
+| `ribbon.py` | Builds the ribbon from the JSON files, with FreeCAD's own command actions.
+| `commands.py` | Commands NX has and FreeCAD has not: Snap View, Show and Hide, Expressions, Repeat Command, the extrude-first workflow, Suppress, Measure Bodies, background presets.
+| `shortcuts.py` | The NX key table (`TABLE`), mapped onto FreeCAD commands.
+| `navigation.py` | NX mouse handling: an event filter on each 3D view takes over MB2 and the MB3 hold.
+| `radial.py` | The radial menu.
+| `triad.py` | The view triad in the lower-left corner.
+| `selection_filter.py` | The Type Filter, as a FreeCAD selection gate.
+| `finder.py` | The Command Finder.
+| `showhide.py` | The Show and Hide panel.
+| `gdt.py`, `gdt_ui.py` | Feature Control Frame and Datum Feature Symbol for TechDraw.
+| `prefs.py` | NX values in FreeCAD's parameter tree (they land in the NX profile's `user.cfg`).
+| `config.py` | Settings and their defaults (xref:settings.adoc[]).
+| `plm.py` | Strata as the data management.
+| `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
+| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]).
+|===
+
+== Ribbon files
+
+Each application has a JSON file; `apps.json` lists the applications and `common.json` holds tabs that several applications share.
+
+[source,json]
+----
+{
+  "title": "Modeling",
+  "workbench": "PartDesignWorkbench",
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "Feature", "items": [
+        {"cmd": ["NXStyle_Extrude", "PartDesign_Pad"], "label": "Extrude", "size": "large"},
+        {"dropdown": "Datum", "items": [
+          {"cmd": "PartDesign_Plane", "label": "Datum Plane"}
+        ]}
+      ]}
+    ]},
+    {"include": "common:View"}
+  ]
+}
+----
+
+* `cmd` is a FreeCAD command name, or a list of candidates: the first that exists wins, so one file serves FreeCAD 1.0 and 1.1.
+* `label` is the NX name on the button; `size` is `large` or `small`.
+* `"optional": true` leaves the button out quietly when the command does not exist (Strata's commands, newer FreeCAD commands).
+  Without it, a missing command is reported by the self-test.
+* `{"include": "common:View"}` inserts a shared tab.
+* A tab with `"contextual": true` (the Sketch tab in `sketch.json`) appears while it applies.
+* In `apps.json`, an application with `"ribbon": null` gets a ribbon generated from its workbench's toolbars.
+
+The xref:nx-to-freecad.adoc[] tables are generated from these files.
+
+== Keyboard shortcuts
+
+`shortcuts.TABLE` lists each key as an `Entry` with the NX command, the key, where it works and the FreeCAD command.
+Section comments (`# ---- …`) group the table, and the xref:keyboard-shortcuts.adoc[] page follows those groups.
+The self-test presses every key.
+
+== Strata [[strata]]
+
+`plm.py` hosts Strata through its embedding API (freecad-strata `1f71005` on):
+
+[source,python]
+----
+import strata.boot as sb
+from strata.ui import theme
+
+sb.configure(host_toolbar=True, panel_area="left")
+sb.on_ready(lambda: ribbon.add_actions(sb.actions().values()))
+theme.set_overrides(light={"accent": "#00838F"})
+----
+
+* `host_toolbar=True`: Strata adds no toolbar or workbench of its own and never re-activates the workbench.
+* `panel_area="left"`: the panel is made with the navigators.
+* `actions()`: Strata's commands as QActions, enabled with the active project.
+* `theme.set_overrides`: Strata's panels in NX-Style's colours.
+
+The submodule is pinned; update it with `git submodule update --remote vendor/freecad-strata` and commit the new pin after the self-test passes.
+
+== Rules the code keeps
+
+* Never write to the normal FreeCAD profile: the launcher refuses any profile that overlaps it.
+* Metric by default.
+* Use FreeCAD's real commands; add an NX-Style command only where FreeCAD has none.
+* No Siemens icons, text or assets.

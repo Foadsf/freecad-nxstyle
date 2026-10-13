@@ -1,0 +1,28 @@
+= Tutorial J: Parametric constraints and relations
+:description: A triangle constrained step by step against NX's status line, then dimensions driven by formulas.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 5
+You learn:: Geometric constraints, degrees of freedom, Fix and Relax, dimension names and formulas
+Sizes:: An 88.9 mm (3.5 in) plate. The triangle's own sizes are in figures only.
+
+image::tutorial-J-parametric.png[The triangle plate after the 25 × 20 size change; the hole follows its formulas]
+
+== In short
+
+. A triangle; *Perpendicular*, a length and an angle; *Fully Fixed*; undo and *Coincident* instead; location dimensions; *Relax Constraint* on Perpendicular; *Vertical*; a tangent circle.
+. At every step, FreeCAD's *Under-constrained: N Degrees of Freedom* or *Fully constrained* is compared with NX's status line. It matches the book's state each time.
+. Extrude the plate.
+. Name the dimensions and drive them with the book's formulas after `=`, for example `=Constraints.width / 5 * 1.6`; the hole is a third of the height.
+. Two size changes, 25 × 15 and 25 × 20; the hole follows.
+
+== Step by step
+
+include::partial$generated/tutorial-J.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX numbers dimensions by itself (p0, p1 …); FreeCAD names a dimension in its properties.
+* FreeCAD's panel says the constraint state where NX's status line does.

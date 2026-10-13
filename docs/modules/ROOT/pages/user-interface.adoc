@@ -1,0 +1,102 @@
+= The user interface
+:description: A tour of the NX-Style screen: ribbon, Quick Access Toolbar, Command Finder, Top Border Bar, Resource Bar, graphics window and cue line.
+
+image::ui-modeling.png[The NX-Style window in the Modeling application]
+
+The window follows NX's layout:
+
+* the *ribbon* across the top, with the *File* button, the *Quick Access Toolbar* and the *Command Finder*;
+* the *Top Border Bar* under it;
+* the *Resource Bar* down the left edge, with the navigators beside it;
+* the *graphics window* in the middle, with document tabs above it and the view triad in its lower-left corner;
+* the *cue line* along the bottom.
+
+== Ribbon
+
+The ribbon has NX's tabs and groups.
+In the Modeling application they are *Home*, *Assemblies*, *Curve*, *Surface*, *Analysis*, *View*, *Render*, *Tools*, *PLM* and *Application*.
+Each button carries NX's name and runs FreeCAD's real command; hover a button to see the FreeCAD command's name and its key.
+xref:nx-to-freecad.adoc[] lists every button with the FreeCAD command behind it.
+
+* *File* (the teal button on the left) opens FreeCAD's File menu, with Preferences and Customize.
+* *Contextual tabs* appear when they apply: editing a sketch adds the *Sketch* tab in front (see xref:sketching.adoc[]).
+* *Application* switches between the NX applications. The ribbon changes to the application's tabs.
+* Buttons that need a selection are greyed out until you select something suitable.
+
+TIP: To see FreeCAD's own names on the buttons (Pad, Pocket, Fillet …), set `"labels": "freecad"` in the xref:settings.adoc[settings].
+
+=== Applications
+
+An NX application is a FreeCAD workbench behind the scenes.
+Applications without a hand-made ribbon get one built from their workbench's toolbars, so every installed workbench is reachable.
+
+.The Application tab
+image::ui-applications.png[Application tab with the NX applications]
+
+include::partial$generated/applications.adoc[]
+
+.A generated ribbon: Pre/Post (FreeCAD's FEM workbench)
+image::ui-simulation.png[Pre/Post application with a ribbon generated from FEM's toolbars]
+
+== Quick Access Toolbar and Command Finder
+
+Left of the tabs: New, Open, Save, Undo, Redo, Cut, Copy, Paste and *Repeat Command* (runs the last command again).
+
+Right of the tabs, the *Command Finder* searches by NX name and by FreeCAD name, and shows where each command lives on the ribbon.
+Type part of a name and press kbd:[Enter] to run the first match.
+
+== Top Border Bar
+
+* *Menu* opens every FreeCAD menu (File, Edit, View, Tools, Macro, Windows, Help and the workbench's own).
+* The *Type Filter* (No Selection Filter, Curve, Datums, Edge, Face, Feature, Point, Sketch, Solid Body) restricts what you can pick in the graphics window, as in NX.
+* *Previous Selection*, *Next Selection*, *Rectangle* selection, *Select All*, *Find in Navigator* and *Deselect All*.
+
+== Resource Bar and navigators
+
+The vertical bar on the left opens the panels; the open ones share one tab strip.
+
+[cols="1,4",options="header"]
+|===
+| Button | Panel
+
+| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu.
+| History | Recently opened parts; double-click one to open it.
+| Information | FreeCAD's report view: messages, warnings, the output of Object Information (kbd:[Ctrl+I]) and Measure Bodies.
+| Journal (Python) | FreeCAD's Python console.
+| Selection | What is selected, with sub-elements.
+| Versions and history | xref:data-management.adoc[Strata]'s panel: every save, versions, workspaces.
+|===
+
+The *Dialog* tab holds the open feature dialog (FreeCAD's task panel).
+When no dialog is open, NX-Style brings the Part Navigator back to the front.
+
+== Graphics window
+
+* Light-grey gradient background, as in NX. *View › Style › Background* offers NX's five presets.
+* Red preselection, orange selection, grey bodies with dark edges.
+* The view triad sits in the lower-left corner; there is no view cube.
+* Document tabs are above the window.
+
+.Hold MB3 for the radial menu
+image::ui-radial-menu.png[Radial menu with Fit, Snap View, Trimetric, Isometric and display modes,320,role=borderless]
+
+== Cue line
+
+The bottom-left of the window tells you what the current tool expects, like NX's cue line: for example "Sketch: choose a curve or constraint tool, or select curves. Ctrl+Q = Finish Sketch".
+
+== Show and Hide
+
+kbd:[Ctrl+W] opens the *Show and Hide* panel: show or hide all objects of one type with one click.
+
+image::ui-show-hide.png[Show and Hide panel,320]
+
+== Touch Mode and FreeCAD's own interface
+
+* kbd:[F4] toggles *Touch Mode*: larger ribbon and bar icons.
+* *Tools › FreeCAD Menus and Toolbars* brings back FreeCAD's own menu bar and toolbars at any time; the same button hides them again.
+
+== Look and theme
+
+NX-Style layers one light theme over FreeCAD's own *FreeCAD Light* stylesheet: a single teal accent with its tints, line icons on the Resource Bar, the left panels in one tab strip, and the document tabs above the graphics window.
+The colour tokens are at the top of `NXStyle/nxstyle/resources/nx_theme.qss`.
+Set `"theme": "none"` in the xref:settings.adoc[settings] to keep FreeCAD's look.

@@ -1,0 +1,13 @@
+{
+  "name": "freecad-nxstyle-docs",
+  "private": true,
+  "description": "Builds the FreeCAD NX-Style documentation site with Antora",
+  "scripts": {
+    "docs": "python tools/gen_docs.py && antora antora-playbook.yml"
+  },
+  "devDependencies": {
+    "@antora/cli": "3.2.0",
+    "@antora/lunr-extension": "1.0.0-alpha.13",
+    "@antora/site-generator": "3.2.0"
+  }
+}

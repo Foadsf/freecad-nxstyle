@@ -1,0 +1,52 @@
+= Data management with Strata
+:description: Strata in place of Teamcenter: every save recorded, versions, workspaces, compare, releases and team sync.
+
+NX works with Teamcenter for data management.
+NX-Style uses {strata}[Strata], a FreeCAD add-on by the same author, for that job.
+It is on by default and needs `git` on the PATH; engineers never use Git directly.
+
+image::strata-plm.png[Strata's Versions and history panel among the navigators, and the PLM tab]
+
+== Where it is
+
+* *Resource Bar › Versions and history*: Strata's panel, in the same tab strip as the Part Navigator.
+* The *PLM* tab on the ribbon: Versions and History, Create Version, Compare, Releases and Sync.
+
+== Turning it on for a project
+
+. Save your parts into one project folder (sub-folders are fine).
+. In *Versions and history*, click *Turn on version control* and confirm the folder and your name.
+. Work and save as usual.
+  Every save appears in the history with a plain-language entry, such as _Edited Base plate: Length 10 mm → 12 mm_.
+
+== What it does
+
+[cols="1,3",options="header"]
+|===
+| Teamcenter idea | Strata
+
+| Saved revisions | Every save is a history entry; nobody types messages.
+| Named versions | *Create Version*: a permanent snapshot of the whole project.
+| Alternatives | *Workspaces*: separate lines of work. Main stays untouched until you merge.
+| Retrieve an old revision | Open any version or entry as a read-only copy, or *Restore* it. A restore adds a new entry, so nothing is lost.
+| Compare | Added, deleted and edited features with old → new values, and a 3D before/after overlay with the volume change.
+| Release | Part number and revision letter (A, B … skipping I, O, Q, S, X, Z per ASME Y14.35), an optional approval step, an *Obsolete* state.
+| Shared vault | *Sync* through a network folder, a synced drive or any Git server. Works offline.
+| Assemblies | All documents in a project folder are versioned together, so an assembly and its parts always match.
+|===
+
+The history is kept in a hidden `.strata` folder in the project; the `.FCStd` files stay ordinary FreeCAD files.
+
+Strata's own {strata}#readme[documentation] covers merging, releases and sharing in detail.
+
+== Without Strata
+
+* `python launch_nx.py --no-strata` starts without it once.
+* `"plm": "none"` in the xref:settings.adoc[settings] switches it off for good.
+
+A copy cloned without `--recursive` has no Strata until `git submodule update --init` (xref:installation.adoc[]); NX-Style starts without it and the launcher says so.
+
+== A Strata installed separately
+
+If Strata is already in the NX profile's own `Mod` folder, the launcher does not load the bundled copy as well, so it never loads twice.
+A Strata from freecad-strata `1f71005` on joins the NX layout through its embedding API (xref:development.adoc#strata[Development]); an older one runs beside it with its own toolbar and panel.

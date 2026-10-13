@@ -1,0 +1,30 @@
+= Tutorial N: The U-Bracket drawing
+:description: An associative drawing of Tutorial M's bracket: sheet sizes, view styles, dimensions, center marks and a model change the drawing follows.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 8 (after Tutorial M)
+You learn:: Sheet size and projection, view styles, smooth edges, dimension settings, Hide and Show, center marks, associativity
+Sizes:: Tutorial M's bracket; the hole changes from Ø19.05 to Ø15.875 mm (the book's Ø0.750 → Ø0.625 in).
+
+image::tutorial-N-u-bracket-drawing.png[The U-Bracket drawing on a B sheet: front, top and isometric views]
+
+== In short
+
+. kbd:[Ctrl+Shift+D], *New Sheet*: template ANSI A, *Third angle*; later swapped for ANSI B.
+. *Base View* front, with hidden lines; a second Base View from the top, lined up above it; an isometric one.
+. Reference dimensions on the top view; *Smooth Visible* off on the isometric view; *FlipArrowheads* on the diameter.
+. kbd:[Ctrl+B] hides two dimensions; select them in the Part Navigator and kbd:[Ctrl+Shift+K] shows them.
+. *Center Mark* on the arcs; a *Radial* dimension; two decimals with Format Spec `%.2f`.
+. kbd:[Ctrl+M]: the hole to Ø15.875; kbd:[Ctrl+Shift+D]: the drawing has followed.
+
+== Step by step
+
+include::partial$generated/tutorial-N.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* Size, projection and scale are the sheet's template and properties, not a Sheet dialog.
+* TechDraw has no *Feature Parameters*: reference dimensions measured from the view stand in; they follow the model but do not drive it.
+* The sheet updates by itself; NX marks it out of date and asks for Update.

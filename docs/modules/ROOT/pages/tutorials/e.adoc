@@ -1,0 +1,30 @@
+= Tutorial E: Saddle Bracket
+:description: The BORN technique, a symmetric extrude, renamed features, three design changes, a material and the mass.
+
+[horizontal]
+Book:: Shih, _Parametric Modeling with Siemens NX_, ch. 4
+You learn:: Datum CSYS first (BORN), Symmetric extrude, Project Curve, renaming in the Part Navigator, Edit Parameters, Assign Material, Measure Bodies
+Sizes:: The text gives 63.5, 12.7, 50.8, Ø19.05 and R6.35 mm (2.5, 0.5, 2.0, Ø0.75 and R0.25 in). The L profile is in figures only, so it is this project's own: 76.2 mm long, a 12.7 mm base, a 19.05 × 50.8 mm upright, a 25.4 × 19.05 mm notch.
+
+image::tutorial-E-saddle-bracket.png[The Saddle Bracket after the design changes]
+
+== In short
+
+. *Datum CSYS* first; FreeCAD asks whether to continue without an attachment; a Body has its own origin anyway.
+. The L profile, extruded *Symmetric* 63.5 mm (the value is the total width, as in NX since NX 1926).
+. A circular end tied to a projected edge.
+. kbd:[F2] in the Part Navigator to name the features.
+. Three design changes: the width 63.5 → 50.8 mm, Until Next → Through All, and a fillet added to the first sketch.
+. *Render › Material › Assign Material*: steel. *Analysis › Measure › Measure Bodies*: 86,504.5 mm³, 7900 kg/m³, 0.6834 kg.
+
+== Step by step
+
+include::partial$generated/tutorial-E.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* Design changes reopen the feature's dialog (Edit Parameters) instead of editing a dimension shown in the graphics window.
+* Assign Material applies at once and closes with *Close*; FreeCAD 1.1 also gives the body the material's colour.
+* FreeCAD's own Measure has no mass; *Measure Bodies* is NX-Style's.
