@@ -16,6 +16,12 @@ import FreeCADGui as Gui
 
 from . import commands, navigation, prefs, shortcuts
 from .qt import QAction, QtCore, QtWidgets, Qt, mouse_event
+
+
+def pixel_luminance(argb):
+    """Rec. 601 luminance (0..255) of a QImage.pixel() value."""
+    r, g, b = (argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF
+    return 0.299 * r + 0.587 * g + 0.114 * b
 from .selection_filter import TypeGate
 
 OUT = os.environ.get("NXSTYLE_SMOKE_OUT", "")
@@ -498,6 +504,14 @@ class Smoke:
     def s_katydid(self):
         """Katydid (github.com/Foadsf/Katydid), on by default: NX's Algorithmic Modeling application."""
         if self.shell._app("algorithmic_modeling"):
+            # Katydid a0a9e8a+ registers its commands at start-up: Canvas is on every Tools tab before its
+            # workbench (which opens the canvas when it starts) has ever been activated
+            mw = Gui.getMainWindow()
+            self.info["katydid canvas before"] = {
+                "command on Tools tab": "Katydid_Canvas" in self.shell.ribbon.locations,
+                "where": self.shell.ribbon.locations.get("Katydid_Canvas"),
+                "workbench": Gui.activeWorkbench().name(),
+                "canvas exists": mw.findChild(QtWidgets.QDockWidget, "KatydidDock") is not None}
             self.shell.switch_application("algorithmic_modeling")
 
     def s_katydid_check(self):
@@ -510,6 +524,10 @@ class Smoke:
                    sorted(Gui.listWorkbenches()))
         if app is None:
             return
+        before = self.info.get("katydid canvas before", {})
+        self.check("Katydid's Canvas on the Tools tab before its workbench has started",
+                   before.get("command on Tools tab") and str(before.get("where", "")).startswith("Tools")
+                   and before.get("workbench") != "KatydidWorkbench" and not before.get("canvas exists"), before)
         r, mw = self.shell.ribbon, Gui.getMainWindow()
         cmds = {c: c in r.locations for c in ("Katydid_Canvas", "Katydid_Bake")}
         self.check("Algorithmic Modeling ribbon with Katydid's Canvas and Bake, and the Application tab",
@@ -525,8 +543,31 @@ class Smoke:
                                               "tabbed": tabbed})
         visible = [tb.objectName() for tb in self.shell.native_toolbars() if tb.isVisible()]
         self.check("Katydid's own toolbar hidden under the ribbon", not visible, visible)
-        if dock is not None and hasattr(dock.widget(), "load_attractor_demo"):
-            dock.widget().load_attractor_demo()        # Katydid's own example, for the screenshot
+        contrast = self.katydid_tab_contrast(dock)
+        # under the NX theme the selected category tab once drew as a black box with no label (Katydid 2a3759b)
+        self.check("Katydid's selected category tab has a readable label", contrast is not None and contrast > 0.3,
+                   contrast)
+        panel = dock.widget() if dock is not None else None
+        if hasattr(panel, "load_example"):              # Katydid's own example, for the screenshot
+            panel.load_example("attractor")
+        elif hasattr(panel, "load_attractor_demo"):
+            panel.load_attractor_demo()
+
+    @staticmethod
+    def katydid_tab_contrast(dock):
+        """Luminance range (0..1) inside the selected tab of Katydid's category ribbon: ~0 = one flat colour.
+        Measured on Katydid 2a3759b (the black box): 0.784 with the tab's border included, which is why the
+        border is excluded."""
+        tabs = getattr(dock.widget(), "ribbon", None) if dock is not None else None
+        bar = tabs.tabBar() if tabs is not None else None
+        if bar is None:
+            return None
+        img = bar.grab(bar.tabRect(bar.currentIndex())).toImage()
+        img.save(os.path.join(OUT, "05_katydid_selected_tab.png"))
+        m = 4          # inside the tab only: its border alone would give a range on a flat black box
+        lum = [pixel_luminance(img.pixel(x, y)) for x in range(m, img.width() - m)
+               for y in range(m, img.height() - m)]
+        return round((max(lum) - min(lum)) / 255, 3) if lum else None
 
     def s_katydid_shot(self):
         """The floating canvas is its own window, so the main-window grab misses it: paint both."""

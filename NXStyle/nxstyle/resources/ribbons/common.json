@@ -73,6 +73,9 @@
         {"cmd": "Spreadsheet_CreateSheet", "label": "Spreadsheet"},
         {"cmd": "Std_DlgParameter", "label": "Parameter Editor"}
       ]},
+      {"name": "Algorithmic Modeling", "items": [
+        {"cmd": "Katydid_Canvas", "label": "Canvas", "size": "large", "optional": true}
+      ]},
       {"name": "Journal", "items": [
         {"cmd": "Std_DlgMacroRecord", "label": "Record", "size": "large"},
         {"cmd": "Std_DlgMacroExecute", "label": "Play"},

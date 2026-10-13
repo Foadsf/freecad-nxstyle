@@ -16,6 +16,8 @@ image::katydid-canvas.png[The Katydid canvas, floating over the NX-Style window]
   It floats on purpose: docked, every canvas repaint also redraws the 3D view, which makes dragging a slider about twice as slow.
 . The ribbon shows *Canvas* (bring the window back) and *Bake*, with the usual View, Tools, PLM and Application tabs.
 
+*Tools › Algorithmic Modeling › Canvas* opens the canvas from any application without switching to Algorithmic Modeling.
+
 Leaving the application (kbd:[Ctrl+M] for Modeling, for example) keeps the canvas window where it is; close it with its own close button.
 
 == Using the canvas
@@ -23,6 +25,7 @@ Leaving the application (kbd:[Ctrl+M] for Modeling, for example) keeps the canva
 Double-click the canvas to search for a component, or drag one from the category tabs; drag from an output grip to an input grip to wire them.
 The preview updates in the graphics window while you work, and *Bake* turns the result into FreeCAD objects.
 The canvas is saved inside the part's `.FCStd` file.
+The canvas's *Examples* menu loads ready-made graphs to start from.
 
 Katydid's own {katydid-docs}[documentation] has the quick start, tutorials and the full component reference.
 

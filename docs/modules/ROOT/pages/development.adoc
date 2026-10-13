@@ -112,7 +112,7 @@ Katydid is its own project and stays unmodified in `vendor/Katydid`; NX-Style ad
 
 * The launcher loads it with `-M`, like Strata (`find_katydid`): off with `--no-katydid` or `"algorithmic_modeling": "none"`, and not loaded twice when a Katydid sits in the NX profile's `Mod` folder.
 * `apps.json` offers it as the *Algorithmic Modeling* application (`KatydidWorkbench`), with its ribbon in `algorithmic.json`.
-* Katydid registers `Katydid_Canvas` and `Katydid_Bake` when its workbench starts, and starting it opens the canvas, so the workbench is not preloaded; switching to the application starts it.
+* Katydid registers `Katydid_Canvas` and `Katydid_Bake` when FreeCAD starts (Katydid `a0a9e8a` on), so *Canvas* is also on the shared Tools tab (`common.json`, `"optional": true`). Starting Katydid's workbench opens the canvas, so the workbench is never preloaded; switching to the application starts it.
 * The canvas is a floating `QDockWidget` named `KatydidDock`; NX-Style leaves it out of the navigator tab strip.
 
 Update the pin the same way: `git submodule update --remote vendor/Katydid`, then the self-test.
