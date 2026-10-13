@@ -341,9 +341,26 @@ class Replay:
         I = [self.i_new, self.i_extrude, self.i_plane, self.i_outline, self.i_extend, self.i_trim, self.i_align, self.i_fillets,  # noqa: E741
              self.i_finish, self.i_extrude_dialog, self.i_cut, self.i_offset, self.i_offset_check, self.i_cut_finish,
              self.i_cut_dialog, self.i_height, self.i_show, self.i_save]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K").upper().split(",")
+        L = [self.l_new, self.l_app, self.l_extrude, self.l_plane, self.l_rect, self.l_finish, self.l_extrude_dialog,
+             self.l_boss, self.l_boss_sketch, self.l_boss_finish, self.l_boss_dialog, self.l_bore, self.l_bore_sketch,
+             self.l_bore_finish, self.l_bore_dialog, self.l_hole, self.l_hole_sketch, self.l_hole_finish,
+             self.l_hole_dialog, self.l_slot, self.l_slot_sketch, self.l_slot_finish, self.l_slot_dialog,
+             self.l_slot_fix, self.l_slot_fix_dialog, self.l_show, self.l_save]
+        M = [self.m_new, self.m_extrude, self.m_plane, self.m_profile, self.m_finish, self.m_extrude_dialog,
+             self.m_body, self.m_body_plane, self.m_body_sketch, self.m_body_finish, self.m_body_dialog,
+             self.m_rect, self.m_rect_sketch, self.m_rect_finish, self.m_rect_dialog, self.m_drill,
+             self.m_drill_sketch, self.m_drill_finish, self.m_drill_dialog, self.m_rename, self.m_dependencies,
+             self.m_suppress_rect, self.m_suppress_drill, self.m_unsuppress_drill, self.m_delete_drill, self.m_born,
+             self.m_born_sketch, self.m_born_finish, self.m_born_dialog, self.m_born_check, self.m_circ,
+             self.m_circ_sketch, self.m_circ_finish, self.m_circ_dialog, self.m_show, self.m_save]
+        N = [self.n_drafting, self.n_sheet, self.n_base, self.n_top, self.n_b_size, self.n_iso, self.n_csys,
+             self.n_text, self.n_feature_params, self.n_smooth, self.n_arrows, self.n_hide_show, self.n_center_marks,
+             self.n_radial, self.n_decimals, self.n_change, self.n_update]
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K,L,M,N").upper().split(",")
+        if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
+            wanted.insert(wanted.index("N"), "M")
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
-                           ("I", I), ("J", J), ("K", K)):
+                           ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N)):
             if key in wanted:
                 yield from steps
 
@@ -4584,6 +4601,1218 @@ class Replay:
         self.show("K_flat_bar")
         self.check_drawn("The part is shown in the graphics window", "K_live_check.png")
         App.ActiveDocument.saveAs(os.path.join(OUT, "FlatBar.FCStd"))
+
+    # ---------------------------------------------------------- tutorial L
+    # The Locator (Shih ch. 3, a millimetre part): Constructive Solid Geometry with sketched and placed
+    # features. The text gives 75 x 50 x 15, the boss's circle through the edge midpoint and corner
+    # (R25), 40 high, a Ø30 bore, a Ø20 hole with 25 and 30 location dimensions, and a 15 / 20 slot
+    # from the right face cut Until Next. Where the hole and the slot sit is in the figures: here the
+    # hole is 25 mm from the right edge on the slot's centre line, the slot 15 mm from the front edge
+    # and 20 wide, so it runs into the hole. The boss is on the left short edge.
+    L_HOLE, L_R_HOLE = (50.0, 25.0), 10.0
+    L_SLOT = (15.0, 20.0)                       # offset from the front edge, width
+
+    def g2s_mm(self, sk, x, y, z):
+        """Global millimetres -> sketch coordinates."""
+        p = sk.getGlobalPlacement().inverse().multVec(App.Vector(x, y, z))
+        return p.x, p.y
+
+    def l_ref(self, stage):
+        """The same part built with the Part API, up to a stage (1 block ... 5 slot)."""
+        import Part
+        V = App.Vector
+        s = Part.makeBox(75, 50, 15)
+        if stage >= 2:
+            s = s.fuse(Part.makeCylinder(25, 40, V(0, 25, 0)))
+        if stage >= 3:
+            s = s.cut(Part.makeCylinder(15, 40, V(0, 25, 0)))
+        if stage >= 4:
+            s = s.cut(Part.makeCylinder(self.L_R_HOLE, 15, V(*self.L_HOLE, 0)))
+        if stage >= 5:
+            y0, w = self.L_SLOT
+            s = s.cut(Part.makeBox(75 - self.L_HOLE[0], w, 15, V(self.L_HOLE[0], y0, 0)))
+        return s.Volume
+
+    def l_new(self):
+        self.tutorial = "L: The Locator (millimetres)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def l_app(self):
+        self.wait_for("l: new part", lambda: bool(set(App.listDocuments()) - self._docs_before))
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("File > New, Millimeters, Blank template, name Locator", "Ctrl+N", DIFFERS if new else FAIL,
+                  "NXStyle's New is NX's Model template (a part with a Body to sketch on); there is no Blank "
+                  "template, so the part is in Modeling already; the name is given at the first save")
+        def where_am_i():
+            mdi = Gui.getMainWindow().findChild(QtWidgets.QMdiArea)
+            sub = mdi.activeSubWindow() if mdi else None
+            return {"active doc": App.ActiveDocument.Name if App.ActiveDocument else None,
+                    "window": sub.windowTitle() if sub else None,
+                    "bodies": {d: [o.Name for o in App.getDocument(d).Objects if o.isDerivedFrom("PartDesign::Body")]
+                               for d in App.listDocuments()}}
+        self.info["L after Ctrl+N"] = where_am_i()
+        b, where = self.click_ribbon("Modeling", tab="Application")
+        QtWidgets.QApplication.processEvents()
+        qtest().qWait(200)
+        after = where_am_i()
+        self.info["L after Application > Modeling"] = after
+        app = (self.shell.current_app or {}).get("id")
+        stays = after["active doc"] in new
+        self.step("File > Applications > Modeling", f"ribbon '{where} > Modeling'",
+                  SAME if b is not None and app == "modeling" and stays else FAIL,
+                  f"application {app}; the new part stays the active one: {stays} ({after['window']})")
+        if not stays:
+            raise RuntimeError("the new part is not the active document")
+        self.wait = 800
+
+    def l_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def l_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.step("Extrude, Sketch Section, the default XY plane, OK", "X key, plane row + MB2",
+                  SAME if picked else FAIL, f"picked {picked}")
+        self.wait = 1500
+
+    def l_rect(self):
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        _, tool, n, ended = self.draw_clicks("R", [(6.0, 4.0), (68.0, 43.0)])
+        self.step("Rectangle (R): two corners, MB2", "R key + 2 MB1 clicks + MB2",
+                  SAME if tool and n >= 4 and ended else FAIL, f"tool {tool}; {n} curves; ended {ended}")
+        L = [((0, 0), (75, 0)), ((75, 0), (75, 50)), ((75, 50), (0, 50)), ((0, 50), (0, 0))]
+        self.rebuild(sk, lines=L, constraints=[
+            ("Horizontal", 0), ("Vertical", 1), ("Horizontal", 2), ("Vertical", 3), ("Coincident", 0, 1, -1, 1),
+            ("DistanceX", 0, 1, 0, 2, 75.0), ("DistanceY", 1, 1, 1, 2, 50.0)])
+        self.step("Dimensions 75 and 50 ('scale the sketch?': Yes)", "values applied", DIFFERS,
+                  f"DoF {sk.DoF}; FreeCAD has no prompt to scale the whole sketch to the first dimension; the "
+                  "corner is put on the origin here (the book leaves the rectangle where it was drawn)")
+        self.wait = 300
+
+    def l_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def l_extrude_dialog(self):
+        self.wait_dialog("l_extrude_dialog")
+        field = self.set_quantity("length", 15)
+        self.mb2_click()
+        ok = self.check_volume("Finish Sketch, distance 15, OK", f"Ctrl+Q, '{field}' = 15 mm, MB2 = OK", self.l_ref(1))
+        self._l_base = self.body().Tip
+        if not ok:
+            pad, prof = self._l_base, getattr(self._l_base, "Profile", None)
+            sk = prof[0] if prof else None
+            self.info["L base pad"] = {p: str(getattr(pad, p, None)) for p in ("Type", "SideType", "Length", "Length2",
+                                                                               "Midplane", "Reversed", "TaperAngle")}
+            self.info["L base sketch"] = {"name": getattr(sk, "Name", None), "geometry": len(getattr(sk, "Geometry", [])),
+                                          "edges": len(sk.Shape.Edges) if sk else None,
+                                          "bbox": str(sk.Shape.BoundBox) if sk else None,
+                                          "doc": App.ActiveDocument.Name, "bodies": [o.Name for o in App.ActiveDocument.Objects
+                                                                                    if o.isDerivedFrom("PartDesign::Body")]}
+            raise RuntimeError("base feature wrong")
+        self.wait = 600
+
+    def ext_count(self, sk):
+        return len(sk.ExternalGeo) - 2          # the first two are the sketch axes
+
+    def project_edges(self, sk, picks, edges, label):
+        """Project Curve: start the tool, MB1 on each edge (global mm points on them), MB2.
+        Falls back to the API for an edge the click did not pick, and says so."""
+        n0 = self.ext_count(sk)
+        b, _ = self.click_ribbon("Project Curve", tab="Sketch")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        for p in picks:
+            self.mb1_click(self.screen_point(sk, *self.g2s_mm(sk, *p)))
+        far = self.g2s_mm(sk, *picks[0])
+        self.mb2_click(self.screen_point(sk, far[0] + 40, far[1] + 40))
+        made = self.ext_count(sk) - n0
+        if made != len(edges):
+            for _ in range(self.ext_count(sk) - n0):
+                sk.delExternal(n0)
+            for obj, sub in edges:
+                sk.addExternal(obj.Name, sub)
+            App.ActiveDocument.recompute()
+        ok = made == len(edges)
+        self.step(label, "ribbon 'Project Curve' + MB1 on each edge + MB2", SAME if tool and ok else DIFFERS,
+                  f"{made} of {len(edges)} edges picked in the graphics window" + ("" if ok else
+                                                                                   "; the rest added through the API"))
+        return n0
+
+    def to_reference(self, sk, first, count):
+        """FreeCAD 1.1 projects picked edges as defining geometry: turn them into reference (construction)."""
+        n0 = len(sk.Shape.Edges)
+        Gui.Selection.clearSelection()
+        for k in range(count):
+            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"ExternalEdge{first + k + 1}")
+        b, _ = self.click_ribbon("Convert To/From Reference", tab="Sketch")
+        App.ActiveDocument.recompute()
+        Gui.Selection.clearSelection()
+        return n0, len(sk.Shape.Edges)
+
+    def l_boss(self):
+        base = self._l_base
+        face = self.face_of(base, lambda f: abs(f.normalAt(0, 0).z + 1) < 1e-6 and abs(f.CenterOfMass.z) < 1e-6)
+        self.select_sub(base, face)
+        b, where = self.click_ribbon("Extrude")
+        self.step("Extrude, the bottom face as the sketch plane", f"select {face} + ribbon '{where} > Extrude'",
+                  SAME if b is not None and self.edited_sketch() is not None else FAIL, "")
+        self.wait = 1500
+
+    def l_boss_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on the bottom face")
+        base = self._l_base
+        edge = next((f"Edge{i}" for i, e in enumerate(base.Shape.Edges, start=1)
+                     if all(abs(v.Point.x) < 1e-6 and abs(v.Point.z) < 1e-6 for v in e.Vertexes)
+                     and abs(e.Length - 50) < 1e-6), None)
+        self.frame_sketch(sk, *self.g2s_mm(sk, 10, 25, 0), 140)
+        first = self.project_edges(sk, [(0, 18, 0)], [(base, edge)], "More > Project Curve: the bottom left edge, OK")
+        c, r = self.g2s_mm(sk, 0, 25, 0), self.g2s_mm(sk, 0, 0, 0)
+        _, tool, n, ended = self.draw_clicks("O", [c, r])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), 25.0)])
+        ext = -3 - first
+        sk.addConstraint(Sketcher.Constraint("Symmetric", ext, 1, ext, 2, 0, 3))      # centre = the edge's midpoint
+        sk.addConstraint(Sketcher.Constraint("PointOnObject", ext, 1, 0))             # through the corner
+        App.ActiveDocument.recompute()
+        self.step("Circle: centre on the edge's midpoint, through the left corner, MB2", "O key + 2 MB1 clicks + "
+                  "MB2; midpoint and corner as constraints", SAME if tool and n >= 1 and ended else FAIL,
+                  f"DoF {sk.DoF}; the book: no dimension needed, the circle is defined by the midpoint and the "
+                  "corner. NX snaps while drawing, FreeCAD records the same as constraints")
+        before, after = self.to_reference(sk, first, 1)
+        self.step("(FreeCAD) the projected edge to reference", "ribbon 'Convert To/From Reference'",
+                  DIFFERS if after == 1 else FAIL, f"profile edges {before} -> {after}. FreeCAD 1.1 projects "
+                  "a picked edge as defining geometry, which would leave an open wire; NX makes regions")
+        self.wait = 300
+
+    def l_boss_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def l_boss_dialog(self):
+        self.wait_dialog("l_boss_dialog")
+        field = self.set_quantity("length", 40)
+        rev = self.checkbox("reverse")
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        bb = self.body().Shape.BoundBox
+        ok = self.check_volume("End 40, Boolean Unite, Flip (upward), OK", f"'{field}' = 40 mm, '{rev}' on, MB2 = OK",
+                               self.l_ref(2), f"; height {bb.ZMin:.1f} .. {bb.ZMax:.1f} mm. Features in a Body "
+                               "unite by themselves (no Boolean option)")
+        if not ok:
+            raise RuntimeError("boss wrong")
+        self.wait = 600
+
+    def l_bore(self):
+        tip = self.body().Tip
+        face = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-6 and abs(f.CenterOfMass.z - 40) < 1e-6)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude, the top face of the cylinder", f"select {face} + ribbon '{where} > Extrude (Subtract)'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  "the subtracting extrude is its own button")
+        self._l_bore_face = face
+        self.wait = 1500
+
+    def l_bore_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on the cylinder top")
+        centre = App.Vector(0, 25, 40)
+        origin = sk.getGlobalPlacement().multVec(App.Vector(0, 0, 0))
+        at_origin = (origin - centre).Length < 1e-6
+        c, r = self.g2s_mm(sk, 0, 25, 40), self.g2s_mm(sk, 9, 25, 40)
+        _, tool, n, ended = self.draw_clicks("O", [c, r])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), 15.0)])
+        if at_origin:
+            sk.addConstraint(Sketcher.Constraint("Coincident", 0, 3, -1, 1))
+            how = "centre on the sketch origin (FreeCAD puts it at the face's centre too)"
+        else:
+            tip = self.body().Tip
+            arc = next(f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, start=1)
+                       if hasattr(e.Curve, "Radius") and abs(e.Curve.Radius - 25) < 1e-6
+                       and abs(e.Curve.Center.z - 40) < 1e-6)
+            sk.addExternal(tip.Name, arc)
+            sk.addConstraint(Sketcher.Constraint("Coincident", 0, 3, -3, 3))
+            how = f"centre tied to the cylinder's edge ({arc}): the sketch origin is not at the centre"
+        sk.addConstraint(Sketcher.Constraint("Diameter", 0, 30.0))
+        App.ActiveDocument.recompute()
+        self.step("Circle on the sketch origin, MB2; diameter 30", "O key + 2 MB1 clicks + MB2; diameter applied",
+                  SAME if tool and n >= 1 and ended and at_origin else (DIFFERS if tool and n >= 1 else FAIL),
+                  f"{how}; DoF {sk.DoF}")
+        self.wait = 300
+
+    def l_bore_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def l_bore_dialog(self):
+        self.wait_dialog("l_bore_dialog")
+        mode = self.choose("through all", "mode")
+        self.mb2_click()
+        self.check_volume("Boolean Subtract, Through All, Flip (downward), OK", f"'{mode}', MB2 = OK", self.l_ref(3),
+                          "; FreeCAD's subtracting extrude goes into the part without a flip")
+        self.wait = 600
+
+    def l_hole(self):
+        tip = self.body().Tip
+        face = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-6 and abs(f.CenterOfMass.z - 15) < 1e-6
+                            and f.CenterOfMass.x > 25)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Hole")
+        self.step("Hole (a placed feature): Simple, a point on the base's top face",
+                  f"select {face} + ribbon '{where} > Hole'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
+                  "FreeCAD's Hole drills at circle centres in a sketch on the face: not placed without a sketch")
+        self.wait = 1500
+
+    def l_hole_sketch(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no hole sketch")
+        x, y = self.L_HOLE
+        c, r = self.g2s_mm(sk, x, y, 15), self.g2s_mm(sk, x + 6, y, 15)
+        _, tool, n, ended = self.draw_clicks("O", [c, r])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), self.L_R_HOLE)])
+        self.step("Location dimensions 25 and 30", "O key + 2 MB1 clicks + MB2; centre placed by values",
+                  DIFFERS if tool and n >= 1 else FAIL, f"centre at ({x:g}, {y:g}): 25 from the right edge, on "
+                  "the slot's centre line. NX adds the two location dimensions by itself")
+        self.wait = 300
+
+    def l_hole_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def l_hole_dialog(self):
+        self.wait_dialog("l_hole_dialog")
+        dia = self.set_quantity("diameter", 2 * self.L_R_HOLE)
+        depth = self.choose("through", "depthtype")
+        self.mb2_click()
+        self.check_volume("Diameter 20, Depth Limit = Through Body, OK", f"'{dia}' = 20 mm, '{depth}', MB2 = OK",
+                          self.l_ref(4))
+        self._l_hole = self.body().Tip
+        self.wait = 600
+
+    def l_slot(self):
+        tip = self.body().Tip
+        face = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).x - 1) < 1e-6 and abs(f.CenterOfMass.x - 75) < 1e-6)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude, the right vertical face of the base", f"select {face} + ribbon '{where} > "
+                  "Extrude (Subtract)'", DIFFERS if b is not None and self.edited_sketch() is not None else FAIL, "")
+        self.wait = 1500
+
+    def l_slot_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no slot sketch")
+        tip = self.body().Tip
+        edges = [(tip, f"Edge{i}") for i, e in enumerate(tip.Shape.Edges, start=1)
+                 if all(abs(v.Point.x - 75) < 1e-6 for v in e.Vertexes) and abs(e.Length - 50) < 1e-6]
+        edges.sort(key=lambda oe: -oe[0].Shape.getElement(oe[1]).Vertexes[0].Point.z)      # top, then bottom
+        self.frame_sketch(sk, *self.g2s_mm(sk, 75, 25, 7.5), 90)
+        first = self.project_edges(sk, [(75, 42, 15), (75, 42, 0)], edges,
+                                   "More > Project Curve: the top and bottom edges, OK")
+        y0, w = self.L_SLOT
+        corners = [self.g2s_mm(sk, 75, y, z) for (y, z) in ((y0, 0), (y0 + w, 0), (y0 + w, 15), (y0, 15))]
+        _, tool, n, ended = self.draw_clicks("R", [corners[0], corners[2]])
+        P = [App.Vector(u, v, 0) for (u, v) in corners]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % 4]) for i in range(4)])
+        # top and bottom lines on the projected edges (the book aligns the rectangle to them)
+        top_bottom = []
+        for k in range(2):
+            g = sk.ExternalGeo[2 + first + k]
+            top_bottom.append((-3 - first - k, g))
+        for line in (0, 2):
+            y_line = sk.Geometry[line].StartPoint.y
+            ext = min(top_bottom, key=lambda t: abs(t[1].StartPoint.y - y_line))[0]
+            sk.addConstraint(Sketcher.Constraint("PointOnObject", line, 1, ext))
+            sk.addConstraint(Sketcher.Constraint("PointOnObject", line, 2, ext))
+        App.ActiveDocument.recompute()
+        self.step("Rectangle aligned to the top and bottom edges; dimensions 15 and 20",
+                  "R key + 2 MB1 clicks + MB2; on the projected edges; values applied",
+                  SAME if tool and n >= 4 and ended else FAIL,
+                  f"15 from the front edge, 20 wide, full height; DoF {sk.DoF}")
+        before, after = self.to_reference(sk, first, 2)
+        self.step("(FreeCAD) the projected edges to reference", "ribbon 'Convert To/From Reference'",
+                  DIFFERS if after == 4 else FAIL, f"profile edges {before} -> {after}")
+        self.wait = 300
+
+    def l_slot_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def l_slot_dialog(self):
+        self.wait_dialog("l_slot_dialog")
+        mode = self.choose("to first", "mode")
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        want = self.l_ref(4) - self.l_ref(5)
+        got = self._l_hole.Shape.Volume - self.solid_volume()
+        self._l_slot = self.body().Tip
+        if abs(got - want) < 1e-3 * want:
+            self.check_volume("Subtract, End = Until Next (into the hole), OK", f"'{mode}', MB2 = OK", self.l_ref(5))
+            self._l_slot_ok = True
+        else:
+            self.step("Subtract, End = Until Next (into the hole), OK", f"'{mode}' (FreeCAD's Until Next), MB2 = OK",
+                      LIMIT, f"removed {got:.1f} mm^3 of the {want:.1f} the slot holds: FreeCAD 1.1.4's 'To first' "
+                      "stops 1 mm into the part instead of at the hole's wall (measured headless too, the same with "
+                      "'Up to face' on the hole's face); NX stops at the next face. Workaround next")
+            self._l_slot_ok = False
+        self.wait = 400
+
+    def l_slot_fix(self):
+        if self._l_slot_ok:
+            self.wait = 100
+            return
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{self._l_slot.Name}.")
+        b, where = self.click_ribbon("Edit Parameters")
+        self._l_where = where
+        self.wait = 1500
+
+    def l_slot_fix_dialog(self):
+        if self._l_slot_ok:
+            self.wait = 100
+            return
+        self.wait_dialog("l_slot_fix_dialog")
+        mode = self.choose("dimension", "mode")
+        field = self.set_quantity("length", 75 - self.L_HOLE[0])
+        self.mb2_click()
+        self.check_volume("Workaround: the slot's depth = 25 (to the hole's axis)", f"slot selected + ribbon "
+                          f"'{self._l_where} > Edit Parameters', '{mode}', '{field}' = 25 mm, MB2 = OK",
+                          self.l_ref(5), "; the same part as NX's Until Next here, because the slot is as wide as "
+                          "the hole and on its centre line")
+        self.wait = 600
+
+    def l_show(self):
+        self.fit()
+
+    def l_save(self):
+        self.show("L_locator")
+        self.check_drawn("The finished Locator is shown in the graphics window", "L_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "Locator.FCStd"))
+
+    # ---------------------------------------------------------- tutorial M
+    # The U-Bracket (Shih ch. 7, inches typed in mm): parent/child relations. A base plate with two
+    # holes, a half-round main body across it, a 2.0 x 1.0 rectangular cut under it, a Ø0.25 drill
+    # sketched on the cut's face; then Suppress, the drill's dependence on the cut, the BORN way
+    # (the drill sketched on the datum XY plane instead) and a circular cut R1.25 replacing the
+    # rectangular one. The text gives 0.5, Ø0.75, ±1.25, 2.0 x 1.0, Ø0.25 and R1.25; the drawing
+    # chapter gives 5 and 2.5. The base's end radius (R1.00) and the body's radius (R1.75) are
+    # NotebookLM's reading of the figures (uncited).
+    M_C, M_R, M_HOLE, M_T = 2.5, 1.0, 0.75, 0.5          # centres at ±2.5, end radius, holes, thickness
+    M_BODY_R, M_BODY_W = 1.75, 1.25                      # body radius, half width (extruded -1.25 .. 1.25)
+    M_RECT, M_DRILL, M_CIRC = (2.0, 1.0), 0.25, 1.25
+
+    def m_ref(self, body=True, rect=False, drill_on_cut=False, drill_born=False, circ=False, hole=None):
+        """The same bracket built with the Part API (inches in, mm out)."""
+        import Part
+        V = App.Vector
+        s, r, c, t = IN, self.M_R, self.M_C, self.M_T
+        hole = self.M_HOLE if hole is None else hole
+        base = Part.makeBox(2 * c * s, 2 * r * s, t * s, V(-c * s, -r * s, 0))
+        for x in (-c, c):
+            base = base.fuse(Part.makeCylinder(r * s, t * s, V(x * s, 0, 0)))
+        for x in (-c, c):
+            base = base.cut(Part.makeCylinder(hole / 2 * s, t * s, V(x * s, 0, 0)))
+        shape = base
+        if body:
+            half = Part.makeCylinder(self.M_BODY_R * s, 2 * self.M_BODY_W * s, V(0, -self.M_BODY_W * s, 0), V(0, 1, 0))
+            half = half.common(Part.makeBox(4 * s, 4 * s, 4 * s, V(-2 * s, -2 * s, 0)))
+            shape = shape.fuse(half)
+        if rect:
+            w, h = self.M_RECT
+            shape = shape.cut(Part.makeBox(w * s, 10 * s, h * s, V(-w / 2 * s, -5 * s, 0)))
+        if drill_on_cut:
+            shape = shape.cut(Part.makeCylinder(self.M_DRILL / 2 * s, 5 * s, V(0, 0, self.M_RECT[1] * s)))
+        if drill_born:
+            shape = shape.cut(Part.makeCylinder(self.M_DRILL / 2 * s, 5 * s, V(0, 0, 0)))
+        if circ:
+            shape = shape.cut(Part.makeCylinder(self.M_CIRC * s, 10 * s, V(0, -5 * s, 0), V(0, 1, 0)))
+        return shape.Volume
+
+    def add_constraints(self, sk, cons):
+        """Add constraints one by one; one the solver calls redundant (implied already) is left out."""
+        skipped = []
+        for k in cons:
+            i = sk.addConstraint(k)
+            if sk.solve() != 0:
+                sk.delConstraint(i)
+                skipped.append(k.Type)
+        return skipped
+
+    def m_feature_select(self, feat):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{feat.Name}.")
+        QtWidgets.QApplication.processEvents()
+
+    def m_new(self):
+        self.tutorial = "M: The U-Bracket, parent/child relations (book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def m_extrude(self):
+        self.wait_for("m: new part's Body", lambda: self.body() is not None)
+        self.step("File > New, Model template, name U-Bracket", "Ctrl+N",
+                  SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL,
+                  "named at the first save")
+        self.units_step()
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def m_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.step("Extrude, the XY plane of the WCS", "X key, plane row + MB2", SAME if picked else FAIL,
+                  f"picked {picked}")
+        self.wait = 1500
+
+    def m_profile(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch in edit")
+        s, c, r = IN, self.M_C, self.M_R
+        pts = [(-c * s, -r * s), (c * s, -r * s), (c * s, r * s), (-c * s, r * s)]
+        _, tool, n, ended = self.draw_clicks("Z", pts + [pts[0]])
+        self.step("Profile: two horizontal lines and two tangent arcs, MB2 twice",
+                  "Z key + MB1 clicks + MB2; the arcs and sizes applied", DIFFERS if tool and n >= 3 else FAIL,
+                  f"{n} curves clicked; NX switches Profile to an arc by dragging MB1, FreeCAD's polyline by "
+                  "pressing M while drawing")
+        V = App.Vector
+        geos = [Part.LineSegment(V(-c * s, -r * s, 0), V(c * s, -r * s, 0)),
+                Part.LineSegment(V(c * s, r * s, 0), V(-c * s, r * s, 0)),
+                Part.ArcOfCircle(Part.Circle(V(c * s, 0, 0), V(0, 0, 1), r * s), -math.pi / 2, math.pi / 2),
+                Part.ArcOfCircle(Part.Circle(V(-c * s, 0, 0), V(0, 0, 1), r * s), math.pi / 2, 3 * math.pi / 2)]
+        self.add_geometry(sk, geos)
+        # circles on the arcs' centres (the book: O, two clicks each); the clicked ones are replaced
+        cn = []
+        for x in (c, -c):
+            _, ctool, k, cended = self.draw_clicks("O", [(x * s, 0), ((x + 0.3) * s, 0)])
+            cn.append(ctool and cended)
+        for g in range(len(sk.Geometry) - 1, 3, -1):
+            sk.delGeometry(g)
+        for x in (c, -c):
+            sk.addGeometry(Part.Circle(V(x * s, 0, 0), V(0, 0, 1), self.M_HOLE / 2 * s), False)
+        C = Sketcher.Constraint
+        skipped = self.add_constraints(sk, [
+            C("Horizontal", 0), C("Horizontal", 1), C("Tangent", 0, 2, 2, 1), C("Tangent", 2, 2, 1, 1),
+            C("Tangent", 1, 2, 3, 1), C("Tangent", 3, 2, 0, 1), C("Coincident", 4, 3, 2, 3),
+            C("Coincident", 5, 3, 3, 3), C("Equal", 2, 3), C("Equal", 4, 5), C("Radius", 2, r * s),
+            C("Diameter", 4, self.M_HOLE * s), C("DistanceX", 3, 3, 2, 3, 2 * c * s),
+            C("DistanceX", -1, 1, 2, 3, c * s), C("PointOnObject", 2, 3, -1)])
+        App.ActiveDocument.recompute()
+        self.info["M base sketch: implied constraints left out"] = skipped
+        dof, fully, msg = self.sk_state(sk)
+        self.step("Two circles on the arcs' centres; dimensions (Equal Radius if needed)",
+                  "O key + 2 MB1 clicks + MB2, twice; centres, Equal and the sizes applied",
+                  SAME if all(cn) and fully else (DIFFERS if all(cn) else FAIL),
+                  f"solver '{msg}' ({dof} DoF); R1.00 ends 5.00 apart, Ø0.75 holes, centred on the origin")
+        self.wait = 300
+
+    def m_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def m_extrude_dialog(self):
+        self.wait_dialog("m_extrude_dialog")
+        field = self.set_quantity("length", self.M_T * IN)
+        self.mb2_click()
+        ok = self.check_volume("Extrude 0.5 in, OK", f"Ctrl+Q, '{field}' = 12.7 mm, MB2 = OK", self.m_ref(body=False))
+        self._m_base = self.body().Tip
+        if not ok:
+            raise RuntimeError("base wrong")
+        self.wait = 600
+
+    def m_body(self):
+        Gui.Selection.clearSelection()
+        self.key("X")
+        self.wait = 1500
+
+    def m_body_plane(self):
+        picked = self.pick_in_feature_list("XZ")
+        self.mb2_click()
+        self.step("Extrude, the XZ plane of the datum coordinate system", "X key, plane row + MB2",
+                  SAME if picked else FAIL, f"picked {picked}")
+        self.wait = 1500
+
+    def m_body_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on XZ")
+        R = self.M_BODY_R
+        c, a, b = self.g2s(sk, 0, 0, 0), self.g2s(sk, R, 0, 0), self.g2s(sk, -R, 0, 0)
+        top = self.g2s(sk, 0, 0, R)
+        _, tool, n, ended = self.draw_clicks("A", [c, a, top])
+        _, ltool, ln, lended = self.draw_clicks("L", [b, a])
+        V = App.Vector
+        # the half above the X axis, whichever way the sketch's axes run: 90° either side of 'up'
+        up = math.atan2(top[1] - c[1], top[0] - c[0])
+        arc = Part.ArcOfCircle(Part.Circle(V(*c, 0), V(0, 0, 1), R * IN), up - math.pi / 2, up + math.pi / 2)
+        self.add_geometry(sk, [arc, Part.LineSegment(arc.EndPoint, arc.StartPoint)])
+        C = Sketcher.Constraint
+        for k in (C("Coincident", 0, 3, -1, 1), C("Coincident", 1, 1, 0, 2), C("Coincident", 1, 2, 0, 1),
+                  C("PointOnObject", 0, 1, -1), C("PointOnObject", 0, 2, -1), C("Radius", 0, R * IN)):
+            sk.addConstraint(k)
+        App.ActiveDocument.recompute()
+        dof, fully, msg = self.sk_state(sk)
+        self.step("Arc: centre on the sketch origin, end points on the edge; Line closing it; one radius "
+                  "dimension: fully constrained", "A key + 3 MB1 clicks + MB2, L key + 2 clicks + MB2; R1.75",
+                  SAME if tool and ltool and fully else FAIL,
+                  f"solver '{msg}' ({dof} DoF); the book asks why one dimension is enough: the centre and the "
+                  "end points sit on the datum axes")
+        self.wait = 300
+
+    def m_body_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def m_body_dialog(self):
+        self.wait_dialog("m_body_dialog")
+        mode = self.choose("two sided", "sidesmode")
+        f1 = self.set_quantity("lengthEdit", self.M_BODY_W * IN)
+        f2 = self.set_quantity("lengthEdit2", self.M_BODY_W * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        bb = self.body().Shape.BoundBox
+        ok = self.check_volume("Limits: Start -1.25, End 1.25, Boolean Unite, OK",
+                               f"'{mode}', '{f1}' = '{f2}' = 31.75 mm, MB2 = OK", self.m_ref(),
+                               f"; across {bb.YMin:.2f} .. {bb.YMax:.2f} mm. NX's two limits are FreeCAD's 'Two "
+                               "sided' (a length each way); features in a Body unite by themselves")
+        self._m_main = self.body().Tip
+        if not ok:
+            raise RuntimeError("main body wrong")
+        self.wait = 600
+
+    def m_front_face(self, tip):
+        return self.face_of(tip, lambda f: abs(f.normalAt(0, 0).y + 1) < 1e-6
+                            and abs(f.CenterOfMass.y + self.M_BODY_W * IN) < 1e-6)
+
+    def m_rect(self):
+        tip = self.body().Tip
+        face = self.m_front_face(tip)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude, the front vertical face", f"select {face} + ribbon '{where} > Extrude (Subtract)'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL, "")
+        self.wait = 1500
+
+    def m_rect_sketch(self):
+        import Part
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on the front face")
+        w, h = self.M_RECT
+        y = -self.M_BODY_W
+        corners = [self.g2s(sk, x, y, z) for (x, z) in ((-w / 2, 0), (w / 2, 0), (w / 2, h), (-w / 2, h))]
+        _, tool, n, ended = self.draw_clicks("R", [corners[0], corners[2]])
+        P = [App.Vector(u, v, 0) for (u, v) in corners]
+        self.add_geometry(sk, [Part.LineSegment(P[i], P[(i + 1) % 4]) for i in range(4)])
+        self.step("Rectangle, dimensions 2.0 x 1.0", "R key + 2 MB1 clicks + MB2; sizes applied",
+                  SAME if tool and n >= 4 and ended else FAIL, "centred on the body, on the base plane")
+        self.wait = 300
+
+    def m_rect_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def m_rect_dialog(self):
+        self.wait_dialog("m_rect_dialog")
+        mode = self.choose("through all", "mode")
+        self.mb2_click()
+        ok = self.check_volume("Subtract, Through All both ways, OK", f"'{mode}', MB2 = OK", self.m_ref(rect=True),
+                               "; from the front face one way is all of it")
+        self._m_rect = self.body().Tip
+        if not ok:
+            raise RuntimeError("rectangular cut wrong")
+        self.wait = 600
+
+    def m_drill(self):
+        tip = self.body().Tip
+        face = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z + 1) < 1e-6
+                            and abs(f.CenterOfMass.z - self.M_RECT[1] * IN) < 1e-6)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude, the underside face of the cut", f"select {face} + ribbon '{where} > Extrude (Subtract)'",
+                  DIFFERS if b is not None and self.edited_sketch() is not None else FAIL, "")
+        self.wait = 1500
+
+    def m_drill_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no drill sketch")
+        origin = next(o for o in self.body().Origin.OriginFeatures if o.TypeId == "App::Point")
+        n0 = self.ext_count(sk)
+        projected = None
+        for sub in ("", "Vertex1"):
+            try:
+                sk.addExternal(origin.Name, sub)
+                App.ActiveDocument.recompute()
+                if self.ext_count(sk) > n0:
+                    projected = sub
+                    break
+            except Exception as e:
+                self.info.setdefault("M origin projection", []).append(f"{sub!r}: {e}")
+        c = self.g2s(sk, 0, 0, self.M_RECT[1])
+        _, tool, n, ended = self.draw_clicks("O", [c, (c[0] + 0.3 * IN, c[1])])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), self.M_DRILL / 2 * IN)])
+        if projected is not None:
+            sk.addConstraint(Sketcher.Constraint("Coincident", 0, 3, -3 - n0, 1))
+        sk.addConstraint(Sketcher.Constraint("Diameter", 0, self.M_DRILL * IN))
+        App.ActiveDocument.recompute()
+        self.step("More > Project Curve: the datum origin; Circle Ø0.25 on it", "the origin point projected (API: "
+                  "it is hidden in the view); O key + 2 clicks + MB2; Ø applied",
+                  DIFFERS if tool and n >= 1 and projected is not None else (DIFFERS if tool else FAIL),
+                  f"origin projected: {projected is not None}; NX picks the datum origin in the graphics window, "
+                  "FreeCAD's origin point is hidden unless the Body's origin is shown")
+        self.wait = 300
+
+    def m_drill_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def m_drill_dialog(self):
+        self.wait_dialog("m_drill_dialog")
+        mode = self.choose("through all", "mode")
+        self.mb2_click()
+        ok = self.check_volume("Subtract, Through All, OK", f"'{mode}', MB2 = OK",
+                               self.m_ref(rect=True, drill_on_cut=True))
+        self._m_drill = self.body().Tip
+        if not ok:
+            raise RuntimeError("centre drill wrong")
+        self.wait = 600
+
+    def m_rename(self):
+        errs = [self.rename(f, n) for f, n in ((self._m_base, "Base"), (self._m_main, "Main-Body"),
+                                               (self._m_rect, "Rect-Cut"), (self._m_drill, "CenterDrill"))]
+        bad = [e for e in errs if e]
+        self.step("Rename the features: Base, Main-Body, Rect-Cut, CenterDrill", "select + F2, type, Enter (4 times)",
+                  DIFFERS if not bad else FAIL, "; ".join(bad) or "NX: click the name twice; FreeCAD: F2")
+
+    def parents(self, feat):
+        """What a feature was built from: its sketch's attachment and the feature it was cut from."""
+        prof = feat.Profile[0] if getattr(feat, "Profile", None) else None
+        att = [o.Label for o, _ in getattr(prof, "AttachmentSupport", []) or []] if prof is not None else []
+        base = getattr(feat, "BaseFeature", None)
+        return att, base.Label if base is not None else None
+
+    def m_dependencies(self):
+        att, base = self.parents(self._m_drill)
+        self.step("Part Navigator > Dependencies: the parents of CenterDrill", "the feature's links (sketch "
+                  "attachment, base feature)", DIFFERS if "Rect-Cut" in att else FAIL,
+                  f"sketched on {att}, cut from {base}: Rect-Cut is its parent, as in the book. FreeCAD shows these "
+                  "in the feature's properties (Attachment, Base Feature) rather than a Dependencies panel")
+
+    def m_suppress_rect(self):
+        self.m_feature_select(self._m_rect)
+        b, where = self.click_ribbon("Suppress")
+        self.info["M suppress button"] = {"command": getattr(b, "command", None), "selection": [
+            (s.ObjectName, s.SubElementNames) for s in Gui.Selection.getSelectionEx()],
+            "commands": [c for c in Gui.listCommands() if "uppress" in c.lower() or "freeze" in c.lower()]}
+        App.ActiveDocument.recompute()
+        states = self.doc_states()
+        sketch = self._m_drill.Profile[0]
+        broken = sketch.Label in states and "Invalid" in states[sketch.Label][0]
+        self.step("Suppress Rect-Cut: NX warns that CenterDrill cannot be placed", f"Rect-Cut selected + ribbon "
+                  f"'{where} > Suppress'", DIFFERS if b is not None and self._m_rect.Suppressed and broken else FAIL,
+                  f"Rect-Cut suppressed {self._m_rect.Suppressed}; FreeCAD cannot place the child either: its sketch "
+                  f"says '{states.get(sketch.Label, ('', ''))[1]}'. No message box: the error marks the sketch in the "
+                  f"Part Navigator, and the part keeps its last shape (volume {self.solid_volume():.1f} mm^3). "
+                  "NXStyle's Suppress is new: FreeCAD 1.1 has the property but no command (its Freeze is different)")
+        self.wait = 600
+
+    def doc_states(self):
+        """Objects not up to date (FreeCAD's 'Touched', 'Invalid', 'Error') with their messages."""
+        out = {}
+        for o in App.ActiveDocument.Objects:
+            st = [s for s in o.State if s in ("Touched", "Invalid", "Error")]
+            if st:
+                out[o.Label] = (st, o.getStatusString())
+        return out
+
+    def m_suppress_drill(self):
+        self.info["M states after suppressing Rect-Cut"] = self.doc_states()
+        self.m_feature_select(self._m_drill)
+        b, where = self.click_ribbon("Suppress")
+        App.ActiveDocument.recompute()
+        states = self.doc_states()
+        self.info["M states after suppressing CenterDrill"] = states
+        ok = self._m_drill.Suppressed and abs(self.solid_volume() - self.m_ref()) < 1e-3 * self.m_ref()
+        sketch = self._m_drill.Profile[0]
+        stuck = self._m_drill.Suppressed and sketch.Label in states
+        self.step("Suppress CenterDrill as well: the part shows the plate and the body only",
+                  f"CenterDrill selected + ribbon '{where} > Suppress'", SAME if ok else (LIMIT if stuck else FAIL),
+                  f"volume {self.solid_volume():.1f} mm^3 (the plate and the body: {self.m_ref():.1f})" +
+                  ("" if ok else f". FreeCAD 1.1.4 still recomputes the suppressed drill's sketch, which cannot find "
+                   f"its face, and stops there: {', '.join(states)} stay out of date. NX leaves a suppressed child "
+                   "alone. Unsuppressing the parent (the book's next steps) brings the model back"))
+        self.wait = 600
+
+    def m_unsuppress_drill(self):
+        self.m_feature_select(self._m_drill)
+        b, where = self.click_ribbon("Suppress")
+        App.ActiveDocument.recompute()
+        rect_back = not self._m_rect.Suppressed
+        self.step("Unsuppress CenterDrill: NX brings its parent Rect-Cut back too", f"CenterDrill selected + "
+                  f"ribbon '{where} > Suppress' (a toggle)", DIFFERS if not self._m_drill.Suppressed else FAIL,
+                  f"Rect-Cut back by itself: {rect_back}. FreeCAD unsuppresses only the selected feature")
+        if not rect_back:
+            self.m_feature_select(self._m_rect)
+            self.click_ribbon("Suppress")
+            App.ActiveDocument.recompute()
+        self.check_volume("Unsuppress Rect-Cut too: both back", "Rect-Cut selected + ribbon 'Suppress'",
+                          self.m_ref(rect=True, drill_on_cut=True))
+        self.wait = 600
+
+    def m_delete_drill(self):
+        self.m_feature_select(self._m_drill)
+        name, sketch = self._m_drill.Name, self._m_drill.Profile[0]
+        self.modals.accept = True
+        self.key("Delete")
+        QtWidgets.QApplication.processEvents()
+        self.modals.accept = False
+        App.ActiveDocument.recompute()
+        gone = App.ActiveDocument.getObject(name) is None
+        left = App.ActiveDocument.getObject(sketch.Name) is not None if gone else None
+        if left:
+            App.ActiveDocument.removeObject(sketch.Name)       # NX deletes the feature's sketch with it
+            App.ActiveDocument.recompute()
+        self.check_volume("Delete CenterDrill (MB3 > Delete)", "CenterDrill selected + Delete key"
+                          + ("; its sketch deleted too" if left else ""), self.m_ref(rect=True),
+                          f"; feature gone {gone}; FreeCAD keeps the feature's sketch ({left}), NX removes it")
+        self.wait = 600
+
+    def m_born(self):
+        xy = next(o for o in self.body().Origin.OriginFeatures if o.Role == "XY_Plane")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{self.body().Origin.Name}.{xy.Name}.")
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("A different approach (BORN): Extrude on the datum XY plane", f"XY plane selected + ribbon "
+                  f"'{where} > Extrude (Subtract)'", DIFFERS if b is not None and self.edited_sketch() is not None
+                  else FAIL, "")
+        self.wait = 1500
+
+    def m_born_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no sketch on XY")
+        _, tool, n, ended = self.draw_clicks("O", [(0, 0), (0.3 * IN, 0)])
+        self.add_geometry(sk, [Part.Circle(App.Vector(0, 0, 0), App.Vector(0, 0, 1), self.M_DRILL / 2 * IN)])
+        sk.addConstraint(Sketcher.Constraint("Coincident", 0, 3, -1, 1))
+        sk.addConstraint(Sketcher.Constraint("Diameter", 0, self.M_DRILL * IN))
+        App.ActiveDocument.recompute()
+        self.step("Circle Ø0.25 on the datum origin", "O key + 2 MB1 clicks + MB2; on the origin, Ø applied",
+                  SAME if tool and n >= 1 and ended else FAIL, f"DoF {sk.DoF}")
+        self.wait = 300
+
+    def m_born_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def m_born_dialog(self):
+        self.wait_dialog("m_born_dialog")
+        mode = self.choose("through all", "mode")
+        rev = self.checkbox("reverse")
+        self.mb2_click()
+        ok = self.check_volume("Subtract, Through All, OK", f"'{mode}', '{rev}' on (up from the plane), MB2 = OK",
+                               self.m_ref(rect=True, drill_born=True),
+                               "; FreeCAD cuts away from the plane's normal by default, so it is reversed to go up")
+        self._m_born = self.body().Tip
+        if ok:
+            self.rename(self._m_born, "CenterDrill")
+        self.wait = 600
+
+    def m_born_check(self):
+        att, base = self.parents(self._m_born)
+        self.m_feature_select(self._m_rect)
+        b, where = self.click_ribbon("Suppress")
+        App.ActiveDocument.recompute()
+        ok = self._m_rect.Suppressed and self._m_born.isValid() and \
+            abs(self.solid_volume() - self.m_ref(drill_born=True)) < 1e-3 * self.m_ref(drill_born=True)
+        self.step("Dependencies: the new drill's parents are the XY plane and the base; Suppress Rect-Cut: the "
+                  "drill stays", f"Rect-Cut selected + ribbon '{where} > Suppress'", SAME if ok else FAIL,
+                  f"sketched on {att}; drill valid {self._m_born.isValid()}; volume {self.solid_volume():.1f} mm^3 "
+                  f"(expected {self.m_ref(drill_born=True):.1f}). In FreeCAD each feature is cut from the one "
+                  f"before ({base}); a suppressed feature passes its input on, so that link does not break")
+        self.wait = 600
+
+    def m_circ(self):
+        tip = self.body().Tip
+        face = self.m_front_face(tip)
+        self.select_sub(tip, face)
+        b, where = self.click_ribbon("Extrude (Subtract)")
+        self.step("Extrude, the front vertical face (circular cut)", f"select {face} + ribbon '{where} > "
+                  "Extrude (Subtract)'", DIFFERS if b is not None and self.edited_sketch() is not None else FAIL, "")
+        self.wait = 1500
+
+    def m_circ_sketch(self):
+        import Part
+        import Sketcher
+        sk = self.edited_sketch()
+        if sk is None:
+            raise RuntimeError("no circular cut sketch")
+        c = self.g2s(sk, 0, -self.M_BODY_W, 0)
+        _, tool, n, ended = self.draw_clicks("O", [c, (c[0] + 0.8 * IN, c[1])])
+        self.add_geometry(sk, [Part.Circle(App.Vector(*c, 0), App.Vector(0, 0, 1), self.M_CIRC * IN)])
+        sk.addConstraint(Sketcher.Constraint("Radius", 0, self.M_CIRC * IN))
+        App.ActiveDocument.recompute()
+        self.step("Circle R1.25 centred on the datum origin", "O key + 2 MB1 clicks + MB2; R applied",
+                  SAME if tool and n >= 1 and ended else FAIL, "the book's text says 'rectangle', its figure and "
+                  "the design change a circle of radius 1.25")
+        self.wait = 300
+
+    def m_circ_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def m_circ_dialog(self):
+        self.wait_dialog("m_circ_dialog")
+        mode = self.choose("through all", "mode")
+        self.mb2_click()
+        self.check_volume("Subtract, Through All, OK: the bracket with a round opening",
+                          f"'{mode}', MB2 = OK", self.m_ref(drill_born=True, circ=True),
+                          "; two design options now live in one model (Rect-Cut suppressed)")
+        self._m_circ = self.body().Tip
+        self.wait = 600
+
+    def m_show(self):
+        self.fit()
+
+    def m_save(self):
+        self.show("M_u_bracket")
+        self.check_drawn("The U-Bracket is shown in the graphics window", "M_live_check.png")
+        App.ActiveDocument.saveAs(os.path.join(OUT, "U-Bracket.FCStd"))
+        self._m_doc = App.ActiveDocument
+
+    # ---------------------------------------------------------- tutorial N
+    # The U-Bracket drawing (Shih ch. 8): an A-size, third-angle sheet changed to B size; front, top and
+    # isometric views; hidden lines; ANSI horizontal text; the model's dimensions on the views; center
+    # marks; a radial dimension; two decimals; then the associative change Ø0.750 -> Ø0.625 in the model
+    # that the drawing must follow. Runs on the U-Bracket from tutorial M (in the same session).
+    def n_template(self, name):
+        import glob
+        root = os.path.join(App.getResourceDir(), "Mod", "TechDraw", "Templates")
+        hits = glob.glob(os.path.join(root, "**", name), recursive=True)
+        return hits[0] if hits else None
+
+    def n_body(self):
+        return next(o for o in self._m_doc.Objects if o.isDerivedFrom("PartDesign::Body"))
+
+    def n_new_view(self, direction, xdir, x, y):
+        """Body selected + Base View, MB2 on the sheet; the view's direction set (TechDraw asks no view list)."""
+        before = {v.Name for v in self._n_page.Views}
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(self._m_doc.Name, self.n_body().Name)
+        b, where = self.click_ribbon("Base View")
+        QtWidgets.QApplication.processEvents()
+        self.wait_for("n: base view", lambda: any(v.Name not in before for v in self._n_page.Views), 4000)
+        new = [v for v in self._n_page.Views if v.Name not in before and v.isDerivedFrom("TechDraw::DrawViewPart")]
+        v = new[-1] if new else None
+        if v is not None:
+            v.Direction, v.XDirection = App.Vector(*direction), App.Vector(*xdir)
+            v.ScaleType = "Custom"
+            v.Scale = 1.0
+            v.X, v.Y = x, y
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        return v, where
+
+    def n_wait_edges(self, view, what):
+        return self.wait_for(f"n: {what} hidden-line worker", lambda: len(view.getVisibleEdges()) > 0, 15000)
+
+    def n_drafting(self):
+        self.tutorial = "N: The U-Bracket drawing, associative (book in inches, typed in mm)"
+        App.setActiveDocument(self._m_doc.Name)
+        self.key("Ctrl+Shift+D")
+        self.wait = 2500
+
+    def n_sheet(self):
+        wb = Gui.activeWorkbench().name()
+        self.step("File > Drafting", "Ctrl+Shift+D", SAME if wb == "TechDrawWorkbench" else FAIL, wb)
+        b, where = self.click_ribbon("New Sheet")
+        QtWidgets.QApplication.processEvents()
+        page = self.newest("TechDraw::DrawPage")
+        a = self.n_template("ANSIA_Landscape.svg")
+        if page is not None and a:
+            page.Template.Template = a
+            page.ProjectionType = next(e for e in page.getEnumerationsOfProperty("ProjectionType") if "third" in e.lower())
+            page.Scale = 1.0
+        App.ActiveDocument.recompute()
+        self._n_page = page
+        self.step("Sheet: Inches, Third Angle, A-8.5X11, scale 1:1, OK", f"ribbon '{where} > New Sheet'; the sheet's "
+                  "template, projection and scale", DIFFERS if page is not None and a else FAIL,
+                  f"template {os.path.basename(a or '?')}, projection {getattr(page, 'ProjectionType', '?')}. NX asks "
+                  "in one Sheet dialog; FreeCAD's New Sheet uses the default template, and size, projection and scale "
+                  "are the sheet's properties. Units follow the preferences (mm here)")
+        self.wait = 1200
+
+    def n_base(self):
+        v, where = self.n_new_view((0, -1, 0), (1, 0, 0), 120.0, 85.0)
+        if v is not None:
+            v.HardHidden = True
+            vo = v.ViewObject
+            for prop, val in (("LineWidth", 0.7), ("HiddenWidth", 0.35)):
+                if prop in vo.PropertiesList:
+                    setattr(vo, prop, val)
+            App.ActiveDocument.recompute()
+            self.n_wait_edges(v, "front")
+        self._n_front = v
+        self.step("Base View: Front; View Style: hidden lines dashed 0.35, visible lines 0.70; place it low on the "
+                  "sheet", f"body selected + ribbon '{where} > Base View', MB2; the view's style properties",
+                  DIFFERS if v is not None and len(v.getVisibleEdges()) > 0 else FAIL,
+                  f"{len(v.getVisibleEdges()) if v else 0} visible, {len(v.getHiddenEdges()) if v else 0} hidden "
+                  "edges. NX sets the style in the view's Settings dialog; TechDraw has Hard Hidden and the line "
+                  "widths in the view's properties")
+        self.wait = 600
+
+    def n_top(self):
+        v, where = self.n_new_view((0, 0, 1), (1, 0, 0), float(self._n_front.X), float(self._n_front.Y) + 95.0)
+        if v is not None:
+            v.HardHidden = True
+            self.n_wait_edges(v, "top")
+        self._n_top = v
+        self.step("Projected Top view above the Front view", "a second Base View, direction Top, aligned above",
+                  DIFFERS if v is not None and len(v.getVisibleEdges()) > 0 else FAIL,
+                  "as in tutorials D and H: NX drags projected views off the base view; FreeCAD's Projected View is "
+                  "a projection group, so a Base View looking down stands in, lined up with the front view")
+        self.wait = 600
+
+    def n_b_size(self):
+        b = self.n_template("ANSIB_Landscape.svg")
+        if b:
+            self._n_page.Template.Template = b
+        App.ActiveDocument.recompute()
+        self.step("MB3 > Edit Sheet: B-11X17", "the sheet's template set to ANSI B", DIFFERS if b else FAIL,
+                  f"template {os.path.basename(b or '?')}; the views keep their places. NX changes the size in Edit "
+                  "Sheet; FreeCAD swaps the template")
+        self.wait = 600
+
+    def n_iso(self):
+        s = 1 / math.sqrt(3)
+        v, where = self.n_new_view((s, -s, s), (1 / math.sqrt(2), 1 / math.sqrt(2), 0),
+                                   float(self._n_front.X) + 200.0, float(self._n_front.Y) + 105.0)
+        if v is not None:
+            self.n_wait_edges(v, "isometric")
+        self._n_iso = v
+        self.step("Base View: Isometric, to the right", f"body selected + ribbon '{where} > Base View', isometric "
+                  "direction", SAME if v is not None and len(v.getVisibleEdges()) > 0 else FAIL, "")
+        self.wait = 600
+
+    def n_csys(self):
+        origin = self.n_body().Origin
+        shown = origin.ViewObject.Visibility
+        self.step("Hide the Datum Coordinate System and the view's cross hair", "-", SAME if not shown else DIFFERS,
+                  "nothing to hide: TechDraw draws only the solid, and NXStyle keeps the Body's origin hidden "
+                  f"(origin shown: {shown})")
+
+    def n_text(self):
+        p = App.ParamGet("User parameter:BaseApp/Preferences/Mod/TechDraw/Dimensions")
+        before = p.GetInt("StandardAndStyle", 0)
+        p.SetInt("StandardAndStyle", 2)
+        self.step("Drafting Preferences: dimension text Horizontal (ANSI)", "Preferences > TechDraw > Dimensions > "
+                  "Standard and Style = ASME Inlined", DIFFERS,
+                  f"was {['ISO Oriented', 'ISO Referencing', 'ASME Inlined', 'ASME Referencing'][before] if 0 <= before < 4 else before}")
+
+    def n_vertices_at(self, view, points):
+        """Cosmetic vertices at view points (view coordinates, mm); their vertex names."""
+        for q in points:
+            view.makeCosmeticVertex(App.Vector(q.x, q.y, 0))
+        App.ActiveDocument.recompute()
+        return self.vertices_at(view, points)
+
+    def n_circles(self, view, radius_in):
+        out = []
+        for i, e in self.view_edges(view):
+            if hasattr(e.Curve, "Radius") and abs(e.Curve.Radius - radius_in * IN) < 1e-3:
+                out.append((i, e))
+        return out
+
+    def n_dim(self, view, kind, subs):
+        before = {d.Name for d in self._n_page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension")}
+        self.select_view_subs(view, subs)
+        b, where = self.click_ribbon(kind)
+        QtWidgets.QApplication.processEvents()
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        new = [d for d in self._n_page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension") and d.Name not in before]
+        return (new[-1] if new else None), where
+
+    def n_feature_params(self):
+        self.step("Command Finder > Feature Parameters: the model's dimensions on the views", "-", MISSING,
+                  "TechDraw has no command that brings a feature's sketch dimensions onto a view; its dimensions "
+                  "are reference dimensions measured from the view (next steps). NX's feature dimensions also drive "
+                  "the model from the drawing")
+        v = self._n_top
+        holes = self.n_circles(v, self.M_HOLE / 2)
+        names = self.n_vertices_at(v, [e.Curve.Center for _, e in holes]) if len(holes) == 2 else []
+        made = []
+        if len(names) == 2:
+            d, where = self.n_dim(v, "Horizontal", names)
+            if d is not None:
+                d.X, d.Y = 0.0, 52.0                 # above the top view, clear of the plate
+                made.append(("centres", d))
+            # 2.5: from the left hole's centre to the drill's centre (the part's middle)
+            drill = self.n_circles(v, self.M_DRILL / 2)
+            if drill:
+                mid = self.n_vertices_at(v, [drill[0][1].Curve.Center])
+                left = min(names, key=lambda n: v.getVertexByIndex(int(n[6:])).Point.x)
+                if mid:
+                    d2, _ = self.n_dim(v, "Horizontal", [left, mid[0]])
+                    if d2 is not None:
+                        d2.X, d2.Y = -31.75, 38.0
+                        made.append(("to the middle", d2))
+            left_hole = min(holes, key=lambda h: h[1].Curve.Center.x)
+            d3, _ = self.n_dim(v, "Diameter", [f"Edge{left_hole[0]}"])
+            if d3 is not None:
+                c = left_hole[1].Curve.Center
+                d3.X, d3.Y = c.x - 22.0, c.y - 36.0              # below left, off the plate
+                made.append(("hole", d3))
+        App.ActiveDocument.recompute()
+        self._n_dims = dict(made)
+        vals = {k: round(float(d.getRawValue()) / IN, 3) for k, d in made}
+        ok = len(made) == 3 and abs(vals.get("centres", 0) - 2 * self.M_C) < 1e-3 and \
+            abs(vals.get("hole", 0) - self.M_HOLE) < 1e-3
+        self.step("Instead: reference dimensions on the top view (5.000, 2.500, Ø0.750)", "cosmetic vertices on the "
+                  "hole centres; ribbon 'Horizontal' (twice) and 'Diameter'", DIFFERS if ok else FAIL,
+                  f"measured (in): {vals}. TechDraw dimensions need vertices at arc centres (as in tutorial H)")
+        self.wait = 800
+
+    def n_smooth(self):
+        v = self._n_iso
+        before = v.SmoothVisible
+        v.SmoothVisible = False
+        App.ActiveDocument.recompute()
+        self.step("Isometric view: Settings > Smooth Edges off", "the view's Smooth Visible property",
+                  SAME if before else DIFFERS,
+                  "smooth (tangent) edges were shown, as in NX, and are now off" if before else
+                  "smooth (tangent) edges were already off here; NX shows them by default")
+
+    def n_arrows(self):
+        d = self._n_dims.get("hole")
+        vo = d.ViewObject if d is not None else None
+        props = [p for p in (vo.PropertiesList if vo else []) if "arrow" in p.lower() or "flip" in p.lower()]
+        flip = next((p for p in props if "flip" in p.lower()), None)
+        if flip:
+            setattr(vo, flip, True)
+            App.ActiveDocument.recompute()
+        self.step("Edit the diameter dimension: Arrow Out", f"the dimension's '{flip}' property" if flip else "-",
+                  DIFFERS if flip else MISSING, f"arrow properties: {props}")
+
+    def n_hide_show(self):
+        dims = [d for k, d in self._n_dims.items() if k in ("centres", "hole")]
+        Gui.Selection.clearSelection()
+        for d in dims:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, d.Name)
+        self.key("Ctrl+B")
+        QtWidgets.QApplication.processEvents()
+        hidden = [not d.ViewObject.Visibility for d in dims]
+        self.step("Immediate Hide: the two dimensions in the top view", "both selected + Ctrl+B (Hide)",
+                  SAME if dims and all(hidden) else FAIL, f"hidden {hidden}")
+        Gui.Selection.clearSelection()
+        for d in dims:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, d.Name)
+        self.key("Ctrl+Shift+K")
+        QtWidgets.QApplication.processEvents()
+        shown = [d.ViewObject.Visibility for d in dims]
+        self.step("Show (Ctrl+Shift+K): the two dimensions back", "selected in the Part Navigator + Ctrl+Shift+K",
+                  SAME if dims and all(shown) else FAIL, f"shown {shown}; NX picks hidden objects in a list, here "
+                  "they are picked in the Part Navigator")
+        Gui.Selection.clearSelection()
+
+    def n_center_marks(self):
+        v = self._n_top
+        arcs = self.n_circles(v, self.M_R) + self.n_circles(v, self.M_DRILL / 2)
+        before = (len(v.CenterLines), len(getattr(v, "CosmeticEdges", []) or []))
+        self.select_view_subs(v, [f"Edge{i}" for i, _ in arcs])
+        b, where = self.click_ribbon("Center Mark")
+        QtWidgets.QApplication.processEvents()
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        App.ActiveDocument.recompute()
+        after = (len(v.CenterLines), len(getattr(v, "CosmeticEdges", []) or []))
+        made = (after[0] - before[0]) + (after[1] - before[1])
+        self.step("Center Mark: the two outer arcs and the drill in the top view", f"{len(arcs)} arcs selected + "
+                  f"ribbon '{where} > Center Mark'", SAME if made > 0 else FAIL,
+                  f"center lines {before[0]} -> {after[0]}, cosmetic edges {before[1]} -> {after[1]}; the book "
+                  "deletes NX's automatic centre lines first: TechDraw adds none by itself")
+
+    def n_radial(self):
+        v = self._n_front
+        arc = self.n_circles(v, self.M_CIRC)
+        d, where = (self.n_dim(v, "Radial", [f"Edge{arc[0][0]}"]) if arc else (None, ""))
+        if d is not None:
+            d.X, d.Y = 30.0, 52.0                                 # up and right, outside the body
+        val = float(d.getRawValue()) / IN if d is not None else None
+        self.step("Radial dimension on the bottom arc of the front view", f"arc selected + ribbon '{where} > Radial'",
+                  SAME if val is not None and abs(val - self.M_CIRC) < 1e-3 else FAIL,
+                  f"R{val:.3f} in" if val is not None else "no radial dimension")
+        self.wait = 600
+
+    def n_decimals(self):
+        dims = [d for k, d in self._n_dims.items() if k in ("centres", "to the middle")]
+        for d in dims:
+            d.FormatSpec = "%.2f"
+        App.ActiveDocument.recompute()
+        self.step("Edit Settings: the 5 and 2.5 dimensions with 2 decimals and trailing zeros",
+                  "the dimensions' Format Spec = %.2f", DIFFERS if dims else FAIL,
+                  "NX: Edit Settings > Text > decimals; TechDraw: the format spec (shown in the preferences units)")
+
+    def n_change(self):
+        """Modeling: the base sketch's hole diameter 0.750 -> 0.625; back to Drafting."""
+        self.key("Ctrl+M")
+        QtWidgets.QApplication.processEvents()
+        base = next(o for o in self._m_doc.Objects if o.Label == "Base")
+        sk = base.Profile[0]
+        k = next(i for i, c in enumerate(sk.Constraints) if c.Type == "Diameter")
+        sk.setDatum(k, App.Units.Quantity(f"{0.625 * IN} mm"))
+        self._m_doc.recompute()
+        ok = abs(self.solid_volume() - self.m_ref(drill_born=True, circ=True, hole=0.625)) < 1e-3 * self.solid_volume()
+        self.step("Modeling: Base feature > Sketch Section, the diameter 0.750 -> 0.625, Finish Sketch, OK",
+                  "Ctrl+M; the base sketch's diameter typed (0.625 in = 15.875 mm)", SAME if ok else FAIL,
+                  f"volume {self.solid_volume():.1f} mm^3 (expected "
+                  f"{self.m_ref(drill_born=True, circ=True, hole=0.625):.1f})")
+        self.key("Ctrl+Shift+D")
+        self.wait = 2500
+
+    def n_update(self):
+        d = self._n_dims.get("hole")
+        App.ActiveDocument.recompute()
+        self.wait_for("n: drawing update", lambda: d is not None and abs(float(d.getRawValue()) / IN - 0.625) < 1e-3,
+                      15000)
+        val = float(d.getRawValue()) / IN if d is not None else None
+        shown = f"{val:.3f} in" if val is not None else "no dimension"
+        self.step("Drafting: MB3 on the drawing > Update; the diameter shows 0.625",
+                  "Ctrl+Shift+D; the sheet updates by itself", SAME if val is not None and abs(val - 0.625) < 1e-3
+                  else FAIL, f"diameter dimension now {shown}; TechDraw keeps the sheet up to date (the page's Keep "
+                  "Updated), NX marks it out of date and asks for Update")
+        self.shot("N_drawing.png")
+        App.ActiveDocument.save()
 
     # ------------------------------------------------------------- runner
     def next(self):

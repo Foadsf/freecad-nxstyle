@@ -40,7 +40,7 @@
         {"cmd": "NXStyle_DatumFeatureSymbol", "label": "Datum Feature Symbol"}
       ]},
       {"name": "Centerline and Hatch", "items": [
-        {"cmd": "TechDraw_FaceCenterLine", "label": "Center Mark", "size": "large"},
+        {"cmd": ["TechDraw_ExtensionCircleCenterLines", "TechDraw_FaceCenterLine"], "label": "Center Mark", "size": "large"},
         {"cmd": "TechDraw_2LineCenterLine", "label": "2D Centerline"},
         {"cmd": "TechDraw_2PointCenterLine", "label": "Centerline by Points"},
         {"cmd": "TechDraw_Hatch", "label": "Hatch"},

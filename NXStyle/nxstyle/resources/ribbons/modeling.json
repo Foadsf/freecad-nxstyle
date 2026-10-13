@@ -55,7 +55,7 @@
         {"cmd": "Std_Edit", "label": "Edit Parameters"},
         {"cmd": "PartDesign_MoveTip", "label": "Make Current Feature"},
         {"cmd": "PartDesign_MoveFeature", "label": "Move to Body"},
-        {"cmd": ["PartDesign_ToggleSuppress", "Std_ToggleFreeze"], "label": "Suppress"},
+        {"cmd": "NXStyle_ToggleSuppress", "label": "Suppress"},
         {"cmd": "Std_Refresh", "label": "Update Model"}
       ]}
     ]},

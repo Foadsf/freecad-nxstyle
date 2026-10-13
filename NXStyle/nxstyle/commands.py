@@ -307,6 +307,34 @@ class Refresh:
             view.redraw()
 
 
+class ToggleSuppress:
+    """NX's Suppress / Unsuppress for the selected features. FreeCAD 1.1 has a feature's Suppressed
+    property but no command for it (Std_ToggleFreeze only stops an object's recompute)."""
+
+    @staticmethod
+    def _features():
+        return [s.Object for s in Gui.Selection.getSelectionEx() if "Suppressed" in s.Object.PropertiesList]
+
+    def GetResources(self):
+        return {"MenuText": "Suppress", "ToolTip": "Suppress the selected features (again: unsuppress). "
+                "A suppressed feature keeps its settings and can be switched back on",
+                "Pixmap": config.resource("icons", "suppress.svg")}
+
+    def IsActive(self):
+        return bool(self._features())
+
+    def Activated(self):
+        feats = self._features()
+        if not feats:
+            return
+        doc = feats[0].Document
+        doc.openTransaction("Suppress")
+        for f in feats:
+            f.Suppressed = not f.Suppressed
+        doc.commitTransaction()
+        doc.recompute()
+
+
 class ImmediateHideObserver:
     def __init__(self):
         self.active = False
@@ -611,6 +639,7 @@ def register(apps):
         "NXStyle_ToggleNativeUI": ToggleNativeUI(),
         "NXStyle_RotateMode": RotateMode(),
         "NXStyle_Refresh": Refresh(),
+        "NXStyle_ToggleSuppress": ToggleSuppress(),
         "NXStyle_ImmediateHide": ImmediateHide(),
         "NXStyle_ObjectInfo": ObjectInfo(),
         "NXStyle_MeasureBodies": MeasureBodies(),

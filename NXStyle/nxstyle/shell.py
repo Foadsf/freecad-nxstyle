@@ -347,6 +347,25 @@ class Shell(QtCore.QObject):
         app = self._app(app_id)
         if app is None:
             return
+        # Switching rebuilds the ribbon, deleting the button that was clicked; the focus then lands
+        # on another document's window and FreeCAD makes that part active (measured: Ctrl+N, then
+        # Application > Modeling, went back to the previous part). Keep the part the user is in.
+        mdi = self.mw.findChild(QtWidgets.QMdiArea)
+        active = mdi.activeSubWindow() if mdi is not None else None
+        try:
+            self._switch_application(app)
+        finally:
+            if active is not None:
+                def keep():
+                    try:
+                        if mdi.activeSubWindow() is not active and active in mdi.subWindowList():
+                            mdi.setActiveSubWindow(active)
+                    except RuntimeError:        # the window was closed meanwhile
+                        pass
+                keep()
+                QtCore.QTimer.singleShot(0, keep)
+
+    def _switch_application(self, app):
         self.current_app = app
         if Gui.activeWorkbench().name() != app["workbench"]:
             self._loading = True
