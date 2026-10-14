@@ -120,6 +120,7 @@ class Smoke:
         yield self.s_katydid_shot, 100
         yield self.s_back, 2000
         yield self.s_katydid_after, 100
+        yield self.s_ap242, 300
         yield self.s_expressions, 800
         yield self.s_final, 100
 
@@ -784,6 +785,55 @@ class Smoke:
             self.shell.preload([e.workbench])
         absent = [f"{e.nx}: {e.cmd}" for e in lazy if shortcuts.resolve(e, set(Gui.listCommands())) == ""]
         self.check("lazily loaded shortcut targets exist after their workbench loads", not absent, absent)
+
+    def s_ap242(self):
+        """STEP with PMI: a plate with a hole and a pin, PMI on both, written and read back."""
+        import Part
+        from . import ap242, pmi_ui
+        if not ap242.available():
+            self.check("STEP AP242 with semantic PMI", True, "this FreeCAD has no pythonocc; skipped")
+            return
+        before = App.ActiveDocument
+        doc = App.newDocument("SmokeAP242")
+        try:
+            shape = Part.makeBox(80, 50, 12).cut(Part.makeCylinder(8, 12, App.Vector(25, 25, 0)))
+            shape = shape.fuse(Part.makeCylinder(5, 15, App.Vector(60, 25, 12))).removeSplitter()
+            plate = doc.addObject("Part::Feature", "Plate")
+            plate.Shape = shape
+            doc.recompute()
+
+            def face(pred):
+                return "Face%d" % next(i for i, f in enumerate(plate.Shape.Faces, 1) if pred(f))
+
+            def kind(f):
+                return f.Surface.__class__.__name__
+
+            bottom = face(lambda f: kind(f) == "Plane" and abs(f.CenterOfMass.z) < 1e-6)
+            hole = face(lambda f: kind(f) == "Cylinder" and abs(f.Surface.Radius - 8) < 1e-6)
+            pin = face(lambda f: kind(f) == "Cylinder" and abs(f.Surface.Radius - 5) < 1e-6)
+            pmi_ui.create("Datum Feature", [(plate, bottom)], doc, Letter="A")
+            pmi_ui.create("Datum Feature", [(plate, hole)], doc, Letter="B")
+            pmi_ui.create("Dimension", [(plate, hole)], doc, DimensionType="Diameter", Fit="H7")
+            pmi_ui.create("Dimension", [(plate, pin)], doc, DimensionType="Diameter", Fit="g6")
+            pmi_ui.create("Feature Control Frame", [(plate, pin)], doc, Characteristic="Position", Tolerance=0.02,
+                          ZoneDiameter=True, MaterialCondition="MMC", DatumReferences=["A", "B(M)"])
+            pmi_ui.create("Feature Control Frame", [(plate, bottom)], doc, Characteristic="Flatness",
+                          Tolerance=0.01)
+            path = os.path.join(OUT, "smoke_pmi.step")
+            text = pmi_ui.export_step(doc, path)
+            s = ap242.summary(open(path, encoding="latin-1").read())
+            back = pmi_ui.last.get("read_back") or {}
+            ok = (s["schema"].startswith("AP242") and s["datums"] == ["A", "B"] and s["fits"] == ["H7", "g6"]
+                  and s["tolerances"] == {"POSITION_TOLERANCE": 1, "FLATNESS_TOLERANCE": 1}
+                  and s["material_requirements"] == 1 and back.get("dimensions") == 2
+                  and back.get("geometric_tolerances") == 2)
+            self.check("STEP AP242 with semantic PMI (written, ISO 286 grades right, read back by OCCT)", ok,
+                       text.splitlines()[1:])
+        finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
 
     # --------------------------------------------------------------- runner
     def next(self):

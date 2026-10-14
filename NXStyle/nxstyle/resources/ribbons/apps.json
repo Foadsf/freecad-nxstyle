@@ -7,7 +7,7 @@
       {"id": "drafting", "title": "Drafting", "workbench": "TechDrawWorkbench", "ribbon": "drafting.json", "shortcut": "Ctrl+Shift+D", "size": "large"},
       {"id": "assemblies", "title": "Assemblies", "workbench": "AssemblyWorkbench", "ribbon": "modeling.json", "first_tab": "Assemblies"},
       {"id": "algorithmic_modeling", "title": "Algorithmic Modeling", "workbench": "KatydidWorkbench", "ribbon": "algorithmic.json"},
-      {"id": "sheet_metal", "title": "Sheet Metal", "workbench": "SMWorkBench", "ribbon": null},
+      {"id": "sheet_metal", "title": "Sheet Metal", "workbench": "SMWorkbench", "ribbon": "sheet_metal.json", "shortcut": "Ctrl+Shift+M"},
       {"id": "part", "title": "Basic Modeling (Part)", "workbench": "PartWorkbench", "ribbon": null}
     ]},
     {"name": "Simulation", "apps": [

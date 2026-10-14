@@ -513,14 +513,21 @@ def spec_groups(tab_spec):
 
 
 def expand_tabs(spec):
-    """Resolve {"include": "common:View"} entries against common.json."""
-    common = {t["name"]: t for t in config.load_json("ribbons", "common.json")["tabs"]}
+    """Resolve {"include": "common:View"} entries against common.json, and {"include": "modeling:PMI"}
+    against another application's ribbon file (one level: that file's own includes are not followed)."""
+    files = {}
     tabs = []
     for t in spec.get("tabs", []):
         if "include" in t:
             src, _, name = t["include"].partition(":")
-            if src == "common" and name in common:
-                tabs.append(common[name])
+            if src not in files:
+                try:
+                    files[src] = {x["name"]: x for x in config.load_json("ribbons", f"{src}.json")["tabs"]
+                                  if "name" in x}
+                except (OSError, ValueError, KeyError):
+                    files[src] = {}
+            if name in files[src]:
+                tabs.append(files[src][name])
         else:
             tabs.append(t)
     return tabs

@@ -4,7 +4,7 @@ include::partial$generated/tutorial-meta.adoc[]
 
 Tutorials A to N are exercises from NX, GD&T and engineering-graphics textbooks, done in NX-Style the way the book tells an NX user to work.
 Tutorials O to R are Grasshopper video tutorials done on the xref:algorithmic-modeling.adoc[Algorithmic Modeling] canvas (Katydid).
-Tutorials S to V are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, and a release with an engineering change.
+Tutorials S to X are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, and an opto-mechanical pin location.
 Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
 
 The step tables are not written by hand.
@@ -41,6 +41,9 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | Drawings made from the PMI | xref:tutorials/t.adoc[T]
 | Volume claims, assembly clearance and interference | xref:tutorials/u.adoc[U]
 | Release, engineering change, release packages | xref:tutorials/v.adoc[V]
+| STEP AP242 with semantic PMI | xref:tutorials/t.adoc[T], xref:tutorials/v.adoc[V]
+| Sheet metal: tab, flanges, flat pattern, bend allowance | xref:tutorials/w.adoc[W]
+| Opto-mechanics: pin location, pointing error, thermal mismatch | xref:tutorials/x.adoc[X]
 |===
 
 == Results
@@ -51,13 +54,14 @@ include::partial$outcome-legend.adoc[]
 
 == The books
 
-* Randy H. Shih, _Parametric Modeling with Siemens NX_ (SDC Publications): tutorials A, C–G and I–N.
+* Randy H. Shih, _Parametric Modeling with Siemens NX_ (SDC Publications): tutorials A, C–G, I–N and W (ch. 13, sheet metal).
 * Gene R. Cogorno, _Geometric Dimensioning and Tolerancing for Mechanical Design_, 3rd ed. (McGraw-Hill): tutorial H.
 * James Leake and Jacob Borgerson, _Engineering Design Graphics_ (Wiley): tutorial K.
 * Tutorial B is a synthesised first-part exercise.
 * Bryan R. Fischer, _Mechanical Tolerance Stackup and Analysis_, 2nd ed. (Taylor & Francis): tutorial S, and the stack-up method.
 * Andreas Wünsch, Fabian Pilz and Sándor Vajna, _Siemens NX für Einsteiger – kurz und bündig_, 4th ed., section 6.10: the PMI workflow of tutorial T.
-* Paul J. Drake, _Dimensioning and Tolerancing Handbook_ (McGraw-Hill), ch. 6 (ASME and ISO compared) and ch. 9 (statistical tolerancing); Gene R. Cogorno (above), ch. 3, 7, 8 and 13: the checks, the fastener formulas and the gauge sizes.
+* Paul J. Drake, _Dimensioning and Tolerancing Handbook_ (McGraw-Hill), ch. 6 (ASME and ISO compared), ch. 9 (statistical tolerancing) and ch. 24 (pinned interfaces, tutorial X); Gene R. Cogorno (above), ch. 3, 7, 8 and 13: the checks, the fastener formulas and the gauge sizes.
+* Fischer (above), ch. 15: the lever of an angle error, tutorial X.
 * The PLM books of John Stark, Michael Grieves, and Antti Saaksvuori and Anselmi Immonen: release and engineering change, tutorial V.
 * Tutorial U's layout is ours; Assembly Clearance follows NX's.
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.

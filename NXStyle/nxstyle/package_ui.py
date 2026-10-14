@@ -7,7 +7,8 @@ Strata's history, not the working copy), with the release record (part number, r
 approver, the version it came from) in the manifest. Without a release it is marked "Not released"
 and made from the open document. Contents:
 
-  model/       <PN>_<rev>.step (STEP AP242 where FreeCAD writes it) and the native .FCStd
+  model/       <PN>_<rev>.step (STEP AP242, with the semantic PMI when the part has PMI; ap242.py) and
+               the native .FCStd
   drawings/    every drawing sheet as PDF
   pmi/         pmi.json (semantic PMI), inspection_plan.csv, functional_gauge.csv, checks.txt
   analysis/    each tolerance stack-up (.txt report and .csv) and mass_properties.csv
@@ -91,6 +92,34 @@ def step_schema(path):
         return " ".join(name.split("{")[0].split())
     except Exception:
         return ""
+
+
+def colors(objs):
+    """{object name: (r, g, b)} of the bodies' display colours, for the STEP file."""
+    out = {}
+    if not App.GuiUp:
+        return out
+    for o in objs:
+        try:
+            out[o.Name] = tuple(o.ViewObject.ShapeAppearance[0].DiffuseColor[:3])
+        except Exception:
+            try:
+                out[o.Name] = tuple(o.ViewObject.ShapeColor[:3])
+            except Exception:
+                pass
+    return out
+
+
+def export_step_pmi(doc, objs, path):
+    """STEP AP242 of objs with the part's semantic PMI (ap242.py). Returns (schema, summary text,
+    problems), or None when there is no PMI, the model is an assembly or this FreeCAD lacks pythonocc."""
+    from . import ap242, pmi_ui
+    p = pmi_ui.all_pmi(doc)
+    if not p or not ap242.available() or any(o.isDerivedFrom("Assembly::AssemblyObject") for o in objs):
+        return None
+    std, general = pmi_ui.settings(doc)
+    s, problems = ap242.write(objs, p, path, std, general, colors=colors(objs))
+    return s["schema"], ap242.summary_text(s), problems
 
 
 def export_step(objs, path):
@@ -196,7 +225,13 @@ def publish(doc, out_root, meta, parts=None, released_file=None, make_zip=True):
             if objs:
                 path = os.path.join(folder, "model", name + ".step")
                 os.makedirs(os.path.dirname(path), exist_ok=True)
-                info["step_schema"] = export_step(objs, path)
+                with_pmi = export_step_pmi(src, objs, path)
+                if with_pmi:
+                    info["step_schema"], info["step_pmi"], problems = with_pmi
+                    if problems:
+                        info["step_pmi_not_written"] = problems
+                else:
+                    info["step_schema"] = export_step(objs, path)
         if "native" in parts:
             path = os.path.join(folder, "model", name + ".FCStd")
             os.makedirs(os.path.dirname(path), exist_ok=True)

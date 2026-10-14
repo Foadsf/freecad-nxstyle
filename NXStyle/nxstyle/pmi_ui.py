@@ -246,18 +246,28 @@ def default_label(obj):
 
 
 def model_size(obj):
-    try:
-        bb = None
-        for o, _ in obj.References:
-            b = o.Shape.BoundBox
-            bb = b if bb is None else bb.united(b)
-        return max(bb.DiagonalLength, 10.0) if bb else 50.0
-    except Exception:
-        return 50.0
+    bb = model_box(obj)
+    return max(bb.DiagonalLength, 10.0) if bb else 50.0
 
 
 def model_box(obj):
+    """The box all of the document's solids fill, so every PMI label shares one column and one row
+    spacing, whichever part it is on (a pin on the bench, a hole in the module); the referenced
+    objects' box when the document has no solid."""
     bb = None
+    for o in obj.Document.Objects:
+        if o.isDerivedFrom("PartDesign::Feature") and not o.isDerivedFrom("PartDesign::Body"):
+            continue                            # a body's features lie inside the body's box
+        try:
+            s = o.Shape
+            if s.isNull() or not s.Solids:
+                continue
+            b = s.BoundBox
+        except Exception:
+            continue
+        bb = b if bb is None else bb.united(b)
+    if bb is not None:
+        return bb
     for o, _ in obj.References:
         try:
             b = o.Shape.BoundBox
@@ -278,8 +288,19 @@ def label_position(obj, row):
 
 
 def default_offset(obj):
-    """The label's place, as an offset from the attachment point (see label_position)."""
-    row = len([p for p in all_pmi(obj.Document) if p is not obj])
+    """The label's place, as an offset from the attachment point (see label_position): the first row
+    of the column no other label is in (counting the others would reuse a deleted PMI's row while the
+    row after it is still taken)."""
+    size = model_size(obj)
+    top = label_position(obj, 0).z
+    used = set()
+    for p in all_pmi(obj.Document):
+        if p is obj or "LabelOffset" not in p.PropertiesList or p.LabelOffset.Length < 1e-9:
+            continue
+        used.add(round((top - (App.Vector(p.Anchor) + App.Vector(p.LabelOffset)).z) / (0.14 * size)))
+    row = 0
+    while row in used:
+        row += 1
     return label_position(obj, row) - App.Vector(obj.Anchor)
 
 
@@ -1217,6 +1238,99 @@ class InspectionPlan:
         show_information(text)
 
 
+def export_step(doc, path):
+    """STEP AP242 of the part's solids with its semantic PMI; returns the report text."""
+    from . import ap242, package_ui
+    objs = package_ui.solids(doc)
+    if not objs:
+        raise ValueError("the part has no solid to export")
+    done = package_ui.export_step_pmi(doc, objs, path)
+    if done is None:
+        why = "this FreeCAD has no pythonocc (OCCT's AP242 PMI writer)" if not ap242.available() else \
+            "the part has no PMI" if not all_pmi(doc) else "assemblies are written without PMI"
+        schema = package_ui.export_step(objs, path)
+        text = f"{path}\nSTEP {schema} without PMI: {why}."
+    else:
+        schema, summary, problems = done
+        text = f"{path}\nSTEP AP242 with semantic PMI: {summary}"
+        if problems:
+            text += "\n\nNot written:\n" + "\n".join("  " + p for p in problems)
+    try:
+        back = ap242.read_back(path) if done else None
+    except Exception:
+        back = None
+    if back:
+        text += (f"\n\nRead back by OpenCASCADE: {back['datums']} datum references, {back['dimensions']} "
+                 f"dimensions, {back['geometric_tolerances']} geometric tolerances")
+    last.update(path=path, text=text, read_back=back)
+    return text
+
+
+last = {}
+
+
+class StepPanel:
+    """File > Export > STEP with PMI: the model and its PMI as data (ISO 10303-242)."""
+
+    def __init__(self):
+        import os
+        self.doc = App.ActiveDocument
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle("STEP AP242 with PMI")
+        lay = QtWidgets.QFormLayout(self.form)
+        base = os.path.splitext(self.doc.FileName)[0] if self.doc.FileName else \
+            os.path.join(os.path.expanduser("~"), self.doc.Label)
+        self.path = QtWidgets.QLineEdit(base + ".step")
+        self.path.setObjectName("stepFile")
+        browse = QtWidgets.QPushButton("Browse…")
+        browse.clicked.connect(self.browse)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.path)
+        row.addWidget(browse)
+        lay.addRow("File", row)
+        n = len(all_pmi(self.doc))
+        info = QtWidgets.QLabel(f"{n} PMI object(s): datums, dimensions with their tolerances and ISO 286 classes, "
+                                "and feature control frames are written as semantic PMI that CAM, CMM and other CAD "
+                                "systems read.")
+        info.setWordWrap(True)
+        lay.addRow(info)
+
+    def browse(self):
+        p, _ = QtWidgets.QFileDialog.getSaveFileName(self.form, "STEP with PMI", self.path.text(),
+                                                     "STEP (*.step *.stp)")
+        if p:
+            self.path.setText(p)
+
+    def accept(self):
+        from .commands import show_information
+        try:
+            text = export_step(self.doc, self.path.text().strip())
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self.form, "STEP with PMI", str(e))
+            return False
+        Gui.Control.closeDialog()
+        show_information(text)
+        return True
+
+    def reject(self):
+        Gui.Control.closeDialog()
+        return True
+
+
+class ExportStep:
+    def GetResources(self):
+        return {"MenuText": "STEP with PMI",
+                "ToolTip": "Export the part as STEP AP242 with its semantic PMI (datums, dimensions, fits, "
+                           "feature control frames), the way NX exports PMI to STEP",
+                "Pixmap": config.resource("icons", "step_pmi.svg")}
+
+    def IsActive(self):
+        return _part_document() and bool(all_pmi(App.ActiveDocument))
+
+    def Activated(self):
+        Gui.Control.showDialog(StepPanel())
+
+
 class InheritPMI:
     def GetResources(self):
         return {"MenuText": "Inherit PMI",
@@ -1260,4 +1374,5 @@ COMMANDS = {
     "NXStyle_PMIInspectionPlan": InspectionPlan(),
     "NXStyle_PMITolerancing": Tolerancing(),
     "NXStyle_InheritPMI": InheritPMI(),
+    "NXStyle_PMIExportSTEP": ExportStep(),
 }

@@ -365,23 +365,27 @@ class Replay(KatydidTutorials, PrecisionTutorials):
         Q = [self.q_new, self.q_polygon, self.q_lift, self.q_explode, self.q_facets, self.q_solid, self.q_shell,
              self.q_shell_dialog]
         R = [self.r_new, self.r_tube, self.r_grid, self.r_weaverbird, self.r_attractor, self.r_openings, self.r_bake]
-        S = [self.s_new, self.s_revolve, self.s_plane, self.s_profile, self.s_finish, self.s_revolve_dialog,
+        S = [self.p_modeling, self.s_new, self.s_revolve, self.s_plane, self.s_profile, self.s_finish, self.s_revolve_dialog,
              self.s_stack, self.s_rows, self.s_tolerances, self.s_requirement, self.s_report, self.s_redesign,
              self.s_change, self.s_show]
         T = list(getattr(self, "T_STEPS", lambda: [])())
         U = list(getattr(self, "U_STEPS", lambda: [])())
         V = list(getattr(self, "V_STEPS", lambda: [])())
+        W = list(getattr(self, "W_STEPS", lambda: [])())
+        X = list(getattr(self, "X_STEPS", lambda: [])())
         wanted = (os.environ.get("NXSTYLE_TUTORIALS")
-                  or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V").upper().split(",")
+                  or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X").upper().split(",")
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
         if "V" in wanted and "T" not in wanted:      # V releases tutorial T's guide bush
             wanted.insert(wanted.index("V"), "T")
         if "KatydidWorkbench" not in Gui.listWorkbenches():
             wanted = [w for w in wanted if w not in "OPQR"]   # Katydid off (--no-katydid): nothing to replay on
+        if "SMWorkbench" not in Gui.listWorkbenches():
+            wanted = [w for w in wanted if w != "W"]          # SheetMetal off (--no-sheetmetal)
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
-                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V)):
+                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X)):
             if key in wanted:
                 yield from steps
 
@@ -2088,6 +2092,7 @@ class Replay(KatydidTutorials, PrecisionTutorials):
         self.wait = 1200
 
     def f_revolve(self):
+        self.wait_for("f_revolve: new part's Body", lambda: self.body() is not None)
         self.step("File > New, Model template", "Ctrl+N",
                   SAME if set(App.listDocuments()) - self._docs_before and self.body() else FAIL, "")
         Gui.Selection.clearSelection()
@@ -2575,6 +2580,9 @@ class Replay(KatydidTutorials, PrecisionTutorials):
 
     def f_pattern_dialog(self):
         self.wait_dialog("f_pattern_dialog")
+        # in a long session FreeCAD can take a few seconds to build the pattern and its direction panels
+        self.wait_for("f_pattern_dialog: direction panels", lambda: bool(self.pattern_dirs())
+                      and self.newest("PartDesign::LinearPattern") is not None, 10000)
         self.info["F pattern dialog widgets"] = self.task_widgets()
         panels = self.pattern_dirs()
         d1 = self.set_direction(panels[0], "x axis", 5, -0.58) if panels else {}
@@ -2723,6 +2731,15 @@ class Replay(KatydidTutorials, PrecisionTutorials):
     def g_template(self):
         ok = self.wait_for("g_template: new assembly", lambda: self.assembly() is not None)
         doc = App.ActiveDocument
+        if not ok:
+            sh = self.shell
+            gdoc = Gui.getDocument(doc.Name) if doc else None
+            self.progress(f"g_template: app {(sh.current_app or {}).get('id')}, ticks {sh._ticks}, timer active "
+                          f"{sh.watch.isActive()}, known {sorted(sh._known_docs)}, docs {App.listDocuments().keys()}, "
+                          f"active {doc.Name if doc else None} objects {len(doc.Objects) if doc else '-'} file "
+                          f"{doc.FileName if doc else '-'}, 3D views "
+                          f"{len(gdoc.mdiViewsOfType('Gui::View3DInventor')) if gdoc else '-'}, "
+                          f"new_part_datum {sh.cfg.get('new_part_datum', True)}")
         doc.saveAs(os.path.join(OUT, "Shaft-Support.FCStd"))
         self.step("File > New, Assembly template, name Shaft-Support", f"ribbon '{self._g_app_where} > "
                   "Assemblies', Ctrl+N; saved as Shaft-Support", DIFFERS if ok else FAIL,

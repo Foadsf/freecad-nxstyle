@@ -149,7 +149,8 @@
         {"cmd": "Std_ToggleClipPlane", "label": "Clip Section"}
       ]},
       {"name": "Tolerance", "items": [
-        {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"}
+        {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"},
+        {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"}
       ]},
       {"name": "Space", "items": [
         {"cmd": "NXStyle_SimpleInterference", "label": "Simple Interference", "size": "large"},
@@ -170,9 +171,11 @@
       ]},
       {"name": "Inspection", "items": [
         {"cmd": "NXStyle_PMIInspectionPlan", "label": "Inspection Plan", "size": "large"},
-        {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"}
+        {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"},
+        {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"}
       ]},
       {"name": "Publish", "items": [
+        {"cmd": "NXStyle_PMIExportSTEP", "label": "STEP with PMI", "size": "large"},
         {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}
       ]}
     ]},

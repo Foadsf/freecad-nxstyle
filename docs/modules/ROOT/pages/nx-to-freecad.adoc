@@ -25,6 +25,10 @@ include::partial$generated/ribbon-drafting.adoc[]
 
 include::partial$generated/ribbon-algorithmic.adoc[]
 
+== Sheet Metal
+
+include::partial$generated/ribbon-sheet_metal.adoc[]
+
 == Applications
 
 include::partial$generated/applications.adoc[]

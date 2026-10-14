@@ -18,6 +18,8 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 | *Datum Feature Symbol* | A datum letter on the selected face.
 | *Inspection Plan* | Numbers the characteristics (the balloons on the model) and lists them with their limits, where the tolerance comes from, and how to measure them; the functional gauge sizes; the checks.
 | *Tolerance Stackup* | xref:tolerance-analysis.adoc[Tolerance analysis], with *Add from PMI*.
+| *Pin Location* | xref:pin-location.adoc[How precisely two pins locate a part], from the PMI of the pins and the holes.
+| *STEP with PMI* | The part as STEP AP242 with its PMI as data (below).
 | *Publish Release Package* | xref:release-package.adoc[Release packages].
 |===
 
@@ -65,8 +67,46 @@ Dimensions covered by the general tolerance show no tolerance of their own, as o
 
 image::tutorial-T-05-drawing.png[The guide bush drawing: inherited dimensions with H7 and k6 and the envelope, frames, datums and the tolerancing note]
 
+== STEP AP242 with semantic PMI
+
+*PMI › STEP with PMI* writes the part and its PMI into one STEP AP242 file (ISO 10303-242).
+The PMI goes in as data that CAM, CMM software and other CAD systems read, not as pictures:
+
+[cols="1,2",options="header"]
+|===
+| NX-Style PMI | STEP AP242
+| Datum Feature Symbol | `DATUM` and `DATUM_FEATURE` on the face
+| A frame's datums | `DATUM_SYSTEM` of datum reference compartments, in precedence order, with MMB or LMB
+| Diameter, radius | `DIMENSIONAL_SIZE` 'diameter' or 'radius' on the cylinder
+| Width of a slot or a tab | `DIMENSIONAL_SIZE` 'thickness' on both faces (a feature of size)
+| Distance | `DIMENSIONAL_LOCATION` between the two faces
+| Deviations, ISO 286 class | `PLUS_MINUS_TOLERANCE`; a class adds `LIMITS_AND_FITS` ('H', 'hole', '7')
+| Feature Control Frame | its tolerance entity (position, flatness …) with the cylindrical zone for Ø, Ⓜ or Ⓛ, and its datum system; coaxiality under ISO when the toleranced feature is an axis
+|===
+
+FreeCAD's own STEP export drops PMI.
+Its Windows and conda builds ship pythonocc, which reaches OpenCASCADE's dimension and tolerance tools and its AP242 writer; NX-Style maps its PMI onto them (`nxstyle/ap242.py`).
+After writing, OpenCASCADE reads the file back, and the Information window reports what it found.
+Without pythonocc the command writes plain STEP and says why.
+
+Not written, because OpenCASCADE has no semantic slot for them: the envelope Ⓔ, theoretically exact dimensions, a count such as 4X, and the ISO 2768 general tolerance.
+The Information window lists each one; they stay in `pmi.json`, the inspection plan and on the drawing.
+
+OpenCASCADE 7.8 writes the IT grade of `LIMITS_AND_FITS` two too high (IT7 as '9'), and its own reader then returns IT9.
+NX-Style writes the grade each dimension has; the unit tests and the self-test check it.
+
+== FreeCAD's PMI plans and other add-ons
+
+FreeCAD has planned a PMI workbench of its own (issues https://github.com/FreeCAD/FreeCAD/issues/29772[29772] and https://github.com/FreeCAD/FreeCAD/issues/29773[29773]): an annotation set per part, model views, datums, dimensions and geometrical tolerances to ISO GPS, validation and AP242 exchange.
+NX-Style writes its PMI through the OpenCASCADE enumerations the plan maps its objects to (its appendix A).
+Tolerance analysis is outside that plan's scope; here it is the xref:tolerance-analysis.adoc[stack-up] and xref:pin-location.adoc[pin location] analyses, which read the PMI.
+
+The https://github.com/ChipsWoodShop/FreeCAD-MBDWorkbench[MBD Workbench] add-on (LGPL-2.1, an early preview) also writes semantic AP242 through pythonocc, and reads it back into FreeCAD objects.
+NX-Style does not use it.
+The https://wiki.freecad.org/Tolerancing[Tolerancing] page of the FreeCAD wiki collects the earlier attempts.
+
 == What differs from NX
 
 * NX places a PMI with a click in the graphics window and keeps it in model views; here it is placed beside its face, one row per PMI, and there are no model views.
-* NX's PMI is exported in STEP AP242 and JT; FreeCAD's STEP export has no PMI. The xref:release-package.adoc[release package] carries it as `pmi/pmi.json` and the inspection plan.
+* NX's PMI goes to STEP AP242 and JT. NX-Style writes STEP AP242 with semantic PMI, but no graphical PMI (the frames as drawn) and no JT.
 * The checks and the gauge sizes are NX-Style's own; NX has PMI validation through separate checkers.

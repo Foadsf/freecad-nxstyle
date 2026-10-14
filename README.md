@@ -14,7 +14,7 @@ git clone --recursive https://github.com/Foadsf/freecad-nxstyle
 python launch_nx.py
 ```
 
-Strata (`vendor/freecad-strata`) and Katydid (`vendor/Katydid`) are git submodules. In a copy cloned without `--recursive`, fetch them with `git submodule update --init`; until then NXStyle starts without them and the launcher says so.
+Strata (`vendor/freecad-strata`), Katydid (`vendor/Katydid`) and FreeCAD's SheetMetal add-on (`vendor/FreeCAD_SheetMetal`) are git submodules. In a copy cloned without `--recursive`, fetch them with `git submodule update --init`; until then NXStyle starts without them and the launcher says so.
 
 ## How it stays out of your normal FreeCAD
 
@@ -43,7 +43,10 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Drafting › Feature Control Frame, Datum Feature Symbol | NX's GD&T dialogs: characteristic, Ø zone, tolerance, material condition, datums with modifiers; placed against the selected edge or under the selected dimension; values stay editable (FreeCAD itself has only fixed GD&T pictures) |
 | Analysis › Measure Bodies | Volume, surface area, assigned material, density, mass and centre of mass in an NX Information window (FreeCAD's own Measure has no mass) |
 | PMI tab (Product and Manufacturing Information) | 3D PMI to ISO GPS (default) or ASME Y14.5: Tolerancing (standard, ISO 2768 general tolerances), Rapid Dimension with ISO 286 classes (H7, g6 …) and the envelope Ⓔ, Feature Control Frame, Datum Feature Symbol, all measured from and attached to faces; Inspection Plan (numbered characteristics, limits, methods, functional gauge sizes at virtual condition, ISO 8015 and Y14.5 checks). Drafting › Inherit PMI puts it on drawing views |
+| PMI › STEP with PMI | STEP AP242 with semantic PMI (datums and datum systems, sizes and locations with deviations and ISO 286 classes, geometrical tolerances with Ⓜ/Ⓛ), written through OpenCASCADE's XCAF tools and read back to check; FreeCAD's own STEP export drops PMI. Release packages use it too |
 | Analysis › Tolerance Stackup | One-dimensional stack-ups measured from the model or taken from PMI and ISO 286 classes: worst case, RSS, adjusted RSS, MRSS, Monte Carlo, Cp/Cpk/ppm against a requirement; associative (it follows design changes). Checked against Fischer's and Drake's worked examples |
+| Analysis › Pin Location | Two dowel pins in two holes or a hole and a slot, from their PMI: worst-case fit, translation, rotation, pointing error at a target, and the thermal mismatch of two materials (Drake ch. 24, Fischer ch. 15) |
+| Sheet Metal (Ctrl+Shift+M) | FreeCAD's SheetMetal add-on, bundled, with NX's ribbon: Tab, Flange, Bend, Hem Flange, Normal Cutout, Convert to Sheet Metal; Sheet Metal Preferences (thickness, bend radius, neutral factor, with bend allowance and deduction) and a Flat Pattern that uses them. Checked against Shih's hand-calculated flat length |
 | Assemblies › Clearance Analysis, Simple Interference | NX's Assembly Clearance: clearance sets saved in the part, hard / containment / touching / soft interference, penetration depth, Clearance Browser with Study Interference, Restore Visibility, Exclude Pair and New/Gone status |
 | Assemblies › Volume Claim, Check Volume Claims | Space reservations for system layouts: keep-in and keep-out claims with margins; finds parts outside their claim, intrusions and space claimed twice |
 | PLM › Publish Release Package | NX's Publish Technical Data Package role: the released part (from Strata's release, not the working copy) as STEP, native file, drawing PDFs, PMI, inspection plan, stack-ups and mass properties, with a SHA-256 manifest (`python -m nxstyle.package verify`) |
@@ -100,13 +103,13 @@ Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry 
 python launch_nx.py --smoke-test out
 ```
 
-This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 69 behaviours, Strata's start and placement and Katydid's canvas among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
+This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothing appears on your screen (`--visible` to watch). The test drives the real UI with synthetic mouse and key events and checks 70 behaviours, Strata's start and placement, Katydid's canvas and a STEP AP242 file with PMI written and read back among them. It writes `out/smoke.json` plus screenshots, and exits non-zero on any failure.
 
 ```bash
 python launch_nx.py --tutorial out
 ```
 
-Replays the tutorials through the UI (`--tutorials G,H` picks some). S to V are precision-engineering work: Fischer's pin stack-up (the book's numbers reproduced), a guide bush documented to ISO GPS in 3D with its drawing inherited from the PMI, volume claims and assembly clearance in a system layout, and a release with an engineering change and release packages. A to N are exercises from NX, GD&T and engineering-graphics textbooks: keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, a GD&T drawing, sketch Extend/Trim/Fillet and an associative offset, constraints with the solver's degree-of-freedom messages and dimension formulas, a part driven by a table of expressions, CSG with placed features, parent/child relations with Suppress, and an associative drawing that follows a model change. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+Replays the tutorials through the UI (`--tutorials G,H` picks some). S to X are precision-engineering work: Fischer's pin stack-up (the book's numbers reproduced), a guide bush documented to ISO GPS in 3D with its drawing inherited from the PMI and its STEP AP242 with PMI, volume claims and assembly clearance in a system layout, a release with an engineering change and release packages, Shih's sheet metal actuator bracket with its flat length checked against the book, and a laser module located by two pins (fit, rotation, pointing error at 2 m, thermal mismatch). A to N are exercises from NX, GD&T and engineering-graphics textbooks: keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, a GD&T drawing, sketch Extend/Trim/Fillet and an associative offset, constraints with the solver's degree-of-freedom messages and dimension formulas, a part driven by a table of expressions, CSG with placed features, parent/child relations with Suppress, and an associative drawing that follows a model change. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
 
 Each run uses a fresh throwaway profile. To test what a second start sees (settings saved by the first), give both runs the same `--profile DIR`; it is kept between runs.
 
@@ -116,7 +119,7 @@ Self-test and tutorial runs are capped at 4 GB of memory (`--max-memory-gb`), ru
 python -m unittest discover -s tests
 ```
 
-Launcher unit tests; FreeCAD is not needed. These and a lint run on every push (GitHub Actions).
+Unit tests (launcher, ISO 286 and ISO 2768, PMI, stack-ups, clearance, release packages, AP242 mapping, sheet metal, pin location); FreeCAD is not needed. These and a lint run on every push (GitHub Actions).
 
 ## Requirements
 
@@ -126,4 +129,4 @@ Known FreeCAD 1.1.4 issue: a PartDesign Body whose origin planes stay visible di
 
 ## Licence and trademarks
 
-[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata and Katydid are separate projects under the same licence, included as submodules. Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.
+[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata and Katydid are separate projects under the same licence, included as submodules; so is FreeCAD's [SheetMetal add-on](https://github.com/shaise/FreeCAD_SheetMetal) (LGPL-2.1), unmodified. Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.

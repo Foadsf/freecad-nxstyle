@@ -348,6 +348,30 @@ def find_katydid(profile: Path, disabled: bool = False) -> tuple[Path | None, st
 
 
 # --------------------------------------------------------------------------
+# SheetMetal: FreeCAD's sheet metal add-on (shaise/FreeCAD_SheetMetal, LGPL-2.1) behind NX Sheet Metal
+# --------------------------------------------------------------------------
+SHEETMETAL_DIR = HERE / "vendor" / "FreeCAD_SheetMetal"   # git submodule of github.com/shaise/FreeCAD_SheetMetal
+
+
+def find_sheetmetal(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:
+    """The SheetMetal folder to load with -M, or None, and why; one copy only, as for Strata. A copy the
+    Addon Manager installed into the NX profile is loaded by FreeCAD itself."""
+    if disabled:
+        return None, "off (--no-sheetmetal)"
+    cfg = read_settings(profile)
+    if cfg.get("sheet_metal", "sheetmetal") != "sheetmetal":
+        return None, f"off (nxstyle.json: sheet_metal = {cfg.get('sheet_metal')!r})"
+    mods = profile / "data" / "Mod"
+    if mods.is_dir():
+        for mod in sorted(mods.iterdir()):
+            if (mod / "SheetMetalCmd.py").is_file():
+                return None, f"installed in the NX profile ({mod})"
+    if (SHEETMETAL_DIR / "InitGui.py").is_file():
+        return SHEETMETAL_DIR, f"bundled ({SHEETMETAL_DIR})"
+    return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
+
+
+# --------------------------------------------------------------------------
 # Hidden desktop (Windows): run the self-test without windows on the user's screen
 # --------------------------------------------------------------------------
 # A test run gets a hard memory ceiling. On 2026-10-12 a tutorial replay grew
@@ -559,6 +583,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without Strata (versions, releases and sync; on by default)")
     ap.add_argument("--no-katydid", action="store_true",
                     help="start without Katydid (the node-based Algorithmic Modeling canvas; on by default)")
+    ap.add_argument("--no-sheetmetal", action="store_true",
+                    help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -593,11 +619,13 @@ def main(argv: list[str] | None = None) -> int:
     extra["NXSTYLE_STRATA_EXPECTED"] = "1" if strata or "NX profile" in strata_why else "0"
     katydid, katydid_why = find_katydid(profile.resolve(), disabled=args.no_katydid)
     extra["NXSTYLE_KATYDID_EXPECTED"] = "1" if katydid or "NX profile" in katydid_why else "0"
-    cmd = build_command(install, args.files, passthrough, tuple(m for m in (strata, katydid) if m))
+    sheetmetal, sheetmetal_why = find_sheetmetal(profile.resolve(), disabled=args.no_sheetmetal)
+    extra["NXSTYLE_SHEETMETAL_EXPECTED"] = "1" if sheetmetal or "NX profile" in sheetmetal_why else "0"
+    cmd = build_command(install, args.files, passthrough, tuple(m for m in (strata, katydid, sheetmetal) if m))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
-                          "command": cmd}, indent=2))
+                          "sheetmetal": sheetmetal_why, "command": cmd}, indent=2))
         return 0
 
     paths = prepare_profile(profile, reset=reset)
@@ -607,6 +635,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"NX profile: {profile.resolve()}")
     print(f"Strata: {strata_why}")
     print(f"Katydid: {katydid_why}")
+    print(f"SheetMetal: {sheetmetal_why}")
 
     if harness:
         if os.name == "nt":

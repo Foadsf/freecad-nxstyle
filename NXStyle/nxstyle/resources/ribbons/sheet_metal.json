@@ -1,0 +1,47 @@
+{
+  "_comment": "NX Sheet Metal mapped onto FreeCAD's SheetMetal add-on (github.com/shaise/FreeCAD_SheetMetal, bundled as vendor/FreeCAD_SheetMetal). The add-on registers its commands when its workbench (SMWorkbench) starts, which switching to this application does. Sheet Metal Preferences and Flat Pattern are NXStyle's (sheetmetal_ui.py).",
+  "title": "Sheet Metal",
+  "workbench": "SMWorkbench",
+  "preload": ["SketcherWorkbench", "PartDesignWorkbench"],
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "Direct Sketch", "items": [
+        {"cmd": ["SheetMetal_NewSketch", "Sketcher_NewSketch"], "label": "Sketch", "size": "large"}
+      ]},
+      {"name": "Basic", "items": [
+        {"cmd": "SheetMetal_AddBase", "label": "Tab", "size": "large"},
+        {"cmd": "SheetMetal_AddWall", "label": "Flange", "size": "large"},
+        {"cmd": "SheetMetal_AddFoldWall", "label": "Bend", "size": "large"},
+        {"cmd": "SheetMetal_AddHem", "label": "Hem Flange"},
+        {"cmd": "SheetMetal_Extrude", "label": "Extend Face"},
+        {"cmd": "SheetMetal_ExtendBySketch", "label": "Extend by Sketch"},
+        {"cmd": "SheetMetal_BaseShape", "label": "Base Shape"}
+      ]},
+      {"name": "Convert", "items": [
+        {"cmd": "SheetMetal_FromSolid", "label": "Convert to Sheet Metal", "size": "large"},
+        {"cmd": "SheetMetal_AddJunction", "label": "Rip"},
+        {"cmd": "SheetMetal_AddBend", "label": "Bend on Edge"}
+      ]},
+      {"name": "Corner", "items": [
+        {"cmd": "SheetMetal_AddRelief", "label": "Bend Relief"},
+        {"cmd": "SheetMetal_AddCornerRelief", "label": "Corner Relief"}
+      ]},
+      {"name": "Feature", "items": [
+        {"cmd": "SheetMetal_AddCutout", "label": "Normal Cutout", "size": "large"},
+        {"cmd": "SheetMetal_SketchOnSheet", "label": "Wrapped Cutout"},
+        {"cmd": "SheetMetal_Forming", "label": "Form Feature"}
+      ]},
+      {"name": "Flat Pattern", "items": [
+        {"cmd": "NXStyle_FlatPattern", "label": "Flat Pattern", "size": "large"},
+        {"cmd": "SheetMetal_UnfoldUpdate", "label": "Update Flat Pattern"},
+        {"cmd": "NXStyle_SheetMetalPreferences", "label": "Sheet Metal Preferences", "size": "large"}
+      ]}
+    ]},
+    {"include": "modeling:Analysis"},
+    {"include": "modeling:PMI"},
+    {"include": "common:View"},
+    {"include": "common:Tools"},
+    {"include": "common:PLM"},
+    {"include": "common:Application"}
+  ]
+}

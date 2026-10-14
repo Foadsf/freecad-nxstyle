@@ -18,7 +18,8 @@ Without a release (or without Strata) the package is made from the open document
 
 ----
 BUSH-100_B/
-  model/BUSH-100_B.step         the solids (STEP; the schema written is recorded in the manifest)
+  model/BUSH-100_B.step         the solids as STEP AP242, with the semantic PMI when the part has PMI
+                                (the manifest records the schema and the PMI the file holds)
   model/BUSH-100_B.FCStd        the released FreeCAD document
   drawings/Page.pdf             every drawing sheet
   pmi/pmi.json                  the PMI, semantic: standard, general tolerances, every annotation
@@ -47,5 +48,5 @@ Run it from the `NXStyle` folder, or with that folder on `PYTHONPATH`; it needs 
 
 == What differs from NX
 
-* NX publishes PMI in 3D PDF or JT and in STEP AP242 with semantic PMI. FreeCAD's STEP export has no PMI, so the package carries it as `pmi.json` and the inspection plan.
+* NX publishes PMI in 3D PDF or JT and in STEP AP242 with semantic PMI. NX-Style's package has the semantic PMI in its STEP file (see xref:pmi.adoc#_step_ap242_with_semantic_pmi[STEP AP242 with semantic PMI]) and everything else in `pmi.json` and the inspection plan; there is no 3D PDF or JT.
 * The checksummed manifest and the verify command are NX-Style's.

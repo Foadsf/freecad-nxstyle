@@ -132,6 +132,7 @@ class Shell(QtCore.QObject):
         self._last_sketch = None
         self._pending_idle = 0
         self._known_docs = set(App.listDocuments())
+        self._waiting_docs = {}        # new empty documents not yet active: ticks waited
 
     # ================================================================ setup
     def setup(self):
@@ -651,6 +652,25 @@ class Shell(QtCore.QObject):
                 commands.pending_feature["command"] = None
                 self._pending_idle = 0
 
+    def _activate_document(self, doc):
+        """Make doc the active document by activating its 3D window; True when it is active."""
+        mdi = self.mw.findChild(QtWidgets.QMdiArea)
+        gdoc = Gui.getDocument(doc.Name)
+        for sub in mdi.subWindowList() if mdi is not None else []:
+            title = sub.windowTitle()
+            if title.split(" : ")[0].rstrip("*") in (doc.Label, doc.Name):
+                mdi.setActiveSubWindow(sub)
+                break
+        QtWidgets.QApplication.processEvents()
+        if App.ActiveDocument is not doc:
+            App.setActiveDocument(doc.Name)
+            try:
+                Gui.ActiveDocument = gdoc
+            except Exception:
+                pass
+        return App.ActiveDocument is doc and Gui.ActiveDocument is not None \
+            and Gui.ActiveDocument.Document is doc
+
     def _new_part_template(self):
         """NX's Model template starts with a datum coordinate system; give a new
         empty document a Body ready to sketch on. In the Assemblies application
@@ -668,8 +688,18 @@ class Shell(QtCore.QObject):
                 self._known_docs.add(name)
                 continue
             views = gdoc.mdiViewsOfType("Gui::View3DInventor") if gdoc else []
-            if not views or App.ActiveDocument is not doc:
+            if not views:
                 continue          # view not ready yet: try again on the next tick
+            if App.ActiveDocument is not doc:
+                # File > New makes the new part the active one, but when other documents were just
+                # opened by a script their deferred activation can take the focus back (measured,
+                # FreeCAD 1.1.4: the new part stayed inactive behind the last opened one). After a
+                # few ticks, bring the new part's window to the front as clicking its tab would.
+                waited = self._waiting_docs.get(name, 0) + 1
+                self._waiting_docs[name] = waited
+                if waited < 3 or not self._activate_document(doc):
+                    continue
+            self._waiting_docs.pop(name, None)
             if self.current_app.get("id") == "assemblies":
                 # NX's Assembly template: an empty assembly, ready for Add Component
                 Gui.runCommand("Assembly_CreateAssembly")
@@ -680,6 +710,7 @@ class Shell(QtCore.QObject):
                 Gui.runCommand("PartDesign_Body")
             self._known_docs.add(name)
         self._known_docs &= names
+        self._waiting_docs = {k: v for k, v in self._waiting_docs.items() if k in names}
 
     def _tick(self):
         self._feature_flow()

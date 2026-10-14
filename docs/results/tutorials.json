@@ -1606,7 +1606,7 @@
    "nx": "File > Applications > Modeling",
    "replay": "ribbon 'Application › Design > Modeling'",
    "outcome": "same",
-   "detail": "application modeling; the new part stays the active one: True (Unnamed : 1[*])"
+   "detail": "application modeling; the new part stays the active one: True (Unnamed1 : 1[*])"
   },
   {
    "tutorial": "L: The Locator (millimetres)",
@@ -2731,6 +2731,14 @@
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
    "n": 15,
+   "nx": "PMI > STEP with PMI: the bush and its PMI as STEP AP242 data",
+   "replay": "ribbon 'PMI › Publish > STEP with PMI', the file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; read back by OpenCASCADE: {'datums': 2, 'dimensions': 4, 'geometric_tolerances': 2}. NX writes PMI to STEP AP242 too; FreeCAD's own STEP export drops it. The envelope Ⓔ and the ISO 2768 note have no semantic AP242 form in OpenCASCADE and are listed as not written"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 16,
    "nx": "Drafting: New Sheet, a top view and a front view at 2:1",
    "replay": "Ctrl+Shift+D, ribbon 'New Sheet', twice 'Base View' with the body selected",
    "outcome": "differs",
@@ -2738,7 +2746,7 @@
   },
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
-   "n": 16,
+   "n": 17,
    "nx": "Inherit PMI on each view: the dimensions with their ISO classes and the envelope, the frames, the datum symbols, and the tolerancing note",
    "replay": "each view selected + ribbon 'Drafting > Inherit PMI'",
    "outcome": "differs",
@@ -2878,7 +2886,7 @@
    "nx": "Publish the release package of rev A",
    "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev A (Released)', folder typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
+   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF with PMI: schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
   },
   {
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
@@ -2926,7 +2934,7 @@
    "nx": "Publish the release package of rev B",
    "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev B (Released)', folder typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_B.FCStd, model/BUSH-100_B.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
+   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_B.FCStd, model/BUSH-100_B.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF with PMI: schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: F7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
   },
   {
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
@@ -2934,7 +2942,7 @@
    "nx": "Publish rev A again (now obsolete), after the change",
    "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev A (Obsolete)', folder typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
+   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF with PMI: schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
   },
   {
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
@@ -2943,6 +2951,126 @@
    "replay": "the two packages' pmi/inspection_plan.csv",
    "outcome": "same",
    "detail": "rev A bore 16.0 to 16.018; rev B 16.016 to 16.034; rev A, published again after the change, still documents H7: a package is made from what was released, not from the working copy"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 1,
+   "nx": "Ctrl+Shift+M: the Sheet Metal application",
+   "replay": "Ctrl+Shift+M",
+   "outcome": "same",
+   "detail": "application sheet_metal; tabs ['Home', 'Analysis', 'PMI', 'View', 'Tools', 'PLM', 'Application']; commands not found none; Tab, Flange, Bend, Hem Flange, Normal Cutout and Flat Pattern from FreeCAD's SheetMetal add-on (bundled), Sheet Metal Preferences and Flat Pattern from NXStyle"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 2,
+   "nx": "Sheet Metal Preferences: 16 gauge, thickness and bend radius 0.0625 in (1.5875 mm), neutral factor 0.41",
+   "replay": "ribbon 'Home › Flat Pattern > Sheet Metal Preferences', the three values typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "Thickness 1.587 mm, inside radius 1.587 mm, neutral factor K 0.41 (DIN k 0.82); 90° bend: bend allowance 3.5160 mm, outside setback 3.1750 mm, bend deduction 2.8340 mm. NX: Sheet Metal Preferences > Part Properties; here they are the add-on's defaults, so Tab and Flange start from them"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 3,
+   "nx": "The tab's profile: 1.633 x 1.620 in (the tab 1.508 in between the flanges' inside faces, plus two thicknesses)",
+   "replay": "drawn by script (tutorials A to D show sketching)",
+   "outcome": "differs",
+   "detail": "rectangle 41.4782 x 41.1480 mm on the XY plane of the body"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 4,
+   "nx": "Tab: the sketch becomes a plate of the preferred thickness",
+   "replay": "sketch selected + ribbon 'Home › Basic > Tab'; MB2 = OK",
+   "outcome": "same",
+   "detail": "thickness field showed 1.59 mm; plate 41.4782 x 41.1480 x 1.5875 mm"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 5,
+   "nx": "Flange on both long edges: 0.615 in outside, material inside",
+   "replay": "the two top edges selected + ribbon 'Home › Basic > Flange'; Length 15.6210 typed, Outer Sharp, Material Inside; MB2 = OK",
+   "outcome": "same",
+   "detail": "bracket 41.4782 x 41.1480 x 15.6210 mm; bend radius 1.5875 and K 0.41 from the preferences"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 6,
+   "nx": "Flat Pattern: unfolded with the neutral factor 0.41; its length against the book's hand calculation",
+   "replay": "the outside of the tab selected + ribbon 'Home › Flat Pattern > Flat Pattern'; MB2 = OK",
+   "outcome": "same",
+   "detail": "K field showed 0.41; flat 67.0523 x 41.1480 mm; by hand (Shih p. 13-31): 2 x 1.31992 in = 67.0519 mm; bend allowance 0.13843 in (0.41 used)"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 7,
+   "nx": "The bracket and its flat pattern in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "13.4% of the view shows the part"
+  },
+  {
+   "tutorial": "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)",
+   "n": 8,
+   "nx": "Drafting: the flat pattern on a sheet at 2:1 with its overall sizes",
+   "replay": "Ctrl+Shift+D, ribbon 'New Sheet', the flat pattern selected + 'Base View'; the two dimensions placed by script",
+   "outcome": "differs",
+   "detail": "dimensions [67.052, 41.148] mm (flat length 67.052 expected; view projected before dimensioning: True); NX has a Flat Pattern view type, here the flat pattern solid is viewed from above"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 1,
+   "nx": "The layout: a steel bench with two Ø6 pins 80 mm apart, an aluminium laser module with two Ø6 holes, the beam; PMI: holes G6, pins h6",
+   "replay": "modelled by script, materials Steel-1C45 and Aluminum-6061-T6 assigned, PMI made as in tutorial T",
+   "outcome": "differs",
+   "detail": "PMI ['Ø6.000 G6 (+0.012/+0.004)', 'Ø6.000 G6 (+0.012/+0.004)', 'Ø6.000 h6 (+0.000/-0.008)', 'Ø6.000 h6 (+0.000/-0.008)']; the beam must hit a target 2 m away within ±0.15 mm"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 2,
+   "nx": "Analysis > Pin Location: two holes G6 on pins h6, spacings ±0.005",
+   "replay": "the four PMI dimensions selected + ribbon 'Analysis › Tolerance > Pin Location'; tolerances, target 2000 mm and limit ±0.15 typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "clearance -0.0060 mm: does NOT assemble; pointing EXCEEDS ±0.15 mm. Drake 24.2: the holes' clearance (0.004 mm) cannot absorb the 0.010 mm the spacings may differ. Expansion from the materials: 23.6 and 11 µm/m/K. NX has no pin location analysis (a variation analysis add-on does this)"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 3,
+   "nx": "The second hole becomes a slot 6 G6 wide, 7 long, along the line of centres",
+   "replay": "the model changed by script, the slot's width dimensioned G6; the analysis double-clicked, slot length 7 typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "assembles; pointing EXCEEDS ±0.15 mm; clearance +0.0020 mm, translation 0.0100 mm, rotation 0.2500 mrad, pointing 0.5000 mm at 2 m (D tan a). Drake 24.12: the slot takes the spacings out of the fit"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 4,
+   "nx": "The pins 200 mm apart instead of 80: the same clearances turn the module less",
+   "replay": "the model changed by script; the PMI and the analysis follow",
+   "outcome": "differs",
+   "detail": "spacings 200.000 / 200.000 mm measured from the model; rotation 0.1000 mrad, pointing 0.2000 mm: assembles; pointing EXCEEDS ±0.15 mm"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 5,
+   "nx": "Finer ISO 286 classes: holes and slot G5, pins h5",
+   "replay": "the PMI's Fit properties (as in tutorial V's ECO)",
+   "outcome": "differs",
+   "detail": "translation 0.0070 mm, rotation 0.0700 mrad, pointing 0.1400 mm: assembles; pointing within ±0.15 mm"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 6,
+   "nx": "Assembled 10 K above the reference temperature: aluminium on steel",
+   "replay": "the analysis double-clicked, 10 K typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "the spacings part by 0.0252 mm (Drake 24.10: 200 mm x 10 K x (23.6 - 11.0) µm/m/K); the slot takes it up; assembles; pointing within ±0.15 mm"
+  },
+  {
+   "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
+   "n": 7,
+   "nx": "The bench, the module on its pins and the beam",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "2.5% of the view shows the part"
   }
  ],
  "info": {

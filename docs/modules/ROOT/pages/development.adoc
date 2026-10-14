@@ -45,12 +45,15 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `clearance_core.py`, `clearance.py` | Assembly Clearance: the classification (no FreeCAD), clearance sets, the Clearance Browser, Simple Interference.
 | `claims.py` | Volume claims and Check Volume Claims.
 | `package.py`, `package_ui.py` | Release packages: manifest, checksums, zip, verify (no FreeCAD); Publish Release Package.
+| `ap242.py` | STEP AP242 with semantic PMI: the mapping onto OpenCASCADE's XCAF enumerations and the file checks (no FreeCAD), the writer and the read-back through pythonocc.
+| `sheetmetal.py`, `sheetmetal_ui.py` | Bend allowance, bend deduction and flat length (no FreeCAD); Sheet Metal Preferences and Flat Pattern on the bundled SheetMetal add-on.
+| `alignment.py`, `alignment_ui.py` | Pin location: fit, translation, rotation, pointing error and thermal mismatch (no FreeCAD); the Pin Location analysis object and dialog.
 | `refs.py` | Picked faces as stable references; positions along a direction; hole or pin.
 | `prefs.py` | NX values in FreeCAD's parameter tree (they land in the NX profile's `user.cfg`).
 | `config.py` | Settings and their defaults (xref:settings.adoc[]).
 | `plm.py` | Strata as the data management.
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
-| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `tutorial_katydid.py` and `tutorial_precision.py` hold tutorials O–R and S–V.
+| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `tutorial_katydid.py` and `tutorial_precision.py` hold tutorials O–R and S–X.
 |===
 
 == Ribbon files

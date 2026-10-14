@@ -661,9 +661,11 @@ def register(apps):
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
-    from . import claims, clearance, gdt_ui, pmi_ui, package_ui, stackup_ui
+    from . import alignment_ui, claims, clearance, gdt_ui, pmi_ui, package_ui, sheetmetal_ui, stackup_ui
+    table.update(alignment_ui.COMMANDS)
     table.update(claims.COMMANDS)
     table.update(clearance.COMMANDS)
+    table.update(sheetmetal_ui.COMMANDS)
     table["NXStyle_FeatureControlFrame"] = gdt_ui.FeatureControlFrame()
     table["NXStyle_DatumFeatureSymbol"] = gdt_ui.DatumFeatureSymbol()
     table["NXStyle_ToleranceStackup"] = stackup_ui.ToleranceStackup()

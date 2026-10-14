@@ -197,6 +197,47 @@ class KatydidTests(unittest.TestCase):
         self.assertEqual(cmd[3:7], ["-M", "strata", "-M", "katydid"])
 
 
+class SheetMetalTests(unittest.TestCase):
+    """The SheetMetal add-on behind NX Sheet Metal: bundled, loaded once, switched off on its own."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.bundled = root / "vendor" / "FreeCAD_SheetMetal"
+        self.bundled.mkdir(parents=True)
+        (self.bundled / "InitGui.py").write_text("")
+        self.profile = root / "profile"
+        self._saved = launch_nx.SHEETMETAL_DIR
+        launch_nx.SHEETMETAL_DIR = self.bundled
+
+    def tearDown(self):
+        launch_nx.SHEETMETAL_DIR = self._saved
+        self.tmp.cleanup()
+
+    def test_bundled_copy_by_default(self):
+        self.assertEqual(launch_nx.find_sheetmetal(self.profile)[0], self.bundled)
+
+    def test_profile_install_is_not_loaded_twice(self):
+        mod = self.profile / "data" / "Mod" / "sheetmetal"
+        mod.mkdir(parents=True)
+        (mod / "SheetMetalCmd.py").write_text("")
+        where, why = launch_nx.find_sheetmetal(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("NX profile", why)
+
+    def test_switched_off_by_flag_or_config(self):
+        self.assertIsNone(launch_nx.find_sheetmetal(self.profile, disabled=True)[0])
+        (self.profile / "config").mkdir(parents=True)
+        (self.profile / "config" / "nxstyle.json").write_text('{"sheet_metal": "none"}')
+        self.assertIsNone(launch_nx.find_sheetmetal(self.profile)[0])
+
+    def test_missing_submodule_says_how_to_get_it(self):
+        (self.bundled / "InitGui.py").unlink()
+        where, why = launch_nx.find_sheetmetal(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("submodule", why)
+
+
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")
 class MemoryCeilingTests(unittest.TestCase):
     """A runaway test run must stop at its ceiling instead of exhausting the machine."""

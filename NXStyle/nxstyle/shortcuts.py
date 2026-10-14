@@ -113,8 +113,10 @@ TABLE = [
     # ---- Applications
     Entry("Modeling", "Ctrl+M", "NXStyle_App_modeling"),
     Entry("Sheet Metal", "Ctrl+Shift+M", "NXStyle_App_sheet_metal",
-          message="Sheet Metal needs FreeCAD's SheetMetal add-on. Install it in this NX profile with "
-                  "Tools > Add-on Manager, restart, and Ctrl+Shift+M will open it."),
+          message="Sheet Metal uses FreeCAD's SheetMetal add-on, which NXStyle bundles: start FreeCAD with "
+                  "launch_nx.py after 'git submodule update --init' (and without --no-sheetmetal or "
+                  "\"sheet_metal\": \"none\" in nxstyle.json), or install the add-on in this NX profile with "
+                  "Tools > Add-on Manager."),
     Entry("Drafting", "Ctrl+Shift+D", "NXStyle_App_drafting"),
     Entry("Layout", "Ctrl+Shift+Y", "NXStyle_App_draft", note="FreeCAD's Draft 2D workbench"),
     Entry("Shape Studio", "Ctrl+Alt+S", "NXStyle_App_shape_studio", note="FreeCAD's Surface workbench"),

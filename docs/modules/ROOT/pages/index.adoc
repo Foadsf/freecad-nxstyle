@@ -21,6 +21,10 @@ Fits, the envelope, ISO 2768 and geometrical tolerances in the model; drawings t
 Stack-ups measured from the model: worst case, RSS, Monte Carlo.
 * *xref:clearance.adoc[Clearance and volume claims]* +
 NX's Assembly Clearance and space reservations for system layouts.
+* *xref:sheet-metal.adoc[Sheet Metal]* +
+Tabs, flanges and flat patterns, with the bend allowance worked out.
+* *xref:pin-location.adoc[Pin location]* +
+Fit, shift, rotation and pointing error of a part on two dowel pins.
 * *xref:keyboard-shortcuts.adoc[Shortcuts]* +
 All 65 NX key bindings and what each one does here.
 
@@ -63,8 +67,14 @@ All 65 NX key bindings and what each one does here.
 | PMI tab, Inherit PMI
 | 3D PMI to ISO GPS (or ASME Y14.5): ISO 286 fits, the envelope, ISO 2768 general tolerances, datums, frames, an inspection plan with checks and gauge sizes; drawings inherit it. See xref:pmi.adoc[].
 
+| Export STEP with PMI
+| *PMI › STEP with PMI*: STEP AP242 with the semantic PMI (datums, sizes and locations with their ISO 286 classes, geometrical tolerances). See xref:pmi.adoc[].
+
 | Tolerance Stackup Validation
-| xref:tolerance-analysis.adoc[Tolerance Stackup]: measured from the model or from PMI; worst case, RSS, adjusted RSS, MRSS, Monte Carlo.
+| xref:tolerance-analysis.adoc[Tolerance Stackup]: measured from the model or from PMI; worst case, RSS, adjusted RSS, MRSS, Monte Carlo. xref:pin-location.adoc[Pin Location] for parts on two dowel pins.
+
+| Sheet Metal
+| kbd:[Ctrl+Shift+M]: FreeCAD's SheetMetal add-on (bundled) with NX's names, Sheet Metal Preferences and Flat Pattern. See xref:sheet-metal.adoc[].
 
 | Assembly Clearance, Simple Interference
 | The same four kinds of interference and the Clearance Browser; plus volume claims. See xref:clearance.adoc[].

@@ -1,0 +1,2 @@
+# FreeCAD's SheetMetal add-on is bundled unmodified as a submodule; it is linted by its own project.
+extend-exclude = ["vendor/FreeCAD_SheetMetal"]

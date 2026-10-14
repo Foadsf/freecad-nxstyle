@@ -12,8 +12,10 @@
 * xref:modeling.adoc[Modeling]
 * xref:assemblies.adoc[Assemblies]
 * xref:drafting.adoc[Drafting and GD&T]
+* xref:sheet-metal.adoc[Sheet Metal]
 * xref:pmi.adoc[PMI and technical product documentation]
 * xref:tolerance-analysis.adoc[Tolerance analysis]
+* xref:pin-location.adoc[Pin location]
 * xref:clearance.adoc[Assembly clearance and volume claims]
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
@@ -44,6 +46,8 @@
 * xref:tutorials/t.adoc[T: A guide bush to ISO GPS (PMI)]
 * xref:tutorials/u.adoc[U: Volume claims and clearance]
 * xref:tutorials/v.adoc[V: Release and engineering change]
+* xref:tutorials/w.adoc[W: The actuator bracket in sheet metal]
+* xref:tutorials/x.adoc[X: Locating a laser module with two pins]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

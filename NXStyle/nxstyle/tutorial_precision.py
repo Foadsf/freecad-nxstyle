@@ -166,6 +166,27 @@ class PrecisionTutorials:
         except RuntimeError:                       # already closed and deleted
             return ""
 
+    def p_modeling(self):
+        """Start in the Modeling application (Ctrl+M), as the books assume; a tutorial run after the
+        Algorithmic Modeling ones would otherwise begin on Katydid's ribbon."""
+        if (getattr(self.shell, "current_app", None) or {}).get("id") != "modeling":
+            self.key("Ctrl+M")
+            self.wait = 2500
+        else:
+            self.wait = 100
+
+    def p_shot_info(self, name):
+        """A screenshot of the Information window alone (the main window grab leaves it out)."""
+        from . import commands
+        dlg = commands._info_dialog
+        try:
+            if dlg is not None and dlg.isVisible():
+                dlg.grab().save(os.path.join(_out(), name))
+                return
+        except RuntimeError:
+            pass
+        self.shot(name)
+
     def p_close_info(self):
         """Close the Information window as a user does (its close button), and give the keys back to the
         main window."""
@@ -384,10 +405,10 @@ class PrecisionTutorials:
     T_Z = {"under": 0.0, "shoulder": 8.0, "top": 38.0}
 
     def T_STEPS(self):
-        return [self.t_new, self.t_part, self.t_tolerancing, self.t_body_size, self.t_datum_a, self.t_datum_b,
+        return [self.p_modeling, self.t_new, self.t_part, self.t_tolerancing, self.t_body_size, self.t_datum_a, self.t_datum_b,
                 self.t_bore_size, self.t_coaxiality, self.t_perpendicularity, self.t_length, self.t_flange,
-                self.t_plan, self.t_envelope, self.t_fit, self.t_pmi_view, self.t_drafting, self.t_views,
-                self.t_inherit, self.t_drawing]
+                self.t_plan, self.t_envelope, self.t_fit, self.t_pmi_view, self.t_step, self.t_drafting,
+                self.t_views, self.t_inherit, self.t_drawing]
 
     def t_volume(self):
         return math.pi * ((20 ** 2 - 8 ** 2) * 8 + (12.5 ** 2 - 8 ** 2) * 30)
@@ -614,6 +635,31 @@ class PrecisionTutorials:
         self.shot("T_pmi_window.png")
         App.ActiveDocument.save()
 
+    def t_step(self):
+        """PMI > STEP with PMI: the bush and its PMI as AP242 data, read back by OpenCASCADE."""
+        from . import ap242, pmi_ui
+        path = os.path.join(_out(), "GuideBush.step")
+        b, where = self.click_ribbon("STEP with PMI", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        typed = self.p_type("stepFile", path)
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        text = self.p_info_text()
+        s = ap242.summary(open(path, encoding="latin-1").read()) if os.path.isfile(path) else None
+        back = pmi_ui.last.get("read_back") or {}
+        ok = (typed and s is not None and s["schema"].startswith("AP242") and s["datums"] == ["A", "B"]
+              and s["fits"] == ["H7", "k6"] and s["dimensions"].get("diameter") == 2
+              and s["tolerances"] == {"COAXIALITY_TOLERANCE": 1, "PERPENDICULARITY_TOLERANCE": 1}
+              and back.get("dimensions") == 4 and back.get("geometric_tolerances") == 2 and "envelope" in text)
+        self.step("PMI > STEP with PMI: the bush and its PMI as STEP AP242 data", f"ribbon '{where} > STEP with PMI', "
+                  "the file name typed, MB2 = OK", DIFFERS if ok else FAIL,
+                  (ap242.summary_text(s) if s else "no file") + f"; read back by OpenCASCADE: {back}. NX writes PMI "
+                  "to STEP AP242 too; FreeCAD's own STEP export drops it. The envelope Ⓔ and the ISO 2768 note have no "
+                  "semantic AP242 form in OpenCASCADE and are listed as not written")
+        self.p_shot_info("T_step.png")
+        self.p_close_info()
+        self.wait = 300
+
     def t_drafting(self):
         self.key("Ctrl+Shift+D")
         self.wait = 2500
@@ -727,7 +773,7 @@ class PrecisionTutorials:
     }
 
     def U_STEPS(self):
-        return [self.u_new, self.u_layout, self.u_claim_structure, self.u_claim_stage, self.u_claim_sensor,
+        return [self.p_modeling, self.u_new, self.u_layout, self.u_claim_structure, self.u_claim_stage, self.u_claim_sensor,
                 self.u_claim_path, self.u_check, self.u_fix, self.u_recheck, self.u_clearance, self.u_study,
                 self.u_exclude, self.u_close]
 
@@ -1071,12 +1117,16 @@ class PrecisionTutorials:
         files = [e["path"] for e in m.get("files", [])]
         meta = m.get("package", {})
         need = [f"model/BUSH-100_{rev}.step", f"model/BUSH-100_{rev}.FCStd", "pmi/inspection_plan.csv", "pmi/pmi.json"]
+        bore = {"A": "H7", "B": "F7"}.get(rev)
+        step_pmi = meta.get("step_pmi", "")
         ok = (not problems and all(n in files for n in need) and any(f.startswith("drawings/") for f in files)
-              and meta.get("revision") == rev and meta.get("state") == state and os.path.isfile(folder + ".zip"))
+              and meta.get("revision") == rev and meta.get("state") == state and os.path.isfile(folder + ".zip")
+              and (bore is None or f"fits: {bore}" in step_pmi))
         self.step(label, f"ribbon '{where} > Publish Release Package', release '{choice}', folder typed, MB2 = OK",
                   DIFFERS if ok else FAIL, f"{len(files)} files ({', '.join(files)}); STEP schema "
-                  f"{meta.get('step_schema', '?')}; standard {meta.get('standard', '?')}; checksums verified "
-                  f"{'OK' if not problems else problems}. NX: File > Export > Publish Technical Data Package")
+                  f"{meta.get('step_schema', '?')} with PMI: {step_pmi or 'none'}; standard {meta.get('standard', '?')}; "
+                  f"checksums verified {'OK' if not problems else problems}. "
+                  "NX: File > Export > Publish Technical Data Package")
         self.p_close_info()
         return folder
 
@@ -1217,4 +1267,590 @@ class PrecisionTutorials:
         self.step("OK: the clearance report", "MB2 = OK", SAME if "Assembly clearance" in text else FAIL,
                   "the clearance set stays in the Part Navigator; double-click it to run it again")
         self.p_close_info()
+        App.ActiveDocument.save()
+
+    # ================================================================ tutorial W
+    # Shih, Parametric Modeling with Siemens NX, ch. 13: the actuator bracket in 16 gauge sheet (T = R = 0.0625 in,
+    # neutral factor 0.41): a tab 1.508 in between the flanges' inside faces and 1.620 in long, two
+    # flanges 0.615 in tall outside. The book flattens half of it by hand to 1.31992 in; the flat
+    # pattern must come out at twice that, 2.63985 in = 67.052 mm.
+    IN = 25.4
+    W_T = 0.0625 * 25.4
+    W_TAB = 1.508 * 25.4               # between the flanges' inside faces
+    W_LEN = 1.620 * 25.4
+    W_FLANGE = 0.615 * 25.4            # outside height
+    W_K = 0.41
+
+    def W_STEPS(self):
+        return [self.p_modeling, self.w_new, self.w_app, self.w_check_app, self.w_prefs, self.w_profile, self.w_tab, self.w_flange,
+                self.w_flat, self.w_show, self.w_drafting, self.w_drawing, self.w_dims, self.w_done]
+
+    def w_width(self):
+        return self.W_TAB + 2 * self.W_T
+
+    def w_expected(self):
+        from . import sheetmetal as sm
+        half = sm.flat_from_outside([self.W_TAB / 2 + self.W_T, self.W_FLANGE], [(90, self.W_T)], self.W_T, self.W_K)
+        return 2 * half
+
+    def w_new(self):
+        self.tutorial = "W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def w_app(self):
+        self.wait_for("w_app: Body", lambda: self.body() is not None)
+        App.ActiveDocument.saveAs(os.path.join(_out(), "ActuatorBracket.FCStd"))
+        self.key("Ctrl+Shift+M")
+        self.wait = 3000
+
+    def w_check_app(self):
+        app = (getattr(self.shell, "current_app", None) or {}).get("id")
+        tabs = self.shell.ribbon.tab_names()
+        missing = [m for m in self.shell.ribbon.missing if m.startswith(("SheetMetal_", "NXStyle_"))]
+        ok = app == "sheet_metal" and tabs[:1] == ["Home"] and "PMI" in tabs and not missing and \
+            self.ribbon_button("Flange")[0] is not None
+        self.step("Ctrl+Shift+M: the Sheet Metal application", "Ctrl+Shift+M", SAME if ok else FAIL,
+                  f"application {app}; tabs {tabs}; commands not found {missing or 'none'}; Tab, Flange, Bend, Hem "
+                  "Flange, Normal Cutout and Flat Pattern from FreeCAD's SheetMetal add-on (bundled), Sheet Metal "
+                  "Preferences and Flat Pattern from NXStyle")
+        self.shot("W_ribbon.png")
+        self.wait = 300
+
+    def w_prefs(self):
+        from . import sheetmetal_ui
+        b, where = self.click_ribbon("Sheet Metal Preferences")
+        QtWidgets.QApplication.processEvents()
+        typed = all([self.p_spin("thickness", self.W_T), self.p_spin("radius", self.W_T),
+                     self.p_spin("neutral", self.W_K)])
+        info = self.p_widget(QtWidgets.QLabel, "bendInfo")
+        text = info.text().replace("<br>", "; ") if info is not None else ""
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        T, R, K = sheetmetal_ui.preferences()
+        ok = typed and abs(T - self.W_T) < 1e-6 and abs(R - self.W_T) < 1e-6 and abs(K - self.W_K) < 1e-9 \
+            and not Gui.Control.activeDialog()
+        self.step("Sheet Metal Preferences: 16 gauge, thickness and bend radius 0.0625 in (1.5875 mm), neutral "
+                  "factor 0.41", f"ribbon '{where} > Sheet Metal Preferences', the three values typed, MB2 = OK",
+                  DIFFERS if ok else FAIL, f"{text}. NX: Sheet Metal Preferences > Part Properties; here they are the "
+                  "add-on's defaults, so Tab and Flange start from them")
+        self.wait = 300
+
+    def w_profile(self):
+        import Part
+        doc = App.ActiveDocument
+        body = self.body()
+        try:
+            self.view().setActiveObject("pdbody", body)
+        except Exception:
+            pass
+        sk = body.newObject("Sketcher::SketchObject", "TabProfile")
+        sk.AttachmentSupport = [(body.Origin.OriginFeatures[3], "")]      # XY plane
+        sk.MapMode = "FlatFace"
+        W, L = self.w_width(), self.W_LEN
+        V = App.Vector
+        pts = [V(0, 0, 0), V(W, 0, 0), V(W, L, 0), V(0, L, 0)]
+        for i in range(4):
+            sk.addGeometry(Part.LineSegment(pts[i], pts[(i + 1) % 4]), False)
+        doc.recompute()
+        self._w_sketch = sk
+        self.step("The tab's profile: 1.633 x 1.620 in (the tab 1.508 in between the flanges' inside faces, plus "
+                  "two thicknesses)", "drawn by script (tutorials A to D show sketching)", DIFFERS,
+                  f"rectangle {W:.4f} x {L:.4f} mm on the XY plane of the body")
+        self.wait = 300
+
+    def w_tab(self):
+        doc = App.ActiveDocument
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, self.body().Name, self._w_sketch.Name + ".")
+        if not Gui.Selection.getSelection() or Gui.Selection.getSelection()[0] is not self._w_sketch:
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, self._w_sketch.Name)
+        QtWidgets.QApplication.processEvents()
+        before = {o.Name for o in doc.Objects}
+        b, where = self.click_ribbon("Tab")
+        QtWidgets.QApplication.processEvents()
+        spin = self.p_widget(QtWidgets.QAbstractSpinBox, "spinThickness")
+        shown = spin.text() if spin is not None else "?"
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        doc.recompute()
+        new = [o for o in doc.Objects if o.Name not in before and hasattr(o, "Thickness")]
+        base = new[0] if new else None
+        self._w_base = base
+        bb = base.Shape.BoundBox if base is not None else None
+        ok = (base is not None and abs(base.Thickness.Value - self.W_T) < 1e-6 and abs(bb.XLength - self.w_width()) < 1e-6
+              and abs(bb.ZLength - self.W_T) < 1e-6 and not Gui.Control.activeDialog())
+        self.step("Tab: the sketch becomes a plate of the preferred thickness", f"sketch selected + ribbon '{where} > "
+                  "Tab'; MB2 = OK", SAME if ok else FAIL,
+                  f"thickness field showed {shown}; plate {bb.XLength:.4f} x {bb.YLength:.4f} x {bb.ZLength:.4f} mm"
+                  if bb else "no tab made")
+        self.wait = 500
+
+    def w_flange(self):
+        doc = App.ActiveDocument
+        base = self._w_base
+        T = self.W_T
+        edges = [f"Edge{i}" for i, e in enumerate(base.Shape.Edges, 1)
+                 if abs(e.BoundBox.ZMin - T) < 1e-6 and abs(e.BoundBox.ZMax - T) < 1e-6
+                 and e.BoundBox.XLength < 1e-6 and e.BoundBox.YLength > 1]
+        Gui.Selection.clearSelection()
+        for e in edges:
+            Gui.Selection.addSelection(doc.Name, base.Name, e)
+        QtWidgets.QApplication.processEvents()
+        before = {o.Name for o in doc.Objects}
+        b, where = self.click_ribbon("Flange")
+        QtWidgets.QApplication.processEvents()
+        spec = self.set_combo("LengthSpec", "Outer Sharp")
+        kind = self.set_combo("BendType", "Material Inside")
+        length = self.set_quantity("Length", round(self.W_FLANGE, 4))
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        doc.recompute()
+        new = [o for o in doc.Objects if o.Name not in before and hasattr(o, "LengthSpec")]
+        wall = new[0] if new else None
+        self._w_wall = wall
+        bb = wall.Shape.BoundBox if wall is not None else None
+        ok = (wall is not None and len(edges) == 2 and spec and kind and length and abs(bb.ZMax - self.W_FLANGE) < 1e-3
+              and abs(bb.XLength - self.w_width()) < 1e-6 and abs(wall.radius.Value - T) < 1e-6
+              and abs(wall.kfactor - self.W_K) < 1e-9 and not Gui.Control.activeDialog())
+        self.step("Flange on both long edges: 0.615 in outside, material inside", f"the two top edges selected + ribbon "
+                  f"'{where} > Flange'; Length {self.W_FLANGE:.4f} typed, Outer Sharp, Material Inside; MB2 = OK",
+                  SAME if ok else FAIL,
+                  (f"bracket {bb.XLength:.4f} x {bb.YLength:.4f} x {bb.ZLength:.4f} mm; bend radius "
+                   f"{wall.radius.Value:.4f} and K {wall.kfactor:g} from the preferences") if wall else "no flange made")
+        self.wait = 500
+
+    def w_flat(self):
+        from . import sheetmetal as sm, sheetmetal_ui
+        doc = App.ActiveDocument
+        wall = self._w_wall
+        face = self.p_face(wall, lambda f: f.Surface.__class__.__name__ == "Plane" and abs(f.CenterOfMass.z) < 1e-6)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, wall.Name, face)
+        QtWidgets.QApplication.processEvents()
+        before = {o.Name for o in doc.Objects}
+        b, where = self.click_ribbon("Flat Pattern")
+        QtWidgets.QApplication.processEvents()
+        k_field = self.p_widget(QtWidgets.QAbstractSpinBox, "floatKFactor")
+        shown = k_field.text() if k_field is not None else "?"
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        doc.recompute()
+        flat = next((o for o in doc.Objects if o.Name not in before and hasattr(o, "KFactor")), None)
+        self._w_flat = flat
+        bb = flat.Shape.BoundBox if flat is not None and not flat.Shape.isNull() else None
+        want = self.w_expected()
+        ok = (bb is not None and abs(bb.XLength - want) < 1e-3 and abs(bb.YLength - self.W_LEN) < 1e-6
+              and abs(bb.ZLength - self.W_T) < 1e-6 and abs(want / self.IN / 2 - 1.31992) < 2e-5)
+        self.step("Flat Pattern: unfolded with the neutral factor 0.41; its length against the book's hand calculation",
+                  f"the outside of the tab selected + ribbon '{where} > Flat Pattern'; MB2 = OK", SAME if ok else FAIL,
+                  (f"K field showed {shown}; flat {bb.XLength:.4f} x {bb.YLength:.4f} mm; by hand (Shih p. 13-31): "
+                   f"2 x 1.31992 in = {2 * 1.31992 * self.IN:.4f} mm; bend allowance "
+                   f"{sm.bend_allowance(90, self.W_T, self.W_T, self.W_K) / self.IN:.5f} in "
+                   f"({sheetmetal_ui.last.get('neutral', '?')} used)") if bb else "no flat pattern")
+        self.wait = 500
+
+    def w_show(self):
+        flat = self._w_flat
+        if flat is not None:
+            flat.Placement.Base = App.Vector(0, -self.W_LEN - 20, 0)     # beside the bracket, for the picture
+            App.ActiveDocument.recompute()
+            self._w_wall.ViewObject.Visibility = True
+        self.view().viewIsometric()
+        self.fit()
+        QtWidgets.QApplication.processEvents()
+        self.check_drawn("The bracket and its flat pattern in the graphics window", "W_bracket.png")
+        App.ActiveDocument.save()
+
+    def w_drafting(self):
+        self.key("Ctrl+Shift+D")
+        self.wait = 2500
+
+    @staticmethod
+    def w_overall(view, page):
+        """The flat pattern's overall sizes: a dimension between the outermost parallel lines each way."""
+        from . import pmi_ui
+        lines = [(i, e) for i, e in pmi_ui._view_edges(view) if not hasattr(e.Curve, "Radius")]
+        made = []
+        for vertical, dtype in ((True, "DistanceX"), (False, "DistanceY")):
+            sel = []
+            for i, e in lines:
+                d = e.Vertexes[-1].Point - e.Vertexes[0].Point
+                if d.Length > 1e-9 and (abs(d.x) < 1e-6 if vertical else abs(d.y) < 1e-6):
+                    sel.append((i, e))
+            best = None
+            for k, (i, e) in enumerate(sel):
+                for j, f in sel[k + 1:]:
+                    g = pmi_ui._parallel_gap(e, f)
+                    if g is not None and (best is None or g > best[0]):
+                        best = (g, i, j, e, f)
+            if best is None:
+                continue
+            _, i, j, e, f = best
+            dim = view.Document.addObject("TechDraw::DrawViewDimension", "Dimension")
+            dim.Type = dtype
+            dim.References2D = [(view, f"Edge{i}"), (view, f"Edge{j}")]
+            dim.MeasureType = "Projected"
+            page.addView(dim)
+            pmi_ui.place_dimension(view, page, dim, dtype, [e, f])
+            made.append(dim)
+        return made
+
+    def w_drawing(self):
+        b, where = self.click_ribbon("New Sheet")
+        if b is None:
+            from . import shell
+            self.retries.append("W: Ctrl+Shift+D did not reach Drafting; Application tab used")
+            shell.switch_application("drafting")
+            QtWidgets.QApplication.processEvents()
+            b, where = self.click_ribbon("New Sheet")
+        QtWidgets.QApplication.processEvents()
+        doc = App.ActiveDocument
+        page = self.newest("TechDraw::DrawPage")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, self._w_flat.Name)
+        before = {v.Name for v in page.Views}
+        self.click_ribbon("Base View")
+        QtWidgets.QApplication.processEvents()
+        v = next((x for x in page.Views if x.Name not in before and x.isDerivedFrom("TechDraw::DrawViewPart")), None)
+        if Gui.Control.activeDialog():
+            self.mb2_click_on_sheet()
+        QtWidgets.QApplication.processEvents()
+        if v is not None:
+            self.progress(f"w_drawing: base view {v.Name} of {[s.Name for s in v.Source]} direction {v.Direction}; "
+                          f"dialog open {bool(Gui.Control.activeDialog())}")
+            v.Direction, v.XDirection = App.Vector(0, 0, 1), App.Vector(1, 0, 0)
+            v.ScaleType = "Custom"
+            v.Scale = 2.0
+            v.X, v.Y = 150.0, 130.0
+            doc.recompute()
+        self._w_page, self._w_view, self._w_where = page, v, where
+        self.wait = 2000           # TechDraw computes the view's edges in the background
+
+    def w_view_ready(self, v):
+        """TechDraw projects a view in the background: wait until it shows the flat pattern from above
+        (an edge as long as the flat pattern), as a user waits for the view to appear."""
+        from . import pmi_ui
+        from .tutorial import qtest
+        want = self.w_expected()
+        lens = []
+        for k in range(40):
+            lens = [e.Length for _, e in pmi_ui._view_edges(v)]
+            if any(abs(x - want) < 1e-3 or abs(x - want * float(v.Scale)) < 1e-3 for x in lens):
+                return True
+            if k in (10, 25):
+                v.touch()
+                v.recompute()
+            qtest().qWait(200)
+            QtWidgets.QApplication.processEvents()
+        self.progress(f"w_view_ready: {v.Name} direction {v.Direction} xdir {v.XDirection} scale {v.Scale} "
+                      f"source {[s.Name for s in v.Source]} touched {v.isTouched()} edge lengths "
+                      f"{sorted(round(x, 3) for x in lens)}")
+        return False
+
+    def w_dims(self):
+        doc = App.ActiveDocument
+        v = self._w_view
+        self._w_ready = v is not None and self.w_view_ready(v)
+        self._w_dims = self.w_overall(v, self._w_page) if v is not None else []
+        doc.recompute()
+        self.wait = 1500
+
+    def w_done(self):
+        doc = App.ActiveDocument
+        for d in self._w_dims:                 # measured again on the finished projection
+            d.touch()
+        doc.recompute()
+        QtWidgets.QApplication.processEvents()
+        values = []
+        for d in self._w_dims:
+            try:
+                values.append(round(float(d.getRawValue()), 3))
+            except Exception:
+                values.append(None)
+        want = round(self.w_expected(), 3)
+        ok = self._w_view is not None and want in values and round(self.W_LEN, 3) in values
+        self.step("Drafting: the flat pattern on a sheet at 2:1 with its overall sizes", "Ctrl+Shift+D, ribbon 'New "
+                  "Sheet', the flat pattern selected + 'Base View'; the two dimensions placed by script",
+                  DIFFERS if ok else FAIL, f"dimensions {values} mm (flat length {want} expected; view projected "
+                  f"before dimensioning: {self._w_ready}); NX has a Flat Pattern view type, here the flat pattern "
+                  "solid is viewed from above")
+        from .tutorial import qtest
+        try:
+            self._w_page.ViewObject.show()            # the sheet in front, as clicking its tab does
+        except Exception:
+            pass
+        qtest().qWait(800)
+        QtWidgets.QApplication.processEvents()
+        self.shot("W_drawing.png")
+        App.ActiveDocument.save()
+        self.key("Ctrl+M")
+        self.wait = 1500
+
+    # ================================================================ tutorial X
+    # Opto-mechanics: a laser module (aluminium) located on an optical bench (steel) by two Ø6 pins;
+    # its beam must hit a target 2 m away within ±0.15 mm. Drake ch. 24 (pinned interfaces) for the
+    # fit, translation and rotation, Fischer ch. 15 for the lever to the target. The design moves from
+    # two holes (does not assemble) to a hole and a slot, a wider pin base, finer ISO 286 classes, and
+    # is checked for assembly 10 K above the reference temperature.
+    X_Y, X_X0, X_TOP = 60.0, 50.0, 20.0
+
+    def X_STEPS(self):
+        return [self.p_modeling, self.x_new, self.x_layout, self.x_analysis, self.x_slot, self.x_slot_check, self.x_base,
+                self.x_classes, self.x_thermal, self.x_thermal_check, self.x_show]
+
+    def x_new(self):
+        self.tutorial = "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def x_shapes(self, dp, slot):
+        """Bench with two pins pressed in, and the module with two holes or a hole and a 7 mm slot."""
+        import Part
+        V = App.Vector
+        y, x0, top = self.X_Y, self.X_X0, self.X_TOP
+        bench = Part.makeBox(dp + 200, 120, top)
+        for x in (x0, x0 + dp):
+            bench = bench.fuse(Part.makeCylinder(3, 18, V(x, y, top - 10)))
+        bench = bench.removeSplitter()
+        module = Part.makeBox(dp + 40, 40, 30, V(x0 - 20, y - 20, top))
+        cut = Part.makeCylinder(3, 30, V(x0, y, top))
+        if slot:
+            L = 7.0
+            xs = x0 + dp
+            cut = cut.fuse([Part.makeBox(L - 6, 6, 30, V(xs - (L - 6) / 2, y - 3, top)),
+                            Part.makeCylinder(3, 30, V(xs - (L - 6) / 2, y, top)),
+                            Part.makeCylinder(3, 30, V(xs + (L - 6) / 2, y, top))])
+        else:
+            cut = cut.fuse(Part.makeCylinder(3, 30, V(x0 + dp, y, top)))
+        module = module.cut(cut).removeSplitter()
+        beam = Part.makeCylinder(1.5, 300, V(x0 + dp + 20, y, top + 15), V(1, 0, 0))
+        return bench, module, beam
+
+    def x_faces(self, dp, slot):
+        """{'hole1', 'hole2' or 'slot_a'/'slot_b', 'pin1', 'pin2'}: face names on the current shapes."""
+        y, x0 = self.X_Y, self.X_X0
+        m, b = self._x["module"], self._x["bench"]
+
+        def cyl(obj, x, internal):
+            for i, f in enumerate(obj.Shape.Faces, 1):
+                s = f.Surface
+                if s.__class__.__name__ == "Cylinder" and abs(s.Radius - 3) < 1e-6 and \
+                        abs(s.Center.x - x) < 1e-6 and abs(s.Center.y - y) < 1e-6:
+                    from . import refs
+                    if (refs.feature_type(f) == "hole") == internal:
+                        return f"Face{i}"
+            return None
+
+        def side(obj, ys):
+            for i, f in enumerate(obj.Shape.Faces, 1):
+                if f.Surface.__class__.__name__ == "Plane" and abs(f.CenterOfMass.y - ys) < 1e-6 and \
+                        abs(f.CenterOfMass.x - (x0 + dp)) < 1e-6:
+                    return f"Face{i}"
+            return None
+        out = {"hole1": cyl(m, x0, True), "pin1": cyl(b, x0, False), "pin2": cyl(b, x0 + dp, False)}
+        if slot:
+            out.update(slot_a=side(m, y - 3), slot_b=side(m, y + 3))
+        else:
+            out["hole2"] = cyl(m, x0 + dp, True)
+        return out
+
+    def x_rebuild(self, dp, slot):
+        """The model change (by script): new shapes, the PMI kept on the same features."""
+        bench, module, beam = self.x_shapes(dp, slot)
+        self._x["bench"].Shape, self._x["module"].Shape, self._x["beam"].Shape = bench, module, beam
+        f = self.x_faces(dp, slot)
+        p = self._x_pmi
+        m, b = self._x["module"], self._x["bench"]
+        p["hole1"].References = [(m, f["hole1"])]
+        p["pin1"].References = [(b, f["pin1"])]
+        p["pin2"].References = [(b, f["pin2"])]
+        if slot:
+            p["slot"].References = [(m, f["slot_a"]), (m, f["slot_b"])]
+        else:
+            p["hole2"].References = [(m, f["hole2"])]
+        App.ActiveDocument.recompute()
+        return f
+
+    def x_material(self, obj, name):
+        import Materials
+        mm = Materials.MaterialManager()
+        uuid = next((u for u, m in mm.Materials.items() if m.Name == name), None)
+        if uuid is not None:
+            obj.ShapeMaterial = mm.getMaterial(uuid)
+        return uuid is not None
+
+    def x_layout(self):
+        from . import pmi_ui
+        self.wait_for("x_layout: document", lambda: App.ActiveDocument is not None)
+        doc = App.ActiveDocument
+        self._x = {}
+        bench, module, beam = self.x_shapes(80.0, False)
+        for key, label, shape, colour in (("bench", "Optical bench", bench, (0.55, 0.57, 0.6)),
+                                          ("module", "Laser module", module, (0.25, 0.45, 0.7)),
+                                          ("beam", "Beam", beam, (0.9, 0.1, 0.1))):
+            o = doc.addObject("Part::Feature", key.capitalize())
+            o.Label = label
+            o.Shape = shape
+            self._x[key] = o
+            try:
+                o.ViewObject.ShapeColor = colour
+            except Exception:
+                pass
+        mats = self.x_material(self._x["bench"], "Steel-1C45") and \
+            self.x_material(self._x["module"], "Aluminum-6061-T6")
+        doc.recompute()
+        f = self.x_faces(80.0, False)
+        m, b = self._x["module"], self._x["bench"]
+        self._x_pmi = {
+            "hole1": pmi_ui.create("Dimension", [(m, f["hole1"])], doc, DimensionType="Diameter", Fit="G6"),
+            "hole2": pmi_ui.create("Dimension", [(m, f["hole2"])], doc, DimensionType="Diameter", Fit="G6"),
+            "pin1": pmi_ui.create("Dimension", [(b, f["pin1"])], doc, DimensionType="Diameter", Fit="h6"),
+            "pin2": pmi_ui.create("Dimension", [(b, f["pin2"])], doc, DimensionType="Diameter", Fit="h6"),
+        }
+        doc.recompute()
+        doc.saveAs(os.path.join(_out(), "LaserModule.FCStd"))
+        self.view().viewIsometric()
+        self.fit()
+        calls = [o.Callout for o in self._x_pmi.values()]
+        ok = mats and all(c.startswith("Ø6.000") for c in calls)
+        self.step("The layout: a steel bench with two Ø6 pins 80 mm apart, an aluminium laser module with two Ø6 "
+                  "holes, the beam; PMI: holes G6, pins h6", "modelled by script, materials Steel-1C45 and "
+                  "Aluminum-6061-T6 assigned, PMI made as in tutorial T", DIFFERS if ok else FAIL,
+                  f"PMI {calls}; the beam must hit a target 2 m away within ±0.15 mm")
+        self.wait = 500
+
+    def x_analysis(self):
+        doc = App.ActiveDocument
+        Gui.Selection.clearSelection()
+        for o in self._x_pmi.values():
+            Gui.Selection.addSelection(doc.Name, o.Name)
+        QtWidgets.QApplication.processEvents()
+        before = {o.Name for o in doc.Objects}
+        b, where = self.click_ribbon("Pin Location", tab="Analysis")
+        QtWidgets.QApplication.processEvents()
+        typed = all([self.p_spin("HoleSpacingTolerance", 0.005), self.p_spin("PinSpacingTolerance", 0.005),
+                     self.p_spin("TargetDistance", 2000), self.p_spin("PointingLimit", 0.15)])
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        a = next((o for o in doc.Objects if o.Name not in before and hasattr(o, "Clearance")), None)
+        self._x_a = a
+        ok = (typed and a is not None and a.Layout == "Two holes" and abs(a.Clearance + 0.006) < 1e-9
+              and "does NOT assemble" in a.Verdict and abs(a.CTEHoles - 23.6) < 1e-6 and abs(a.CTEPins - 11) < 1e-6)
+        self.step("Analysis > Pin Location: two holes G6 on pins h6, spacings ±0.005", f"the four PMI dimensions "
+                  f"selected + ribbon '{where} > Pin Location'; tolerances, target 2000 mm and limit ±0.15 typed; "
+                  "MB2 = OK", DIFFERS if ok else FAIL,
+                  (f"clearance {a.Clearance:+.4f} mm: {a.Verdict}. Drake 24.2: the holes' clearance (0.004 mm) cannot "
+                   "absorb the 0.010 mm the spacings may differ. Expansion from the materials: "
+                   f"{a.CTEHoles:g} and {a.CTEPins:g} µm/m/K. NX has no pin location analysis (a variation analysis "
+                   "add-on does this)") if a else "no analysis made")
+        self.p_shot_info("X_two_holes.png")
+        self.p_close_info()
+        self.wait = 400
+
+    def x_slot(self):
+        from . import pmi_ui
+        doc = App.ActiveDocument
+        _, module, _ = self.x_shapes(80.0, True)
+        self._x["module"].Shape = module
+        doc.recompute()
+        f = self.x_faces(80.0, True)
+        m = self._x["module"]
+        old = self._x_pmi.pop("hole2")
+        doc.removeObject(old.Name)
+        self._x_pmi["slot"] = pmi_ui.create("Dimension", [(m, f["slot_a"]), (m, f["slot_b"])], doc,
+                                            DimensionType="Distance", Fit="G6")
+        self._x_pmi["hole1"].References = [(m, f["hole1"])]
+        self._x_a.Hole2 = self._x_pmi["slot"]
+        doc.recompute()
+        self.x_edit({"SlotLength": 7.0})
+        self.wait = 400
+
+    def x_edit(self, values):
+        """Double-click the analysis in the Part Navigator, type the values, MB2 = OK."""
+        self._x_a.ViewObject.doubleClicked()
+        QtWidgets.QApplication.processEvents()
+        self._x_typed = all(self.p_spin(k, v) for k, v in values.items())
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+
+    def x_slot_check(self):
+        a = self._x_a
+        ok = (self._x_typed and a.Layout == "Hole and slot" and a.Clearance > 0 and "EXCEEDS" in a.Verdict
+              and abs(a.Pointing - 0.5) < 0.001 and self._x_pmi["slot"].Callout.startswith("6.000 G6"))
+        self.step("The second hole becomes a slot 6 G6 wide, 7 long, along the line of centres", "the model changed by "
+                  "script, the slot's width dimensioned G6; the analysis double-clicked, slot length 7 typed, "
+                  "MB2 = OK", DIFFERS if ok else FAIL,
+                  f"{a.Verdict}; clearance {a.Clearance:+.4f} mm, translation {a.Translation:.4f} mm, rotation "
+                  f"{a.Rotation:.4f} mrad, pointing {a.Pointing:.4f} mm at 2 m (D tan a). Drake 24.12: the slot takes "
+                  "the spacings out of the fit")
+        self.p_shot_info("X_slot.png")
+        self.p_close_info()
+        self.wait = 300
+
+    def x_tidy_labels(self):
+        """Labels keep their offset from their feature, so features that moved carry them out of the
+        column: put them back, one row each, as dragging them would."""
+        from . import pmi_ui
+        objs = [self._x_pmi[k] for k in ("hole1", "slot", "pin1", "pin2") if k in self._x_pmi]
+        for o in objs:
+            o.LabelOffset = App.Vector()
+        for o in objs:
+            o.LabelOffset = pmi_ui.default_offset(o)
+
+    def x_base(self):
+        self.x_rebuild(200.0, True)
+        self.x_tidy_labels()
+        a = self._x_a
+        a.touch()
+        App.ActiveDocument.recompute()
+        ok = (abs(a.PinSpacing - 200) < 1e-6 and abs(a.HoleSpacing - 200) < 1e-6 and abs(a.Pointing - 0.2) < 0.001
+              and "EXCEEDS" in a.Verdict)
+        self.step("The pins 200 mm apart instead of 80: the same clearances turn the module less", "the model changed "
+                  "by script; the PMI and the analysis follow", DIFFERS if ok else FAIL,
+                  f"spacings {a.HoleSpacing:.3f} / {a.PinSpacing:.3f} mm measured from the model; rotation "
+                  f"{a.Rotation:.4f} mrad, pointing {a.Pointing:.4f} mm: {a.Verdict}")
+        self.wait = 300
+
+    def x_classes(self):
+        p = self._x_pmi
+        for k in ("hole1", "slot"):
+            p[k].Fit = "G5"
+        for k in ("pin1", "pin2"):
+            p[k].Fit = "h5"
+        a = self._x_a
+        a.touch()
+        App.ActiveDocument.recompute()
+        ok = abs(a.Translation - 0.007) < 1e-9 and a.Pointing <= 0.15 and "within" in a.Verdict
+        self.step("Finer ISO 286 classes: holes and slot G5, pins h5", "the PMI's Fit properties (as in tutorial V's "
+                  "ECO)", DIFFERS if ok else FAIL,
+                  f"translation {a.Translation:.4f} mm, rotation {a.Rotation:.4f} mrad, pointing {a.Pointing:.4f} mm: "
+                  f"{a.Verdict}")
+        self.wait = 300
+
+    def x_thermal(self):
+        self.x_edit({"DeltaT": 10.0})
+        self.wait = 400
+
+    def x_thermal_check(self):
+        a = self._x_a
+        growth = 200 * 10 * (23.6 - 11.0) * 1e-6
+        ok = self._x_typed and "slot takes it up" in a.Report and f"{growth:.4f}" in a.Report and "within" in a.Verdict
+        self.step("Assembled 10 K above the reference temperature: aluminium on steel", "the analysis double-clicked, "
+                  "10 K typed, MB2 = OK", DIFFERS if ok else FAIL,
+                  f"the spacings part by {growth:.4f} mm (Drake 24.10: 200 mm x 10 K x (23.6 - 11.0) µm/m/K); the slot "
+                  f"takes it up; {a.Verdict}")
+        self.p_shot_info("X_thermal.png")
+        self.p_close_info()
+        App.ActiveDocument.save()
+        self.wait = 300
+
+    def x_show(self):
+        self.view().viewIsometric()
+        self.fit()
+        QtWidgets.QApplication.processEvents()
+        self.check_drawn("The bench, the module on its pins and the beam", "X_layout.png")
         App.ActiveDocument.save()

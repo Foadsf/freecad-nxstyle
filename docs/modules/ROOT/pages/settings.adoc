@@ -51,6 +51,7 @@ include::partial$generated/settings.adoc[]
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
 | No data management | `"plm": "none"`
 | No Algorithmic Modeling (Katydid) | `"algorithmic_modeling": "none"`
+| No Sheet Metal (SheetMetal add-on) | `"sheet_metal": "none"`
 |===
 
 NOTE: Before 2026-10-13, NX-Style read `nxstyle.json` from the profile's root folder instead of `config`.

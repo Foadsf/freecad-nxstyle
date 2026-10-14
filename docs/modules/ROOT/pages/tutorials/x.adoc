@@ -1,0 +1,70 @@
+= Tutorial X: Locating a laser module with two pins
+:description: Opto-mechanics: a laser module located on an optical bench by two dowel pins, analysed from its PMI (fit, translation, rotation, pointing error at 2 m) and improved step by step: a slot, a wider pin base, finer ISO 286 classes, and a check 10 K warm.
+
+[horizontal]
+Books:: Drake, _Dimensioning and Tolerancing Handbook_, ch. 24 (pinned interfaces); Fischer, _Mechanical Tolerance Stackup and Analysis_, ch. 15 (the lever of an angle error); the module is ours
+You learn:: Analysis › Pin Location from PMI; why two tight holes do not assemble; what a slot does; pin base and ISO 286 class against pointing error; aluminium on steel at another temperature
+Sizes:: Ø6 pins pressed into a steel bench; an aluminium laser module with Ø6 holes; the beam must hit a target 2 m away within ±0.15 mm
+
+The module (Aluminum-6061-T6, 23.6 µm/m/K) sits on two pins in the bench (Steel-1C45, 11 µm/m/K).
+Its beam leaves along the line of the pins: if the module turns by α about the vertical, the spot moves by 2000 tan α on the target.
+
+== Step by step
+
+=== 1. The layout and its PMI
+
+The bench, the module and the beam are made by script, the materials assigned, and the PMI added as in xref:tutorials/t.adoc[tutorial T]: the holes Ø6 G6 (+0.004 to +0.012), the pins Ø6 h6 (0 to −0.008).
+Holes and pins are 80 mm apart, each spacing ±0.005.
+
+=== 2. Pin Location: two holes do not assemble
+
+Select the four PMI dimensions, *Analysis › Pin Location*.
+Type the spacing tolerances (0.005), the distance to the target (2000) and the pointing limit (0.15); OK.
+
+The worst-case clearance is −0.006 mm: the holes leave 0.004 mm, but the two spacings may differ by 0.010 mm (Drake 24.2).
+Some modules would not go on.
+The materials' expansion coefficients are already filled in.
+
+image::tutorial-X-01-two-holes.png[Two holes G6 on pins h6: does not assemble]
+
+=== 3. A hole and a slot
+
+The second hole becomes a slot 6 G6 wide and 7 long along the line of centres; its width gets a PMI dimension with G6, and the analysis takes it as its second feature.
+Double-click the analysis and type the slot length, 7.
+
+It assembles: the slot takes the spacings out of the fit (Drake 24.12).
+The module can shift 0.010 mm and turn 0.25 mrad: 0.50 mm on the target, over the ±0.15 mm limit.
+
+image::tutorial-X-02-slot.png[A hole and a slot: assembles, but the beam may miss by 0.5 mm]
+
+=== 4. A wider pin base
+
+The pins and the hole and slot move to 200 mm apart.
+The PMI and the analysis follow the model: the same clearances now turn the module 0.10 mrad, 0.20 mm on the target. Still over.
+
+=== 5. Finer classes
+
+The holes and the slot become G5, the pins h5, in the PMI's *Fit*.
+Translation 0.007 mm, rotation 0.070 mrad, pointing 0.14 mm: within ±0.15 mm.
+
+=== 6. Assembled 10 K warm
+
+Double-click the analysis and type 10 K.
+Aluminium on steel, 200 mm apart: the spacings part by 0.0252 mm (Drake 24.10).
+With two holes, each would have to grow by that much, adding 0.0126 mm of translation and 0.126 mrad of rotation, more than the budget.
+The slot takes it up in its length; translation and rotation stay as they were.
+
+image::tutorial-X-03-thermal.png[10 K warm: the slot takes up the thermal growth]
+
+image::tutorial-X-04-layout.png[The bench, the laser module on its pins, and the beam]
+
+== The replay
+
+include::partial$generated/tutorial-X.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX has no pin location analysis; a variation analysis add-on does this kind of study there.
+* The model changes (the slot, the wider base) are made by script, and the PMI is kept on the same features by the script; in NX the PMI would follow the edited features.

@@ -25,7 +25,7 @@ The hidden-desktop test mode is Windows-only.
 
 == Get the project
 
-Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata` and xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid`.
+Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata`, xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid` and FreeCAD's xref:sheet-metal.adoc[SheetMetal add-on] in `vendor/FreeCAD_SheetMetal`.
 
 [source,bash]
 ----
@@ -39,7 +39,7 @@ If you cloned without `--recursive`, or downloaded a ZIP of the repository, fetc
 git submodule update --init
 ----
 
-NX-Style still starts without them; the launcher then prints `Strata: not found` or `Katydid: not found` and how to get them.
+NX-Style still starts without them; the launcher then prints `Strata: not found`, `Katydid: not found` or `SheetMetal: not found` and how to get them.
 
 == Start it
 
@@ -58,6 +58,7 @@ FreeCAD 1.1.4: C:\Users\you\AppData\Local\Programs\FreeCAD 1.1\bin\freecad.exe
 NX profile: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1
 Strata: bundled (...\freecad-nxstyle\vendor\freecad-strata)
 Katydid: bundled (...\freecad-nxstyle\vendor\Katydid)
+SheetMetal: bundled (...\freecad-nxstyle\vendor\FreeCAD_SheetMetal)
 ----
 
 Open files directly by naming them:
@@ -90,6 +91,9 @@ python launch_nx.py part.FCStd
 
 | `--no-katydid`
 | Starts without Katydid (Algorithmic Modeling). To switch it off for good, set `"algorithmic_modeling": "none"`.
+
+| `--no-sheetmetal`
+| Starts without the SheetMetal add-on (Sheet Metal). To switch it off for good, set `"sheet_metal": "none"`.
 
 | `--dry-run`
 | Prints the FreeCAD executable, the profile and the command line, and starts nothing.

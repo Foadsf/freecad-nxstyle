@@ -1,0 +1,61 @@
+= Tutorial W: The actuator bracket in sheet metal
+:description: NX Sheet Metal on FreeCAD's SheetMetal add-on: preferences, a tab, two flanges, the flat pattern checked against Shih's hand calculation, and a flat pattern drawing.
+
+[horizontal]
+Book:: Randy H. Shih, _Parametric Modeling with Siemens NX_ (SDC Publications), ch. 13, Basic Sheet Metal Designs (the actuator bracket, the bend allowance, the flattened length by hand, p. 13-31)
+You learn:: Ctrl+Shift+M, Sheet Metal Preferences (thickness, bend radius, neutral factor), Tab, Flange with Outer Sharp and Material Inside, Flat Pattern, the bend allowance, a drawing of the flat pattern
+Sizes:: 16 gauge sheet, 0.0625 in (1.5875 mm), bend radius 0.0625 in, neutral factor 0.41; a tab 1.508 in between the flanges' inside faces and 1.620 in long; flanges 0.615 in tall outside
+
+== Step by step
+
+=== 1. The Sheet Metal application
+
+kbd:[Ctrl+N], then kbd:[Ctrl+Shift+M].
+The Home tab has NX's sheet metal commands; the add-on behind them is bundled with NX-Style (xref:sheet-metal.adoc[Sheet Metal]).
+
+image::tutorial-W-01-ribbon.png[The Sheet Metal application]
+
+=== 2. Sheet Metal Preferences
+
+*Sheet Metal Preferences*: thickness 1.5875, bend radius 1.5875, neutral factor 0.41.
+The dialog shows what they give for a 90° bend: bend allowance 3.5160 mm (0.13843 in, as in the book), bend deduction 2.8340 mm.
+
+=== 3. Tab
+
+A rectangle 1.633 × 1.620 in on the XY plane: the tab's 1.508 in plus the two thicknesses, since the flanges will be inside it (the sketch is drawn by script; xref:tutorials/a.adoc[tutorial A] shows sketching).
+Select it, *Tab*, OK: a plate of the preferred thickness.
+
+=== 4. Flanges
+
+Select the plate's two long top edges, *Flange*.
+*Length* 15.621 (0.615 in), *Length Spec* Outer Sharp (the height to the outside), *Bend Type* Material Inside (the plate's outline stays the outside); OK.
+The bend radius and the neutral factor come from the preferences.
+
+=== 5. The flat pattern, checked by hand
+
+Select the plate's outside face, *Flat Pattern*, OK.
+The flat pattern is 67.0523 × 41.1480 mm.
+
+The book flattens half the bracket by hand: (1.508/2 − 0.0625) + (0.615 − 2 × 0.0625) + 0.13843 = 1.31992 in, the straight lengths between the bend's tangent lines plus one bend allowance.
+Twice that is 67.0519 mm; the 0.4 µm difference is the book's rounding.
+
+image::tutorial-W-02-bracket.png[The bracket and its flat pattern]
+
+=== 6. The flat pattern drawing
+
+kbd:[Ctrl+Shift+D], *New Sheet*, select the flat pattern, *Base View*, from above at 2:1.
+Its overall sizes, 67.052 and 41.148, are dimensioned (by script).
+
+image::tutorial-W-03-drawing.png[The flat pattern on a drawing sheet with its overall sizes]
+
+== The replay
+
+include::partial$generated/tutorial-W.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX keeps the sheet metal preferences with the part; here they are the add-on's defaults, per user.
+* NX's Flat Pattern feature has its own drawing view type with bend lines and a bend table; here the flat pattern solid is viewed from above. The add-on can also write the outline and bend lines as sketches (Generate Sketch in its Unfold dialog).
+* The sizes are typed in millimetres; the book works in inches.

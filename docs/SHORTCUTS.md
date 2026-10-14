@@ -62,7 +62,7 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Edit Display | <kbd>Ctrl</kbd>+<kbd>J</kbd> | `Std_SetAppearance` | anywhere |  |
 | Object Information | <kbd>Ctrl</kbd>+<kbd>I</kbd> | `NXStyle_ObjectInfo` | anywhere |  |
 | Modeling | <kbd>Ctrl</kbd>+<kbd>M</kbd> | `NXStyle_App_modeling` | anywhere |  |
-| Sheet Metal | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | (explains why) | anywhere | Sheet Metal needs FreeCAD's SheetMetal add-on. Install it in this NX profile with Tools > Add-on Manager, restart, and Ctrl+Shift+M will open it. |
+| Sheet Metal | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | `NXStyle_App_sheet_metal` | anywhere | Opens the Sheet Metal application on FreeCAD's SheetMetal add-on, which NXStyle bundles; without the add-on the key explains how to get it |
 | Drafting | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> | `NXStyle_App_drafting` | anywhere |  |
 | Layout | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> | `NXStyle_App_draft` | anywhere | FreeCAD's Draft 2D workbench |
 | Shape Studio | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> | `NXStyle_App_shape_studio` | anywhere | FreeCAD's Surface workbench |
