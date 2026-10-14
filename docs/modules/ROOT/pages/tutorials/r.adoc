@@ -1,0 +1,70 @@
+= Tutorial R: Beginner masterclass, tube and attractor frames
+:description: A swept tube, a grid of panel corners on it, and opening frames sized by their distance to an attractor point.
+
+[horizontal]
+Video:: https://www.youtube.com/watch?v=Y66bSN4QFUE[Rhino Grasshopper Tutorial (Beginner)] (YouTube, channel Rhino Grasshopper), 54 minutes
+Application:: xref:algorithmic-modeling.adoc[Algorithmic Modeling] (Katydid)
+You learn:: Frames along a curve, sweeping a section, dividing a surface into panels, an attractor with Remap Numbers
+Sizes:: Millimetres: a tube of radius 9 on a 40 mm rail, 12 × 6 panels, openings 0.6 to 2.6 in radius
+
+The masterclass leans on three plugins: Bifocals (labels), LunchBox (panels) and Weaverbird (mesh frames, subdivision, thickening).
+Katydid has no plugins and no mesh tools, so this page rebuilds what its own components can: the tube, the panel grid and openings that grow near an attractor.
+Each opening gets a frame ring, standing in for Weaverbird's picture frames.
+
+== Step by step
+
+=== 1. Set-up
+
+Plugin installation (*File › Special Folders › Components Folder*, *Unblock*) has no counterpart.
+Grasshopper's *Draw Fancy Wires* is how Katydid always draws: solid for one item, double for a list, dashed for a tree of several branches.
+
+=== 2. The tube
+
+. *Circle*, a *Rail radius* slider (40): the rail.
+. *Evaluate Curve* at a *Frame t* slider (0 to 1): its point and tangent are the frame Grasshopper's *Perp Frame* gives. Katydid's *t* always runs 0 to 1, so there is nothing to *Reparameterize*.
+. *Circle CNR* (centre, normal, radius) with a *Tube radius* slider (9): the section on that frame.
+. *Pipe* sweeps it along the rail (the video's *Sweep 1*; a round section is all Pipe needs). A *Panel* shows the result.
+
+The tube's volume is 63,955 mm³, 2π²Rr² for a torus.
+
+image::tutorial-R-01-tube.png[The swept tube]
+
+=== 3. The panel grid
+
+The video divides the surface with *Divide Domain²* and *IsoTrim* (or LunchBox panels).
+Here *U* section circles stand along the rail (a *Series* of *t* values into Evaluate Curve and Circle CNR), and *Divide Curve* splits each into *V* points: the corners of 12 × 6 panels, all on the tube.
+
+image::tutorial-R-02-grid.png[Seventy-two panel corners on the tube]
+
+=== 4. The attractor
+
+* A *Construct Point* with three sliders stands in for the *MD Slider*.
+* *Distance* from every corner to it.
+* *Bounds*, its input Flattened, gives the nearest and farthest.
+* *Remap Numbers* maps the distances onto the opening radii. Two sliders stand in for *Construct Domain*: *Largest* (2.6) into *T0* and *Smallest* (0.6) into *T1*, so the nearest corner gets the largest opening.
+
+=== 5. The frames
+
+* A second ring of corners 3 mm further in (Expression `x - 3`, Circle CNR, Divide Curve).
+* *Vector 2Pt* from each corner to its inner twin: the opening's axis.
+* *Circle CNR* with the remapped radii: the openings.
+* *Pipe* with a *Frame width* slider (0.45) turns each opening into a frame.
+
+Drag the attractor sliders and the large frames follow it round the tube.
+
+image::tutorial-R-03-frames.png[Opening frames that grow near the attractor]
+
+NOTE: Cutting real holes through a hollow tube was tried first and failed: in the GUI, a second Solid Difference on a Pipe-minus-Pipe wall came back invalid, while the same shapes cut cleanly once read back from a file. It is reported to Katydid.
+
+=== 6. Bake
+
+Select the tube's Pipe and the frames' Pipe and click *Home › Algorithm › Bake*: the tube and the 72 frames become Part solids.
+Live dimensions (*Aligned Dimension*) and *Custom Preview* colours have no Katydid counterpart yet.
+
+image::tutorial-R-04-baked.png[The baked tube and frames]
+
+== The replay
+
+include::partial$generated/tutorial-R.adoc[]
+
+include::partial$outcome-legend.adoc[]

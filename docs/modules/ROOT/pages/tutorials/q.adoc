@@ -1,0 +1,79 @@
+= Tutorial Q: Faceted planter
+:description: Two polygons, the top one turned by 360/2N, triangle facets between them, a closed solid, and a shell.
+
+[horizontal]
+Video:: https://www.youtube.com/watch?v=5WAzp1-SHh4[Rhino Grasshopper Tutorial (Beginner)] (YouTube, channel Rhino Grasshopper)
+Application:: xref:algorithmic-modeling.adoc[Algorithmic Modeling] (Katydid), then xref:modeling.adoc[Modeling] for the shell
+You learn:: Rotating by a formula, lists and data trees (Shift, Graft, Flatten), facets from points, joining faces into a solid, a shell
+Sizes:: Millimetres: a pentagon of radius 30, 60 high, walls 3 thick
+
+For the facets to be triangles, each top corner must sit over the middle of a base edge.
+The angle between corners is 360°/N, so the top polygon turns by half of it: 36° for a pentagon.
+
+== Step by step
+
+=== 1. The base polygon
+
+*Regular Polygon* with a *Radius* slider (10 to 50, here 30) and a *Segments* slider (3 to 8, here 5).
+
+image::tutorial-Q-01-polygon.png[A pentagon of radius 30]
+
+=== 2. The top polygon
+
+*Move* it up by a *Height* slider (60) and *Rotate* it by an *Expression* `360/x/2`, with the Segments slider as *x*.
+The video uses two *Division* components and a *Unit Z* vector; Katydid's Move takes the height directly, and Rotate works in degrees.
+
+image::tutorial-Q-02-top.png[The top pentagon, raised and turned by 36 degrees]
+
+=== 3. Corners and their neighbours
+
+The video *Explodes* both polygons and trims the repeated closing vertex with *Shortest List*.
+Katydid's *Divide Curve* into *Segments* gives the corners without the repeat, so no Shortest List is needed.
+
+*Shift List* by 1 gives each corner's neighbour.
+Then come the data trees:
+
+* *Graft* the corner lists (right-click an output › *Graft*): each corner gets its own branch, so the next component builds one facet per corner.
+* *Flatten* Shift List's input first: Shift List adds a level to the path, and without the Flatten its branches would not line up with the others.
+
+=== 4. The facets
+
+The video uses *Extrude Point* (an edge drawn to a point).
+Here a closed *Polyline* through three corners does the same, then *Planar Surface*:
+
+* lower facets: base corner, next base corner, top corner;
+* upper facets: top corner, next top corner, next base corner.
+
+The shifted lists keep the facets from twisting: ten triangles.
+
+image::tutorial-Q-03-facets.png[Ten triangular facets]
+
+=== 5. A closed solid
+
+The video caps the openings with *Boundary Surfaces* and joins everything with *Brep Join*.
+Here *Solid Union*, its input Flattened, joins the ten facets into one shell, and *Cap Holes* closes the top and the bottom: a valid solid of 12 faces and 138,495.8 mm³, exactly what FreeCAD's Part API gives for the same faces.
+
+image::tutorial-Q-04-solid.png[The closed faceted solid]
+
+=== 6. Bake and shell
+
+The video's *Option A* bakes the solid and runs Rhino's *Shell*.
+Here the same happens with FreeCAD:
+
+. Select *Cap Holes* and click *Home › Algorithm › Bake*.
+. kbd:[Ctrl+M] (Modeling), click the top face of the baked solid.
+. *Surface › Surface Operations › Thicken* (FreeCAD's Part Thickness), type `-3 mm`, tick *Intersection*, *MB2*.
+
+IMPORTANT: Without *Intersection*, FreeCAD 1.1.4 returns this faceted solid unchanged. With it, the planter is hollow and open at the top, its outside unchanged.
+
+The video's *Option B*, Pufferfish's parametric *Shell Polysurface*, has no Katydid component yet.
+
+image::tutorial-Q-05-baked.png[The baked solid]
+
+image::tutorial-Q-06-shell.png[The hollow planter after Thicken]
+
+== The replay
+
+include::partial$generated/tutorial-Q.adoc[]
+
+include::partial$outcome-legend.adoc[]

@@ -32,7 +32,9 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | Assemblies | xref:tutorials/g.adoc[G]
 | Drawings | xref:tutorials/d.adoc[D], xref:tutorials/n.adoc[N]
 | GD&T | xref:tutorials/h.adoc[H]
-| Algorithmic modelling (a Grasshopper-style canvas) | xref:tutorials/o.adoc[O]
+| Algorithmic modelling (a Grasshopper-style canvas) | xref:tutorials/o.adoc[O], xref:tutorials/p.adoc[P], xref:tutorials/q.adoc[Q], xref:tutorials/r.adoc[R]
+| Data trees: Graft, Flatten, lists that pair up | xref:tutorials/q.adoc[Q], xref:tutorials/p.adoc[P]
+| Attractors | xref:tutorials/r.adoc[R]
 |===
 
 == Results
@@ -51,5 +53,8 @@ include::partial$outcome-legend.adoc[]
 == The videos
 
 * Bastian Wibranek, https://www.youtube.com/watch?v=cN6XuHxrfxU[Rhino 3D and Grasshopper - Basics Tutorial]: tutorial O.
+* Rhino Grasshopper (YouTube channel), https://www.youtube.com/watch?v=q0rWnXPHeFQ[Grasshopper Tutorial For beginners]: tutorial P.
+* Rhino Grasshopper, https://www.youtube.com/watch?v=5WAzp1-SHh4[Rhino Grasshopper Tutorial (Beginner)], the planter: tutorial Q.
+* Rhino Grasshopper, https://www.youtube.com/watch?v=Y66bSN4QFUE[Rhino Grasshopper Tutorial (Beginner)], the 54-minute masterclass: tutorial R.
 
 The pages summarise the exercises; they do not reproduce the books or the videos.

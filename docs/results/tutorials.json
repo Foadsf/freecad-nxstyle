@@ -2255,6 +2255,238 @@
    "replay": "one save (Save As, named by the replay): the canvas is saved inside the part",
    "outcome": "differs",
    "detail": "Katydid_Basics.FCStd holds the parts and the canvas (a Katydid object in the Part Navigator); there is no separate definition file to keep next to it"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 1,
+   "nx": "Rhino's Front view; open Grasshopper",
+   "replay": "Ctrl+N + Application > Algorithmic Modeling",
+   "outcome": "same",
+   "detail": "an empty canvas on the new part"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 2,
+   "nx": "Draw half of the profile in Rhino's Front view; Curve > Set one Curve",
+   "replay": "stand-in: five Construct Points (X and Z typed with Set value...) Shift-wired into Interpolate",
+   "outcome": "missing",
+   "detail": "profile from Vector (0.0, 0.0, 0.0) to Vector (58.0, 0.0, 70.0), length 108.4 mm. Katydid has no Curve parameter that follows a FreeCAD sketch yet (asked for): the points are typed instead of drawn"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 3,
+   "nx": "Two Rhino points, Bottom and Top, referenced into Point parameters (moved with the Gumball)",
+   "replay": "stand-in: two Construct Points driven by sliders",
+   "outcome": "missing",
+   "detail": "bottom Vector (14.0, 45.0, 0.0), top Vector (44.0, 20.0, 84.0); sliders move them, as the Gumball does in Rhino"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 4,
+   "nx": "XZ Plane at the Bottom point; Mirror the curve in it",
+   "replay": "Mirror: G = the profile, P = the Bottom point, N typed 0, 1, 0 (Katydid's Mirror takes the plane as a point and a normal)",
+   "outcome": "differs",
+   "detail": "mirrored profile at y = 90.0; the span is twice the Bottom point's Y"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 5,
+   "nx": "End Points of both curves",
+   "replay": "stand-in: Evaluate Curve at t = 0 and t = 1 on each",
+   "outcome": "missing",
+   "detail": "{'s0': (0.0, 0.0, 0.0), 'e0': (58.0, 0.0, 70.0), 's1': (0.0, 90.0, 0.0), 'e1': (58.0, 90.0, 70.0)}. Katydid has no End Points component yet (asked for); Evaluate Curve's t runs from 0 to 1 along the curve"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 6,
+   "nx": "Bottom arch: Merge (start, Bottom point, mirrored start) into Interpolate; top arch the same through the Top point Projected onto the mirror plane",
+   "replay": "Merge: the three points Shift-wired into Interpolate's V in order; Project stand-in: Deconstruct the Top point, its Y replaced by the Bottom point's",
+   "outcome": "differs",
+   "detail": "arches pass through the Bottom point and the projected Top point at (0.0, 0.0) mm. Shift-wiring several sources into one input merges them in order (Grasshopper does the same); Katydid has no Merge or Project component yet"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 7,
+   "nx": "Edge Surface from the four boundary curves (a loft would ignore the arches)",
+   "replay": "stand-in: Loft through the profile, a middle section (Bottom point, the profile's midpoint on the mirror plane, the projected Top point) and the mirrored profile",
+   "outcome": "missing",
+   "detail": "surface area 9023 mm^2; it passes through the Bottom point and the projected Top point ((0.0, 0.0) mm), so it follows the arches at their middle. Katydid has no Edge Surface yet (asked for)"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 8,
+   "nx": "Contour the surface along Unit Y; distance = span / count (Distance, Division); edge fix x - 0.001",
+   "replay": "Contour with N typed 0, 1, 0 and D = a Series of offsets: 1 mm, then (span - 2) / count apart, count + 1 of them, so the first and last planes sit 1 mm inside the edges",
+   "outcome": "differs",
+   "detail": "13 contour curves for count 12, 7.333333333333333 mm apart; per plane [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]. Katydid's Contour takes one plane offset per item, so a Series lists them; Division is an Expression here"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 9,
+   "nx": "Offset Curve by the rib depth; Ruled Surface between each contour and its offset (both Flattened)",
+   "replay": "Offset Curve with a 'Rib depth' slider; Ruled Surface: A = the contours, B = their offsets, both inputs Flattened (right-click > Flatten)",
+   "outcome": "same",
+   "detail": "13 flat rib strips, 19395 mm^2 in all"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 10,
+   "nx": "Extrude the strips along Y by spacing x a thickness ratio (Multiplication, Unit Y)",
+   "replay": "Multiplication (spacing x 'Thickness ratio' 0.3) into Vector XYZ's Y, into Extrude's D",
+   "outcome": "same",
+   "detail": "13 solid ribs, 41284 mm^3; thickness [2.2] mm (spacing 7.333333333333333 x 0.3 = 2.2000)"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 11,
+   "nx": "Custom Preview with a Colour Swatch",
+   "replay": "-",
+   "outcome": "missing",
+   "detail": "Katydid previews everything in one colour (red, green when selected); per-component colours are not there yet (asked for)"
+  },
+  {
+   "tutorial": "P: Waffle canopy (Katydid)",
+   "n": 12,
+   "nx": "Bake the ribs; Internalise the referenced curve",
+   "replay": "select Extrude + ribbon 'Home › Algorithm > Bake'",
+   "outcome": "same",
+   "detail": "13 rib solids in the Part Navigator, 41284 mm^3. Nothing to internalise: the profile's points are typed on the canvas, not referenced"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 1,
+   "nx": "Open Grasshopper",
+   "replay": "Ctrl+N + Application > Algorithmic Modeling",
+   "outcome": "same",
+   "detail": "an empty canvas on the new part"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 2,
+   "nx": "Polygon on the XY plane; sliders for Radius (10-50) and Segments (3-8)",
+   "replay": "Regular Polygon with 'Radius' 30 and 'Segments' 5",
+   "outcome": "same",
+   "detail": "5 edges, corners 30.000 mm from the centre"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 3,
+   "nx": "Move it up by Unit Z x height; Rotate 3D by 360 / N / 2 degrees (two Divisions)",
+   "replay": "Move with 'Height' in Z; Rotate with A = Expression 360/x/2 (x = Segments); Katydid's Rotate takes degrees",
+   "outcome": "differs",
+   "detail": "top polygon at z = 60.0, first corner at 36.0 degrees (360 / 5 / 2 = 36): each top corner sits over the middle of a base edge"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 4,
+   "nx": "Explode both polygons; Shortest List drops the repeated closing vertex; Shift List by 1",
+   "replay": "stand-in for Explode: Divide Curve into Segments (corners, without the repeated closing one, so no Shortest List is needed); Shift List with its input Flattened; the lists for the facets Grafted, one corner per branch",
+   "outcome": "missing",
+   "detail": "corners per list {'bv': 5, 'tv': 5, 'bs': 5, 'ts': 5}. Katydid has no Explode or Shortest List yet (asked for)"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 5,
+   "nx": "Extrude Point: each base edge to a top corner, then each top edge to the shifted base corner",
+   "replay": "stand-in for Extrude Point: a closed Polyline through each branch's three corners (base, next base, top / top, next top, next base), then Planar Surface",
+   "outcome": "missing",
+   "detail": "10 triangular facets, 10628 mm^2; Shift List keeps them from twisting. Katydid has no Extrude Point yet (asked for)"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 6,
+   "nx": "Boundary Surfaces for the top and bottom caps; everything Flattened into Brep Join: a closed solid",
+   "replay": "Solid Union with its input Flattened joins the ten facets into one shell; Cap Holes closes the top and bottom",
+   "outcome": "differs",
+   "detail": "valid solid, 12 faces, 138495.8 mm^3 (the same faces made directly with FreeCAD's Part API: 138495.8). Cap Holes makes both caps, so no separate Boundary Surfaces are needed"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 7,
+   "nx": "Bake the solid",
+   "replay": "select Cap Holes + ribbon 'Home › Algorithm > Bake'",
+   "outcome": "same",
+   "detail": "Cap 0, 138495.8 mm^3"
+  },
+  {
+   "tutorial": "Q: Faceted planter (Katydid)",
+   "n": 8,
+   "nx": "Shell: Rhino's Shell command, the top face picked, thickness 5 (or Pufferfish's Shell Polysurface)",
+   "replay": "the top face selected + ribbon 'Surface › Surface Operations > Thicken' (FreeCAD's Part Thickness), '-3 mm' typed, Intersection ticked, MB2 = OK",
+   "outcome": "differs",
+   "detail": "hollow planter 35097.5 mm^3 of 138495.8, outside unchanged True, 23 faces; value -3.0 mm. Option B (Pufferfish's parametric Shell) has no Katydid component yet"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 1,
+   "nx": "Install Bifocals, LunchBox and Weaverbird (Components Folder, Unblock)",
+   "replay": "-",
+   "outcome": "missing",
+   "detail": "Katydid has no plugins: everything below uses its own components"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 2,
+   "nx": "Display > Draw Icons, Full Names, Fancy Wires",
+   "replay": "-",
+   "outcome": "same",
+   "detail": "Katydid always draws its wires 'fancy': solid for one item, double for a list, dashed for a tree of several branches"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 3,
+   "nx": "Circle rail; Perp Frame at t (Reparameterize: 0 to 1); a section Circle on that frame; Sweep 1",
+   "replay": "Circle (rail), Evaluate Curve at 'Frame t' (its point and tangent are the frame: Katydid's t always runs 0 to 1), Circle CNR (centre, normal, radius) for the section; Pipe for the sweep; a Panel shows the result",
+   "outcome": "differs",
+   "detail": "tube 63955 mm^3 (a torus, 2 pi^2 R r^2 = 63955). No Perp Frame or Sweep 1 component yet: a circle section swept along a rail is Katydid's Pipe"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 4,
+   "nx": "Divide Domain2 into U x V; IsoTrim the surface into panels (or LunchBox Quad Panels)",
+   "replay": "stand-in: U section circles along the rail (Series of t, Evaluate Curve, Circle CNR), each divided into V points: the corners of U x V panels",
+   "outcome": "missing",
+   "detail": "72 panel corners, all on the tube (within 0.0000 mm). Katydid has no Divide Domain2, IsoTrim or panelling components yet"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 5,
+   "nx": "Mesh Surface; Weaverbird Picture Frame, Weld, Catmull-Clark (level 1-3), Thicken",
+   "replay": "-",
+   "outcome": "missing",
+   "detail": "no mesh components or Weaverbird counterpart in Katydid: the next step frames each opening with a ring instead of insetting mesh faces"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 6,
+   "nx": "Attractor: Evaluate Surface at an MD Slider's uv; Closest Point distances; Bounds; Construct Domain; Remap Numbers into the opening sizes",
+   "replay": "Construct Point with X/Y/Z sliders (no MD Slider yet); Distance from every panel corner; Bounds (input Flattened); Remap Numbers into 'Smallest' .. 'Largest' (two sliders for the target domain)",
+   "outcome": "differs",
+   "detail": "72 opening radii from 0.6000000000000001 to 2.6 mm; the corner nearest the attractor gets 2.6 ('Largest' into T0, 'Smallest' into T1). Katydid has no MD Slider or Construct Domain yet"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 7,
+   "nx": "Graft the remapped sizes into Weaverbird's Picture Frame distance: the openings grow near the attractor; Weld, Catmull-Clark and Thicken round and thicken the frames",
+   "replay": "a second ring of corners 3 mm further in (Expression x - 3, Circle CNR, Divide Curve); Vector 2Pt from each corner to its inner twin as the opening's axis; Circle CNR with the remapped radii; Pipe with a 'Frame width' slider makes each opening's frame",
+   "outcome": "differs",
+   "detail": "72 frames (72 valid solids) on the tube (centres within 1.6e-14 mm), openings 0.6 to 2.6 mm in radius, the largest nearest the attractor; drag the attractor sliders and they follow. Katydid has no mesh components: the frames are rings, not inset mesh faces"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 8,
+   "nx": "Deconstruct Brep, List Item and Aligned Dimension for live dimensions; Custom Preview colours",
+   "replay": "-",
+   "outcome": "missing",
+   "detail": "no drawing dimensions or preview colours on Katydid's canvas yet"
+  },
+  {
+   "tutorial": "R: Beginner masterclass, tube and attractor openings (Katydid)",
+   "n": 9,
+   "nx": "Right-click > Bake to a Rhino layer",
+   "replay": "select the tube's Pipe and the frames' Pipe + ribbon 'Home › Algorithm > Bake'",
+   "outcome": "same",
+   "detail": "73 objects baked (the tube and 72 frames), 73 valid; FreeCAD has no layers here: they go into the Part Navigator"
   }
  ],
  "info": {

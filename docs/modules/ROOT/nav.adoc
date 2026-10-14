@@ -33,6 +33,9 @@
 * xref:tutorials/m.adoc[M: The U-Bracket]
 * xref:tutorials/n.adoc[N: The U-Bracket drawing]
 * xref:tutorials/o.adoc[O: Grasshopper basics (Katydid)]
+* xref:tutorials/p.adoc[P: Waffle canopy (Katydid)]
+* xref:tutorials/q.adoc[Q: Faceted planter (Katydid)]
+* xref:tutorials/r.adoc[R: Tube and attractor frames (Katydid)]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

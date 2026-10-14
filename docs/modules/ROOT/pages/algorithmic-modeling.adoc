@@ -29,6 +29,13 @@ The canvas's *Examples* menu loads ready-made graphs to start from.
 
 Katydid's own {katydid-docs}[documentation] has the quick start, tutorials and the full component reference.
 
+Four Grasshopper video tutorials are worked through on this canvas, step by step with pictures:
+
+* xref:tutorials/o.adoc[O: Grasshopper basics] -- a sphere, sliders, Bake, a cylinder;
+* xref:tutorials/p.adoc[P: Waffle canopy] -- mirror, arches, a surface, contour ribs;
+* xref:tutorials/q.adoc[Q: Faceted planter] -- data trees, triangle facets, a solid, a shell;
+* xref:tutorials/r.adoc[R: Tube and attractor frames] -- a swept tube, a panel grid, an attractor.
+
 === Keys
 
 While the canvas has the keyboard focus, kbd:[Delete] removes the selected components and kbd:[Ctrl+Q] switches their preview on and off.

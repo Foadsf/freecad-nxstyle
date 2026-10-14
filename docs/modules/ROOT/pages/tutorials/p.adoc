@@ -1,0 +1,89 @@
+= Tutorial P: Waffle canopy
+:description: A ribbed canopy from one profile curve: mirror, two arches, a four-sided surface, contour slices offset into ribs and extruded.
+
+[horizontal]
+Video:: https://www.youtube.com/watch?v=q0rWnXPHeFQ[Grasshopper Tutorial For beginners] (YouTube, channel Rhino Grasshopper)
+Application:: xref:algorithmic-modeling.adoc[Algorithmic Modeling] (Katydid)
+You learn:: Mirroring in a plane, merging points into a curve, a surface from boundary curves, contours, offset and ruled surfaces, extruding by a computed thickness
+Sizes:: Millimetres: a 58 × 70 profile, a 90 mm span, 13 ribs 4 mm deep
+
+The canopy grows from one curve.
+Its mirror gives the far side, two arches close it at the bottom and the top, a surface spans the four, and parallel slices of that surface become the ribs.
+
+== Step by step
+
+=== 1. The profile
+
+The video draws half of the profile in Rhino's Front view and references it into a *Curve* parameter.
+Katydid cannot reference a FreeCAD sketch yet, so the profile is drawn on the canvas instead: five *Construct Point* components, their X and Z typed with right-click › *Set value…*, all wired into one *Interpolate* with kbd:[Shift] held, so they arrive in order.
+
+image::tutorial-P-01-profile.png[Five points interpolated into the profile curve]
+
+=== 2. The Bottom and Top points
+
+Two more Construct Points stand in for the two Rhino points: *Bottom* (X 14, Y 45) sets the mirror plane and the bulge at the base, *Top* (X 44, Y 20, Z 84) the height and depth of the top arch.
+Sliders move them, as the Gumball does in Rhino.
+
+image::tutorial-P-02-points.png[Bottom and Top points driven by sliders]
+
+=== 3. Mirror
+
+*Mirror* with the profile in *G*, the Bottom point in *P* and the normal *N* typed `0, 1, 0`: the mirror plane is the XZ plane through the Bottom point.
+Grasshopper builds that plane with an *XZ Plane* component; Katydid's Mirror takes the point and the normal itself.
+Dragging *Half span* now widens or narrows the canopy.
+
+image::tutorial-P-03-mirror.png[The profile and its mirror image, 90 mm apart]
+
+=== 4. End points
+
+Four *Evaluate Curve* components with *t* = 0 and *t* = 1 give the start and end of both curves (Grasshopper's *End Points*; Katydid's *t* always runs from 0 to 1).
+
+=== 5. The two arches
+
+* *Bottom arch*: the profile's start, the Bottom point and the mirror's start, Shift-wired into an Interpolate in that order. Several wires into one input merge their data in order, as Grasshopper's *Merge* does.
+* *Top arch*: the same through the Top point *projected* onto the mirror plane. Two *Deconstruct* components and a Construct Point take the Top point's X and Z and the Bottom point's Y.
+
+image::tutorial-P-04-arches.png[The bottom and top arches closing the outline]
+
+=== 6. The surface
+
+The video spans the four curves with *Edge Surface*, which Katydid does not have yet.
+A *Loft* through three sections stands in: the profile, a middle section from the Bottom point through the profile's midpoint to the projected Top point, and the mirror.
+It passes through both arches at their middle, where the bulge is.
+
+image::tutorial-P-05-surface.png[The canopy surface lofted through three sections]
+
+=== 7. Contours
+
+*Contour* the surface along Y: *N* typed `0, 1, 0`, and *D* a *Series* of plane offsets.
+The span is the *Distance* between the two start points; an *Expression* divides it by the *Count* slider (12), and an *Addition* gives count + 1 planes: 13 ribs.
+
+TIP: The video subtracts 0.001 from the spacing so the last slice is not lost on the edge. Katydid's Contour cuts a fine mesh, where a plane that close to the edge splits into fragments, so the first and last planes sit 1 mm inside instead.
+
+image::tutorial-P-06-contours.png[Thirteen contour curves across the surface]
+
+=== 8. Rib strips
+
+*Offset Curve* moves each contour by the *Rib depth* (4 mm) in its own plane.
+*Ruled Surface* spans each contour and its offset, both inputs Flattened (right-click › *Flatten*), so the curves pair up one to one.
+
+image::tutorial-P-07-strips.png[Flat strips between the contours and their offsets]
+
+=== 9. Thickness
+
+*Multiplication* of the spacing and a *Thickness ratio* slider (0.3) gives the rib thickness, *Vector XYZ* turns it into a Y vector, and *Extrude* gives the strips their thickness: 13 solid ribs.
+
+image::tutorial-P-08-ribs.png[Thirteen solid ribs]
+
+=== 10. Bake
+
+Select the Extrude and click *Home › Algorithm › Bake*: the ribs become 13 Part solids in the Part Navigator.
+Katydid has no *Custom Preview* colours yet, and there is nothing to internalise, since the profile is on the canvas.
+
+image::tutorial-P-09-baked.png[The baked ribs]
+
+== The replay
+
+include::partial$generated/tutorial-P.adoc[]
+
+include::partial$outcome-legend.adoc[]

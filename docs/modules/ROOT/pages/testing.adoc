@@ -45,11 +45,13 @@ It writes `out/smoke.json` and screenshots, and exits non-zero on any failure.
 python launch_nx.py --tutorial out
 ----
 
-The replay works through the fourteen xref:tutorials/index.adoc[tutorials] the way the books tell an NX user to: the same keys, the NX-named ribbon buttons, MB1 clicks on sketch points in the graphics window, MB2 to end tools and accept dialogs.
+The replay works through the xref:tutorials/index.adoc[tutorials] the way the books tell an NX user to: the same keys, the NX-named ribbon buttons, MB1 clicks on sketch points in the graphics window, MB2 to end tools and accept dialogs.
+On the Katydid canvas (tutorials O to R) it double-clicks the empty canvas and types each component's name, drags wires from grip to grip (kbd:[Shift] adds), sets Graft, Flatten and input values from the grips' right-click menu, and types slider values into the slider's dialog; after each step it saves a screenshot with the floating canvas laid over the lower half of the graphics window.
 Dimension values are applied through FreeCAD's API, the equivalent of typing them into Rapid Dimension; everything else is real UI input.
 
 Each feature is checked by its volume against the same operation done directly with FreeCAD's Part API, and the final part must be drawn in the graphics window.
 `--tutorials G,H` picks some; N runs M first.
+A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed out; the canvas tutorials O to R take about 20 minutes together.
 
 The replay writes `out/tutorial.json`, a `progress.log` and screenshots.
 Exit code 1 means a step FAILED.

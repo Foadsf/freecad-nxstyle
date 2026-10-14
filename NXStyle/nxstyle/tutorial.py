@@ -359,13 +359,19 @@ class Replay(KatydidTutorials):
              self.n_radial, self.n_decimals, self.n_change, self.n_update]
         O = [self.o_new, self.o_names, self.o_sphere, self.o_point, self.o_radius, self.o_two, self.o_bake,
              self.o_cylinder, self.o_warning, self.o_save]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O").upper().split(",")
+        P = [self.p_new, self.p_curve, self.p_points, self.p_mirror, self.p_ends, self.p_arches, self.p_surface,
+             self.p_contour, self.p_ribs, self.p_extrude, self.p_bake]
+        Q = [self.q_new, self.q_polygon, self.q_lift, self.q_explode, self.q_facets, self.q_solid, self.q_shell,
+             self.q_shell_dialog]
+        R = [self.r_new, self.r_tube, self.r_grid, self.r_weaverbird, self.r_attractor, self.r_openings, self.r_bake]
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R").upper().split(",")
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
-        if "O" in wanted and "KatydidWorkbench" not in Gui.listWorkbenches():
-            wanted.remove("O")                       # Katydid off (--no-katydid): nothing to replay on
+        if "KatydidWorkbench" not in Gui.listWorkbenches():
+            wanted = [w for w in wanted if w not in "OPQR"]   # Katydid off (--no-katydid): nothing to replay on
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
-                           ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O)):
+                           ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
+                           ("Q", Q), ("R", R)):
             if key in wanted:
                 yield from steps
 
