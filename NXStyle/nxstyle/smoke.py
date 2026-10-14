@@ -121,6 +121,7 @@ class Smoke:
         yield self.s_back, 2000
         yield self.s_katydid_after, 100
         yield self.s_ap242, 300
+        yield self.s_model_views, 300
         yield self.s_expressions, 800
         yield self.s_final, 100
 
@@ -829,6 +830,80 @@ class Smoke:
                   and back.get("geometric_tolerances") == 2)
             self.check("STEP AP242 with semantic PMI (written, ISO 286 grades right, read back by OCCT)", ok,
                        text.splitlines()[1:])
+        finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+
+    def s_model_views(self):
+        """PMI model views: the eight look as FreeCAD's standard views do, and the work view filters PMI."""
+        import Part
+        from . import pmi_ui, pmi_views
+        before = App.ActiveDocument
+        doc = App.newDocument("SmokeViews")
+        try:
+            box = doc.addObject("Part::Feature", "Plate")
+            box.Shape = Part.makeBox(80, 60, 10)
+            doc.recompute()
+            av = Gui.getDocument(doc.Name).ActiveView
+            methods = {"Front": "viewFront", "Top": "viewTop", "Right": "viewRight", "Back": "viewRear",
+                       "Bottom": "viewBottom", "Left": "viewLeft", "Isometric": "viewIsometric",
+                       "Trimetric": "viewTrimetric"}
+            off = []
+            from .tutorial import qtest
+            for name, method in methods.items():
+                getattr(av, method)()
+                last, t0 = None, time.monotonic()
+                while time.monotonic() - t0 < 3:          # FreeCAD animates the turn: wait until it rests
+                    qtest().qWait(100)
+                    q = tuple(round(c, 9) for c in av.getCameraOrientation().Q)
+                    if q == last:
+                        break
+                    last = q
+                rot = av.getCameraOrientation()
+                d, u = rot.multVec(App.Vector(0, 0, -1)), rot.multVec(App.Vector(0, 1, 0))
+                want_d, want_u = pmi_views.STANDARD[name]
+                _, up, _ = pmi_views.frame(want_d, want_u)
+                if (d - App.Vector(*pmi_views._unit(want_d))).Length > 1e-4 or (u - App.Vector(*up)).Length > 1e-4:
+                    off.append(f"{name}: FreeCAD dir {tuple(round(c, 6) for c in d)} up "
+                               f"{tuple(round(c, 6) for c in u)}")
+            self.check("the eight PMI model views look as FreeCAD's standard views do", not off, off)
+
+            def face(pred):
+                return "Face%d" % next(i for i, f in enumerate(box.Shape.Faces, 1) if pred(f))
+            top = face(lambda f: abs(f.CenterOfMass.z - 10) < 1e-6)
+            bottom = face(lambda f: abs(f.CenterOfMass.z) < 1e-6)
+            left = face(lambda f: abs(f.CenterOfMass.x) < 1e-6)
+            right = face(lambda f: abs(f.CenterOfMass.x - 80) < 1e-6)
+            pmi_ui.folder(doc)
+            views = {v.Label: v for v in pmi_ui.model_views(doc)}
+            pmi_ui.activate(views["Top"])
+            width = pmi_ui.create("Dimension", [(box, left), (box, right)], doc, DimensionType="Distance")
+            pmi_ui.activate(views["Front"])
+            datum = pmi_ui.create("Datum Feature", [(box, bottom)], doc, Letter="A")
+            flat = pmi_ui.create("Feature Control Frame", [(box, top)], doc, Characteristic="Flatness",
+                                 Tolerance=0.05)
+            in_front = set(pmi_ui.activate(views["Front"]))
+            last, t0 = None, time.monotonic()
+            while time.monotonic() - t0 < 3:              # the turn is animated: wait until it rests
+                qtest().qWait(100)
+                q = tuple(round(c, 9) for c in av.getCameraOrientation().Q)
+                if q == last:
+                    break
+                last = q
+            rot = av.getCameraOrientation()
+            camera_ok = (rot.multVec(App.Vector(0, 0, -1)) - App.Vector(0, 1, 0)).Length < 1e-6
+            in_top = set(pmi_ui.activate(views["Top"]))
+            pmi_ui.display_in_views([datum], [views["Top"], views["Front"]])
+            in_top2 = set(pmi_ui.activate(views["Top"]))
+            everything = set(pmi_ui.show_all(doc))
+            ok = (len(views) == 8 and in_front == {datum.Name, flat.Name} and in_top == {width.Name}
+                  and in_top2 == {width.Name, datum.Name} and everything == {width.Name, datum.Name, flat.Name}
+                  and camera_ok and width.Views == [views["Top"]])
+            self.check("model views: a PMI goes into the work view; switching hides the others; Display in Views",
+                       ok, f"Front {sorted(in_front)}, Top {sorted(in_top)}, Top after copy {sorted(in_top2)}, "
+                       f"all {sorted(everything)}, camera {camera_ok}")
         finally:
             App.closeDocument(doc.Name)
             if before is not None and before.Name in App.listDocuments():

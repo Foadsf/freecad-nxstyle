@@ -72,6 +72,6 @@ include::partial$outcome-legend.adoc[]
 
 == What differs from NX
 
-* NX places each PMI with a click and stores it in model views; here a PMI is placed beside its face.
+* NX places each PMI with a click; here a PMI is placed beside its face. This bush's PMI are made with no work view, so they show in every model view; xref:tutorials/y.adoc[tutorial Y] works in model views.
 * NX has no ISO 8015 check and no inspection plan; NX-Style's come from the PMI's semantics.
 * NX writes PMI into STEP AP242 and JT; NX-Style writes STEP AP242 with semantic PMI only (no graphical PMI, no JT).

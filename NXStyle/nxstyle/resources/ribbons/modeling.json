@@ -174,6 +174,11 @@
         {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"},
         {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"}
       ]},
+      {"name": "Model View", "items": [
+        {"cmd": "NXStyle_PMIDisplayInViews", "label": "Display in Views", "size": "large"},
+        {"cmd": "NXStyle_PMINewModelView", "label": "New Model View"},
+        {"cmd": "NXStyle_PMIShowAll", "label": "Show All PMI"}
+      ]},
       {"name": "Publish", "items": [
         {"cmd": "NXStyle_PMIExportSTEP", "label": "STEP with PMI", "size": "large"},
         {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}

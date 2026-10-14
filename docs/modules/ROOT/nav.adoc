@@ -48,6 +48,7 @@
 * xref:tutorials/v.adoc[V: Release and engineering change]
 * xref:tutorials/w.adoc[W: The actuator bracket in sheet metal]
 * xref:tutorials/x.adoc[X: Locating a laser module with two pins]
+* xref:tutorials/y.adoc[Y: PMI in model views]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

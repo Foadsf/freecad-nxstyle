@@ -168,9 +168,11 @@ def export_pmi(doc, folder):
     anns = pmi_ui.annotations(doc)
     std, general = pmi_ui.settings(doc)
     name = "ISO GPS (ISO 8015)" if std == "ISO" else "ASME Y14.5"
+    views = [{"name": v.Label, "direction": [round(c, 6) for c in v.Direction], "up": [round(c, 6) for c in v.Up]}
+             for v in pmi_ui.model_views(doc)]
     package.write_text(os.path.join(folder, "pmi.json"), json.dumps(
-        {"standard": name, "general_tolerances": general or "", "units": "mm", "annotations": anns},
-        indent=1, ensure_ascii=False))
+        {"standard": name, "general_tolerances": general or "", "units": "mm", "model_views": views,
+         "annotations": anns}, indent=1, ensure_ascii=False))
     plan = pmi.inspection_plan(anns, general=general)
     package.write_csv(os.path.join(folder, "inspection_plan.csv"), package.dict_rows(
         plan, ["number", "requirement", "kind", "nominal", "lower", "upper", "tolerance_from", "upper_at_departure",

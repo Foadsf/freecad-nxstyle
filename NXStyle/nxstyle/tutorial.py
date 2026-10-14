@@ -373,8 +373,9 @@ class Replay(KatydidTutorials, PrecisionTutorials):
         V = list(getattr(self, "V_STEPS", lambda: [])())
         W = list(getattr(self, "W_STEPS", lambda: [])())
         X = list(getattr(self, "X_STEPS", lambda: [])())
+        Y = list(getattr(self, "Y_STEPS", lambda: [])())
         wanted = (os.environ.get("NXSTYLE_TUTORIALS")
-                  or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X").upper().split(",")
+                  or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y").upper().split(",")
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
         if "V" in wanted and "T" not in wanted:      # V releases tutorial T's guide bush
@@ -385,7 +386,7 @@ class Replay(KatydidTutorials, PrecisionTutorials):
             wanted = [w for w in wanted if w != "W"]          # SheetMetal off (--no-sheetmetal)
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
-                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X)):
+                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y)):
             if key in wanted:
                 yield from steps
 

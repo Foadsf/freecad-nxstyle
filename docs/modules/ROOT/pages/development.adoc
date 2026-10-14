@@ -45,6 +45,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `clearance_core.py`, `clearance.py` | Assembly Clearance: the classification (no FreeCAD), clearance sets, the Clearance Browser, Simple Interference.
 | `claims.py` | Volume claims and Check Volume Claims.
 | `package.py`, `package_ui.py` | Release packages: manifest, checksums, zip, verify (no FreeCAD); Publish Release Package.
+| `pmi_views.py` | PMI model views: the standard views, their frames and camera orientation, the label layout in a view's plane (no FreeCAD); the view objects and Display in Views are in `pmi_ui.py`.
 | `ap242.py` | STEP AP242 with semantic PMI: the mapping onto OpenCASCADE's XCAF enumerations and the file checks (no FreeCAD), the writer and the read-back through pythonocc.
 | `sheetmetal.py`, `sheetmetal_ui.py` | Bend allowance, bend deduction and flat length (no FreeCAD); Sheet Metal Preferences and Flat Pattern on the bundled SheetMetal add-on.
 | `alignment.py`, `alignment_ui.py` | Pin location: fit, translation, rotation, pointing error and thermal mismatch (no FreeCAD); the Pin Location analysis object and dialog.

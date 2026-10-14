@@ -1,0 +1,58 @@
+= Tutorial Y: PMI in model views
+:description: NX's model views for PMI: the work view, PMI that belong to a view and lie in its plane, switching views, and Display in Views.
+
+[horizontal]
+Book:: The model views of Wünsch, Pilz and Vajna, _Siemens NX für Einsteiger – kurz und bündig_, 4th ed., section 6.10, and Sham Tickoo, _Siemens NX 12.0 for Designers_, ch. 12; the plate is ours
+You learn:: the Model Views folder, the work view (double-click), PMI in a view and in its plane, Display in Views, Show All PMI
+Sizes:: A plate 80 × 60 × 10 with four Ø8 holes
+
+A part is documented in more than one direction: its hole pattern is read from above, its thickness and flatness from the front.
+NX keeps each in its own model view, so neither view is cluttered by the other's annotations.
+
+== Step by step
+
+=== 1. The plate and its model views
+
+The plate is made by script. *PMI › Tolerancing*, OK: the part gets its PMI folder and a *Model Views* folder with Front, Top, Right, Back, Bottom, Left, Isometric and Trimetric.
+
+=== 2. The Top view
+
+Double-click *Top* under Model Views: it becomes the work view, and the camera looks down on the plate.
+Select a hole, *Rapid Dimension*, class `H11`, quantity 4: _4X Ø8.000 H11_.
+Select the front and back faces, *Rapid Dimension*: the width 60, covered by the general tolerance.
+Both go into Top, their labels in its plane.
+
+=== 3. The Front view
+
+Double-click *Front*: Top's two PMI disappear.
+*Rapid Dimension* on the underside and the top face, ±0.1: the thickness.
+*Datum Feature Symbol* A on the underside, *Feature Control Frame* flatness 0.05 on the top.
+
+image::tutorial-Y-02-front.png[The Front model view: thickness, datum A and flatness]
+
+=== 4. Back to Top
+
+Double-click *Top*: only the hole size and the width show.
+
+image::tutorial-Y-01-top.png[The Top model view: the hole size and the width]
+
+=== 5. Display in Views
+
+Datum A is referenced from above too. Select it, *PMI › Display in Views*, tick *Top* beside Front, OK: it now shows in both.
+
+=== 6. Isometric, and Show All PMI
+
+Double-click *Isometric*: it has no PMI of its own, so nothing shows.
+*Show All PMI* ends the work view; all five show, each in its own view's plane.
+
+== The replay
+
+include::partial$generated/tutorial-Y.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX's new part has its model views from the start; here they come with the part's first PMI.
+* The replay double-clicks a model view by calling the handler the Part Navigator calls.
+* *Display in Views* is on the PMI tab here, on the PMI's right-click menu in NX. *Show All PMI* is NX-Style's.

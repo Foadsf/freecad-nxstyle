@@ -58,6 +58,8 @@ class PMIFeature:
         _prop(obj, "App::PropertyVector", "Anchor2", g, "Second attachment point (distance)", mode=2)
         _prop(obj, "App::PropertyString", "FeatureType", g, "plane, hole, pin, width or other", mode=1)
         _prop(obj, "App::PropertyString", "Callout", g, "The annotation as text", mode=1)
+        _prop(obj, "App::PropertyLinkList", "Views", g, "The model views it is displayed in (empty: all views); "
+              "PMI > Display in Views changes them")
         k = obj.PMIType
         if k == "Dimension":
             d = "Dimension"
@@ -176,6 +178,9 @@ def semantic(obj):
                                                                        if d.strip()])
     else:
         a.update(kind="datum", letter=(obj.Letter or "").strip().upper())
+    views = [v.Label for v in getattr(obj, "Views", []) or []]
+    if views:
+        a["views"] = views
     return a
 
 
@@ -203,7 +208,161 @@ def folder(doc):
         g.addProperty("App::PropertyString", "GeneralTolerance", "Tolerancing",
                       "General tolerances for dimensions without their own, e.g. ISO 2768-mK (add -E for the "
                       "envelope on every feature of size)")
+    views_group(doc)
     return g
+
+
+# ------------------------------------------------------------------ model views
+VIEWS_GROUP = "ModelViews"
+
+
+class ModelViewFeature:
+    """An NX model view: a viewing direction and screen up. The part's work view is the Model Views
+    folder's WorkView; new PMI goes into it."""
+
+    def __init__(self, obj):
+        obj.Proxy = self
+        self.setup(obj)
+
+    def setup(self, obj):
+        g = "Model View"
+        _prop(obj, "App::PropertyVector", "Direction", g, "Viewing direction, from the eye into the model")
+        _prop(obj, "App::PropertyVector", "Up", g, "What is up on the screen")
+
+    def onDocumentRestored(self, obj):
+        self.setup(obj)
+
+    def execute(self, obj):
+        pass
+
+    def dumps(self):
+        return None
+
+    def loads(self, state):
+        return None
+
+
+class ModelViewView:
+    def __init__(self, vobj):
+        vobj.Proxy = self
+
+    def attach(self, vobj):
+        self.vobj = vobj
+
+    def getIcon(self):
+        return config.resource("icons", "model_view.svg")
+
+    def doubleClicked(self, vobj):
+        activate(vobj.Object)
+        return True
+
+    def dumps(self):
+        return None
+
+    def loads(self, state):
+        return None
+
+
+def views_group(doc, make=True):
+    """The Part Navigator's Model Views folder, with NX's eight standard views when it is made."""
+    g = doc.getObject(VIEWS_GROUP)
+    if g is not None and g.isDerivedFrom("App::DocumentObjectGroup"):
+        return g
+    if not make:
+        return None
+    from . import pmi_views
+    g = doc.addObject("App::DocumentObjectGroup", VIEWS_GROUP)
+    g.Label = "Model Views"
+    g.addProperty("App::PropertyLink", "WorkView", "Model Views",
+                  "The work view: new PMI goes into it, PMI not displayed in it are hidden (none: all show)")
+    for name in pmi_views.ORDER:
+        make_view(doc, name, *pmi_views.STANDARD[name], group=g)
+    return g
+
+
+def make_view(doc, label, direction, up, group=None):
+    v = doc.addObject("App::FeaturePython", "ModelView")
+    ModelViewFeature(v)
+    v.Label = label
+    v.Direction = App.Vector(*direction)
+    v.Up = App.Vector(*up)
+    if App.GuiUp:
+        ModelViewView(v.ViewObject)
+    (group or views_group(doc)).addObject(v)
+    return v
+
+
+def model_views(doc):
+    g = views_group(doc, make=False)
+    return [o for o in g.Group if isinstance(getattr(o, "Proxy", None), ModelViewFeature)] if g else []
+
+
+def work_view(doc):
+    g = views_group(doc, make=False)
+    return getattr(g, "WorkView", None) if g is not None else None
+
+
+def view_of(obj):
+    """(direction, up) of the plane a PMI's label lies in: its first model view's, else Front's."""
+    from . import pmi_views
+    views = getattr(obj, "Views", None) or []
+    if views:
+        v = views[0]
+        return tuple(v.Direction), tuple(v.Up)
+    return pmi_views.STANDARD["Front"]
+
+
+def apply_visibility(doc):
+    """Show the PMI displayed in the work view (all of them when there is none), as NX does."""
+    from . import pmi_views
+    w = work_view(doc)
+    shown = []
+    for p in all_pmi(doc):
+        show = pmi_views.shown([v.Name for v in getattr(p, "Views", []) or []], w.Name if w else None)
+        if App.GuiUp and p.ViewObject is not None and p.ViewObject.Visibility != show:
+            p.ViewObject.Visibility = show
+        if show:
+            shown.append(p.Name)
+    return shown
+
+
+def activate(view):
+    """Make view the work view: the camera turns to it, and only its PMI show."""
+    from . import pmi_views
+    doc = view.Document
+    g = views_group(doc)
+    g.WorkView = view
+    for v in model_views(doc):
+        v.Label2 = "Work" if v is view else ""
+    shown = apply_visibility(doc)
+    if App.GuiUp:
+        gd = Gui.getDocument(doc.Name)
+        av = gd.ActiveView if gd is not None else None
+        if av is not None and hasattr(av, "setCameraOrientation"):
+            if hasattr(av, "stopAnimating"):
+                av.stopAnimating()        # a view turn still running (Home, F8) would turn the camera back
+            av.setCameraOrientation(pmi_views.quaternion(tuple(view.Direction), tuple(view.Up)))
+            av.fitAll()
+    last_view.update(work=view.Label, shown=shown)
+    return shown
+
+
+def show_all(doc):
+    g = views_group(doc, make=False)
+    if g is not None:
+        g.WorkView = None
+        for v in model_views(doc):
+            v.Label2 = ""
+    return apply_visibility(doc)
+
+
+def replace_label(obj):
+    """Put a PMI's label into the first free row of its view's column."""
+    obj.LabelOffset = App.Vector()
+    obj.LabelOffset = default_offset(obj)
+
+
+last_view = {}
 
 
 def settings(doc):
@@ -227,6 +386,9 @@ def create(kind, picks, doc=None, **values):
     for k, v in values.items():
         setattr(obj, k, v)
     folder(doc).addObject(obj)
+    w = work_view(doc)
+    if w is not None and "Views" not in values:
+        obj.Views = [w]                   # NX: a new PMI goes into the work view
     if App.GuiUp:
         PMIView(obj.ViewObject)
     doc.recompute()
@@ -277,27 +439,38 @@ def model_box(obj):
     return bb
 
 
+def _corners(bb):
+    return [(x, y, z) for x in (bb.XMin, bb.XMax) for y in (bb.YMin, bb.YMax) for z in (bb.ZMin, bb.ZMax)]
+
+
 def label_position(obj, row):
-    """Where the row-th PMI label of the part sits: one column beside the part (towards -X), top down in
-    creation order, so labels never cover each other or the part; leaders run to the faces."""
+    """Where the row-th PMI label of its model view sits: one column left of the part as the view shows
+    it, rows top down, in the view's plane (NX puts PMI in the plane of the view it belongs to), so labels
+    never cover each other or the part; leaders run to the faces. PMI in no view use the Front plane."""
+    from . import pmi_views
     size = model_size(obj)
     bb = model_box(obj)
     if bb is None:
         return App.Vector(-size, 0, -0.14 * size * row)
-    return App.Vector(bb.XMin - 0.35 * size, bb.Center.y, bb.ZMax + 0.1 * size - 0.14 * size * row)
+    return App.Vector(*pmi_views.label_point(_corners(bb), size, *view_of(obj), row))
 
 
 def default_offset(obj):
     """The label's place, as an offset from the attachment point (see label_position): the first row
-    of the column no other label is in (counting the others would reuse a deleted PMI's row while the
-    row after it is still taken)."""
+    of its view's column no other label is in (counting the others would reuse a deleted PMI's row while
+    the row after it is still taken)."""
+    from . import pmi_views
     size = model_size(obj)
-    top = label_position(obj, 0).z
+    bb = model_box(obj)
+    plane = view_of(obj)
     used = set()
     for p in all_pmi(obj.Document):
-        if p is obj or "LabelOffset" not in p.PropertiesList or p.LabelOffset.Length < 1e-9:
+        if p is obj or "LabelOffset" not in p.PropertiesList or p.LabelOffset.Length < 1e-9 or bb is None:
             continue
-        used.add(round((top - (App.Vector(p.Anchor) + App.Vector(p.LabelOffset)).z) / (0.14 * size)))
+        if view_of(p) != plane:
+            continue                      # another view's column
+        at = App.Vector(p.Anchor) + App.Vector(p.LabelOffset)
+        used.add(pmi_views.label_row(_corners(bb), size, *plane, (at.x, at.y, at.z)))
     row = 0
     while row in used:
         row += 1
@@ -1331,6 +1504,123 @@ class ExportStep:
         Gui.Control.showDialog(StepPanel())
 
 
+def selected_pmi():
+    return [o for o in Gui.Selection.getSelection() if isinstance(getattr(o, "Proxy", None), PMIFeature)]
+
+
+def display_in_views(objs, views):
+    """NX's Display > in Views: show objs in exactly these model views (an empty list: in all views).
+    A PMI that now belongs to one view only gets its label in that view's plane, if its plane changed."""
+    doc = objs[0].Document
+    for o in objs:
+        before = view_of(o)
+        o.Views = list(views)
+        if view_of(o) != before:
+            replace_label(o)
+    doc.recompute()
+    return apply_visibility(doc)
+
+
+class DisplayInViewsPanel:
+    """Which model views the selected PMI are displayed in (NX: RMB > Display > in Views)."""
+
+    def __init__(self, objs):
+        self.objs = objs
+        self.doc = objs[0].Document
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle("Display in Views")
+        lay = QtWidgets.QVBoxLayout(self.form)
+        lay.addWidget(QtWidgets.QLabel(f"{len(objs)} PMI: " + ", ".join(o.Label for o in objs[:4])
+                                       + (" …" if len(objs) > 4 else "")))
+        current = {v.Name for o in objs for v in (o.Views or [])}
+        everywhere = all(not o.Views for o in objs)
+        self.all = QtWidgets.QCheckBox("All views")
+        self.all.setObjectName("allViews")
+        self.all.setChecked(everywhere)
+        lay.addWidget(self.all)
+        self.boxes = {}
+        for v in model_views(self.doc):
+            b = QtWidgets.QCheckBox(v.Label)
+            b.setObjectName(f"view_{v.Label}")
+            b.setChecked(v.Name in current)
+            b.setEnabled(not everywhere)
+            lay.addWidget(b)
+            self.boxes[v.Name] = (b, v)
+        self.all.toggled.connect(lambda on: [b.setEnabled(not on) for b, _ in self.boxes.values()])
+        note = QtWidgets.QLabel("A PMI shows when its view is the work view (double-click a view in the Part "
+                                "Navigator). Tick several views to copy it, one to move it.")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        lay.addStretch()
+
+    def accept(self):
+        views = [] if self.all.isChecked() else [v for b, v in self.boxes.values() if b.isChecked()]
+        if not self.all.isChecked() and not views:
+            QtWidgets.QMessageBox.information(self.form, "Display in Views", "Tick at least one view, or All views.")
+            return False
+        self.doc.openTransaction("Display in Views")
+        display_in_views(self.objs, views)
+        self.doc.commitTransaction()
+        Gui.Control.closeDialog()
+        return True
+
+    def reject(self):
+        Gui.Control.closeDialog()
+        return True
+
+
+class DisplayInViews:
+    def GetResources(self):
+        return {"MenuText": "Display in Views",
+                "ToolTip": "Show the selected PMI in other model views, move it to one, or show it in all views "
+                           "(NX: Display > in Views)",
+                "Pixmap": config.resource("icons", "display_in_views.svg")}
+
+    def IsActive(self):
+        return bool(selected_pmi()) and not Gui.Control.activeDialog()
+
+    def Activated(self):
+        objs = selected_pmi()
+        folder(objs[0].Document)
+        Gui.Control.showDialog(DisplayInViewsPanel(objs))
+
+
+class NewModelView:
+    def GetResources(self):
+        return {"MenuText": "New Model View",
+                "ToolTip": "Save the current view direction as a model view and make it the work view; rename it "
+                           "in the Part Navigator",
+                "Pixmap": config.resource("icons", "new_model_view.svg")}
+
+    def IsActive(self):
+        return _part_document() and Gui.ActiveDocument is not None and \
+            hasattr(Gui.ActiveDocument.ActiveView, "getCameraOrientation")
+
+    def Activated(self):
+        doc = App.ActiveDocument
+        rot = Gui.ActiveDocument.ActiveView.getCameraOrientation()
+        d, u = rot.multVec(App.Vector(0, 0, -1)), rot.multVec(App.Vector(0, 1, 0))
+        doc.openTransaction("New Model View")
+        folder(doc)
+        n = 1 + sum(1 for v in model_views(doc) if v.Label.startswith("Model View "))
+        v = make_view(doc, f"Model View {n}", tuple(d), tuple(u))
+        activate(v)
+        doc.commitTransaction()
+
+
+class ShowAllPMI:
+    def GetResources(self):
+        return {"MenuText": "Show All PMI",
+                "ToolTip": "No work view: every PMI shows, whichever views it belongs to",
+                "Pixmap": config.resource("icons", "show_all_pmi.svg")}
+
+    def IsActive(self):
+        return App.ActiveDocument is not None and work_view(App.ActiveDocument) is not None
+
+    def Activated(self):
+        show_all(App.ActiveDocument)
+
+
 class InheritPMI:
     def GetResources(self):
         return {"MenuText": "Inherit PMI",
@@ -1375,4 +1665,7 @@ COMMANDS = {
     "NXStyle_PMITolerancing": Tolerancing(),
     "NXStyle_InheritPMI": InheritPMI(),
     "NXStyle_PMIExportSTEP": ExportStep(),
+    "NXStyle_PMIDisplayInViews": DisplayInViews(),
+    "NXStyle_PMINewModelView": NewModelView(),
+    "NXStyle_PMIShowAll": ShowAllPMI(),
 }

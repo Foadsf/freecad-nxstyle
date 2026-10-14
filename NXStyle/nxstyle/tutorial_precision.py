@@ -1854,3 +1854,209 @@ class PrecisionTutorials:
         QtWidgets.QApplication.processEvents()
         self.check_drawn("The bench, the module on its pins and the beam", "X_layout.png")
         App.ActiveDocument.save()
+
+    # ================================================================ tutorial Y
+    # PMI in model views (Wünsch, Pilz and Vajna, NX für Einsteiger, 6.10; Tickoo ch. 12): a plate of ours,
+    # 80 x 60 x 10 with four Ø8 holes. Its hole sizes and widths are documented in the Top view, its
+    # thickness, datum and flatness in the Front view; double-clicking a view makes it the work view and
+    # hides the other view's PMI; Display in Views copies the datum into Top.
+    Y_HOLES = [(15.0, 15.0), (65.0, 15.0), (15.0, 45.0), (65.0, 45.0)]
+
+    def Y_STEPS(self):
+        return [self.p_modeling, self.y_new, self.y_part, self.y_tolerancing, self.y_top, self.y_hole_size,
+                self.y_width, self.y_front, self.y_thickness, self.y_datum, self.y_flatness, self.y_switch,
+                self.y_display, self.y_all]
+
+    def y_new(self):
+        self.tutorial = "Y: PMI in model views"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def y_part(self):
+        import Part
+        self.wait_for("y_part: document", lambda: App.ActiveDocument is not None)
+        doc = App.ActiveDocument
+        shape = Part.makeBox(80, 60, 10)
+        for x, y in self.Y_HOLES:
+            shape = shape.cut(Part.makeCylinder(4, 10, App.Vector(x, y, 0)))
+        plate = doc.addObject("Part::Feature", "Plate")
+        plate.Shape = shape
+        doc.recompute()
+        doc.saveAs(os.path.join(_out(), "Plate.FCStd"))
+        self._y_plate = plate
+        self.view().viewIsometric()
+        self.fit()
+        self.step("The plate: 80 x 60 x 10 with four Ø8 holes", "modelled by script (the exercise is the model "
+                  "views)", DIFFERS, f"volume {plate.Shape.Volume:.1f} mm^3")
+        self.wait = 400
+
+    def y_face(self, what):
+        p = self._y_plate
+        planes = {"top": ("z", 10.0), "bottom": ("z", 0.0), "front": ("y", 0.0), "back": ("y", 60.0)}
+        if what == "hole":
+            return self.p_face(p, lambda f: f.Surface.__class__.__name__ == "Cylinder"
+                               and abs(f.Surface.Center.x - 15) < 1e-6 and abs(f.Surface.Center.y - 15) < 1e-6)
+        axis, at = planes[what]
+        return self.p_face(p, self.p_plane_at(axis, at))
+
+    def y_views(self):
+        from . import pmi_ui
+        return {v.Label: v for v in pmi_ui.model_views(App.ActiveDocument)}
+
+    def y_tolerancing(self):
+        from . import pmi_ui
+        b, where = self.click_ribbon("Tolerancing", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        names = list(self.y_views())
+        ok = names == ["Front", "Top", "Right", "Back", "Bottom", "Left", "Isometric", "Trimetric"]
+        self.step("The part's Model Views: Front, Top, Right, Back, Bottom, Left, Isometric, Trimetric",
+                  f"ribbon '{where} > Tolerancing' (ISO GPS), MB2 = OK: the PMI folder and the Model Views folder",
+                  SAME if ok else FAIL, f"Model Views {names}; work view "
+                  f"{getattr(pmi_ui.work_view(App.ActiveDocument), 'Label', None)}. NX's new part has them from "
+                  "the start; here they come with the part's first PMI")
+        self.wait = 300
+
+    def y_activate(self, name):
+        """Double-click a model view in the Part Navigator (the same handler the tree calls)."""
+        from . import pmi_ui, pmi_views
+        from .tutorial import qtest
+        import time
+        v = self.y_views()[name]
+        v.ViewObject.doubleClicked()
+        last, t0 = None, time.monotonic()
+        while time.monotonic() - t0 < 3:                  # the view turns animated: wait until it rests
+            qtest().qWait(100)
+            q = tuple(round(c, 9) for c in self.view().getCameraOrientation().Q)
+            if q == last:
+                break
+            last = q
+        rot = self.view().getCameraOrientation()
+        d = rot.multVec(App.Vector(0, 0, -1))
+        want = App.Vector(*pmi_views._unit(pmi_views.STANDARD[name][0]))
+        ok = pmi_ui.work_view(App.ActiveDocument) is v and (d - want).Length < 1e-6
+        if not ok:
+            self.progress(f"y_activate {name}: work {getattr(pmi_ui.work_view(App.ActiveDocument), 'Label', None)}, "
+                          f"camera looks along {tuple(round(c, 4) for c in d)}")
+        return ok
+
+    def y_visible(self):
+        from . import pmi_ui
+        return sorted(p.Label for p in pmi_ui.all_pmi(App.ActiveDocument) if p.ViewObject.Visibility)
+
+    def y_top(self):
+        ok = self.y_activate("Top")
+        self.step("Double-click Top in the Part Navigator: the work view", "double-click 'Top' under Model Views",
+                  SAME if ok else FAIL, "the camera looks down on the plate; new PMI goes into Top")
+        self.wait = 400
+
+    def y_pmi(self, label, picks, ribbon, fill, check, how, outcome=DIFFERS):
+        from . import pmi_ui
+        doc = App.ActiveDocument
+        before = {o.Name for o in pmi_ui.all_pmi(doc)}
+        self.p_select([(self._y_plate, self.y_face(p)) for p in picks])
+        b, where = self.click_ribbon(ribbon, tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        filled = fill()
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        doc.recompute()
+        new = [o for o in pmi_ui.all_pmi(doc) if o.Name not in before]
+        o = new[-1] if new else None
+        work = pmi_ui.work_view(doc)
+        ok = bool(filled) and o is not None and check(o) and list(o.Views) == [work]
+        self.step(label, f"{', '.join(picks)} selected + ribbon '{where} > {ribbon}'; {how}; MB2 = OK",
+                  outcome if ok else FAIL, (f"{o.Callout}; in view {[v.Label for v in o.Views]}, its label in that "
+                                            "view's plane") if o else "no PMI made")
+        return o
+
+    def y_hole_size(self):
+        def fill():
+            q = self.p_widget(QtWidgets.QSpinBox, "quantity")
+            if q is not None:
+                for _ in range(3):
+                    q.stepUp()                     # the spin box's up arrow, three clicks: 4X
+            return self.p_type("fit", "H11") and q is not None and q.value() == 4
+        self._y_hole = self.y_pmi("Rapid Dimension on a hole: 4X Ø8 H11", ["hole"], "Rapid Dimension", fill,
+                                  lambda o: o.Callout.startswith("4X Ø8.000 H11"), "'H11' typed, quantity 4")
+        self.wait = 300
+
+    def y_width(self):
+        self._y_width = self.y_pmi("Rapid Dimension: the width 60 (ISO 2768)", ["front", "back"], "Rapid Dimension",
+                                   lambda: True, lambda o: abs(o.Nominal - 60) < 1e-9, "nothing typed")
+        self.wait = 300
+
+    def y_front(self):
+        ok = self.y_activate("Front")
+        vis = self.y_visible()
+        hidden = self._y_hole.Label not in vis and self._y_width.Label not in vis
+        self.step("Double-click Front: Top's PMI are hidden", "double-click 'Front' under Model Views",
+                  SAME if ok and hidden else FAIL, f"visible PMI: {vis or 'none'}")
+        self.wait = 400
+
+    def y_thickness(self):
+        def fill():
+            return self.p_spin("upperDeviation", 0.1) and self.p_spin("lowerDeviation", 0.1)
+        self._y_thick = self.y_pmi("Rapid Dimension: the thickness 10 ±0.1", ["bottom", "top"], "Rapid Dimension",
+                                   fill, lambda o: o.Callout == "10.000 ±0.100", "+0.1 and −0.1 typed")
+        self.wait = 300
+
+    def y_datum(self):
+        self._y_datum = self.y_pmi("Datum Feature Symbol A on the underside", ["bottom"], "Datum Feature Symbol",
+                                   lambda: self.p_type("datumLetter", "A"), lambda o: o.Letter == "A", "letter A")
+        self.wait = 300
+
+    def y_flatness(self):
+        def fill():
+            combo = self.p_widget(QtWidgets.QComboBox, "characteristic")
+            i = next((k for k in range(combo.count()) if combo.itemText(k).lower() == "flatness"), -1)
+            combo.setCurrentIndex(i)
+            self.p_type("tolerance", "0.05")
+            return i >= 0
+        self._y_flat = self.y_pmi("Flatness 0.05 on the top face", ["top"], "Feature Control Frame", fill,
+                                  lambda o: o.Characteristic.lower() == "flatness", "flatness, 0.05")
+        self.shot("Y_front.png")
+        self.wait = 300
+
+    def y_switch(self):
+        ok = self.y_activate("Top")
+        vis = self.y_visible()
+        want = sorted([self._y_hole.Label, self._y_width.Label])
+        self.step("Double-click Top again: only Top's PMI show", "double-click 'Top'", SAME if ok and vis == want
+                  else FAIL, f"visible PMI: {vis}")
+        self.shot("Y_top.png")              # the view switch fits the part already (fit() would turn to Trimetric)
+        self.wait = 300
+
+    def y_display(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self._y_datum.Name)
+        QtWidgets.QApplication.processEvents()
+        b, where = self.click_ribbon("Display in Views", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        ticked = self.p_check("view_Top")
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        vis = self.y_visible()
+        views = sorted(v.Label for v in self._y_datum.Views)
+        ok = ticked and views == ["Front", "Top"] and self._y_datum.Label in vis
+        self.step("Display in Views: datum A also in Top", f"datum A selected + ribbon '{where} > Display in Views', "
+                  "Top ticked beside Front, MB2 = OK", SAME if ok else FAIL,
+                  f"datum A in {views}; visible in Top: {vis}. NX: RMB > Display > in Views")
+        self.wait = 300
+
+    def y_all(self):
+        ok_iso = self.y_activate("Isometric")
+        none = self.y_visible()
+        b, where = self.click_ribbon("Show All PMI", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        vis = self.y_visible()
+        ok = ok_iso and not none and len(vis) == 5
+        self.step("Isometric has no PMI of its own; Show All PMI shows every view's", "double-click 'Isometric'; "
+                  f"ribbon '{where} > Show All PMI'", DIFFERS if ok else FAIL,
+                  f"Isometric shows {none or 'nothing'}; then {len(vis)} PMI, each label in its own view's plane. "
+                  "NX shows a view's PMI only while it is the work view; Show All PMI is NXStyle's")
+        self.shot("Y_all.png")
+        App.ActiveDocument.save()
+        self.wait = 300

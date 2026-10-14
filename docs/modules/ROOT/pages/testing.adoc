@@ -28,7 +28,7 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It checks 70 behaviours, among them:
+It checks 72 behaviours, among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
@@ -36,6 +36,7 @@ It checks 70 behaviours, among them:
 * metric units even when the profile was set to US customary;
 * Strata starts and sits with the navigators;
 * the Algorithmic Modeling application opens Katydid's canvas, floating, with Canvas, Bake and the Application tab on the ribbon; Canvas is on the Tools tab before Katydid's workbench has started; the selected category tab has a readable label; the canvas stays open after switching back to Modeling;
+* the eight PMI model views look as FreeCAD's own standard views do, a new PMI goes into the work view, switching views hides the others' PMI, and Display in Views copies one;
 * a plate with PMI written as STEP AP242: datums, the H7 and g6 classes with their right IT grades, position with Ⓜ and flatness in the file, and OpenCASCADE reading back the dimensions and tolerances.
 
 It writes `out/smoke.json` and screenshots, and exits non-zero on any failure.

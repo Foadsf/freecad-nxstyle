@@ -3071,6 +3071,102 @@
    "replay": "render of the graphics window",
    "outcome": "same",
    "detail": "2.5% of the view shows the part"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 1,
+   "nx": "The plate: 80 x 60 x 10 with four Ø8 holes",
+   "replay": "modelled by script (the exercise is the model views)",
+   "outcome": "differs",
+   "detail": "volume 45989.4 mm^3"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 2,
+   "nx": "The part's Model Views: Front, Top, Right, Back, Bottom, Left, Isometric, Trimetric",
+   "replay": "ribbon 'PMI › Standard > Tolerancing' (ISO GPS), MB2 = OK: the PMI folder and the Model Views folder",
+   "outcome": "same",
+   "detail": "Model Views ['Front', 'Top', 'Right', 'Back', 'Bottom', 'Left', 'Isometric', 'Trimetric']; work view None. NX's new part has them from the start; here they come with the part's first PMI"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 3,
+   "nx": "Double-click Top in the Part Navigator: the work view",
+   "replay": "double-click 'Top' under Model Views",
+   "outcome": "same",
+   "detail": "the camera looks down on the plate; new PMI goes into Top"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 4,
+   "nx": "Rapid Dimension on a hole: 4X Ø8 H11",
+   "replay": "hole selected + ribbon 'PMI › Dimension > Rapid Dimension'; 'H11' typed, quantity 4; MB2 = OK",
+   "outcome": "differs",
+   "detail": "4X Ø8.000 H11 (+0.090/+0.000); in view ['Top'], its label in that view's plane"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 5,
+   "nx": "Rapid Dimension: the width 60 (ISO 2768)",
+   "replay": "front, back selected + ribbon 'PMI › Dimension > Rapid Dimension'; nothing typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "60.000; in view ['Top'], its label in that view's plane"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 6,
+   "nx": "Double-click Front: Top's PMI are hidden",
+   "replay": "double-click 'Front' under Model Views",
+   "outcome": "same",
+   "detail": "visible PMI: none"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 7,
+   "nx": "Rapid Dimension: the thickness 10 ±0.1",
+   "replay": "bottom, top selected + ribbon 'PMI › Dimension > Rapid Dimension'; +0.1 and −0.1 typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "10.000 ±0.100; in view ['Front'], its label in that view's plane"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 8,
+   "nx": "Datum Feature Symbol A on the underside",
+   "replay": "bottom selected + ribbon 'PMI › Annotation > Datum Feature Symbol'; letter A; MB2 = OK",
+   "outcome": "differs",
+   "detail": "datum feature A; in view ['Front'], its label in that view's plane"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 9,
+   "nx": "Flatness 0.05 on the top face",
+   "replay": "top selected + ribbon 'PMI › Annotation > Feature Control Frame'; flatness, 0.05; MB2 = OK",
+   "outcome": "differs",
+   "detail": "flatness | 0.050; in view ['Front'], its label in that view's plane"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 10,
+   "nx": "Double-click Top again: only Top's PMI show",
+   "replay": "double-click 'Top'",
+   "outcome": "same",
+   "detail": "visible PMI: ['Diameter 8.000', 'Distance 60.000']"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 11,
+   "nx": "Display in Views: datum A also in Top",
+   "replay": "datum A selected + ribbon 'PMI › Model View > Display in Views', Top ticked beside Front, MB2 = OK",
+   "outcome": "same",
+   "detail": "datum A in ['Front', 'Top']; visible in Top: ['Datum A', 'Diameter 8.000', 'Distance 60.000']. NX: RMB > Display > in Views"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 12,
+   "nx": "Isometric has no PMI of its own; Show All PMI shows every view's",
+   "replay": "double-click 'Isometric'; ribbon 'PMI › Model View > Show All PMI'",
+   "outcome": "differs",
+   "detail": "Isometric shows nothing; then 5 PMI, each label in its own view's plane. NX shows a view's PMI only while it is the work view; Show All PMI is NXStyle's"
   }
  ],
  "info": {

@@ -19,6 +19,9 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 | *Inspection Plan* | Numbers the characteristics (the balloons on the model) and lists them with their limits, where the tolerance comes from, and how to measure them; the functional gauge sizes; the checks.
 | *Tolerance Stackup* | xref:tolerance-analysis.adoc[Tolerance analysis], with *Add from PMI*.
 | *Pin Location* | xref:pin-location.adoc[How precisely two pins locate a part], from the PMI of the pins and the holes.
+| *Display in Views* | Which model views the selected PMI show in: tick one to move it, several to copy it, or *All views* (NX: RMB › Display › in Views).
+| *New Model View* | The current view direction as a new model view, made the work view.
+| *Show All PMI* | No work view: every PMI shows, whichever view it belongs to.
 | *STEP with PMI* | The part as STEP AP242 with its PMI as data (below).
 | *Publish Release Package* | xref:release-package.adoc[Release packages].
 |===
@@ -26,6 +29,25 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 Each PMI is attached to its faces by a link that FreeCAD's topological naming keeps on the same face.
 It is drawn at a constant size with a leader to the face; frames and datum symbols use the same drawing as NX-Style's Drafting dialogs.
 Its values are properties: change the *Fit*, the *Envelope* or a tolerance in the property view and everything that uses it follows, the stack-ups too.
+
+== Model views
+
+As in NX, PMI belongs to model views.
+The part's first PMI command (*Tolerancing*, *Rapid Dimension* …) adds a *Model Views* folder to the Part Navigator with NX's eight: Front, Top, Right, Back, Bottom, Left, Isometric and Trimetric. They look as FreeCAD's standard views do.
+
+* *Double-click a model view*: it becomes the work view (marked _Work_). The camera turns to it, and PMI not displayed in it are hidden.
+* A new PMI goes into the work view, and its label lies in that view's plane: a column left of the part as the view shows it, rows down the screen. Sizes seen from above go in Top, thicknesses and flatness in Front, and each view stays readable.
+* *Display in Views* moves or copies the selected PMI to other views, or shows them in all views.
+* *Show All PMI* ends the work view; everything shows, each label in its own view's plane.
+* PMI made with no work view, and PMI of parts made before model views existed, show in every view.
+
+The release package's `pmi.json` lists the model views, and each annotation's views.
+
+image::tutorial-Y-01-top.png[The Top model view: the hole size and the width; the Front view's PMI are hidden]
+
+image::tutorial-Y-02-front.png[The Front model view: the thickness, datum A and the flatness]
+
+xref:tutorials/y.adoc[Tutorial Y] works through it.
 
 == ISO GPS or ASME Y14.5
 
@@ -107,6 +129,8 @@ The https://wiki.freecad.org/Tolerancing[Tolerancing] page of the FreeCAD wiki c
 
 == What differs from NX
 
-* NX places a PMI with a click in the graphics window and keeps it in model views; here it is placed beside its face, one row per PMI, and there are no model views.
+* NX places a PMI with a click in the graphics window; here it is placed beside its face, one row per PMI in its view's plane.
+* In NX *Display › in Views* is on the PMI's right-click menu; here it is on the PMI tab. A model view here is a direction: the part is fitted when it becomes the work view. *Show All PMI* is NX-Style's.
+* Model views are not written to STEP: OpenCASCADE does not export AP242 saved views (FreeCAD issue 29772 notes the same for OCCT 8.0).
 * NX's PMI goes to STEP AP242 and JT. NX-Style writes STEP AP242 with semantic PMI, but no graphical PMI (the frames as drawn) and no JT.
 * The checks and the gauge sizes are NX-Style's own; NX has PMI validation through separate checkers.
