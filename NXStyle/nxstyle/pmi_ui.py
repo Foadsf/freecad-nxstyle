@@ -889,12 +889,62 @@ def annotations(doc):
     return anns
 
 
+def datum_feature(o):
+    """The drf.py feature a Datum Feature Symbol's face gives: a plane (outward normal), a cylinder's axis,
+    or None for other geometry."""
+    picks = [(p, s) for p, subs in o.References for s in (subs or [""])]
+    if not picks:
+        return None
+    try:
+        shape = refs.resolve(*picks[0])
+    except Exception:
+        return None
+    kind = refs.surface_kind(shape)
+    if kind == "plane":
+        return "plane", tuple(refs.anchor(shape)), tuple(refs.plane_normal(shape))
+    if kind in ("cylinder", "circle"):
+        c, d = refs.cylinder_axis(shape)
+        return "axis", tuple(c), tuple(d)
+    return None
+
+
+def frames(doc):
+    """[(frame text, datum letters, drf report)] of every distinct datum system the frames refer to."""
+    from . import drf
+    feats = {}
+    for o in all_pmi(doc):
+        if o.PMIType == "Datum Feature" and o.Letter.strip():
+            f = datum_feature(o)
+            if f is not None:
+                feats.setdefault(o.Letter.strip().upper(), f)
+    out, seen = [], set()
+    for o in all_pmi(doc):
+        if o.PMIType != "Feature Control Frame":
+            continue
+        letters = tuple(parse_datum(d)[0] for d in o.DatumReferences if d.strip())
+        if not letters or letters in seen:
+            continue
+        seen.add(letters)
+        missing = [x for x in letters if x not in feats]
+        if missing:
+            out.append((o.Label, letters, f"{' | '.join(letters)}: no datum feature symbol (or no plane or cylinder) "
+                                          f"for {', '.join(missing)}"))
+            continue
+        out.append((o.Label, letters, drf.report(list(letters), [feats[x] for x in letters])))
+    return out
+
+
 def plan_text(doc):
     anns = annotations(doc)
     doc.recompute()
     std, general = settings(doc)
-    return pmi.report(anns, title=f"PMI of {doc.Label}: inspection plan, functional gauge, checks", standard=std,
+    text = pmi.report(anns, title=f"PMI of {doc.Label}: inspection plan, functional gauge, checks", standard=std,
                       general=general)
+    systems = frames(doc)
+    if systems:
+        text += ("\n\nDatum reference frames (degrees of freedom, Drake 5.9.7: a plane arrests 3, 2 or 1 in order of "
+                 "precedence, an axis up to 4):\n" + "\n".join(f"  {r}" for _, _, r in systems))
+    return text
 
 
 def stack_values(o, part="tolerance"):
@@ -1053,6 +1103,46 @@ def edge_for_face(view, shape):
 why = {}
 
 
+INHERIT_MODES = ["From Model View", "Aligned to Drawing (Entire Part)"]
+
+
+def inherit_mode(view):
+    """NX's Inherit PMI setting of a drawing view (Settings > Common > PMI), as a property of the view."""
+    if "NX_InheritPMI" not in view.PropertiesList:
+        view.addProperty("App::PropertyEnumeration", "NX_InheritPMI", "NX",
+                         "Which PMI Inherit PMI brings: those of the model view this view looks along (and those "
+                         "shown in all views), or every PMI whose plane faces this view")
+        view.NX_InheritPMI = INHERIT_MODES
+        view.NX_InheritPMI = INHERIT_MODES[0]
+    return view.NX_InheritPMI
+
+
+def pmi_for_view(view, mode=None):
+    """(PMI a drawing view inherits, how it chose them). From Model View: the PMI of the model view that
+    looks the way this drawing view does (TechDraw's Direction points at the viewer, a model view's into
+    the part), else as Aligned to Drawing; Aligned to Drawing (Entire Part): every PMI whose plane faces
+    the view, whichever model view it is in (Wünsch, Pilz and Vajna, NX für Einsteiger 6.10)."""
+    from . import pmi_views
+    doc = view.Document
+    mode = mode or inherit_mode(view)
+    look = App.Vector(view.Direction)
+    if look.Length < 1e-12:
+        return all_pmi(doc), "all PMI"
+    look = App.Vector(-look.x, -look.y, -look.z).normalize()
+    if mode == INHERIT_MODES[0]:
+        match = next((v for v in model_views(doc)
+                      if (App.Vector(v.Direction).normalize() - look).Length < 1e-6), None)
+        if match is not None:
+            return ([p for p in all_pmi(doc) if pmi_views.shown([v.Name for v in p.Views or []], match.Name)],
+                    f"from model view {match.Label}")
+    picked = []
+    for p in all_pmi(doc):
+        d = App.Vector(*view_of(p)[0]).normalize()
+        if abs(d.dot(look)) > 1 - 1e-6:
+            picked.append(p)
+    return picked, "aligned to the drawing (entire part)"
+
+
 def inherit(view, objs=None):
     """Put the model's PMI on a drawing view: diameters and distances as TechDraw dimensions on the edges
     that show their faces, with the PMI's ISO class or tolerance, stacked outside the view; datum symbols on
@@ -1115,6 +1205,7 @@ def inherit(view, objs=None):
 
 
 last_inherit = {}
+last_inherit_how = {}
 
 
 def size_dimension_on(page, o):
@@ -1442,6 +1533,43 @@ def export_step(doc, path):
 last = {}
 
 
+def import_step(path, doc=None):
+    """A STEP AP242 file's parts and its semantic PMI as NXStyle PMI on their faces (the MBD direction
+    back: another CAD system's PMI, or NXStyle's own, becomes PMI here). Returns (objects, PMI, problems)."""
+    import Part
+    from . import ap242
+    doc = doc or App.ActiveDocument or App.newDocument()
+    data = ap242.read(path)
+    parts = []
+    for name, shape in data["shapes"]:
+        o = doc.addObject("Part::Feature", "Imported")
+        o.Shape = Part.__fromPythonOCC__(shape)
+        o.Label = name
+        parts.append(o)
+    doc.recompute()
+    made, problems = [], list(data["problems"])
+    for rec in data["records"]:
+        kind, values = ap242.pmi_values(rec)
+        if kind is None:
+            problems.append(values)
+            continue
+        faces = rec.get("faces", []) + rec.get("faces2", [])
+        if not faces:
+            problems.append(f"{kind} {values}: not attached to a face")
+            continue
+        picks = [(parts[n], sub) for n, sub in faces]
+        if kind == "Dimension" and values["DimensionType"] == "Distance" and len(picks) < 2:
+            problems.append(f"distance {rec.get('nominal')}: needs two faces, the file gives {len(picks)}")
+            continue
+        try:
+            made.append(create(kind, picks, doc, **values))
+        except Exception as e:
+            problems.append(f"{kind} {values}: {e}")
+    doc.recompute()
+    last.update(imported=[p.Label for p in made], import_problems=problems)
+    return parts, made, problems
+
+
 class StepPanel:
     """File > Export > STEP with PMI: the model and its PMI as data (ISO 10303-242)."""
 
@@ -1488,6 +1616,83 @@ class StepPanel:
     def reject(self):
         Gui.Control.closeDialog()
         return True
+
+
+class ImportStep:
+    def GetResources(self):
+        return {"MenuText": "Import STEP with PMI",
+                "ToolTip": "Open a STEP AP242 file's parts and its semantic PMI (datums, dimensions with their "
+                           "tolerances and ISO 286 classes, feature control frames) as PMI on their faces",
+                "Pixmap": config.resource("icons", "import_step_pmi.svg")}
+
+    def IsActive(self):
+        return not Gui.Control.activeDialog()
+
+    def Activated(self):
+        Gui.Control.showDialog(ImportPanel())
+
+
+class ImportPanel:
+    """File > Import > STEP with PMI: another system's (or NXStyle's) AP242 part with its PMI as data."""
+
+    def __init__(self):
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle("Import STEP with PMI")
+        lay = QtWidgets.QFormLayout(self.form)
+        self.path = QtWidgets.QLineEdit()
+        self.path.setObjectName("stepFile")
+        browse = QtWidgets.QPushButton("Browse…")
+        browse.clicked.connect(self.browse)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.path)
+        row.addWidget(browse)
+        lay.addRow("File", row)
+        info = QtWidgets.QLabel("The parts come in as solids; datums, dimensions with their tolerances and ISO 286 "
+                                "classes, and feature control frames become PMI on their faces. Into the open part, "
+                                "or a new one.")
+        info.setWordWrap(True)
+        lay.addRow(info)
+
+    def browse(self):
+        p, _ = QtWidgets.QFileDialog.getOpenFileName(self.form, "Import STEP with PMI", self.path.text(),
+                                                     "STEP (*.step *.stp)")
+        if p:
+            self.path.setText(p)
+
+    def accept(self):
+        import os
+        from .commands import show_information
+        path = self.path.text().strip()
+        if not os.path.isfile(path):
+            QtWidgets.QMessageBox.information(self.form, "Import STEP with PMI", f"No file {path!r}.")
+            return False
+        try:
+            text = import_report(path)
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self.form, "Import STEP with PMI", str(e))
+            return False
+        Gui.Control.closeDialog()
+        Gui.SendMsgToActiveView("ViewFit")
+        show_information(text)
+        return True
+
+    def reject(self):
+        Gui.Control.closeDialog()
+        return True
+
+
+def import_report(path, doc=None):
+    """Import path (import_step) and describe what came in, for the Information window."""
+    doc = doc or App.ActiveDocument or App.newDocument()
+    doc.openTransaction("Import STEP with PMI")
+    parts, made, problems = import_step(path, doc)
+    doc.commitTransaction()
+    text = (f"{path}\n{len(parts)} part(s): {', '.join(p.Label for p in parts)}\n{len(made)} PMI:\n"
+            + "\n".join(f"  {p.PMIType}: {p.Callout}" for p in made))
+    if problems:
+        text += "\n\nNot imported:\n" + "\n".join("  " + p for p in problems)
+    last.update(import_text=text)
+    return text
 
 
 class ExportStep:
@@ -1642,9 +1847,11 @@ class InheritPMI:
         view = self._view()
         doc = view.Document
         doc.openTransaction("Inherit PMI")
-        made, skipped = inherit(view)
+        objs, how = pmi_for_view(view)
+        made, skipped = inherit(view, objs)
         doc.commitTransaction()
-        msg = f"Inherit PMI: {len(made)} annotation(s) on {view.Label}"
+        last_inherit_how[view.Name] = how
+        msg = f"Inherit PMI ({how}): {len(made)} annotation(s) on {view.Label}"
         for label, why in skipped:
             msg += f"\n  {label}: not placed ({why})"
         App.Console.PrintMessage(msg + "\n")
@@ -1665,6 +1872,7 @@ COMMANDS = {
     "NXStyle_PMITolerancing": Tolerancing(),
     "NXStyle_InheritPMI": InheritPMI(),
     "NXStyle_PMIExportSTEP": ExportStep(),
+    "NXStyle_PMIImportSTEP": ImportStep(),
     "NXStyle_PMIDisplayInViews": DisplayInViews(),
     "NXStyle_PMINewModelView": NewModelView(),
     "NXStyle_PMIShowAll": ShowAllPMI(),

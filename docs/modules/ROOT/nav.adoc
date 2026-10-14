@@ -49,6 +49,7 @@
 * xref:tutorials/w.adoc[W: The actuator bracket in sheet metal]
 * xref:tutorials/x.adoc[X: Locating a laser module with two pins]
 * xref:tutorials/y.adoc[Y: PMI in model views]
+* xref:tutorials/z.adoc[Z: MBD exchange through STEP AP242]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

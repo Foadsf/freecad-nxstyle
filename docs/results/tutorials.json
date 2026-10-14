@@ -2732,7 +2732,7 @@
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
    "n": 15,
    "nx": "PMI > STEP with PMI: the bush and its PMI as STEP AP242 data",
-   "replay": "ribbon 'PMI › Publish > STEP with PMI', the file name typed, MB2 = OK",
+   "replay": "ribbon 'PMI › Exchange > STEP with PMI', the file name typed, MB2 = OK",
    "outcome": "differs",
    "detail": "schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; read back by OpenCASCADE: {'datums': 2, 'dimensions': 4, 'geometric_tolerances': 2}. NX writes PMI to STEP AP242 too; FreeCAD's own STEP export drops it. The envelope Ⓔ and the ISO 2768 note have no semantic AP242 form in OpenCASCADE and are listed as not written"
   },
@@ -2884,7 +2884,7 @@
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
    "n": 5,
    "nx": "Publish the release package of rev A",
-   "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev A (Released)', folder typed, MB2 = OK",
+   "replay": "ribbon 'PMI › Exchange > Publish Release Package', release 'BUSH-100 rev A (Released)', folder typed, MB2 = OK",
    "outcome": "differs",
    "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF with PMI: schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
   },
@@ -2932,7 +2932,7 @@
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
    "n": 11,
    "nx": "Publish the release package of rev B",
-   "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev B (Released)', folder typed, MB2 = OK",
+   "replay": "ribbon 'PMI › Exchange > Publish Release Package', release 'BUSH-100 rev B (Released)', folder typed, MB2 = OK",
    "outcome": "differs",
    "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_B.FCStd, model/BUSH-100_B.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF with PMI: schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: F7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
   },
@@ -2940,7 +2940,7 @@
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
    "n": 12,
    "nx": "Publish rev A again (now obsolete), after the change",
-   "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev A (Obsolete)', folder typed, MB2 = OK",
+   "replay": "ribbon 'PMI › Exchange > Publish Release Package', release 'BUSH-100 rev A (Obsolete)', folder typed, MB2 = OK",
    "outcome": "differs",
    "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF with PMI: schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
   },
@@ -3167,6 +3167,70 @@
    "replay": "double-click 'Isometric'; ribbon 'PMI › Model View > Show All PMI'",
    "outcome": "differs",
    "detail": "Isometric shows nothing; then 5 PMI, each label in its own view's plane. NX shows a view's PMI only while it is the work view; Show All PMI is NXStyle's"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 13,
+   "nx": "Drafting: New Sheet, a top view and a front view",
+   "replay": "Ctrl+Shift+D, ribbon 'New Sheet', twice 'Base View' with the plate selected",
+   "outcome": "differs",
+   "detail": "NX makes a drawing view from a model view (Base View > Model View to Use); here the view's direction is set to Top, then Front"
+  },
+  {
+   "tutorial": "Y: PMI in model views",
+   "n": 14,
+   "nx": "Inherit PMI on each view, From Model View: each gets its model view's PMI",
+   "replay": "each view selected + ribbon 'Drafting > Inherit PMI' (the view's NX_InheritPMI: From Model View)",
+   "outcome": "same",
+   "detail": "top view (from model view Top): ['Diameter 8.000', 'Distance 60.000']; front view (from model view Front): ['Datum A', 'Distance 10.000', 'Flatness']. Datum A is in Top too, but a datum on the underside shows edge-on only in the front view"
+  },
+  {
+   "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
+   "n": 1,
+   "nx": "The mounting plate and its PMI: datums A, B, C; the holes Ø8 H11 positioned Ø0.2 (M) to A|B|C; B perpendicular to A; thickness 10 ±0.1 (a count such as 4X has no AP242 form in OpenCASCADE, so it is left off)",
+   "replay": "modelled by script, the PMI made as in tutorials T and Y",
+   "outcome": "differs",
+   "detail": "10.000 ±0.100; datum feature A; datum feature B; datum feature C; perpendicularity | 0.050 | A; position | Ø0.200 (M) | A | B | C; Ø8.000 H11 (+0.090/+0.000)"
+  },
+  {
+   "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
+   "n": 2,
+   "nx": "Inspection Plan: the datum reference frames, degrees of freedom arrested (Drake 5.9.7)",
+   "replay": "ribbon 'PMI › Inspection > Inspection Plan'",
+   "outcome": "differs",
+   "detail": "Datum reference frames (degrees of freedom, Drake 5.9.7: a plane arrests 3, 2 or 1 in order of precedence, an axis up to 4): / A | B | C arrests 6 of 6 degrees of freedom (A 3, B 2, C 1) / A arrests 3 of 6 degrees of freedom (A 3); free: translation along X; translation along Y; rotation about Z. NX has no such check; a position to A|B|C fixes all six, the perpendicularity to A alone leaves the plate free to slide and turn on A, which is all it needs"
+  },
+  {
+   "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
+   "n": 3,
+   "nx": "PMI > STEP with PMI: the file for the supplier",
+   "replay": "ribbon 'PMI › Exchange > STEP with PMI', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B, C (2 datum systems); sizes: 1 diameter, 1 thickness; locations: 0; with ± tolerances: 2; fits: H11; geometric tolerances: 1 perpendicularity, 1 position"
+  },
+  {
+   "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
+   "n": 4,
+   "nx": "New part, PMI > Import STEP with PMI: the same PMI on the same faces",
+   "replay": "Ctrl+N, ribbon 'PMI › Exchange > Import STEP with PMI', the file typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "parts ['Mounting plate']; 7 PMI, identical to what was written: True. NX: File > Import > STEP with PMI; FreeCAD's own STEP import drops the PMI"
+  },
+  {
+   "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
+   "n": 5,
+   "nx": "The supplier's Inspection Plan from the imported PMI",
+   "replay": "ribbon 'PMI > Inspection Plan'",
+   "outcome": "differs",
+   "detail": "the same characteristics and datum reference frames as at the source: the inspection can be planned from the STEP file alone"
+  },
+  {
+   "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
+   "n": 6,
+   "nx": "The imported plate with its PMI",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "5.9% of the view shows the part"
   }
  ],
  "info": {

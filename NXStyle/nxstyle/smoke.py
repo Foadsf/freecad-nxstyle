@@ -830,6 +830,17 @@ class Smoke:
                   and back.get("geometric_tolerances") == 2)
             self.check("STEP AP242 with semantic PMI (written, ISO 286 grades right, read back by OCCT)", ok,
                        text.splitlines()[1:])
+            # the MBD round trip: the file's PMI imported into a new part as NXStyle PMI on its faces
+            back_doc = App.newDocument("SmokeAP242Import")
+            try:
+                parts, made, problems = pmi_ui.import_step(path, back_doc)
+                written = sorted(p.Callout for p in pmi_ui.all_pmi(doc))
+                imported = sorted(p.Callout for p in made)
+                self.check("Import STEP with PMI: the same PMI on the same kind of faces", written == imported and
+                           not problems and [p.Label for p in parts] == ["Plate"],
+                           f"written {written}; imported {imported}; problems {problems}")
+            finally:
+                App.closeDocument(back_doc.Name)
         finally:
             App.closeDocument(doc.Name)
             if before is not None and before.Name in App.listDocuments():

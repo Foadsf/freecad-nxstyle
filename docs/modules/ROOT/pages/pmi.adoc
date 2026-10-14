@@ -23,6 +23,7 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 | *New Model View* | The current view direction as a new model view, made the work view.
 | *Show All PMI* | No work view: every PMI shows, whichever view it belongs to.
 | *STEP with PMI* | The part as STEP AP242 with its PMI as data (below).
+| *Import STEP with PMI* | An AP242 file's parts with their PMI, as NX-Style PMI on their faces (below).
 | *Publish Release Package* | xref:release-package.adoc[Release packages].
 |===
 
@@ -87,6 +88,13 @@ In Drafting, select a view and click *Inherit PMI*:
 A PMI is placed once per sheet, in the first view that shows it.
 Dimensions covered by the general tolerance show no tolerance of their own, as on a drawing.
 
+Which PMI a view inherits is its *NX_InheritPMI* property, NX's _Settings › Common › PMI › Inherit PMI_ (Wünsch, Pilz and Vajna, 6.10):
+
+* *From Model View* (the default): the PMI of the model view that looks the way the drawing view does (a top view gets Top's), and those shown in all views. A view no model view matches takes them as below.
+* *Aligned to Drawing (Entire Part)*: every PMI whose plane faces the drawing view, whichever model view it was made in.
+
+image::tutorial-Y-03-drawing.png[Top and front views inheriting the PMI of the Top and Front model views]
+
 image::tutorial-T-05-drawing.png[The guide bush drawing: inherited dimensions with H7 and k6 and the envelope, frames, datums and the tolerancing note]
 
 == STEP AP242 with semantic PMI
@@ -116,6 +124,32 @@ The Information window lists each one; they stay in `pmi.json`, the inspection p
 
 OpenCASCADE 7.8 writes the IT grade of `LIMITS_AND_FITS` two too high (IT7 as '9'), and its own reader then returns IT9.
 NX-Style writes the grade each dimension has; the unit tests and the self-test check it.
+
+OpenCASCADE also takes a dimension's lower tolerance as the size below nominal and writes its negative as the lower bound.
+The first two NX-Style versions with STEP with PMI (commits 8b05383 and e217d17, 2026-10-14) passed it signed, so their files gave lower bounds the wrong sign (±0.1 as +0.1/+0.1); write such parts again.
+
+== Import STEP with PMI
+
+*PMI › Import STEP with PMI* reads an AP242 file into the open part (or a new one): each part as a solid, and its semantic PMI as NX-Style PMI on the same faces, which the Inspection Plan, the stack-ups, Pin Location and Inherit PMI then use as if they had been made here.
+A supplier receives the model and its tolerances in one file, and plans the inspection from it (xref:tutorials/z.adoc[tutorial Z]).
+
+What comes in: datums, diameters, radii, widths and distances with their deviations or ISO 286 class, and the frames NX-Style has, with their zone, Ⓜ/Ⓛ and datum system (MMB/LMB).
+What does not: dimension types and tolerances NX-Style's PMI has no form for (they are listed), saved views, and the graphical PMI.
+OpenCASCADE's reader returns only the size of a lower tolerance; NX-Style takes its sign from the file's own `TOLERANCE_VALUE`, so +0.050/+0.020 comes back as written.
+
+== Datum reference frames
+
+The *Inspection Plan* ends with every datum system the frames refer to, and the degrees of freedom it arrests (Drake, _Dimensioning and Tolerancing Handbook_, 5.9.7): a planar primary datum arrests three, a planar secondary two, a tertiary the last one; a cylinder's axis up to four.
+
+----
+A | B | C arrests 6 of 6 degrees of freedom (A 3, B 2, C 1)
+A arrests 3 of 6 degrees of freedom (A 3); free: translation along X; translation along Y; rotation about Z
+----
+
+What stays free is named: the plate on A can still slide and turn on it, which is all a perpendicularity to A needs, but a position to A alone would not be located.
+A face and a hole perpendicular to it leave the turn about the hole: the report says _rotation about Z through (25, 25, 0)_.
+
+image::tutorial-Z-01-frames.png[The Inspection Plan's datum reference frames]
 
 == FreeCAD's PMI plans and other add-ons
 

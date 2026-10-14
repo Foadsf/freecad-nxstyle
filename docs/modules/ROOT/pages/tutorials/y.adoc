@@ -3,7 +3,7 @@
 
 [horizontal]
 Book:: The model views of Wünsch, Pilz and Vajna, _Siemens NX für Einsteiger – kurz und bündig_, 4th ed., section 6.10, and Sham Tickoo, _Siemens NX 12.0 for Designers_, ch. 12; the plate is ours
-You learn:: the Model Views folder, the work view (double-click), PMI in a view and in its plane, Display in Views, Show All PMI
+You learn:: the Model Views folder, the work view (double-click), PMI in a view and in its plane, Display in Views, Show All PMI, Inherit PMI From Model View
 Sizes:: A plate 80 × 60 × 10 with four Ø8 holes
 
 A part is documented in more than one direction: its hole pattern is read from above, its thickness and flatness from the front.
@@ -44,6 +44,14 @@ Datum A is referenced from above too. Select it, *PMI › Display in Views*, tic
 
 Double-click *Isometric*: it has no PMI of its own, so nothing shows.
 *Show All PMI* ends the work view; all five show, each in its own view's plane.
+
+=== 7. The drawing inherits from the model views
+
+kbd:[Ctrl+Shift+D], *New Sheet*, a top view and a front view of the plate.
+Select each and click *Inherit PMI*. Each view's *NX_InheritPMI* is _From Model View_, so the top view gets Top's PMI (the hole size, the width) and the front view Front's (the thickness, datum A, the flatness).
+Datum A is in Top too, but the underside shows edge-on only in the front view, so it is placed there.
+
+image::tutorial-Y-03-drawing.png[The drawing: each view with its model view's PMI]
 
 == The replay
 

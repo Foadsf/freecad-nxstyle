@@ -175,12 +175,17 @@ class PrecisionTutorials:
         else:
             self.wait = 100
 
-    def p_shot_info(self, name):
-        """A screenshot of the Information window alone (the main window grab leaves it out)."""
+    def p_shot_info(self, name, end=False):
+        """A screenshot of the Information window alone (the main window grab leaves it out); end=True
+        scrolls to its last lines first."""
         from . import commands
         dlg = commands._info_dialog
         try:
             if dlg is not None and dlg.isVisible():
+                box = dlg.findChild(QtWidgets.QPlainTextEdit)
+                if end and box is not None:
+                    box.verticalScrollBar().setValue(box.verticalScrollBar().maximum())
+                    QtWidgets.QApplication.processEvents()
                 dlg.grab().save(os.path.join(_out(), name))
                 return
         except RuntimeError:
@@ -1865,7 +1870,7 @@ class PrecisionTutorials:
     def Y_STEPS(self):
         return [self.p_modeling, self.y_new, self.y_part, self.y_tolerancing, self.y_top, self.y_hole_size,
                 self.y_width, self.y_front, self.y_thickness, self.y_datum, self.y_flatness, self.y_switch,
-                self.y_display, self.y_all]
+                self.y_display, self.y_all, self.y_drafting, self.y_sheet, self.y_inherit, self.y_done]
 
     def y_new(self):
         self.tutorial = "Y: PMI in model views"
@@ -2060,3 +2065,239 @@ class PrecisionTutorials:
         self.shot("Y_all.png")
         App.ActiveDocument.save()
         self.wait = 300
+
+    def y_drafting(self):
+        self._y_doc = App.ActiveDocument
+        self.key("Ctrl+Shift+D")
+        self.wait = 2500
+
+    def y_sheet(self):
+        b, where = self.click_ribbon("New Sheet")
+        if b is None:
+            from . import shell
+            self.retries.append("Y: Ctrl+Shift+D did not reach Drafting; Application tab used")
+            shell.switch_application("drafting")
+            QtWidgets.QApplication.processEvents()
+            self.click_ribbon("New Sheet")
+        QtWidgets.QApplication.processEvents()
+        doc = App.ActiveDocument
+        self._y_page = self.newest("TechDraw::DrawPage")
+        made = []
+        for direction, pos in ((App.Vector(0, 0, 1), (110.0, 135.0)), (App.Vector(0, -1, 0), (110.0, 55.0))):
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, self._y_plate.Name)
+            before = {v.Name for v in self._y_page.Views}
+            self.click_ribbon("Base View")
+            QtWidgets.QApplication.processEvents()
+            v = next((x for x in self._y_page.Views if x.Name not in before
+                      and x.isDerivedFrom("TechDraw::DrawViewPart")), None)
+            if Gui.Control.activeDialog():
+                self.mb2_click_on_sheet()
+            if v is not None:
+                v.Direction, v.XDirection = direction, App.Vector(1, 0, 0)
+                v.ScaleType = "Custom"
+                v.Scale = 1.2
+                v.X, v.Y = pos
+                v.touch()
+                v.recompute()
+                made.append(v)
+        doc.recompute()
+        self._y_views = made
+        self.step("Drafting: New Sheet, a top view and a front view", "Ctrl+Shift+D, ribbon 'New Sheet', twice "
+                  "'Base View' with the plate selected", DIFFERS if len(made) == 2 else FAIL,
+                  "NX makes a drawing view from a model view (Base View > Model View to Use); here the view's "
+                  "direction is set to Top, then Front")
+        self.wait = 2500
+
+    def y_inherit(self):
+        from . import pmi_ui
+        from .tutorial import qtest
+        page = self._y_page
+        got = {}
+        for v, size in zip(self._y_views, (60.0, 10.0)):  # the top view shows the 60 width, the front the 10
+            ready = False
+            for k in range(50):                             # TechDraw projects in the background: wait for it
+                if any(abs(e.Length - size) < 1e-3 or abs(e.Length - size * float(v.Scale)) < 1e-3
+                       for _, e in pmi_ui._view_edges(v)):
+                    ready = True
+                    break
+                if k in (5, 20, 35):
+                    v.touch()
+                    v.recompute()
+                qtest().qWait(200)
+            self.progress(f"y_inherit: {v.Label} direction {v.Direction} projected: {ready}")
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(App.ActiveDocument.Name, v.Name)
+            QtWidgets.QApplication.processEvents()
+            before = {x.Name for x in page.Views}
+            self.click_ribbon("Inherit PMI")
+            QtWidgets.QApplication.processEvents()
+            App.ActiveDocument.recompute()
+            tags = {getattr(x, "NX_Pmi", "") for x in page.Views if x.Name not in before}
+            got[v.Label] = (pmi_ui.last_inherit_how.get(v.Name, "?"),
+                            sorted(p.Label for p in pmi_ui.all_pmi(self._y_doc) if p.Name in tags))
+        top, front = (got.get(v.Label, ("?", [])) for v in self._y_views)
+        want_top = sorted([self._y_hole.Label, self._y_width.Label])
+        want_front = sorted([self._y_thick.Label, self._y_datum.Label, self._y_flat.Label])
+        ok = (top[0] == "from model view Top" and front[0] == "from model view Front" and top[1] == want_top
+              and front[1] == want_front)
+        self.step("Inherit PMI on each view, From Model View: each gets its model view's PMI", "each view selected + "
+                  "ribbon 'Drafting > Inherit PMI' (the view's NX_InheritPMI: From Model View)", SAME if ok else FAIL,
+                  f"top view ({top[0]}): {top[1]}; front view ({front[0]}): {front[1]}. Datum A is in Top too, but "
+                  "a datum on the underside shows edge-on only in the front view"
+                  + ("" if ok else f"; skipped {pmi_ui.last_inherit}"))
+        self.wait = 800
+
+    def y_done(self):
+        App.ActiveDocument.recompute()
+        from .tutorial import qtest
+        try:
+            self._y_page.ViewObject.show()
+        except Exception:
+            pass
+        qtest().qWait(800)
+        QtWidgets.QApplication.processEvents()
+        self.shot("Y_drawing.png")
+        App.ActiveDocument.save()
+        self.key("Ctrl+M")
+        self.wait = 1500
+
+    # ================================================================ tutorial Z
+    # MBD exchange: a mounting plate documented with datums A (underside), B (left side), C (front side),
+    # 4X Ø8 H11 holes positioned Ø0.2 (M) to A|B|C and the side B perpendicular to A. Its datum reference
+    # frames are checked (Drake 5.9.7), it goes out as STEP AP242 and comes back into a new part with the
+    # same PMI on the same faces, as a supplier receiving the file would see it.
+    Z_HOLES = [(20.0, 15.0), (100.0, 15.0), (20.0, 65.0), (100.0, 65.0)]
+
+    def Z_STEPS(self):
+        return [self.p_modeling, self.z_new, self.z_part, self.z_plan, self.z_export, self.z_new2, self.z_import,
+                self.z_plan2, self.z_show]
+
+    def z_new(self):
+        self.tutorial = "Z: MBD exchange, a part and its PMI through STEP AP242"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def z_part(self):
+        import Part
+        from . import pmi_ui
+        self.wait_for("z_part: document", lambda: App.ActiveDocument is not None)
+        doc = App.ActiveDocument
+        shape = Part.makeBox(120, 80, 10)
+        for x, y in self.Z_HOLES:
+            shape = shape.cut(Part.makeCylinder(4, 10, App.Vector(x, y, 0)))
+        plate = doc.addObject("Part::Feature", "MountingPlate")
+        plate.Shape = shape
+        plate.Label = "Mounting plate"
+        doc.recompute()
+
+        def face(pred):
+            return "Face%d" % next(i for i, f in enumerate(plate.Shape.Faces, 1) if pred(f))
+
+        def plane_at(axis, at):
+            return face(lambda f: f.Surface.__class__.__name__ == "Plane"
+                        and abs(getattr(f.CenterOfMass, axis) - at) < 1e-6)
+        hole = face(lambda f: f.Surface.__class__.__name__ == "Cylinder" and abs(f.Surface.Center.x - 20) < 1e-6
+                    and abs(f.Surface.Center.y - 15) < 1e-6)
+        A, B, C = plane_at("z", 0.0), plane_at("x", 0.0), plane_at("y", 0.0)
+        pmi_ui.folder(doc)
+        made = [pmi_ui.create("Datum Feature", [(plate, A)], doc, Letter="A"),
+                pmi_ui.create("Datum Feature", [(plate, B)], doc, Letter="B"),
+                pmi_ui.create("Datum Feature", [(plate, C)], doc, Letter="C"),
+                pmi_ui.create("Dimension", [(plate, hole)], doc, DimensionType="Diameter", Fit="H11"),
+                pmi_ui.create("Feature Control Frame", [(plate, hole)], doc, Characteristic="Position",
+                              Tolerance=0.2, ZoneDiameter=True, MaterialCondition="MMC",
+                              DatumReferences=["A", "B", "C"]),
+                pmi_ui.create("Feature Control Frame", [(plate, B)], doc, Characteristic="Perpendicularity",
+                              Tolerance=0.05, DatumReferences=["A"]),
+                pmi_ui.create("Dimension", [(plate, A), (plate, plane_at("z", 10.0))], doc, DimensionType="Distance",
+                              UpperDeviation=0.1, LowerDeviation=0.1)]
+        doc.recompute()
+        doc.saveAs(os.path.join(_out(), "MountingPlate.FCStd"))
+        self._z_doc, self._z_plate = doc, plate
+        self._z_callouts = sorted(p.Callout for p in made)
+        self.view().viewIsometric()
+        self.fit()
+        self.step("The mounting plate and its PMI: datums A, B, C; the holes Ø8 H11 positioned Ø0.2 (M) to A|B|C; "
+                  "B perpendicular to A; thickness 10 ±0.1 (a count such as 4X has no AP242 form in OpenCASCADE, so "
+                  "it is left off)", "modelled by script, the PMI made as in tutorials T and Y",
+                  DIFFERS, "; ".join(self._z_callouts))
+        self.wait = 600
+
+    def z_plan(self):
+        b, where = self.click_ribbon("Inspection Plan", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        text = self.p_info_text()
+        lines = [ln.strip() for ln in text.splitlines() if "arrests" in ln]
+        full = any(ln.startswith("A | B | C arrests 6 of 6 degrees of freedom (A 3, B 2, C 1)") for ln in lines)
+        partial = any(ln.startswith("A arrests 3 of 6") and "free" in ln for ln in lines)
+        self.step("Inspection Plan: the datum reference frames, degrees of freedom arrested (Drake 5.9.7)",
+                  f"ribbon '{where} > Inspection Plan'", DIFFERS if full and partial else FAIL,
+                  " / ".join(lines) + ". NX has no such check; a position to A|B|C fixes all six, the "
+                  "perpendicularity to A alone leaves the plate free to slide and turn on A, which is all it needs")
+        self.p_shot_info("Z_frames.png", end=True)
+        self.p_close_info()
+        self.wait = 300
+
+    def z_export(self):
+        from . import ap242
+        path = os.path.join(_out(), "MountingPlate.step")
+        b, where = self.click_ribbon("STEP with PMI", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        typed = self.p_type("stepFile", path)
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        s = ap242.summary(open(path, encoding="latin-1").read()) if os.path.isfile(path) else None
+        self._z_path = path
+        ok = typed and s is not None and s["datums"] == ["A", "B", "C"] and s["fits"] == ["H11"]
+        self.step("PMI > STEP with PMI: the file for the supplier", f"ribbon '{where} > STEP with PMI', file name "
+                  "typed, MB2 = OK", DIFFERS if ok else FAIL, ap242.summary_text(s) if s else "no file")
+        self.p_close_info()
+        self.wait = 300
+
+    def z_new2(self):
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1500
+
+    def z_import(self):
+        from . import pmi_ui
+        self.wait_for("z_import: new part", lambda: App.ActiveDocument is not None
+                      and App.ActiveDocument is not self._z_doc)
+        doc = App.ActiveDocument
+        b, where = self.click_ribbon("Import STEP with PMI", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        typed = self.p_type("stepFile", self._z_path)
+        self.mb2_click()
+        QtWidgets.QApplication.processEvents()
+        got = sorted(p.Callout for p in pmi_ui.all_pmi(doc))
+        parts = [o.Label for o in doc.Objects if o.isDerivedFrom("Part::Feature") and o.TypeId == "Part::Feature"]
+        text = self.p_info_text()
+        ok = typed and got == self._z_callouts and "Mounting plate" in parts and "Not imported" not in text
+        self._z_doc2 = doc
+        self.step("New part, PMI > Import STEP with PMI: the same PMI on the same faces", f"Ctrl+N, ribbon '{where} > "
+                  "Import STEP with PMI', the file typed, MB2 = OK", DIFFERS if ok else FAIL,
+                  f"parts {parts}; {len(got)} PMI, identical to what was written: {got == self._z_callouts}. "
+                  "NX: File > Import > STEP with PMI; FreeCAD's own STEP import drops the PMI")
+        self.p_shot_info("Z_import.png")
+        self.p_close_info()
+        self.wait = 300
+
+    def z_plan2(self):
+        self.click_ribbon("Inspection Plan", tab="PMI")
+        QtWidgets.QApplication.processEvents()
+        text = self.p_info_text()
+        ok = "A | B | C arrests 6 of 6 degrees of freedom (A 3, B 2, C 1)" in text and "H11" in text
+        self.step("The supplier's Inspection Plan from the imported PMI", "ribbon 'PMI > Inspection Plan'",
+                  DIFFERS if ok else FAIL, "the same characteristics and datum reference frames as at the source: "
+                  "the inspection can be planned from the STEP file alone")
+        self.p_close_info()
+        self.wait = 300
+
+    def z_show(self):
+        self.view().viewIsometric()
+        self.fit()
+        QtWidgets.QApplication.processEvents()
+        self.check_drawn("The imported plate with its PMI", "Z_imported.png")
+        App.ActiveDocument.saveAs(os.path.join(_out(), "MountingPlate_imported.FCStd"))

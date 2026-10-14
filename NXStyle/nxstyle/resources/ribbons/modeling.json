@@ -179,8 +179,9 @@
         {"cmd": "NXStyle_PMINewModelView", "label": "New Model View"},
         {"cmd": "NXStyle_PMIShowAll", "label": "Show All PMI"}
       ]},
-      {"name": "Publish", "items": [
+      {"name": "Exchange", "items": [
         {"cmd": "NXStyle_PMIExportSTEP", "label": "STEP with PMI", "size": "large"},
+        {"cmd": "NXStyle_PMIImportSTEP", "label": "Import STEP with PMI", "size": "large"},
         {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}
       ]}
     ]},

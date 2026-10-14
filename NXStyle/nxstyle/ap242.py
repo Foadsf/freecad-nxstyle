@@ -167,6 +167,42 @@ def _entities(text):
     return out
 
 
+_NUM = r"([-+]?(?:\d+\.?\d*|\.\d+)(?:E[-+]?\d+)?)"
+
+
+def signed_tolerances(text):
+    """[(nominal, lower, upper)] of every ± tolerance in a STEP file, signed as written (OCCT's reader
+    returns only the size of the lower bound, so a lower bound above nominal would come back below it)."""
+    ents = _entities(text)
+
+    def number(i):
+        e = ents.get(i, "")
+        m = re.search(r"MEASURE\(" + _NUM + r"\)", e) or re.search(r"MEASURE_WITH_UNIT\(" + _NUM, e)
+        return float(m.group(1)) if m else None
+
+    nominal = {}
+    for e in ents.values():
+        m = re.match(r"DIMENSIONAL_CHARACTERISTIC_REPRESENTATION\(#(\d+),#(\d+)\)", e)
+        if m:
+            rep = ents.get(int(m.group(2)), "")
+            items = re.findall(r"#(\d+)", rep)
+            vals = [number(int(i)) for i in items]
+            vals = [v for v in vals if v is not None]
+            if vals:
+                nominal[int(m.group(1))] = vals[0]
+    out = []
+    for e in ents.values():
+        m = re.match(r"PLUS_MINUS_TOLERANCE\(#(\d+),#(\d+)\)", e)
+        if not m:
+            continue
+        tv = re.match(r"TOLERANCE_VALUE\(#(\d+),#(\d+)\)", ents.get(int(m.group(1)), ""))
+        if tv and int(m.group(2)) in nominal:
+            lo, up = number(int(tv.group(1))), number(int(tv.group(2)))
+            if lo is not None and up is not None:
+                out.append((nominal[int(m.group(2))], lo, up))
+    return out
+
+
 def summary(text):
     """The semantic PMI a STEP file holds, read from its entities:
     {"schema", "datums": [letters], "datum_systems": n, "dimensions": {"diameter": n, ...},
@@ -383,7 +419,9 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
             d.SetValue(float(r["nominal"]))
             if r["upper"] is not None:
                 d.SetUpperTolValue(float(r["upper"]))
-                d.SetLowerTolValue(float(r["lower"]))
+                # OCCT takes the lower tolerance as the size below nominal and writes its negative as the
+                # TOLERANCE_VALUE lower bound (measured: -0.1 given became +0.1 in the file)
+                d.SetLowerTolValue(-float(r["lower"]))
             if r["fit"]:
                 letter, grade, kind = r["fit"]
                 variance = getattr(X, "XCAFDimTolObjects_DimensionFormVariance_" + letter.upper(), None)
@@ -437,6 +475,220 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
     with open(path, "w", encoding="latin-1", newline="") as f:
         f.write(text)
     return summary(text), problems
+
+
+# ------------------------------------------------------------------ reading (the other direction)
+GEOM_NAMES = {v: k for k, v in GEOM_TYPES.items()}
+GEOM_NAMES["Coaxiality"] = "concentricity"          # ISO's coaxiality uses the concentricity symbol here
+MATERIAL_NAMES = {"M": "MMC", "L": "LMC", "": "None"}
+
+
+def pmi_values(record):
+    """The PMI object's properties (pmi_ui.create keyword arguments) for a record read from a file:
+
+      {"kind": "dimension", "type": "Size_Diameter", "upper", "lower", "fit": (letter, grade, kind) or None}
+      {"kind": "fcf", "type": "Position", "value", "diameter", "material": "M"/"L"/"",
+       "datums": [(letter, precedence, material)]}
+      {"kind": "datum", "letter"}
+    Returns (PMI type, properties), or (None, reason) for what NXStyle's PMI cannot hold."""
+    k = record["kind"]
+    if k == "datum":
+        return "Datum Feature", {"Letter": record["letter"]}
+    if k == "dimension":
+        t = record["type"]
+        dim = "Diameter" if t == "Size_Diameter" else "Radius" if t == "Size_Radius" else \
+            "Distance" if t in ("Size_Thickness", "Location_LinearDistance") else None
+        if dim is None:
+            return None, f"dimension type {t} is not one NXStyle's PMI has"
+        values = {"DimensionType": dim}
+        if record.get("fit"):
+            letter, grade, kind = record["fit"]
+            values["Fit"] = f"{letter.upper() if kind == 'hole' else letter.lower()}{grade}"
+        elif record.get("upper") is not None:
+            values["UpperDeviation"] = float(record["upper"])
+            values["LowerDeviation"] = -float(record["lower"])          # stored as a magnitude below nominal
+        return "Dimension", values
+    if k == "fcf":
+        name = GEOM_NAMES.get(record["type"])
+        if name is None:
+            return None, f"tolerance type {record['type']} is not one NXStyle's PMI has"
+        refs = [f"{letter}({mat})" if mat else letter for letter, _, mat in sorted(record.get("datums", []),
+                                                                                   key=lambda d: d[1])]
+        return "Feature Control Frame", {"Characteristic": name.title(), "Tolerance": float(record["value"]),
+                                         "ZoneDiameter": bool(record.get("diameter")),
+                                         "MaterialCondition": MATERIAL_NAMES.get(record.get("material", ""), "None"),
+                                         "DatumReferences": refs}
+    return None, f"unknown record {k}"
+
+
+def read(path):
+    """Model and semantic PMI of an AP242 file (OCCT's reader in GDT mode).
+
+    Returns {"shapes": [(name, OCC shape)], "records": [record with "faces": [(shape index, "FaceN"), ...] and,
+    for a distance, "faces2"], "problems": [...]}; records as pmi_values() takes them."""
+    from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
+    from OCC.Core.TDF import TDF_AttributeIterator, TDF_LabelSequence
+    from OCC.Core.TDataStd import TDataStd_Integer, TDataStd_Real
+    from OCC.Core.TDocStd import TDocStd_Document
+    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
+    from OCC.Core.TopExp import topexp
+    from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+    from OCC.Core.XCAFDoc import XCAFDoc_Datum, XCAFDoc_Dimension, XCAFDoc_DocumentTool
+    import OCC.Core.XCAFDimTolObjects as X
+
+    def names(prefix):
+        return {int(getattr(X, n)): n[len(prefix):] for n in dir(X) if n.startswith(prefix)}
+    geom = names("XCAFDimTolObjects_GeomToleranceType_")
+    dims = names("XCAFDimTolObjects_DimensionType_")
+    variance = names("XCAFDimTolObjects_DimensionFormVariance_")
+    grade = {k: v for k, v in names("XCAFDimTolObjects_DimensionGrade_").items()}
+    mmb = int(X.XCAFDimTolObjects_DatumSingleModif_MaximumMaterialRequirement)
+    lmb = int(X.XCAFDimTolObjects_DatumSingleModif_LeastMaterialRequirement)
+
+    r = STEPCAFControl_Reader()
+    r.SetGDTMode(True)
+    r.SetNameMode(True)
+    doc = TDocStd_Document("pythonocc-xcaf")
+    if not r.ReadFile(path):
+        raise RuntimeError(f"OpenCASCADE could not read {path}")
+    r.Transfer(doc)
+    st = XCAFDoc_DocumentTool.ShapeTool(doc.Main())
+    dt = XCAFDoc_DocumentTool.DimTolTool(doc.Main())
+
+    def attrs(label):
+        """{type name: value} of the label's own attributes."""
+        out = {}
+        it = TDF_AttributeIterator(label)
+        while it.More():
+            a = it.Value()
+            n = a.DynamicType().Name()
+            try:
+                if n == "TDataStd_Integer":
+                    out[n] = TDataStd_Integer.DownCast(a).Get()
+                elif n == "TDataStd_Real":
+                    out[n] = TDataStd_Real.DownCast(a).Get()
+                elif n == "TDataStd_Name":
+                    out[n] = label.GetLabelName()        # pythonocc does not wrap TDataStd_Name.Get()
+            except Exception:
+                pass
+            it.Next()
+        return out
+
+    from OCC.Core.TDF import TDF_Label
+
+    def parts_of(lab, loc, out):
+        """The simple (part) shapes under a free shape: PMI hang on their faces in the part's own frame,
+        and an assembly or a reference places them (loc)."""
+        if st.IsAssembly(lab):
+            comps = TDF_LabelSequence()
+            st.GetComponents(lab, comps)
+            for k in range(1, comps.Length() + 1):
+                c = comps.Value(k)
+                ref = TDF_Label()
+                if st.GetReferredShape(c, ref):
+                    parts_of(ref, loc.Multiplied(st.GetLocation(c)), out)
+            return
+        if st.IsReference(lab):
+            ref = TDF_Label()
+            if st.GetReferredShape(lab, ref):
+                parts_of(ref, loc.Multiplied(st.GetLocation(lab)), out)
+            return
+        out.append((lab, loc))
+
+    from OCC.Core.TopLoc import TopLoc_Location
+    free = TDF_LabelSequence()
+    st.GetFreeShapes(free)
+    leaves = []
+    for i in range(1, free.Length() + 1):
+        parts_of(free.Value(i), TopLoc_Location(), leaves)
+    shapes, maps = [], []
+    for i, (lab, loc) in enumerate(leaves, 1):
+        s = st.GetShape(lab)                      # in the part's own frame: the PMI's faces are found here
+        fmap, emap = TopTools_IndexedMapOfShape(), TopTools_IndexedMapOfShape()
+        topexp.MapShapes(s, TopAbs_FACE, fmap)
+        topexp.MapShapes(s, TopAbs_EDGE, emap)
+        placed = s.Moved(loc) if not loc.IsIdentity() else s
+        shapes.append((attrs(lab).get("TDataStd_Name") or f"Part{i}", placed))
+        maps.append((fmap, emap))
+    problems = []
+
+    def where(seq):
+        out = []
+        for k in range(1, seq.Length() + 1):
+            s = st.GetShape(seq.Value(k))
+            for n, (fmap, emap) in enumerate(maps):
+                m, kind = (fmap, "Face") if s.ShapeType() == TopAbs_FACE else (emap, "Edge")
+                idx = m.FindIndex(s)
+                if idx:
+                    out.append((n, f"{kind}{idx}"))
+                    break
+            else:
+                problems.append("a PMI is attached to a shape that is not a face or edge of a part")
+        return out
+
+    records = []
+    with open(path, encoding="latin-1") as f:
+        written = signed_tolerances(f.read())
+    q = TDF_LabelSequence()
+    dt.GetDatumLabels(q)
+    seen = set()
+    for i in range(1, q.Length() + 1):
+        lab = q.Value(i)
+        o = XCAFDoc_Datum.Set(lab).GetObject()
+        letter = o.GetName().ToCString() if o.GetName() is not None else ""
+        a, b = TDF_LabelSequence(), TDF_LabelSequence()
+        dt.GetRefShapeLabel(lab, a, b)
+        faces = where(a)
+        if letter and faces and letter not in seen:
+            seen.add(letter)
+            records.append({"kind": "datum", "letter": letter, "faces": faces})
+    q = TDF_LabelSequence()
+    dt.GetDimensionLabels(q)
+    for i in range(1, q.Length() + 1):
+        lab = q.Value(i)
+        o = XCAFDoc_Dimension.Set(lab).GetObject()
+        a, b = TDF_LabelSequence(), TDF_LabelSequence()
+        dt.GetRefShapeLabel(lab, a, b)
+        rec = {"kind": "dimension", "type": dims.get(int(o.GetType()), str(o.GetType())), "nominal": o.GetValue(),
+               "upper": None, "lower": None, "fit": None, "faces": where(a), "faces2": where(b)}
+        if o.IsDimWithClassOfTolerance():
+            vals = list(o.GetClassOfTolerance())        # pythonocc: (ok, isHole, form variance, grade)
+            hole, fv, gr = vals[-3:]
+            letter, it_grade = variance.get(int(fv), ""), grade.get(int(gr), "")
+            if letter and it_grade.startswith("IT") and it_grade[2:].isdigit():
+                rec["fit"] = (letter, int(it_grade[2:]), "hole" if hole else "shaft")
+        if o.GetUpperTolValue() or o.GetLowerTolValue():
+            up, size = o.GetUpperTolValue(), o.GetLowerTolValue()
+            # the reader gives the lower bound's size only: its sign comes from the file itself
+            signed = [lo for nom, lo, u in written if abs(nom - rec["nominal"]) < 1e-9 and abs(u - up) < 1e-9
+                      and abs(abs(lo) - abs(size)) < 1e-9]
+            rec["upper"] = up
+            rec["lower"] = signed[0] if len(set(signed)) == 1 else -abs(size)
+        records.append(rec)
+    q = TDF_LabelSequence()
+    dt.GetGeomToleranceLabels(q)
+    for i in range(1, q.Length() + 1):
+        lab = q.Value(i)
+        child = {n: attrs(lab.FindChild(n, False)) for n in (GT_TYPE, GT_TYPE_OF_VALUE, GT_VALUE, GT_MATERIAL)}
+        a, b = TDF_LabelSequence(), TDF_LabelSequence()
+        dt.GetRefShapeLabel(lab, a, b)
+        mat = {int(X.XCAFDimTolObjects_GeomToleranceMatReqModif_M): "M",
+               int(X.XCAFDimTolObjects_GeomToleranceMatReqModif_L): "L"}.get(
+            child[GT_MATERIAL].get("TDataStd_Integer", -1), "")
+        refs = TDF_LabelSequence()
+        dt.GetDatumWithObjectOfTolerLabels(lab, refs)
+        datums = []
+        for k in range(1, refs.Length() + 1):
+            d = XCAFDoc_Datum.Set(refs.Value(k)).GetObject()
+            mods = d.GetModifiers()
+            mm = [int(mods.Value(j)) for j in range(1, mods.Length() + 1)] if mods is not None else []
+            datums.append((d.GetName().ToCString(), d.GetPosition(), "M" if mmb in mm else "L" if lmb in mm else ""))
+        records.append({"kind": "fcf", "type": geom.get(child[GT_TYPE].get("TDataStd_Integer", -1), "?"),
+                        "value": child[GT_VALUE].get("TDataStd_Real", 0.0),
+                        "diameter": child[GT_TYPE_OF_VALUE].get("TDataStd_Integer", 0) ==
+                        int(X.XCAFDimTolObjects_GeomToleranceTypeValue_Diameter),
+                        "material": mat, "datums": datums, "faces": where(a)})
+    return {"shapes": shapes, "records": records, "problems": problems}
 
 
 def read_back(path):

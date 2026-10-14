@@ -105,7 +105,8 @@ def dimension_text(a, digits=3):
         return count + value + env
     if abs(p - m) < 1e-12:
         return f"{count}{value} ±{fmt(p, digits)}{env}"
-    return f"{count}{value} +{fmt(p, digits)}/-{fmt(m, digits)}{env}"
+    # signed deviations: a zone wholly above (or below) nominal reads +0.050/+0.020, never "--0.020"
+    return f"{count}{value} {p:+.{digits}f}/{-m:+.{digits}f}{env}"
 
 
 def text(a, digits=3):

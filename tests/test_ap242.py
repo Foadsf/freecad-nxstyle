@@ -141,5 +141,45 @@ class File(unittest.TestCase):
         self.assertIn("geometric tolerances: 1 flatness, 1 position", ap242.summary_text(s))
 
 
+class Reading(unittest.TestCase):
+    def test_dimension_with_class(self):
+        kind, v = ap242.pmi_values({"kind": "dimension", "type": "Size_Diameter", "fit": ("G", 6, "shaft"),
+                                    "upper": -0.002, "lower": -0.011})
+        self.assertEqual((kind, v), ("Dimension", {"DimensionType": "Diameter", "Fit": "g6"}))
+
+    def test_dimension_with_deviations_signed(self):
+        # lower bound below nominal: a positive "minus"; above nominal: a negative one
+        _, v = ap242.pmi_values({"kind": "dimension", "type": "Location_LinearDistance", "upper": 0.2, "lower": -0.1})
+        self.assertEqual(v, {"DimensionType": "Distance", "UpperDeviation": 0.2, "LowerDeviation": 0.1})
+        _, v = ap242.pmi_values({"kind": "dimension", "type": "Size_Thickness", "upper": 0.05, "lower": 0.02})
+        self.assertEqual(v["LowerDeviation"], -0.02)
+
+    def test_frame(self):
+        kind, v = ap242.pmi_values({"kind": "fcf", "type": "Position", "value": 0.05, "diameter": True,
+                                    "material": "M", "datums": [("B", 2, "M"), ("A", 1, "")]})
+        self.assertEqual(kind, "Feature Control Frame")
+        self.assertEqual(v, {"Characteristic": "Position", "Tolerance": 0.05, "ZoneDiameter": True,
+                             "MaterialCondition": "MMC", "DatumReferences": ["A", "B(M)"]})
+        _, v = ap242.pmi_values({"kind": "fcf", "type": "Coaxiality", "value": 0.02, "datums": []})
+        self.assertEqual(v["Characteristic"], "Concentricity")
+
+    def test_what_pmi_cannot_hold(self):
+        self.assertIsNone(ap242.pmi_values({"kind": "dimension", "type": "Size_SphericalDiameter"})[0])
+
+    def test_signed_tolerances_from_the_file(self):
+        text = """DATA;
+#1 = ( LENGTH_MEASURE_WITH_UNIT() MEASURE_REPRESENTATION_ITEM() MEASURE_WITH_UNIT(POSITIVE_LENGTH_MEASURE(16.),#9) REPRESENTATION_ITEM('') );
+#2 = SHAPE_DIMENSION_REPRESENTATION('',(#1),#8);
+#3 = DIMENSIONAL_SIZE(#7,'diameter');
+#4 = DIMENSIONAL_CHARACTERISTIC_REPRESENTATION(#3,#2);
+#5 = MEASURE_WITH_UNIT(5.E-02,#9);
+#6 = MEASURE_WITH_UNIT(2.E-02,#9);
+#10 = TOLERANCE_VALUE(#6,#5);
+#11 = PLUS_MINUS_TOLERANCE(#10,#3);
+ENDSEC;
+"""
+        self.assertEqual(ap242.signed_tolerances(text), [(16.0, 0.02, 0.05)])
+
+
 if __name__ == "__main__":
     unittest.main()

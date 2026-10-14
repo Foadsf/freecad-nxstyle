@@ -1,0 +1,59 @@
+= Tutorial Z: MBD exchange through STEP AP242
+:description: A mounting plate documented in the model, its datum reference frames checked, sent as STEP AP242 with PMI, and received into a new part with the same PMI on the same faces.
+
+[horizontal]
+Books:: Drake, _Dimensioning and Tolerancing Handbook_, 5.9.7 (degrees of freedom of a datum reference frame); the plate is ours
+Standards:: ISO 10303-242 (STEP AP242: semantic PMI), ISO 5459 (datums), ISO 1101 (geometrical tolerances), ISO 286
+You learn:: the Inspection Plan's datum reference frames, STEP with PMI, Import STEP with PMI, planning an inspection from the file alone
+Sizes:: A plate 120 × 80 × 10 with four Ø8 holes
+
+Model-based definition means the model carries the tolerances, and they travel with it as data.
+Here they go out to a supplier in a STEP file and come back into an empty part as PMI, ready for the inspection plan.
+
+== Step by step
+
+=== 1. The plate and its PMI
+
+The plate and its PMI are made by script, as tutorials xref:tutorials/t.adoc[T] and xref:tutorials/y.adoc[Y] make them with the ribbon: datums A (underside), B (left side), C (front side), the hole Ø8 H11 positioned Ø0.2 Ⓜ to A|B|C, side B perpendicular 0.05 to A, the thickness 10 ±0.1.
+
+=== 2. The datum reference frames
+
+*PMI › Inspection Plan*. Below the characteristics:
+
+----
+A | B | C arrests 6 of 6 degrees of freedom (A 3, B 2, C 1)
+A arrests 3 of 6 degrees of freedom (A 3); free: translation along X; translation along Y; rotation about Z
+----
+
+The position needs all six; the perpendicularity of B needs only A.
+
+image::tutorial-Z-01-frames.png[The datum reference frames in the Inspection Plan]
+
+=== 3. Out: STEP with PMI
+
+*PMI › STEP with PMI*, a file name, OK: datums A, B and C, two datum systems, the size with H11 and the thickness with ±0.1, the position and the perpendicularity.
+
+=== 4. In: Import STEP with PMI
+
+kbd:[Ctrl+N], *PMI › Import STEP with PMI*, the file, OK.
+The plate comes in with seven PMI, the same as were written, on the same faces.
+
+image::tutorial-Z-02-import.png[What came in: the part and its seven PMI]
+
+=== 5. The supplier's inspection plan
+
+*Inspection Plan* on the imported part: the same characteristics, limits and datum reference frames as at the source.
+
+image::tutorial-Z-03-imported.png[The imported plate with its PMI]
+
+== The replay
+
+include::partial$generated/tutorial-Z.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX exchanges PMI through STEP AP242 and JT, with graphical PMI and saved views; NX-Style's files carry the semantic PMI only.
+* A count (4X), the envelope Ⓔ and the ISO 2768 note have no AP242 form in OpenCASCADE, so this plate is dimensioned without them.
+* The report of the degrees of freedom a datum system arrests is NX-Style's.
