@@ -66,7 +66,12 @@ NX's *Open in Window* is opening the part's own document.
 * *Reports › Bill of Materials* makes a spreadsheet with the parts and their quantities.
   NX puts the parts list on the drawing; a FreeCAD drawing can show the spreadsheet as a Tabular Note.
 
+== Clearance and space
+
+*Clearance Analysis* and *Simple Interference* (NX's Assembly Clearance) and *Volume Claim* and *Check Volume Claims* are on the Assemblies tab: see xref:clearance.adoc[].
+
 == See also
 
 * xref:tutorials/g.adoc[Tutorial G] -- the Shaft Support, from Add Component to the parts list.
+* xref:tutorials/u.adoc[Tutorial U] -- volume claims and assembly clearance in a system layout.
 * xref:data-management.adoc[] -- Strata versions an assembly and its parts together.

@@ -1,0 +1,74 @@
+= Tutorial S: Tolerance stack-up of a grooved pin
+:description: Fischer's Example 7.1 and 8.1 as a stack-up measured from the model: worst case, RSS, adjusted RSS, Monte Carlo, a requirement, a better dimensioning scheme, and a design change the stack-up follows.
+
+[horizontal]
+Book:: Bryan R. Fischer, _Mechanical Tolerance Stackup and Analysis_, 2nd ed., Example 7.1 (worst case, fig. 7.11 and 7.12) and Example 8.1 (statistical, fig. 8.16 and 8.17)
+You learn:: Analysis › Tolerance Stackup, measured contributors, the stack direction, worst case against RSS, a requirement, fewer contributors, associativity
+Sizes:: The book's axial sizes: 45 ±0.5 overall, 30 ±0.2 from the head end to the groove, 13.2 ±0.5 from the tip to the groove, so a groove 1.8 wide. Its diameters are not given: the pin here has a Ø14 × 5 head, a Ø10 shank and a Ø8.6 groove root.
+
+The question is the book's: how wide can the groove be, at least and at most, when the pin is made to these three dimensions?
+
+== Step by step
+
+=== 1. The pin
+
+kbd:[Ctrl+N], *Revolve* with nothing selected, the XY plane, and the half section with *Profile* (kbd:[Z]).
+Dimension it fully; name the groove's width `GrooveWidth`.
+kbd:[Ctrl+Q] continues into the Revolve dialog: the X axis, 360°, OK.
+
+=== 2. The loop
+
+*Analysis › Tolerance Stackup*.
+Pick the groove's side towards the head (point A) and the head's end face, then *Add Measured*: 30.000, against the stack direction.
+Then the head end and the tip (45.000, +), and the tip and the groove's other side (point B: 13.200, −).
+The stack direction is the outward normal of A, across the groove.
+
+Type the descriptions and the tolerances into the table: ±0.2, ±0.5, ±0.5.
+
+image::tutorial-S-02-dialog.png[The Tolerance Stackup dialog: the three contributors and the live report]
+
+[cols="2,1,1,1",options="header"]
+|===
+| | Fischer | NX-Style | Min to max
+| Nominal | 1.8 | 1.8000 |
+| Worst case | ±1.2 | ±1.2000 | 0.6000 to 3.0000
+| RSS | ±0.74 | ±0.7348 | 1.0652 to 2.5348
+| Adjusted RSS (1.5 × RSS) | ±1.1 | ±1.1023 | 0.6977 to 2.9023
+|===
+
+The book rounds; the numbers are the same.
+
+=== 3. A requirement
+
+The groove has to take a DIN 471 retaining ring for a Ø10 shaft, which needs a groove at least 1.1 wide.
+Tick *Minimum* and type 1.1.
+Worst case (0.6) and adjusted RSS (0.70) fail; the Monte Carlo run of 100 000 pins finds about 2 000 per million too narrow.
+With three contributors the report recommends the worst-case result, as Fischer does.
+
+OK puts the report in the Information window; the loop stays in the graphics window beside the pin, numbered as in the table.
+
+image::tutorial-S-03-loop.png[The stack-up loop drawn beside the pin, seen from above]
+
+=== 4. Fewer contributors
+
+Fischer's remedy is not tighter tolerances but a better dimensioning scheme: dimension what the function needs, with the fewest dimensions in the loop.
+Select the stack-up and click *Tolerance Stackup* to edit it, *Remove* the three rows, and add the groove's width itself: A to B, ±0.1.
+The worst case is now 1.7 to 1.9 and passes.
+
+=== 5. A design change
+
+Change `GrooveWidth` in the sketch to 2.0.
+The stack-up follows: it measures the faces, it does not keep a copy of the numbers.
+
+image::tutorial-S-04-pin.png[The pin after the design change, with its one-contributor stack-up]
+
+== The replay
+
+include::partial$generated/tutorial-S.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX's stack-up tool (Tolerance Stackup Validation) is a separate product working from PMI; NX-Style's measures the model directly, takes PMI too (xref:tutorials/t.adoc[tutorial T]), and is a feature of the part.
+* The dimensions are set through FreeCAD's API, the equivalent of typing them into Rapid Dimension.

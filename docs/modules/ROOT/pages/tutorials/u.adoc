@@ -1,0 +1,79 @@
+= Tutorial U: Volume claims and assembly clearance
+:description: A system layout with volume claims and a keep-out for the beam path, the violations found and fixed, then NX's Assembly Clearance with its four kinds of interference.
+
+[horizontal]
+Source:: NX's Assembly Clearance (Analysis › Assembly Clearance › Perform Analysis; the Clearance Browser; soft, touching, hard and containment interferences); the layout is ours
+You learn:: Volume Claim, keep-out, Check Volume Claims, Clearance Analysis, the clearance zone, Study Interference, Exclude Pair
+Sizes:: A 400 × 300 × 20 frame; a 150 × 150 × 60 stage; a Ø60 sensor housing; a 40 × 10 × 60 cable bracket; a Ø6 dowel; an M4-sized cover screw
+
+== Step by step
+
+=== 1. The layout and its claims
+
+The parts are made by script: boxes and cylinders stand in for the modules.
+For each module select its parts and click *Assemblies › Volume Claim*, then type the owner, the size and the corner:
+
+[cols="1,2,2",options="header"]
+|===
+| Claim | Members | Space
+| Structure | frame, dowel | 400 × 300 × 20 at 0, 0, 0
+| Stage | stage | 180 × 170 × 80 at 30, 30, 20
+| Sensor | housing, cover screw, cable bracket | 100 × 100 × 120 at 250, 100, 20
+| Optics (keep-out, margin 2) | none | 60 × 20 × 20 at 190, 140, 90: the beam path
+|===
+
+=== 2. Check Volume Claims
+
+*Assemblies › Check Volume Claims* finds four problems:
+
+* the stage's claim and the beam path's keep-out share space (OVERLAP);
+* the cable bracket sticks out of the sensor's claim (OUTSIDE);
+* it enters the stage's claim and the beam path (INTRUSION, twice).
+
+The offending volumes are drawn in red.
+
+image::tutorial-U-01-claims.png[The claims, the keep-out, and the violations in red]
+
+=== 3. Fixed by the owners
+
+The optics designer raises the beam path to 110 mm; the sensor team moves its bracket into its own claim.
+*Check Volume Claims* again: no findings.
+
+image::tutorial-U-02-claims-ok.png[Every part inside its claim]
+
+=== 4. Assembly Clearance
+
+With nothing selected, *Assemblies › Clearance Analysis*: a clearance set of every part.
+Clearance zone 3 mm, *Perform Analysis*:
+
+[cols="2,1,3",options="header"]
+|===
+| Pair | Kind | Why
+| cover screw / sensor housing | hard | the screw is modelled without its tapped hole: 4 mm penetration
+| dowel / frame | containment | the dowel is modelled inside the frame, without its hole
+| stage / frame, sensor housing / frame | touching | they stand on the frame
+| cable bracket / sensor housing | soft | 2.4 mm apart, inside the 3 mm zone
+|===
+
+image::tutorial-U-03-clearance.png[The Clearance Browser]
+
+=== 5. Study, restore, exclude
+
+Pick the dowel's row and click *Study Interference*: only the dowel, the frame and the interference volume stay shown.
+*Restore Visibility* brings the rest back.
+The screw's thread engagement is intended: pick its row and click *Exclude Pair*.
+The analysis runs again; the hard interference is listed as *Gone*, and the rule stays in the set for the next run.
+
+image::tutorial-U-04-study.png[Study Interference on the dowel in the frame]
+
+== The replay
+
+include::partial$generated/tutorial-U.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX has no volume claims; they are NX-Style's.
+* NX's clearance zones can also be set per component and per pair in the dialog; here per pair with `PairRules`.
+* NX moves a component with Move Component; here its placement is changed.

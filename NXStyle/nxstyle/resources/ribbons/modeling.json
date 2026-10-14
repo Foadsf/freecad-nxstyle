@@ -87,6 +87,14 @@
       {"name": "Reports", "items": [
         {"cmd": "Assembly_CreateBom", "label": "Bill of Materials", "size": "large"},
         {"cmd": "Assembly_ExportASMT", "label": "Export Assembly"}
+      ]},
+      {"name": "Clearance Analysis", "items": [
+        {"cmd": "NXStyle_ClearanceAnalysis", "label": "Clearance Analysis", "size": "large"},
+        {"cmd": "NXStyle_SimpleInterference", "label": "Simple Interference", "size": "large"}
+      ]},
+      {"name": "Volume Claims", "items": [
+        {"cmd": "NXStyle_VolumeClaim", "label": "Volume Claim", "size": "large"},
+        {"cmd": "NXStyle_CheckVolumeClaims", "label": "Check Volume Claims", "size": "large"}
       ]}
     ]},
     {"name": "Curve", "groups": [
@@ -139,6 +147,33 @@
       {"name": "Section", "items": [
         {"cmd": ["Part_SectionCut", "Std_SectionCut"], "label": "Edit Section", "size": "large"},
         {"cmd": "Std_ToggleClipPlane", "label": "Clip Section"}
+      ]},
+      {"name": "Tolerance", "items": [
+        {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"}
+      ]},
+      {"name": "Space", "items": [
+        {"cmd": "NXStyle_SimpleInterference", "label": "Simple Interference", "size": "large"},
+        {"cmd": "NXStyle_ClearanceAnalysis", "label": "Clearance Analysis", "size": "large"},
+        {"cmd": "NXStyle_CheckVolumeClaims", "label": "Check Volume Claims", "size": "large"}
+      ]}
+    ]},
+    {"name": "PMI", "groups": [
+      {"name": "Standard", "items": [
+        {"cmd": "NXStyle_PMITolerancing", "label": "Tolerancing", "size": "large"}
+      ]},
+      {"name": "Dimension", "items": [
+        {"cmd": "NXStyle_PMIRapidDimension", "label": "Rapid Dimension", "size": "large"}
+      ]},
+      {"name": "Annotation", "items": [
+        {"cmd": "NXStyle_PMIFeatureControlFrame", "label": "Feature Control Frame", "size": "large"},
+        {"cmd": "NXStyle_PMIDatumFeatureSymbol", "label": "Datum Feature Symbol", "size": "large"}
+      ]},
+      {"name": "Inspection", "items": [
+        {"cmd": "NXStyle_PMIInspectionPlan", "label": "Inspection Plan", "size": "large"},
+        {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"}
+      ]},
+      {"name": "Publish", "items": [
+        {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}
       ]}
     ]},
     {"include": "common:View"},

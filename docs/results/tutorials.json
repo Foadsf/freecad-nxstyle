@@ -2487,6 +2487,462 @@
    "replay": "select the tube's Pipe and the frames' Pipe + ribbon 'Home › Algorithm > Bake'",
    "outcome": "same",
    "detail": "73 objects baked (the tube and 72 frames), 73 valid; FreeCAD has no layers here: they go into the Part Navigator"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 1,
+   "nx": "File > New (Ctrl+N), Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 2,
+   "nx": "Revolve, nothing selected",
+   "replay": "ribbon 'Home › Feature > Revolve'",
+   "outcome": "same",
+   "detail": ""
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 3,
+   "nx": "Sketch on the XY plane",
+   "replay": "plane row + MB2",
+   "outcome": "same",
+   "detail": "XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 4,
+   "nx": "Profile (Z): the pin's half section, 10 lines, MB2",
+   "replay": "Z key + 11 MB1 clicks + MB2",
+   "outcome": "same",
+   "detail": "tool True; 10 curves; ended True"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 5,
+   "nx": "Rapid Dimension: 45 overall, groove 30 from the head and 1.8 wide; Ø14 head, Ø10 shank, Ø8.6 groove root",
+   "replay": "values applied (the groove width named GrooveWidth)",
+   "outcome": "differs",
+   "detail": "solver 0 (0 = fully constrained)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 6,
+   "nx": "Revolve about the X axis, 360°, OK",
+   "replay": "axis 'Base X-axis', MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 3874.5 mm^3, expected 3874.5; 1 solid(s)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 7,
+   "nx": "Analysis > Tolerance Stackup",
+   "replay": "ribbon 'Analysis › Tolerance > Tolerance Stackup'",
+   "outcome": "differs",
+   "detail": "NXStyle's own command: FreeCAD has no stack-up tool (NX's is the separate Tolerance Stackup Validation)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 8,
+   "nx": "Pick groove side A to the head end, Add Measured",
+   "replay": "two MB1 picks + 'Add Measured'",
+   "outcome": "same",
+   "detail": "measured -30.000 mm along (1.0, 0.0, 0.0)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 9,
+   "nx": "Pick head end to tip, Add Measured",
+   "replay": "two MB1 picks + 'Add Measured'",
+   "outcome": "same",
+   "detail": "measured +45.000 mm along (1.0, 0.0, 0.0)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 10,
+   "nx": "Pick tip to groove side B, Add Measured",
+   "replay": "two MB1 picks + 'Add Measured'",
+   "outcome": "same",
+   "detail": "measured -13.200 mm along (1.0, 0.0, 0.0)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 11,
+   "nx": "Tolerances ±0.2, ±0.5, ±0.5: worst case 0.6 to 3.0, RSS ±0.74, adjusted RSS ±1.1 (0.7 to 2.9)",
+   "replay": "typed into the table's cells",
+   "outcome": "same",
+   "detail": "nominal 1.8000; worst case 0.6000 to 3.0000; RSS ±0.7348; adjusted 0.6977 to 2.9023: Fischer's figures 7.12 and 8.17"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 12,
+   "nx": "Requirement: the groove takes a DIN 471 ring for a Ø10 shaft, so A-B >= 1.1",
+   "replay": "Minimum ticked, 1.1 typed",
+   "outcome": "differs",
+   "detail": "verdict: worst case FAILS, adjusted RSS FAILS; Monte Carlo 2,230 ppm out (100000 assemblies). The book states no requirement: this one shows what the numbers mean"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 13,
+   "nx": "OK: the stack-up report",
+   "replay": "MB2 = OK; the report in the Information window",
+   "outcome": "same",
+   "detail": "the stack-up stays in the Part Navigator and recomputes with the part"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 14,
+   "nx": "Change the dimensioning: the groove's width dimensioned directly, 1.8 ±0.1",
+   "replay": "three rows removed, A to B added, ±0.1 typed",
+   "outcome": "differs",
+   "detail": "worst case 1.700 to 1.900; worst case OK, adjusted RSS OK. One contributor instead of three (Fischer: dimension what the function needs, with the fewest dimensions in the loop)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 15,
+   "nx": "Design change: the groove widened to 2.0 in the model",
+   "replay": "the sketch's GrooveWidth = 2.0",
+   "outcome": "same",
+   "detail": "the stack-up follows: nominal 2.000, worst case 1.900 to 2.100 (it measures the faces, not a copy of the numbers)"
+  },
+  {
+   "tutorial": "S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)",
+   "n": 16,
+   "nx": "The pin and its stack-up loop in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "10.9% of the view shows the part"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 1,
+   "nx": "The guide bush: flange Ø40 x 8, body Ø25 x 30, bore Ø16",
+   "replay": "modelled by script (the exercise is the documentation)",
+   "outcome": "same",
+   "detail": "volume 17139.0 mm^3, expected 17139.0"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 2,
+   "nx": "PMI tab > Tolerancing: ISO GPS, general tolerances ISO 2768-mK",
+   "replay": "ribbon 'PMI › Standard > Tolerancing', 'ISO 2768-mK' typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "standard ISO, general ISO 2768-mK: what a drawing's title block says (NX keeps it in the drafting standard and a general note); stored with the PMI folder of the part"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 3,
+   "nx": "Rapid Dimension on the body's cylinder: Ø25 k6 with the envelope Ⓔ (it is pressed into the housing)",
+   "replay": "body selected + ribbon 'PMI › Dimension > Rapid Dimension'; 'k6' typed, Envelope ticked; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø25.000 k6 (+0.015/+0.002) Ⓔ; NX: the cylindrical face is picked in the graphics window and the PMI placed with a click; here it is placed beside the face"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 4,
+   "nx": "Datum Feature Symbol A on the Ø25 body (its axis)",
+   "replay": "body selected + ribbon 'PMI › Annotation > Datum Feature Symbol'; letter A; MB2 = OK",
+   "outcome": "differs",
+   "detail": "datum feature A"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 5,
+   "nx": "Datum Feature Symbol B on the shoulder that seats on the housing",
+   "replay": "shoulder selected + ribbon 'PMI › Annotation > Datum Feature Symbol'; letter B; MB2 = OK",
+   "outcome": "differs",
+   "detail": "datum feature B"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 6,
+   "nx": "Rapid Dimension on the bore: Ø16 H7 (no envelope yet)",
+   "replay": "bore selected + ribbon 'PMI › Dimension > Rapid Dimension'; 'H7' typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø16.000 H7 (+0.018/+0.000)"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 7,
+   "nx": "Coaxiality of the bore Ø0.02 to A (ISO 1101; the symbol ASME calls concentricity)",
+   "replay": "bore selected + ribbon 'PMI › Annotation > Feature Control Frame'; concentricity, Ø0.02, datum A; MB2 = OK",
+   "outcome": "differs",
+   "detail": "concentricity | Ø0.020 | A"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 8,
+   "nx": "Perpendicularity of the shoulder 0.02 to A",
+   "replay": "shoulder selected + ribbon 'PMI › Annotation > Feature Control Frame'; perpendicularity, 0.02, datum A; MB2 = OK",
+   "outcome": "differs",
+   "detail": "perpendicularity | 0.020 | A"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 9,
+   "nx": "Rapid Dimension: the body's length 30, no tolerance of its own (ISO 2768-m, over 6 up to 30: ±0.2)",
+   "replay": "shoulder, top selected + ribbon 'PMI › Dimension > Rapid Dimension'; nothing typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "30.000"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 10,
+   "nx": "Rapid Dimension: the flange 8 ±0.05",
+   "replay": "under, shoulder selected + ribbon 'PMI › Dimension > Rapid Dimension'; +0.05 and −0.05 typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "8.000 ±0.050"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 11,
+   "nx": "Inspection Plan: the characteristics, numbered, and the checks",
+   "replay": "ribbon 'PMI › Inspection > Inspection Plan'",
+   "outcome": "differs",
+   "detail": "the check finds the bore's H7 without the envelope: under ISO 8015 a size controls only local two-point sizes, so the fit is not guaranteed. NX has no such check"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 12,
+   "nx": "The bore gets the envelope Ⓔ; the plan again",
+   "replay": "the PMI's Envelope property; Inspection Plan",
+   "outcome": "differs",
+   "detail": "6 characteristics, no errors or warnings; the length 30 inspected at 29.8 to 30.2 (ISO 2768-m); bore Ø16.000 H7 (+0.018/+0.000) Ⓔ"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 13,
+   "nx": "The fit Ø16 H7/g6 as a stack-up: bore from the PMI, shaft by its ISO 286 class",
+   "replay": "Add from PMI (the bore's dimension) + Add Typed: 16, '-', class g6",
+   "outcome": "differs",
+   "detail": "clearance 0.006 to 0.035 mm worst case, as ISO 286 gives for 16 H7/g6 (0.006 to 0.035); a later change of the PMI's class follows"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 14,
+   "nx": "The bush with its PMI in the graphics window",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "6.2% of the view shows the part"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 15,
+   "nx": "Drafting: New Sheet, a top view and a front view at 2:1",
+   "replay": "Ctrl+Shift+D, ribbon 'New Sheet', twice 'Base View' with the body selected",
+   "outcome": "differs",
+   "detail": "the second Base View stands in for a projected view, as in tutorial H"
+  },
+  {
+   "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
+   "n": 16,
+   "nx": "Inherit PMI on each view: the dimensions with their ISO classes and the envelope, the frames, the datum symbols, and the tolerancing note",
+   "replay": "each view selected + ribbon 'Drafting > Inherit PMI'",
+   "outcome": "differs",
+   "detail": "4 dimensions [8.0, 16.0, 25.0, 30.0] (⌀%.3w k6 Ⓔ; ⌀%.3w H7 Ⓔ; %.2w; %.2w), 4 symbols, note ['Tolerancing ISO 8015', 'General tolerances ISO 2768-mK']. NX inherits PMI from a model view into a drawing view; FreeCAD has no PMI, NXStyle adds both"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 1,
+   "nx": "The layout: frame, stage, sensor housing with its cover screw and cable bracket, a dowel",
+   "replay": "modelled by script (the exercise is the space management)",
+   "outcome": "same",
+   "detail": "boxes and cylinders stand in for the modules' parts"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 2,
+   "nx": "Claim for the structure: frame and dowel",
+   "replay": "Frame, Dowel selected + ribbon 'Assemblies › Volume Claims > Volume Claim'; owner, size, corner typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Claim Structure: Keep-in, 400 x 300 x 20 at (0, 0, 0); NX has no volume claims (its Assembly Clearance checks parts against parts)"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 3,
+   "nx": "Claim for the stage module",
+   "replay": "Stage selected + ribbon 'Assemblies › Volume Claims > Volume Claim'; owner, size, corner typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Claim Stage: Keep-in, 180 x 170 x 80 at (30, 30, 20); NX has no volume claims (its Assembly Clearance checks parts against parts)"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 4,
+   "nx": "Claim for the sensor module: housing, cover screw, cable bracket",
+   "replay": "Sensor housing, Cover screw, Cable bracket selected + ribbon 'Assemblies › Volume Claims > Volume Claim'; owner, size, corner typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Claim Sensor: Keep-in, 100 x 100 x 120 at (250, 100, 20); NX has no volume claims (its Assembly Clearance checks parts against parts)"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 5,
+   "nx": "Keep-out for the optical path, with a 2 mm margin",
+   "replay": "nothing selected + ribbon 'Assemblies › Volume Claims > Volume Claim'; owner, size, corner, margin typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Claim Optics: Keep-out, 60 x 20 x 20 at (190, 140, 90), margin 2.0; NX has no volume claims (its Assembly Clearance checks parts against parts)"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 6,
+   "nx": "Check Volume Claims",
+   "replay": "ribbon 'Assemblies › Volume Claims > Check Volume Claims'",
+   "outcome": "differs",
+   "detail": "Cable bracket (Claim Sensor) enters Claim Stage: 6000.0 mm³; Cable bracket sticks out of Claim Sensor: 24000.0 mm³ outside; Cable bracket (Claim Sensor) enters Claim Optics or its 2 mm margin: 4800.0 mm³; Claim Stage and Claim Optics claim the same 4000.0 mm³. The offending volumes are drawn in red"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 7,
+   "nx": "The optics designer raises the beam path to 110 mm; the sensor team moves its cable bracket into its own claim",
+   "replay": "the keep-out's and the bracket's Placement",
+   "outcome": "differs",
+   "detail": "in NX the bracket would be moved with Move Component; the claim's placement is a property"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 8,
+   "nx": "Check Volume Claims again: every part inside its claim, no intrusion, no space claimed twice",
+   "replay": "ribbon 'Assemblies › Volume Claims > Check Volume Claims'",
+   "outcome": "differs",
+   "detail": "no findings"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 9,
+   "nx": "Assemblies > Clearance Analysis: a clearance set of every part, zone 3 mm, Perform Analysis",
+   "replay": "ribbon 'Assemblies › Clearance Analysis > Clearance Analysis', 3 typed, 'Perform Analysis'",
+   "outcome": "differs",
+   "detail": "{'hard': 1, 'containment': 1, 'touching': 2, 'soft': 1}; Cable bracket/Sensor housing soft (2.39 mm); Cover screw/Sensor housing hard (penetration 4.00, 62.8 mm³); Dowel/Frame containment (penetration 6.00, 424.1 mm³); Frame/Sensor housing touching (0.00 mm); Frame/Stage touching (0.00 mm). NX: the same four kinds; FreeCAD had only Part > Check Geometry and booleans"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 10,
+   "nx": "Study Interference on the dowel in the frame, then Restore Visibility",
+   "replay": "row picked in the browser + 'Study Interference', 'Restore Visibility'",
+   "outcome": "same",
+   "detail": "shown while studying: ['Clearance interferences', 'Dowel', 'Frame']; NX: MB3 > Study Interference and Restore Component Visibility"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 11,
+   "nx": "Exclude Pair: the screw's thread engagement is intended; the analysis runs again",
+   "replay": "hard row picked + 'Exclude Pair'",
+   "outcome": "same",
+   "detail": "{'hard': 0, 'containment': 1, 'touching': 2, 'soft': 1}; gone since the last run: [{'gone': 'Part003|Part004'}]; the rule is kept in the set's PairRules, so the next check after a design change skips it too"
+  },
+  {
+   "tutorial": "U: Volume claims and assembly clearance in a system layout",
+   "n": 12,
+   "nx": "OK: the clearance report",
+   "replay": "MB2 = OK",
+   "outcome": "same",
+   "detail": "the clearance set stays in the Part Navigator; double-click it to run it again"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 1,
+   "nx": "The guide bush of tutorial T, saved in a project folder; Versions and history",
+   "replay": "the Versions and history tab of the navigators",
+   "outcome": "same",
+   "detail": "Strata's panel among the navigators (Teamcenter's place in NX); the ribbon button shows or hides it"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 2,
+   "nx": "Turn on version control for the project folder",
+   "replay": "'Turn on version control', folder and name, 'Turn on'",
+   "outcome": "same",
+   "detail": "project V_project: every save is now recorded"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 3,
+   "nx": "Create Version V1",
+   "replay": "ribbon 'PLM › Versions > Create Version', name and description, 'Create version'",
+   "outcome": "same",
+   "detail": "versions ['V1']"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 4,
+   "nx": "Release V1 as part number BUSH-100: revision A",
+   "replay": "the version's MB3 menu > Release; part number typed; 'Release'",
+   "outcome": "differs",
+   "detail": "releases [('BUSH-100', 'A', 'Released')]; the menu item's action is called (the replay does not open the context menu)"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 5,
+   "nx": "Publish the release package of rev A",
+   "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev A (Released)', folder typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 6,
+   "nx": "ECO-001: the bore Ø16 H7 becomes F7 (the shaft runs warmer); save",
+   "replay": "the PMI's Fit property; Ctrl+S",
+   "outcome": "differs",
+   "detail": "Ø16.000 F7 (+0.034/+0.016) Ⓔ; the fit's stack-up follows: clearance 0.022 to 0.051; the save is recorded in the history"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 7,
+   "nx": "Create Version V2",
+   "replay": "ribbon 'PLM › Versions > Create Version'",
+   "outcome": "same",
+   "detail": "versions ['V2', 'V1']"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 8,
+   "nx": "Compare V1 with V2",
+   "replay": "ribbon 'PLM › Versions > Compare', From V1, To V2",
+   "outcome": "same",
+   "detail": "1 document changed · 2 feature changes: GuideBush | Diameter 16.000: 2 parameters |   Callout: Ø16.000 H7 (+0.018/+0.000) Ⓔ  →  Ø16.000 F7 (+0.034/+0.016) Ⓔ |   Fit: H7  →  F7 | ToleranceStackup: 8 parameters |   AdjustedMax: 0.0363213  →  0.0523213 |   AdjustedMin: 0.00467873  →  0.0206787 |   Nominal: 0.0205  →  0.0365 |   RSSMax: 0.0310475  →  0.0470475 |   RSSMin: 0.00995249  →  0.0259525 |   Report: Tolerance stack-up: ToleranceSta"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 9,
+   "nx": "Release V2: the same part number, the next revision B",
+   "replay": "MB3 > Release, 'Release'",
+   "outcome": "differs",
+   "detail": "releases [('BUSH-100', 'A', 'Released'), ('BUSH-100', 'B', 'Released')]"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 10,
+   "nx": "Releases: rev A marked obsolete",
+   "replay": "ribbon 'PLM › Release > Releases', row A, 'Mark obsolete', Yes",
+   "outcome": "same",
+   "detail": "releases [('BUSH-100', 'A', 'Obsolete'), ('BUSH-100', 'B', 'Released')]"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 11,
+   "nx": "Publish the release package of rev B",
+   "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev B (Released)', folder typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_B.FCStd, model/BUSH-100_B.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 12,
+   "nx": "Publish rev A again (now obsolete), after the change",
+   "replay": "ribbon 'PMI › Publish > Publish Release Package', release 'BUSH-100 rev A (Obsolete)', folder typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "9 files (analysis/ToleranceStackup.csv, analysis/ToleranceStackup.txt, analysis/mass_properties.csv, drawings/Page.pdf, model/BUSH-100_A.FCStd, model/BUSH-100_A.step, pmi/checks.txt, pmi/inspection_plan.csv, pmi/pmi.json); STEP schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.; standard ISO GPS (ISO 8015); checksums verified OK. NX: File > Export > Publish Technical Data Package"
+  },
+  {
+   "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
+   "n": 13,
+   "nx": "Each package documents its own revision: the inspection plans of A and B",
+   "replay": "the two packages' pmi/inspection_plan.csv",
+   "outcome": "same",
+   "detail": "rev A bore 16.0 to 16.018; rev B 16.016 to 16.034; rev A, published again after the change, still documents H7: a package is made from what was released, not from the working copy"
   }
  ],
  "info": {

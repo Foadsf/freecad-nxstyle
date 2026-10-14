@@ -32,6 +32,7 @@ import FreeCADGui as Gui
 from .qt import QtCore, QtWidgets, Qt, mouse_event
 from .ribbon import CommandButton
 from .tutorial_katydid import KatydidTutorials
+from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
 IN = 25.4
@@ -86,7 +87,7 @@ class ModalWatcher(QtCore.QObject):
             w.close()
 
 
-class Replay(KatydidTutorials):
+class Replay(KatydidTutorials, PrecisionTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -364,14 +365,23 @@ class Replay(KatydidTutorials):
         Q = [self.q_new, self.q_polygon, self.q_lift, self.q_explode, self.q_facets, self.q_solid, self.q_shell,
              self.q_shell_dialog]
         R = [self.r_new, self.r_tube, self.r_grid, self.r_weaverbird, self.r_attractor, self.r_openings, self.r_bake]
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS") or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R").upper().split(",")
+        S = [self.s_new, self.s_revolve, self.s_plane, self.s_profile, self.s_finish, self.s_revolve_dialog,
+             self.s_stack, self.s_rows, self.s_tolerances, self.s_requirement, self.s_report, self.s_redesign,
+             self.s_change, self.s_show]
+        T = list(getattr(self, "T_STEPS", lambda: [])())
+        U = list(getattr(self, "U_STEPS", lambda: [])())
+        V = list(getattr(self, "V_STEPS", lambda: [])())
+        wanted = (os.environ.get("NXSTYLE_TUTORIALS")
+                  or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V").upper().split(",")
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
+        if "V" in wanted and "T" not in wanted:      # V releases tutorial T's guide bush
+            wanted.insert(wanted.index("V"), "T")
         if "KatydidWorkbench" not in Gui.listWorkbenches():
             wanted = [w for w in wanted if w not in "OPQR"]   # Katydid off (--no-katydid): nothing to replay on
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
-                           ("Q", Q), ("R", R)):
+                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V)):
             if key in wanted:
                 yield from steps
 

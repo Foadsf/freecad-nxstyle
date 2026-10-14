@@ -12,8 +12,12 @@
 * xref:modeling.adoc[Modeling]
 * xref:assemblies.adoc[Assemblies]
 * xref:drafting.adoc[Drafting and GD&T]
+* xref:pmi.adoc[PMI and technical product documentation]
+* xref:tolerance-analysis.adoc[Tolerance analysis]
+* xref:clearance.adoc[Assembly clearance and volume claims]
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
+* xref:release-package.adoc[Release packages]
 * xref:settings.adoc[Settings]
 
 .Tutorials
@@ -36,6 +40,10 @@
 * xref:tutorials/p.adoc[P: Waffle canopy (Katydid)]
 * xref:tutorials/q.adoc[Q: Faceted planter (Katydid)]
 * xref:tutorials/r.adoc[R: Tube and attractor frames (Katydid)]
+* xref:tutorials/s.adoc[S: Tolerance stack-up of a pin]
+* xref:tutorials/t.adoc[T: A guide bush to ISO GPS (PMI)]
+* xref:tutorials/u.adoc[U: Volume claims and clearance]
+* xref:tutorials/v.adoc[V: Release and engineering change]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

@@ -25,7 +25,7 @@ def pixel_luminance(argb):
 from .selection_filter import TypeGate
 
 OUT = os.environ.get("NXSTYLE_SMOKE_OUT", "")
-EXPECTED_MODELING_TABS = ["Home", "Assemblies", "Curve", "Surface", "Analysis", "View", "Render", "Tools",
+EXPECTED_MODELING_TABS = ["Home", "Assemblies", "Curve", "Surface", "Analysis", "PMI", "View", "Render", "Tools",
                           "Application"]
 
 

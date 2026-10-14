@@ -1,8 +1,10 @@
+<img src="docs/ui/img/logo.svg" alt="" width="72" align="right">
+
 # FreeCAD NX-Style
 
 Run your normal, unmodified FreeCAD with a user interface laid out and behaving like Siemens NX: ribbon, Top Border Bar, Resource Bar, NX mouse buttons, NX shortcuts, NX names. Data management, the job Teamcenter does next to NX, comes from [Strata](https://github.com/Foadsf/freecad-strata): every save recorded, versions, workspaces, releases. There is no fork, no patch, and your usual FreeCAD settings are never touched.
 
-**Documentation: [foadsf.github.io/freecad-nxstyle](https://foadsf.github.io/freecad-nxstyle)**: installation, a five-minute first part, fourteen step-by-step tutorials, every keyboard shortcut and every setting.
+**Documentation: [foadsf.github.io/freecad-nxstyle](https://foadsf.github.io/freecad-nxstyle)**: installation, a five-minute first part, step-by-step tutorials (textbook exercises and precision-engineering work), every keyboard shortcut and every setting.
 
 ```bash
 git clone --recursive https://github.com/Foadsf/freecad-nxstyle
@@ -40,6 +42,11 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Assemblies | NX's Assembly template (a new document in Assemblies starts with an empty Assembly) and NX constraint names: Touch Align, Concentric, Align Axes, Align/Lock, Fix, Bond, Parallel, Perpendicular, Angle |
 | Drafting › Feature Control Frame, Datum Feature Symbol | NX's GD&T dialogs: characteristic, Ø zone, tolerance, material condition, datums with modifiers; placed against the selected edge or under the selected dimension; values stay editable (FreeCAD itself has only fixed GD&T pictures) |
 | Analysis › Measure Bodies | Volume, surface area, assigned material, density, mass and centre of mass in an NX Information window (FreeCAD's own Measure has no mass) |
+| PMI tab (Product and Manufacturing Information) | 3D PMI to ISO GPS (default) or ASME Y14.5: Tolerancing (standard, ISO 2768 general tolerances), Rapid Dimension with ISO 286 classes (H7, g6 …) and the envelope Ⓔ, Feature Control Frame, Datum Feature Symbol, all measured from and attached to faces; Inspection Plan (numbered characteristics, limits, methods, functional gauge sizes at virtual condition, ISO 8015 and Y14.5 checks). Drafting › Inherit PMI puts it on drawing views |
+| Analysis › Tolerance Stackup | One-dimensional stack-ups measured from the model or taken from PMI and ISO 286 classes: worst case, RSS, adjusted RSS, MRSS, Monte Carlo, Cp/Cpk/ppm against a requirement; associative (it follows design changes). Checked against Fischer's and Drake's worked examples |
+| Assemblies › Clearance Analysis, Simple Interference | NX's Assembly Clearance: clearance sets saved in the part, hard / containment / touching / soft interference, penetration depth, Clearance Browser with Study Interference, Restore Visibility, Exclude Pair and New/Gone status |
+| Assemblies › Volume Claim, Check Volume Claims | Space reservations for system layouts: keep-in and keep-out claims with margins; finds parts outside their claim, intrusions and space claimed twice |
+| PLM › Publish Release Package | NX's Publish Technical Data Package role: the released part (from Strata's release, not the working copy) as STEP, native file, drawing PDFs, PMI, inspection plan, stack-ups and mass properties, with a SHA-256 manifest (`python -m nxstyle.package verify`) |
 | Units | Metric by default: mm, kg (FreeCAD's Standard schema) |
 
 **Look:** one NX-light theme layered on FreeCAD's own *FreeCAD Light* stylesheet, with a single accent colour and its tints, original line icons on the Resource Bar, the left panels as one tab strip, and document tabs above the graphics window. The colour tokens are listed at the top of `NXStyle/nxstyle/resources/nx_theme.qss`. Set `"theme": "none"` to keep FreeCAD's look.
@@ -99,7 +106,7 @@ This starts FreeCAD in a throwaway profile, on a hidden Windows desktop so nothi
 python launch_nx.py --tutorial out
 ```
 
-Replays fourteen exercises from NX, GD&T and engineering-graphics textbooks through the UI (`--tutorials G,H` picks some): keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, a GD&T drawing, sketch Extend/Trim/Fillet and an associative offset, constraints with the solver's degree-of-freedom messages and dimension formulas, a part driven by a table of expressions, CSG with placed features, parent/child relations with Suppress, and an associative drawing that follows a model change. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
+Replays the tutorials through the UI (`--tutorials G,H` picks some). S to V are precision-engineering work: Fischer's pin stack-up (the book's numbers reproduced), a guide bush documented to ISO GPS in 3D with its drawing inherited from the PMI, volume claims and assembly clearance in a system layout, and a release with an engineering change and release packages. A to N are exercises from NX, GD&T and engineering-graphics textbooks: keys, ribbon clicks, MB1 sketch clicks, MB2 to finish. They cover sketch and extrude, revolve, datum planes, holes, mirror, circular and rectangular patterns, renaming and design changes, materials and mass, edge blend, shell, an assembly with its constraints and degrees of freedom, a drawing with a section view, a GD&T drawing, sketch Extend/Trim/Fillet and an associative offset, constraints with the solver's degree-of-freedom messages and dimension formulas, a part driven by a table of expressions, CSG with placed features, parent/child relations with Suppress, and an associative drawing that follows a model change. It checks every feature by its volume and that the part is actually drawn. Results: [docs/TUTORIAL-REPLAY.md](docs/TUTORIAL-REPLAY.md).
 
 Each run uses a fresh throwaway profile. To test what a second start sees (settings saved by the first), give both runs the same `--profile DIR`; it is kept between runs.
 

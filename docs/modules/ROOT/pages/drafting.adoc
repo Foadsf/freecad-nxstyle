@@ -72,6 +72,9 @@ The tolerance and the datum letters stay editable afterwards, as the symbol's ed
 
 image::tutorial-H-gdt-drawing.png[GD&T plate drawing: datums A, B and C, basic dimensions and three feature control frames]
 
+Inherit PMI::
+When the part is documented in 3D (xref:pmi.adoc[PMI]), select a view and click *Inherit PMI*: the dimensions with their ISO classes and tolerances, the frames, the datum symbols and the tolerancing note come onto the sheet.
+
 == Center marks, notes, hatches
 
 * *Center Mark* draws centre lines for the selected circles; TechDraw adds none by itself.
@@ -97,3 +100,4 @@ NX marks the drawing out of date and asks for *Update*.
 * xref:tutorials/d.adoc[Tutorial D] -- base and section views.
 * xref:tutorials/h.adoc[Tutorial H] -- a GD&T drawing with datums and feature control frames.
 * xref:tutorials/n.adoc[Tutorial N] -- sheet sizes, view styles, center marks and an associative change.
+* xref:tutorials/t.adoc[Tutorial T] -- a drawing made from the part's PMI, to ISO GPS.

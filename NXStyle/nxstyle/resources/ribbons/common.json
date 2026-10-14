@@ -95,7 +95,8 @@
         {"cmd": "Strata_Compare", "label": "Compare", "optional": true}
       ]},
       {"name": "Release", "items": [
-        {"cmd": "Strata_Releases", "label": "Releases", "size": "large", "optional": true}
+        {"cmd": "Strata_Releases", "label": "Releases", "size": "large", "optional": true},
+        {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}
       ]},
       {"name": "Team", "items": [
         {"cmd": "Strata_Sync", "label": "Sync", "size": "large", "optional": true}

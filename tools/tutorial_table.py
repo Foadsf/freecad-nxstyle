@@ -24,19 +24,24 @@ def main(argv):
     rows = []
     for r in steps:
         cells = [f"{r['tutorial'][:1]}{r['n']}", r["nx"], r["replay"], f"**{r['outcome']}**", r["detail"]]
-        rows.append("| " + " | ".join(c.replace("|", "/") for c in cells) + " |")
+        # one table row per step: line breaks inside a cell would end the Markdown row
+        rows.append("| " + " | ".join(" ".join(str(c).replace("|", "/").split()) for c in cells) + " |")
     with open(md, encoding="utf-8") as f:
         lines = f.read().split("\n")
     head = next(i for i, ln in enumerate(lines) if ln.startswith("| # | NX step |"))
     end = head + 2
     while end < len(lines) and lines[end].startswith("|"):
         end += 1
+    # a run of some tutorials (--tutorials S,T) replaces those tutorials' rows only, as gen_docs --results does
+    ran = {r["tutorial"][:1] for r in steps}
+    kept = [ln for ln in lines[head + 2:end] if ln[2:3] not in ran]
+    merged = sorted(kept + rows, key=lambda ln: (ln[2:3], int("".join(ch for ch in ln[3:8].split("|")[0] if ch.isdigit()) or 0)))
     tmp = md + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(lines[:head + 2] + rows + lines[end:]))
+        f.write("\n".join(lines[:head + 2] + merged + lines[end:]))
     os.replace(tmp, md)
     counts = collections.Counter((r["tutorial"][:1], r["outcome"]) for r in steps)
-    print(f"replaced {end - head - 2} rows with {len(rows)}")
+    print(f"replaced {end - head - 2 - len(kept)} rows of {''.join(sorted(ran))} with {len(rows)}; kept {len(kept)}")
     for t in sorted({k[0] for k in counts}):
         print(t, {k[1]: v for k, v in counts.items() if k[0] == t})
     return 0

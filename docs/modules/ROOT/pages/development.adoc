@@ -39,11 +39,18 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `finder.py` | The Command Finder.
 | `showhide.py` | The Show and Hide panel.
 | `gdt.py`, `gdt_ui.py` | Feature Control Frame and Datum Feature Symbol for TechDraw.
+| `pmi.py`, `pmi_ui.py` | PMI: semantics, ISO GPS / ASME checks, inspection plan, gauge sizes (`pmi.py`, no FreeCAD); the PMI objects, their 3D display, the PMI tab's dialogs and Inherit PMI (`pmi_ui.py`).
+| `iso.py` | ISO 286 limits and fits, ISO 2768 general tolerances (no FreeCAD).
+| `stackup.py`, `stackup_ui.py` | Tolerance stack-up engine (no FreeCAD) and the Tolerance Stackup object, dialog and loop display.
+| `clearance_core.py`, `clearance.py` | Assembly Clearance: the classification (no FreeCAD), clearance sets, the Clearance Browser, Simple Interference.
+| `claims.py` | Volume claims and Check Volume Claims.
+| `package.py`, `package_ui.py` | Release packages: manifest, checksums, zip, verify (no FreeCAD); Publish Release Package.
+| `refs.py` | Picked faces as stable references; positions along a direction; hole or pin.
 | `prefs.py` | NX values in FreeCAD's parameter tree (they land in the NX profile's `user.cfg`).
 | `config.py` | Settings and their defaults (xref:settings.adoc[]).
 | `plm.py` | Strata as the data management.
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
-| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]).
+| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `tutorial_katydid.py` and `tutorial_precision.py` hold tutorials O–R and S–V.
 |===
 
 == Ribbon files

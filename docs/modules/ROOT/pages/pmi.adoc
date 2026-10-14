@@ -1,0 +1,72 @@
+= PMI and technical product documentation
+:description: 3D PMI to ISO GPS (or ASME Y14.5): ISO 286 fits, the envelope, ISO 2768 general tolerances, datums, geometrical tolerances, the inspection plan, checks, and drawings that inherit the PMI.
+
+NX documents a part in the model: Product and Manufacturing Information (PMI) on the PMI tab, kept in the Part Navigator's PMI folder and inherited by drawings.
+FreeCAD has no PMI.
+NX-Style adds it, with the semantics a precision-engineering company works to: technical product documentation (TPD) to ISO GPS, or ASME Y14.5 where a customer asks for it.
+
+image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits with the envelope, datums, frames and balloon numbers]
+
+== The PMI tab
+
+[cols="1,3",options="header"]
+|===
+| Button | Does
+| *Tolerancing* | The part's standard, *ISO GPS* (the default) or *ASME Y14.5*, and its general tolerances, e.g. `ISO 2768-mK`: what a drawing's title block says. Stored with the part's PMI folder.
+| *Rapid Dimension* | A dimension on the model. Select one cylinder (diameter) or two faces (distance) first. The nominal is measured from the model and follows design changes. Give it an ISO 286 *tolerance class* (H7, g6 …: the dialog shows the limits), or upper and lower deviations, the *envelope* Ⓔ (ISO 14405), *theoretically exact*, and a quantity (4X).
+| *Feature Control Frame* | A geometrical tolerance on the selected face: characteristic, Ø zone, tolerance, Ⓜ or Ⓛ, up to three datums with modifiers. The same dialog as Drafting's.
+| *Datum Feature Symbol* | A datum letter on the selected face.
+| *Inspection Plan* | Numbers the characteristics (the balloons on the model) and lists them with their limits, where the tolerance comes from, and how to measure them; the functional gauge sizes; the checks.
+| *Tolerance Stackup* | xref:tolerance-analysis.adoc[Tolerance analysis], with *Add from PMI*.
+| *Publish Release Package* | xref:release-package.adoc[Release packages].
+|===
+
+Each PMI is attached to its faces by a link that FreeCAD's topological naming keeps on the same face.
+It is drawn at a constant size with a leader to the face; frames and datum symbols use the same drawing as NX-Style's Drafting dialogs.
+Its values are properties: change the *Fit*, the *Envelope* or a tolerance in the property view and everything that uses it follows, the stack-ups too.
+
+== ISO GPS or ASME Y14.5
+
+The two differ where it matters for a fit:
+
+* *ISO 8015 independency* is ISO's default: a size tolerance controls only local two-point sizes, not form.
+A fit is only guaranteed with the envelope Ⓔ, a form tolerance, or a general note with `-E` (`ISO 2768-mK-E`).
+ASME's Rule #1 puts every size inside an envelope of perfect form at MMC, so Ⓔ is redundant there.
+* *ISO 2768* general tolerances cover every dimension without its own tolerance: `ISO 2768-m` gives a 30 mm length ±0.2 (over 6 up to and including 30), a 40 mm one ±0.3.
+ASME Y14.5 has no general tolerances.
+* ASME does not use I, O and Q as datum letters, and its 2018 edition dropped concentricity and symmetry (ISO keeps coaxiality and symmetry).
+
+== Checks
+
+*Inspection Plan* checks the PMI as an experienced checker would:
+
+* a fit class without the envelope under ISO 8015 (warning), a feature of size without one (note);
+* a dimension with no tolerance and no general tolerance note;
+* form tolerances with a datum, orientation and run-out without one, run-out or concentricity with Ⓜ, Ⓜ on a plane, a Ø zone on a plane;
+* datums referenced but not identified, identified twice, referenced at MMC though not a feature of size;
+* an ISO 286 shaft class on a hole or the other way round.
+
+== Functional gauge
+
+For a frame at MMC on a feature of size, the plan gives the gauge element at its virtual condition: a gauge pin of the hole's MMC minus its tolerance, a gauge hole of the pin's MMC plus its tolerance.
+A datum feature of size referenced at MMC is simulated at its maximum material boundary, its orientation tolerance's virtual condition.
+The unit tests reproduce Cogorno's hole-pattern plate (ch. 13): pins of .250 for the four holes, .500 for datum D.
+
+== Drawings inherit the PMI
+
+In Drafting, select a view and click *Inherit PMI*:
+
+* diameters and distances become TechDraw dimensions on the matching edges, with their ISO class, deviations, Ⓔ and count;
+* frames and datum symbols are placed beside their face, if the view shows it edge-on or face-on;
+* the sheet gets the tolerancing note: _Tolerancing ISO 8015_, _General tolerances ISO 2768-mK_.
+
+A PMI is placed once per sheet, in the first view that shows it.
+Dimensions covered by the general tolerance show no tolerance of their own, as on a drawing.
+
+image::tutorial-T-05-drawing.png[The guide bush drawing: inherited dimensions with H7 and k6 and the envelope, frames, datums and the tolerancing note]
+
+== What differs from NX
+
+* NX places a PMI with a click in the graphics window and keeps it in model views; here it is placed beside its face, one row per PMI, and there are no model views.
+* NX's PMI is exported in STEP AP242 and JT; FreeCAD's STEP export has no PMI. The xref:release-package.adoc[release package] carries it as `pmi/pmi.json` and the inspection plan.
+* The checks and the gauge sizes are NX-Style's own; NX has PMI validation through separate checkers.

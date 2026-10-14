@@ -14,7 +14,13 @@ Get FreeCAD 1.0 or newer, clone the project and start it with one command.
 * *xref:quick-start.adoc[Quick start]* +
 Sketch and extrude your first part the NX way in five minutes.
 * *xref:tutorials/index.adoc[Tutorials]* +
-Fourteen textbook exercises, step by step, checked by the replay.
+Textbook exercises and precision-engineering work, step by step, checked by the replay.
+* *xref:pmi.adoc[PMI to ISO GPS]* +
+Fits, the envelope, ISO 2768 and geometrical tolerances in the model; drawings that inherit them.
+* *xref:tolerance-analysis.adoc[Tolerance analysis]* +
+Stack-ups measured from the model: worst case, RSS, Monte Carlo.
+* *xref:clearance.adoc[Clearance and volume claims]* +
+NX's Assembly Clearance and space reservations for system layouts.
 * *xref:keyboard-shortcuts.adoc[Shortcuts]* +
 All 65 NX key bindings and what each one does here.
 
@@ -53,6 +59,18 @@ All 65 NX key bindings and what each one does here.
 
 | Drafting GD&T
 | Feature Control Frame and Datum Feature Symbol dialogs that FreeCAD does not have. See xref:drafting.adoc[].
+
+| PMI tab, Inherit PMI
+| 3D PMI to ISO GPS (or ASME Y14.5): ISO 286 fits, the envelope, ISO 2768 general tolerances, datums, frames, an inspection plan with checks and gauge sizes; drawings inherit it. See xref:pmi.adoc[].
+
+| Tolerance Stackup Validation
+| xref:tolerance-analysis.adoc[Tolerance Stackup]: measured from the model or from PMI; worst case, RSS, adjusted RSS, MRSS, Monte Carlo.
+
+| Assembly Clearance, Simple Interference
+| The same four kinds of interference and the Clearance Browser; plus volume claims. See xref:clearance.adoc[].
+
+| Publish Technical Data Package
+| xref:release-package.adoc[Publish Release Package]: the released part with a checksummed manifest.
 
 | Units
 | Metric by default (mm, kg).

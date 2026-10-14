@@ -15,7 +15,8 @@ python -m unittest discover -s tests
 ruff check --select F,E9 .
 ----
 
-The unit tests cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata and Katydid it loads and where it reads `nxstyle.json`, that every application's ribbon has the Application tab, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
+The unit tests cover the engineering computations, checked against the books' worked examples: the tolerance stack-up (Fischer's pin and ground plate, Drake's MRSS factor, Cogorno's fastener and boundary formulas), ISO 286 limits and fits (against the ISO 286-1 formulas and published values) and ISO 2768, the PMI semantics (ISO 8015 and ASME Y14.5 checks, inspection plan, gauge sizes), the release package manifest and its verification, and the clearance classification.
+They also cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata and Katydid it loads and where it reads `nxstyle.json`, that every application's ribbon has the Application tab, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
 FreeCAD is not needed.
 GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).
 
@@ -50,7 +51,9 @@ On the Katydid canvas (tutorials O to R) it double-clicks the empty canvas and t
 Dimension values are applied through FreeCAD's API, the equivalent of typing them into Rapid Dimension; everything else is real UI input.
 
 Each feature is checked by its volume against the same operation done directly with FreeCAD's Part API, and the final part must be drawn in the graphics window.
-`--tutorials G,H` picks some; N runs M first.
+Tutorials S to V check engineering results: the stack-up against Fischer's figures, the fit against ISO 286, the inherited dimensions on the sheet, the clearance kinds and penetration depth, the release states in Strata and the release packages against their manifests.
+Dialogs that Strata opens are answered by the replay the way a user fills them in.
+`--tutorials G,H` picks some; N runs M first, V runs T first.
 A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed out; the canvas tutorials O to R take about 20 minutes together.
 
 The replay writes `out/tutorial.json`, a `progress.log` and screenshots.

@@ -37,7 +37,8 @@
         {"cmd": "TechDraw_WeldSymbol", "label": "Weld Symbol"},
         {"cmd": "TechDraw_SurfaceFinishSymbols", "label": "Surface Finish"},
         {"cmd": "NXStyle_FeatureControlFrame", "label": "Feature Control Frame", "size": "large"},
-        {"cmd": "NXStyle_DatumFeatureSymbol", "label": "Datum Feature Symbol"}
+        {"cmd": "NXStyle_DatumFeatureSymbol", "label": "Datum Feature Symbol"},
+        {"cmd": "NXStyle_InheritPMI", "label": "Inherit PMI", "size": "large"}
       ]},
       {"name": "Centerline and Hatch", "items": [
         {"cmd": ["TechDraw_ExtensionCircleCenterLines", "TechDraw_FaceCenterLine"], "label": "Center Mark", "size": "large"},

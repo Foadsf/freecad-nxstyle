@@ -1,0 +1,68 @@
+= Tutorial T: A guide bush documented to ISO GPS
+:description: Technical product documentation in the model: ISO 286 fits, the envelope, ISO 2768 general tolerances, datums and geometrical tolerances as 3D PMI, the inspection plan and its checks, the fit as a stack-up, and the drawing inheriting the PMI.
+
+[horizontal]
+Book:: The PMI workflow of Wünsch, Pilz and Vajna, _Siemens NX für Einsteiger – kurz und bündig_, 4th ed., section 6.10 (PMI tab, Rapid Dimension on a cylindrical face, tolerances, the PMI folder); the part is ours
+Standards:: ISO 16792 (3D annotation), ISO 286 (fits), ISO 14405 (the envelope), ISO 8015 (independency), ISO 2768 (general tolerances), ISO 1101 and ISO 5459 (geometrical tolerances and datums)
+You learn:: PMI › Tolerancing, Rapid Dimension with a tolerance class, the envelope, datums, frames, Inspection Plan, the ISO 8015 trap, a fit as a stack-up, Inherit PMI
+Sizes:: A flange Ø40 × 8, a body Ø25 × 30 pressed into a housing, a bore Ø16 for a sliding shaft
+
+The bush's body is pressed into a housing (Ø25 k6 in an H7 hole); its shoulder seats on the housing; a Ø16 g6 shaft slides in its bore.
+
+== Step by step
+
+=== 1. The part and its standard
+
+The bush is modelled by script; the exercise is the documentation.
+*PMI › Tolerancing*: *ISO GPS*, general tolerances `ISO 2768-mK`.
+
+=== 2. Sizes with their fits
+
+Select the body's cylinder, *PMI › Rapid Dimension*: tolerance class `k6`, *Envelope* ticked, OK: _Ø25.000 k6 (+0.015/+0.002) Ⓔ_.
+Then the bore: `H7`, without the envelope for now.
+
+=== 3. Datums and geometrical tolerances
+
+*Datum Feature Symbol* A on the body's cylinder, B on the shoulder.
+*Feature Control Frame*: coaxiality Ø0.02 to A on the bore; perpendicularity 0.02 to A on the shoulder.
+
+=== 4. Dimensions without a tolerance of their own
+
+*Rapid Dimension* between the shoulder and the top: 30, nothing typed; the flange 8 ±0.05.
+The 30 is covered by ISO 2768-m: ±0.2 (over 6 up to and including 30).
+
+image::tutorial-T-03-pmi.png[The bush with its PMI: fits with the envelope, datums A and B, two frames, the balloon numbers]
+
+=== 5. The inspection plan, and the ISO 8015 trap
+
+*PMI › Inspection Plan* numbers the six characteristics and checks the PMI.
+It flags the bore: _H7 is a fit, but under ISO 8015 independency the size controls only two-point sizes, not form_.
+A bore within H7 at every section can still be bent or barrel-shaped enough to bind the shaft.
+Tick the bore's *Envelope* in the property view and run the plan again: no warnings.
+
+image::tutorial-T-02-plan.png[The inspection plan: characteristics with their limits, where each tolerance comes from, and the checks]
+
+=== 6. The fit as a stack-up
+
+*Tolerance Stackup*, select the bore's PMI dimension, *Add from PMI*; *Add Typed* for the shaft: 16, direction −, class `g6`.
+The worst case is a clearance of 0.006 to 0.035 mm, as ISO 286 gives for Ø16 H7/g6.
+The stack-up reads the bore's class from the PMI: change it, and the fit follows (xref:tutorials/v.adoc[tutorial V] does).
+
+=== 7. The drawing inherits the PMI
+
+kbd:[Ctrl+Shift+D], *New Sheet*, a top view and a front view at 2:1.
+Select each view and click *Inherit PMI*: the diameters with k6 and H7 and Ⓔ, the 30 and the 8 ±0.05, the frames, the datum symbols, and the note _Tolerancing ISO 8015 · General tolerances ISO 2768-mK_.
+
+image::tutorial-T-05-drawing.png[The drawing made from the PMI]
+
+== The replay
+
+include::partial$generated/tutorial-T.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX places each PMI with a click and stores it in model views; here a PMI is placed beside its face.
+* NX has no ISO 8015 check and no inspection plan; NX-Style's come from the PMI's semantics.
+* NX writes PMI into STEP AP242 and JT; FreeCAD cannot, so the xref:release-package.adoc[release package] carries it as data.

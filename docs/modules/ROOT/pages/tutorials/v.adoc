@@ -1,0 +1,56 @@
+= Tutorial V: Release and engineering change
+:description: The guide bush of tutorial T released with Strata, its release package published, changed by an engineering change, compared, released as revision B, and revision A made obsolete.
+
+[horizontal]
+Source:: Engineering change management as the PLM books describe it (Stark, Grieves, Saaksvuori and Immonen): a release with part number and revision, an engineering change, a new revision, the old one obsolete; the package NX publishes with File › Export › Publish Technical Data Package
+You learn:: PLM › Versions and History, Create Version, Release, Publish Release Package, Compare, Releases, Mark obsolete
+Needs:: xref:tutorials/t.adoc[Tutorial T] first (the replay runs it), and `git` on the PATH for Strata
+
+== Step by step
+
+=== 1. Version control
+
+Save the bush into a project folder.
+*PLM › Versions and History*, *Turn on version control*: from now on every save is recorded.
+
+=== 2. Release revision A
+
+*PLM › Create Version*: `V1`.
+Right-click V1 in the history, *Release*: part number `BUSH-100`; Strata proposes revision A.
+
+=== 3. The release package of revision A
+
+*PLM › Publish Release Package*: the dialog picks BUSH-100 rev A.
+The package holds the STEP model, the FreeCAD document, the drawing as PDF, the PMI and inspection plan, the fit's stack-up and the mass properties, with a manifest of SHA-256 checksums (xref:release-package.adoc[]).
+
+=== 4. ECO-001
+
+The shaft runs warmer than planned: the bore changes from H7 to F7.
+Change the bore PMI's *Fit* to `F7` and save.
+The PMI shows _Ø16.000 F7 (+0.034/+0.016) Ⓔ_, and the fit's stack-up from tutorial T follows: clearance 0.022 to 0.051.
+
+=== 5. Compare and release revision B
+
+*Create Version* `V2`, then *PLM › Compare* V1 with V2: Strata lists the changed PMI property.
+Release V2: the same part number, revision B.
+*PLM › Releases*, select revision A, *Mark obsolete*.
+
+image::tutorial-V-01-compare.png[Compare: what changed between V1 and V2]
+
+=== 6. Both packages
+
+Publish revision B, and revision A again.
+Revision A's package, made after the change, still documents Ø16 H7 (16.000 to 16.018): a package is made from what was released, never from the working copy.
+Revision B's documents F7 (16.016 to 16.034).
+
+== The replay
+
+include::partial$generated/tutorial-V.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* Teamcenter's role is played by Strata: versions are Git commits in a hidden `.strata` folder, releases are tags.
+* Releasing is the version's context-menu command; the replay calls it directly instead of opening the menu.
+* NX's Publish Technical Data Package makes 3D PDF or JT; NX-Style's release package is a folder and a zip with a checksummed manifest.

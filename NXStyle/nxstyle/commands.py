@@ -439,7 +439,7 @@ class ObjectInfo:
 
 def show_information(text):
     """NX's Information window: a non-modal text window (also echoed to the Report view)."""
-    from .qt import QtGui, QtWidgets
+    from .qt import QtCore, QtGui, QtWidgets
     global _info_dialog
     App.Console.PrintMessage("Information\n" + text + "\n")
     if _info_dialog is not None:
@@ -448,6 +448,9 @@ def show_information(text):
         except RuntimeError:
             pass
     dlg = QtWidgets.QDialog(Gui.getMainWindow())
+    # deleted when closed: closed-but-kept windows piled up, and the next lookup by name could find a stale
+    # one while the live one stayed active and kept NX keys (Ctrl+Shift+D ...) from the main window
+    dlg.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     dlg.setObjectName("NXInformation")
     dlg.setWindowTitle("Information")
     dlg.resize(560, 360)
@@ -658,9 +661,14 @@ def register(apps):
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
-    from . import gdt_ui
+    from . import claims, clearance, gdt_ui, pmi_ui, package_ui, stackup_ui
+    table.update(claims.COMMANDS)
+    table.update(clearance.COMMANDS)
     table["NXStyle_FeatureControlFrame"] = gdt_ui.FeatureControlFrame()
     table["NXStyle_DatumFeatureSymbol"] = gdt_ui.DatumFeatureSymbol()
+    table["NXStyle_ToleranceStackup"] = stackup_ui.ToleranceStackup()
+    table.update(pmi_ui.COMMANDS)
+    table["NXStyle_PublishPackage"] = package_ui.PublishPackage()
     for key in config.BACKGROUNDS:
         table[f"NXStyle_Background_{key}"] = Background(key)
     for app in apps:

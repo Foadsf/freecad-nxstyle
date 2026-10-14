@@ -28,11 +28,9 @@
   .navbar-brand .navbar-item.search { flex: 1 1 auto; min-width: 0; padding-left: 0.5rem; padding-right: 0.25rem; }
   #search-input { width: 100%; }
 }
-.nx-mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 2rem; height: 1.45rem; border-radius: 4px; background: #fff; color: var(--nx-accent);
-  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
-}
+/* the project's own mark (docs/ui/img/logo.svg); a white ring keeps it apart from the teal bar */
+.site-logo { width: 1.9rem; height: 1.9rem; border-radius: 9px; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
+  flex-shrink: 0; }
 @media screen and (min-width: 1024px) {
   .navbar-end > a.navbar-item, .navbar-end .navbar-link { color: #fff; }
   .navbar-end > a.navbar-item:hover { background: var(--nx-accent-dark); color: #fff; }

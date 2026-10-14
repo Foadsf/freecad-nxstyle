@@ -1,0 +1,51 @@
+= Release packages
+:description: PLM › Publish Release Package: the released part for manufacturing and suppliers, with a manifest of SHA-256 checksums.
+
+A released part is handed over as a package: the model, the drawings, the PMI and inspection plan, the analyses, and a list that says which release it is.
+NX does this with *File › Export › Publish Technical Data Package*.
+NX-Style's *Publish Release Package* is on the *PLM* tab and the *PMI* tab.
+
+== From a release, not from the working copy
+
+With xref:data-management.adoc[Strata], the dialog lists the part's releases and picks the newest *Released* one.
+The package is made from the document exactly as it was released: Strata writes that version out, NX-Style opens it, exports it and closes it.
+Changes made since in the working copy are not in it.
+xref:tutorials/v.adoc[Tutorial V] publishes revision A again after an engineering change, and its package still documents the old bore.
+
+Without a release (or without Strata) the package is made from the open document and marked _Not released_.
+
+== Contents
+
+----
+BUSH-100_B/
+  model/BUSH-100_B.step         the solids (STEP; the schema written is recorded in the manifest)
+  model/BUSH-100_B.FCStd        the released FreeCAD document
+  drawings/Page.pdf             every drawing sheet
+  pmi/pmi.json                  the PMI, semantic: standard, general tolerances, every annotation
+  pmi/inspection_plan.csv       numbered characteristics, limits, where the tolerance comes from, method
+  pmi/functional_gauge.csv      gauge elements at virtual condition (when there are frames at MMC)
+  pmi/checks.txt                the ISO GPS or ASME checks
+  analysis/<stack-up>.txt|.csv  every tolerance stack-up
+  analysis/mass_properties.csv  volume, area, material, mass, centre of mass
+  manifest.json                 the release (part number, revision, state, approver, version, commit) and
+                                every file with its size and SHA-256
+  README.txt                    the same, readable
+BUSH-100_B.zip                  the folder as a reproducible zip (same files, same bytes)
+----
+
+== Checking a package
+
+The recipient checks that nothing was changed or lost:
+
+[source,bash]
+----
+python -m nxstyle.package verify BUSH-100_B
+----
+
+It recomputes every checksum and lists changed, missing and unlisted files (exit code 1), or says that all files match.
+Run it from the `NXStyle` folder, or with that folder on `PYTHONPATH`; it needs no FreeCAD.
+
+== What differs from NX
+
+* NX publishes PMI in 3D PDF or JT and in STEP AP242 with semantic PMI. FreeCAD's STEP export has no PMI, so the package carries it as `pmi.json` and the inspection plan.
+* The checksummed manifest and the verify command are NX-Style's.
