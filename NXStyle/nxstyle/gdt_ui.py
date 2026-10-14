@@ -111,21 +111,34 @@ def place_datum(letter, page, kind, data):
 
 
 def place_frame(params, page, kind, data):
-    svg, w = gdt.feature_control_frame(params["characteristic"], params["tolerance"], params["diameter"],
-                                       params["modifier"], params["datums"])
+    """params: characteristic, tolerance, diameter, modifier, datums; a two-row frame also has lower
+    (tolerance, modifier, datums) and composite."""
+    params = dict(params)
+    lower = params.pop("lower", None)
+    composite = params.pop("composite", True)
+    h = gdt.H
+    if lower:
+        rows = [(params["tolerance"], params["diameter"], params["modifier"], params["datums"]),
+                (lower[0], params["diameter"], lower[1], lower[2])]
+        svg, w, h = gdt.stacked_frame(params["characteristic"], rows, composite)
+        text = gdt.stacked_callout(params["characteristic"], rows, composite)
+    else:
+        svg, w = gdt.feature_control_frame(params["characteristic"], params["tolerance"], params["diameter"],
+                                           params["modifier"], params["datums"])
+        text = gdt.callout(**params)
     if kind == "dimension":
         x, y = dimension_on_sheet(data)
-        y -= gdt.H / 2 + GAP + 3.5            # under the dimension text
+        y -= h / 2 + GAP + 3.5                # under the dimension text
     elif kind == "edge":
         (x, y), horizontal, (ox, oy) = edge_on_sheet(*data)
         if horizontal:
-            y += oy * (gdt.H / 2 + GAP + 12.0)    # clear of a datum symbol on the same edge
+            y += oy * (h / 2 + GAP + 12.0)        # clear of a datum symbol on the same edge
         else:
             x += ox * (w / 2 + GAP + 12.0)
     else:
         x, y = page_centre(page)
     sym = add_symbol(page, "FeatureControlFrame", svg, x, y)
-    tag(sym, kind="feature control frame", callout=gdt.callout(**params))
+    tag(sym, kind="feature control frame", callout=text)
     return sym
 
 

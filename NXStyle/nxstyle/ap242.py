@@ -126,11 +126,21 @@ def plan(annotations, standard="ISO", general=None):
                 r["not_written"].append(f"{a['count']}X")
             out.append(r)
         elif k == "fcf":
-            out.append({"kind": "fcf", "id": a["id"], "type": geom_type(a, standard), "value": a["tolerance"],
-                        "diameter": bool(a.get("diameter")), "material": MATERIAL.get(a.get("modifier", ""), ""),
-                        "datums": [(d[0], i, MATERIAL.get(d[1] if len(d) > 1 else "", ""))
-                                   for i, d in enumerate(a.get("datums", []), 1)],
-                        "not_written": []})
+            r = {"kind": "fcf", "id": a["id"], "type": geom_type(a, standard), "value": a["tolerance"],
+                 "diameter": bool(a.get("diameter")), "material": MATERIAL.get(a.get("modifier", ""), ""),
+                 "datums": [(d[0], i, MATERIAL.get(d[1] if len(d) > 1 else "", ""))
+                            for i, d in enumerate(a.get("datums", []), 1)],
+                 "not_written": []}
+            low = pmi.lower(a)
+            if low:
+                # the lower row goes out as a second tolerance on the same faces; OCCT's XCAF has no relationship
+                # that ties it to the upper one, so a composite frame reads back as two single-segment frames
+                r["lower"] = {"value": low["tolerance"], "material": MATERIAL.get(low.get("modifier", ""), ""),
+                              "datums": [(d[0], i, MATERIAL.get(d[1] if len(d) > 1 else "", ""))
+                                         for i, d in enumerate(low.get("datums", []), 1)]}
+                if pmi.composite(a):
+                    r["not_written"].append("the composite link between the rows (written as two frames)")
+            out.append(r)
     return out
 
 
@@ -311,7 +321,7 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
     from OCC.Core.XCAFDoc import XCAFDoc_ColorSurf, XCAFDoc_Datum, XCAFDoc_Dimension, XCAFDoc_DocumentTool
     import OCC.Core.XCAFDimTolObjects as X
 
-    from . import pmi_ui, refs
+    from . import claims, pmi_ui, refs
 
     STEPCAFControl_Controller.Init()
     Interface_Static.SetCVal("write.step.schema", "AP242DIS")
@@ -324,7 +334,7 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
 
     parts = []                       # (FreeCAD global shape, XCAF label, face map, edge map)
     for o in objs:
-        g = Part.getShape(o, "", transform=True)
+        g = claims.global_shape(o)          # where refs.resolve puts the PMI faces, inside assemblies too
         label = shapes.AddShape(Part.__toPythonOCC__(g), False, False)
         name = str((names or {}).get(o.Name, o.Label))
         TDataStd_Name.Set(label, name)
@@ -400,7 +410,8 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
         return lab
 
     fits = []
-    referenced = {d[0] for a in anns if a["kind"] == "fcf" for d in a.get("datums", [])}
+    referenced = {d[0] for a in anns if a["kind"] == "fcf"
+                  for d in list(a.get("datums", [])) + list((pmi.lower(a) or {}).get("datums", []))}
     for a, r in zip(anns, plan(anns, standard, general)):
         p = objs_by_id[a["id"]]
         for what in r.get("not_written", []):
@@ -441,23 +452,24 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
             else:
                 problems.append(f"{p.Label}: a distance needs two faces")
         else:
-            lab = dimtol.AddGeomTolerance()
-            TDataStd_Integer.Set(lab.FindChild(GT_TYPE), int(getattr(X, "XCAFDimTolObjects_GeomToleranceType_"
-                                                                       + r["type"])))
-            if r["diameter"]:
-                TDataStd_Integer.Set(lab.FindChild(GT_TYPE_OF_VALUE),
-                                     int(X.XCAFDimTolObjects_GeomToleranceTypeValue_Diameter))
-            TDataStd_Real.Set(lab.FindChild(GT_VALUE), float(r["value"]))
-            mat = {"M": X.XCAFDimTolObjects_GeomToleranceMatReqModif_M,
-                   "L": X.XCAFDimTolObjects_GeomToleranceMatReqModif_L}.get(r["material"],
-                                                                         X.XCAFDimTolObjects_GeomToleranceMatReqModif_None)
-            TDataStd_Integer.Set(lab.FindChild(GT_MATERIAL), int(mat))
-            TDataStd_Integer.Set(lab.FindChild(GT_ZONE), int(X.XCAFDimTolObjects_GeomToleranceZoneModif_None))
-            dimtol.SetGeomTolerance(seq(on), lab)
-            for letter, position, material in r["datums"]:
-                dl = datum(letter, position, material)
-                if dl is not None:
-                    dimtol.SetDatumToGeomTol(dl, lab)
+            for row in [r] + ([dict(r, **r["lower"])] if r.get("lower") else []):
+                lab = dimtol.AddGeomTolerance()
+                TDataStd_Integer.Set(lab.FindChild(GT_TYPE), int(getattr(X, "XCAFDimTolObjects_GeomToleranceType_"
+                                                                           + row["type"])))
+                if row["diameter"]:
+                    TDataStd_Integer.Set(lab.FindChild(GT_TYPE_OF_VALUE),
+                                         int(X.XCAFDimTolObjects_GeomToleranceTypeValue_Diameter))
+                TDataStd_Real.Set(lab.FindChild(GT_VALUE), float(row["value"]))
+                mat = {"M": X.XCAFDimTolObjects_GeomToleranceMatReqModif_M,
+                       "L": X.XCAFDimTolObjects_GeomToleranceMatReqModif_L}.get(
+                    row["material"], X.XCAFDimTolObjects_GeomToleranceMatReqModif_None)
+                TDataStd_Integer.Set(lab.FindChild(GT_MATERIAL), int(mat))
+                TDataStd_Integer.Set(lab.FindChild(GT_ZONE), int(X.XCAFDimTolObjects_GeomToleranceZoneModif_None))
+                dimtol.SetGeomTolerance(seq(on), lab)
+                for letter, position, material in row["datums"]:
+                    dl = datum(letter, position, material)
+                    if dl is not None:
+                        dimtol.SetDatumToGeomTol(dl, lab)
 
     w = STEPCAFControl_Writer()
     w.SetDimTolMode(True)

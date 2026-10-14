@@ -122,6 +122,8 @@ class Smoke:
         yield self.s_katydid_after, 100
         yield self.s_ap242, 300
         yield self.s_model_views, 300
+        yield self.s_assembly_links, 200
+        yield self.s_inspection, 300
         yield self.s_expressions, 800
         yield self.s_final, 100
 
@@ -847,6 +849,105 @@ class Smoke:
                 App.setActiveDocument(before.Name)
                 Gui.getDocument(before.Name)
 
+    def s_inspection(self):
+        """Composite position evaluated from measured data, a gauge study, and a title block on a sheet."""
+        import Part
+        from . import msa_ui, pmi_ui, position_ui, titleblock_ui
+        before = App.ActiveDocument
+        doc = App.newDocument("SmokeInspection")
+        try:
+            shape = Part.makeBox(80, 80, 10)
+            centres = [(20.0, 20.0), (20.0, 60.0), (60.0, 60.0), (60.0, 20.0)]
+            for x, y in centres:
+                shape = shape.cut(Part.makeCylinder(2.5, 10, App.Vector(x, y, 0)))
+            plate = doc.addObject("Part::Feature", "Plate")
+            plate.Shape = shape
+            doc.recompute()
+
+            def face(pred):
+                return "Face%d" % next(i for i, f in enumerate(plate.Shape.Faces, 1) if pred(f))
+
+            def plane(axis):
+                return face(lambda f: f.Surface.__class__.__name__ == "Plane"
+                            and abs(getattr(f.CenterOfMass, axis)) < 1e-6)
+            holes = [face(lambda f, x=x, y=y: f.Surface.__class__.__name__ == "Cylinder"
+                          and abs(f.Surface.Center.x - x) < 1e-6 and abs(f.Surface.Center.y - y) < 1e-6)
+                     for x, y in centres]
+            for letter, axis in (("A", "z"), ("B", "x"), ("C", "y")):
+                pmi_ui.create("Datum Feature", [(plate, plane(axis))], doc, Letter=letter)
+            size = pmi_ui.create("Dimension", [(plate, h) for h in holes], doc, DimensionType="Diameter",
+                                 UpperDeviation=0.2, Quantity=4)
+            frame = pmi_ui.create("Feature Control Frame", [(plate, h) for h in holes], doc, Characteristic="Position",
+                                  Tolerance=0.2, ZoneDiameter=True, MaterialCondition="MMC",
+                                  DatumReferences=["A", "B", "C"], FrameStyle="Composite Frame", LowerTolerance=0.04,
+                                  LowerMaterialCondition="MMC", LowerDatumReferences=["A"])
+            ev = position_ui.create(frame, doc, Measured=["19.94 20.06 5.12", "20.08 60.08 5.16", "60.12 59.96 5.20",
+                                                          "60.04 19.96 5.08"])
+            svg, _, h = pmi_ui.label_svg(frame)
+            self.check("composite position: callout, two-row label, evaluation from measured data",
+                       frame.Callout == "position | Ø0.200 (M) | A | B | C / Ø0.040 (M) | A" and abs(h - 14) < 1e-9
+                       and ev.Verdict == "ACCEPT" and abs(ev.LowerUsed - 71.5) < 0.2 and ev.Size == size
+                       and ev.Basic == ["20.0000 20.0000", "20.0000 60.0000", "60.0000 60.0000", "60.0000 20.0000"],
+                       f"{frame.Callout}; {ev.Verdict}, PLTZF {ev.UpperUsed:.1f} %, FRTZF {ev.LowerUsed:.1f} %; "
+                       f"basic {list(ev.Basic)}")
+            study = msa_ui.create(size, doc, Readings=["5.10 5.14", "5.08 5.12", "5.15 5.19"],
+                                  Spread="6 sigma (AIAG MSA)")
+            self.check("gauge study on a PMI size", abs(study.Tolerance - 0.2) < 1e-9 and study.Percent > 30
+                       and study.Verdict.startswith("unacceptable"), f"{study.Percent:.1f} %: {study.Verdict}")
+            page = doc.addObject("TechDraw::DrawPage", "Sheet")
+            tmpl = doc.addObject("TechDraw::DrawSVGTemplate", "Template")
+            tmpl.Template = os.path.join(App.getResourceDir(), "Mod", "TechDraw", "Templates",
+                                         "Default_Template_A4_Landscape.svg")
+            page.Template = tmpl
+            doc.recompute()
+            doc.Meta = {"DB_PART_NO": "PLT-300", "DB_PART_REV": "C", "DB_PART_NAME": "PLATE, COVER"}
+            had = titleblock_ui.has_title_block(page)
+            values = {k: v for k, v in titleblock_ui.titleblock.values(titleblock_ui.info(page)).items()}
+            titleblock_ui.apply(page, values, titleblock_ui.iso_template(page), [("C", "First release", "", "")])
+            t = dict(page.Template.EditableTexts)
+            block = [v for v in page.Views if getattr(v, "NX_Kind", "") == "revision block"]
+            self.check("Populate Title Block: ISO 7200 fields from the part's attributes, a revision block",
+                       not had and t.get("drawing_number") == "PLT-300" and t.get("revision_index") == "C"
+                       and t.get("title") == "PLATE, COVER" and t.get("general_tolerances") == "ISO 8015"
+                       and t.get("supplementary_title_2") == "" and t.get("responsible_department") == ""
+                       and len(block) == 1, f"template had a title block: {had}; {t}")
+        finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+
+    def s_assembly_links(self):
+        """Volume claims and clearance see a linked part where its assembly puts it, and not its hidden source."""
+        from . import claims, clearance
+        before = App.ActiveDocument
+        doc = App.newDocument("SmokeLinks")
+        try:
+            block = doc.addObject("Part::Box", "Block")
+            block.Length = block.Width = block.Height = 10
+            asm = doc.addObject("App::Part", "Assembly")
+            asm.Placement.Base = App.Vector(100, 0, 0)
+            link = doc.addObject("App::Link", "BlockLink")
+            link.LinkedObject = block
+            link.Placement.Base = App.Vector(0, 50, 0)
+            asm.addObject(link)
+            block.Visibility = False
+            wall = doc.addObject("Part::Box", "Wall")           # touches the link only where it really is
+            wall.Length = wall.Width = wall.Height = 5
+            wall.Placement.Base = App.Vector(105, 55, 0)
+            doc.recompute()
+            got = [(o.Name, round(s.BoundBox.XMin, 3), round(s.BoundBox.YMin, 3)) for o, s in claims.parts(doc)]
+            row = clearance.analyse_pair(link, wall, clearance.solid_of(link), clearance.solid_of(wall), 0.0)
+            vol = row[0]["volume"] if row else 0.0
+            self.check("linked part in a moved assembly: claims and clearance use its global position",
+                       got == [("BlockLink", 100.0, 50.0), ("Wall", 105.0, 55.0)] and abs(vol - 125) < 1e-6,
+                       f"parts {got}; overlap with the wall {vol:.1f} mm³ (want 125)")
+        finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+
     def s_model_views(self):
         """PMI model views: the eight look as FreeCAD's standard views do, and the work view filters PMI."""
         import Part
@@ -863,13 +964,24 @@ class Smoke:
                        "Trimetric": "viewTrimetric"}
             off = []
             from .tutorial import qtest
+            # a new 3D view sets its default orientation a moment after it opens, and that can undo the
+            # first turn made at once (measured: Front read as Top in two runs): let it settle first
+            same, last, t0 = 0, None, time.monotonic()
+            while same < 5 and time.monotonic() - t0 < 4:
+                qtest().qWait(100)
+                q = tuple(round(c, 9) for c in av.getCameraOrientation().Q)
+                same = same + 1 if q == last else 0
+                last = q
             for name, method in methods.items():
+                start = tuple(round(c, 9) for c in av.getCameraOrientation().Q)
                 getattr(av, method)()
                 last, t0 = None, time.monotonic()
                 while time.monotonic() - t0 < 3:          # FreeCAD animates the turn: wait until it rests
                     qtest().qWait(100)
                     q = tuple(round(c, 9) for c in av.getCameraOrientation().Q)
-                    if q == last:
+                    # the turn may start a moment late: resting where it started is not resting yet
+                    # (measured: Front read as the Top it came from), unless it was already there
+                    if q == last and (q != start or time.monotonic() - t0 > 1.0):
                         break
                     last = q
                 rot = av.getCameraOrientation()

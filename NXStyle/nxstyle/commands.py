@@ -661,8 +661,12 @@ def register(apps):
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
-    from . import alignment_ui, claims, clearance, gdt_ui, pmi_ui, package_ui, sheetmetal_ui, stackup_ui
+    from . import (alignment_ui, claims, clearance, gdt_ui, msa_ui, pmi_ui, package_ui, position_ui, sheetmetal_ui,
+                   stackup_ui, titleblock_ui)
     table.update(alignment_ui.COMMANDS)
+    table.update(position_ui.COMMANDS)
+    table.update(msa_ui.COMMANDS)
+    table.update(titleblock_ui.COMMANDS)
     table.update(claims.COMMANDS)
     table.update(clearance.COMMANDS)
     table.update(sheetmetal_ui.COMMANDS)

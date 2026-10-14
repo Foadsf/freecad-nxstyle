@@ -530,7 +530,7 @@ class PrecisionTutorials:
             return self.p_type("fit", "H7")
         self._t_bore_dim = self.t_pmi("Rapid Dimension on the bore: Ø16 H7 (no envelope yet)", ["bore"],
                                       "Rapid Dimension", fill,
-                                      lambda o: o.Callout.startswith("Ø16.000 H7 (+0.018/+0.000)"), "'H7' typed")
+                                      lambda o: o.Callout.startswith("Ø16.000 H7 (+0.018/0)"), "'H7' typed")
         self.wait = 300
 
     def t_frame(self, label, face, characteristic, tol, diameter, datums):

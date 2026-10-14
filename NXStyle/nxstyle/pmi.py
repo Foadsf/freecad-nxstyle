@@ -13,9 +13,15 @@ A PMI annotation is a dict, as stored in the model (see pmi_ui) and in a release
                 gives the deviations), envelope (ISO 14405 (E)), basic (theoretically exact),
                 count (4 for "4X")
   fcf:          characteristic (a key of gdt.SYMBOLS), tolerance, diameter (Ø zone),
-                modifier ("", "MMC", "LMC"), datums [[letter, modifier], ...]
+                modifier ("", "MMC", "LMC"), datums [[letter, modifier], ...]; a two-row frame also
+                has lower {tolerance, modifier, datums} and frame "composite" (ASME Y14.5 composite:
+                the lower row, FRTZF, refines the spacing of the pattern and its orientation to the
+                datums it repeats, never their location) or "single" (two single-segment frames: the
+                lower row's datums locate as well as orient)
   datum:        letter
   number        characteristic number for inspection (set by number())
+  uncertainty   expanded measurement uncertainty U (k = 2) of the method that checks it, mm (optional:
+                the inspection plan then gives the TUR and the ISO 14253-1 acceptance limits; msa.py)
 
 The part's tolerancing standard is ISO GPS by default (technical product documentation: ISO 1101,
 ISO 5459, ISO 8015, ISO 14405, ISO 286, ISO 2768), or ASME Y14.5. They differ where it matters:
@@ -90,6 +96,14 @@ def internal(a):
     return a.get("feature_type") == "hole" or (a.get("feature_type") == "width" and a.get("internal", True))
 
 
+def deviation_text(v, digits=3):
+    """A limit deviation: signed, and a zero one as the digit 0 without a sign (ISO 129-1; ASME Y14.5 for
+    metric drawings), never "-0.000" or "+0.000"."""
+    if abs(v) < 0.5 * 10 ** -digits:
+        return "0"
+    return f"{v:+.{digits}f}"
+
+
 def dimension_text(a, digits=3):
     prefix = {"diameter": DIAMETER, "radius": "R"}.get(a.get("dim_type"), "")
     count = f"{a['count']}X " if a.get("count", 1) > 1 else ""
@@ -99,14 +113,26 @@ def dimension_text(a, digits=3):
         return f"{count}[{value}]"
     if a.get("fit"):
         up, lo = iso.deviations(a["fit"], a["nominal"])
-        return f"{count}{value} {a['fit']} ({up:+.{digits}f}/{lo:+.{digits}f}){env}"
+        return f"{count}{value} {a['fit']} ({deviation_text(up, digits)}/{deviation_text(lo, digits)}){env}"
     p, m = a.get("plus", 0.0), a.get("minus", 0.0)
     if p == 0 and m == 0:
         return count + value + env
     if abs(p - m) < 1e-12:
         return f"{count}{value} ±{fmt(p, digits)}{env}"
     # signed deviations: a zone wholly above (or below) nominal reads +0.050/+0.020, never "--0.020"
-    return f"{count}{value} {p:+.{digits}f}/{-m:+.{digits}f}{env}"
+    return f"{count}{value} {deviation_text(p, digits)}/{deviation_text(-m, digits)}{env}"
+
+
+def lower(a):
+    """The lower row of a two-row frame (dict), or None for a single frame."""
+    low = a.get("lower")
+    if a.get("kind") != "fcf" or not low or not low.get("tolerance"):
+        return None
+    return low
+
+
+def composite(a):
+    return lower(a) is not None and a.get("frame", "composite") == "composite"
 
 
 def text(a, digits=3):
@@ -115,8 +141,14 @@ def text(a, digits=3):
     if k == "dimension":
         return dimension_text(a, digits)
     if k == "fcf":
-        return gdt.callout(a["characteristic"], fmt(a["tolerance"], digits), a.get("diameter", False),
-                           a.get("modifier", ""), [tuple(d) for d in a.get("datums", [])])
+        upper = (fmt(a["tolerance"], digits), a.get("diameter", False), a.get("modifier", ""),
+                 [tuple(d) for d in a.get("datums", [])])
+        low = lower(a)
+        if low is None:
+            return gdt.callout(a["characteristic"], *upper)
+        row = (fmt(low["tolerance"], digits), a.get("diameter", False), low.get("modifier", ""),
+               [tuple(d) for d in low.get("datums", [])])
+        return gdt.stacked_callout(a["characteristic"], [upper, row], a.get("frame", "composite") == "composite")
     if k == "datum":
         return f"datum feature {a['letter']}"
     return a.get("text", "")
@@ -172,12 +204,46 @@ def check(annotations, standard="ISO", general=None):
             out.append(("warning", a["id"], "the feature has no size dimension: its MMC (and bonus) is unknown"))
         if len(set(ds)) != len(ds):
             out.append(("error", a["id"], "a datum letter is repeated in the frame"))
-        for d, dm in a.get("datums", []):
+        low = lower(a)
+        low_refs = list(low.get("datums", [])) if low else []
+        if low:
+            out += _check_lower(a, low, std, ds, fos)
+        for d, dm in list(a.get("datums", [])) + low_refs:
             if d not in datums:
                 out.append(("error", a["id"], f"datum {d} is referenced but not identified on the part"))
             elif dm and datums[d].get("feature_type") not in SIZE_FEATURES:
                 out.append(("error", a["id"], f"datum {d} is not a feature of size: it cannot be referenced at "
                             f"{'MMC' if dm == 'MMC' else 'LMC'}"))
+    return out
+
+
+def _check_lower(a, low, std, ds, fos):
+    """The lower row of a two-row frame (Cogorno ch. 12, Drake ch. 5): it refines the upper row, so it
+    must be tighter; a composite lower row may only repeat the upper row's datums, in their order, and
+    they orient it, never locate it."""
+    out = []
+    c, kind = a["characteristic"], a.get("frame", "composite")
+    lds = [d[0] for d in low.get("datums", [])]
+    if c not in {"position"} | PROFILE:
+        out.append(("error", a["id"], f"a two-row frame is for position or profile, not {c}"))
+    if low["tolerance"] >= a.get("tolerance", 0):
+        out.append(("error", a["id"], f"the lower row ({fmt(low['tolerance'])}) must be tighter than the upper "
+                    f"({fmt(a.get('tolerance', 0))}): it refines the pattern within it"))
+    if kind == "composite" and lds != ds[:len(lds)]:
+        out.append(("error", a["id"], f"the composite lower row may only repeat the upper row's datums in their "
+                    f"order ({'|'.join(ds) or 'none'}), not {'|'.join(lds)}"))
+    if len(set(lds)) != len(lds):
+        out.append(("error", a["id"], "a datum letter is repeated in the lower row"))
+    if low.get("modifier") and not fos:
+        out.append(("error", a["id"], f"{low['modifier']} in the lower row applies only to a feature of size"))
+    if low.get("modifier") and c in PROFILE:
+        out.append(("error", a["id"], "profile takes no material condition modifier on its tolerance"))
+    if kind == "single" and not lds:
+        out.append(("warning", a["id"], "a single-segment lower row without datums is the same as a composite one: "
+                    "use the composite frame"))
+    if std == "ISO":
+        out.append(("note", a["id"], "two-row (composite) frames are ASME Y14.5 notation; ISO GPS states a "
+                    "pattern with ISO 5458 (two frames, combined zone CZ)"))
     return out
 
 
@@ -281,19 +347,79 @@ def inspection_plan(annotations, digits=3, general=None):
                 notes.append("envelope: perfect form at MMC")
             row["note"] = "; ".join(notes)
         else:
-            row.update(kind=a["characteristic"], nominal=0.0, lower=0.0, upper=a["tolerance"],
-                       datums="|".join(d + ({"MMC": "(M)", "LMC": "(L)"}.get(m, "")) for d, m in a.get("datums", [])))
+            low = lower(a)
+            segments = [(a["tolerance"], a.get("modifier", ""), a.get("datums", []), "")]
+            if low:
+                comp = composite(a)
+                segments = [(a["tolerance"], a.get("modifier", ""), a.get("datums", []), "PLTZF" if comp else "upper"),
+                            (low["tolerance"], low.get("modifier", ""), low.get("datums", []), "FRTZF" if comp else "lower")]
             size = sizes.get(a.get("feature"))
-            if a.get("modifier") in ("MMC", "LMC") and size is not None:
-                mmc, lmc = mmc_lmc(size, general)
-                at = mmc if a["modifier"] == "MMC" else lmc
-                other = lmc if a["modifier"] == "MMC" else mmc
-                row["upper_at_departure"] = a["tolerance"] + abs(other - at)
-                row["note"] = (f"{fmt(a['tolerance'], digits)} at {a['modifier']} ({fmt(at, digits)}), up to "
-                               f"{fmt(row['upper_at_departure'], digits)} at {'LMC' if a['modifier'] == 'MMC' else 'MMC'} "
-                               f"({fmt(other, digits)})")
+            for tol, mod, datums, seg in segments:
+                r = dict(row)
+                letters = "|".join(d + ({"MMC": "(M)", "LMC": "(L)"}.get(m, "")) for d, m in datums)
+                r.update(kind=a["characteristic"], nominal=0.0, lower=0.0, upper=tol, datums=letters, segment=seg)
+                notes = []
+                if seg:
+                    r["requirement"] = gdt.callout(a["characteristic"], fmt(tol, digits), a.get("diameter", False), mod,
+                                                   [tuple(d) for d in datums])
+                    notes.append(_segment_note(seg, letters))
+                    r["method"] = segment_method(a, mod, seg)
+                if mod in ("MMC", "LMC") and size is not None:
+                    mmc, lmc = mmc_lmc(size, general)
+                    at = mmc if mod == "MMC" else lmc
+                    other = lmc if mod == "MMC" else mmc
+                    r["upper_at_departure"] = tol + abs(other - at)
+                    notes.append(f"{fmt(tol, digits)} at {mod} ({fmt(at, digits)}), up to "
+                                 f"{fmt(r['upper_at_departure'], digits)} at {'LMC' if mod == 'MMC' else 'MMC'} "
+                                 f"({fmt(other, digits)})")
+                r["note"] = "; ".join(notes)
+                rows.append(r)
+            continue
         rows.append(row)
+    by_id = {a["id"]: a for a in annotations}
+    for r in rows:
+        u = by_id[r["id"]].get("uncertainty", 0.0)
+        if u > 0:
+            _add_uncertainty(r, u, digits)
     return rows
+
+
+def _add_uncertainty(r, u, digits):
+    """TUR and the ISO 14253-1 acceptance limits of a plan row whose method has the uncertainty U."""
+    from . import msa
+    one_sided = r["kind"] not in ("distance", "diameter", "radius", "angle")
+    ratio = msa.tur(r["lower"], r["upper"], u)
+    acc = msa.acceptance(r["lower"], r["upper"], u, one_sided)
+    r.update(uncertainty=u, tur=round(ratio, 2))
+    text = f"U {fmt(u, digits)}: TUR {msa.ratio_text(ratio)} ({msa.tur_verdict(ratio)})"
+    if acc is None:
+        r.update(accept_lower="", accept_upper="")
+        text += "; U leaves no acceptance zone (ISO 14253-1): the method cannot prove conformance"
+    else:
+        r.update(accept_lower=acc[0], accept_upper=acc[1])
+        text += (f"; accept {fmt(acc[1], digits)} max" if one_sided else
+                 f"; accept {fmt(acc[0], digits)} to {fmt(acc[1], digits)}") + " (ISO 14253-1)"
+    r["note"] = "; ".join(x for x in (r["note"], text) if x)
+
+
+def _segment_note(seg, letters):
+    return {"PLTZF": f"pattern-locating zone: locates and orients the pattern to {letters or 'nothing'}",
+            "FRTZF": "feature-relating zone: spacing of the features" + (f", orientation to {letters}" if letters else
+                                                                          "; the pattern may float and turn"),
+            "upper": f"upper segment: locates the pattern to {letters or 'nothing'}",
+            "lower": f"lower segment: locates and orients the pattern to {letters or 'nothing'}, spacing tighter"}[seg]
+
+
+def segment_method(a, mod, seg):
+    """How a row of a two-row frame is verified (Cogorno ch. 13): one functional gauge per row, the
+    FRTZF gauge without the location datums; or a CMM, the lower row best-fit."""
+    if mod == "MMC":
+        return ("functional gauge with datums" if seg in ("PLTZF", "upper") else
+                "second functional gauge (orientation datums only, pins float)" if seg == "FRTZF" else
+                "second functional gauge") + " or CMM"
+    if seg == "FRTZF":
+        return "CMM: best fit of the pattern (Analysis > Position Evaluation)"
+    return "CMM"
 
 
 def gauges(annotations, general=None):
@@ -305,19 +431,35 @@ def gauges(annotations, general=None):
     out = []
     vc_of = {}
     for a in annotations:
-        if a["kind"] != "fcf" or a.get("modifier") != "MMC":
+        if a["kind"] != "fcf":
             continue
         size = sizes.get(a.get("feature"))
         if size is None:
             continue
         mmc, _ = mmc_lmc(size, general)
         hole = internal(size)
-        vc = mmc - a["tolerance"] if hole else mmc + a["tolerance"]
-        vc_of.setdefault(a.get("feature"), []).append((a, vc))
         count = size.get("count", 1)
-        out.append({"element": ("gauge pin" if hole else "gauge hole") + (f" x{count}" if count > 1 else ""),
-                    "for": text(a), "size": vc, "feature": a.get("feature"),
-                    "how": f"virtual condition: MMC {mmc:g} {'-' if hole else '+'} {a['tolerance']:g}"})
+        low = lower(a)
+        rows = [(a["tolerance"], a.get("modifier", ""), a.get("datums", []), "")]
+        if low:                       # a two-row frame takes one gauge per row (Cogorno ch. 13)
+            comp = composite(a)
+            rows = [(a["tolerance"], a.get("modifier", ""), a.get("datums", []), "PLTZF" if comp else "upper"),
+                    (low["tolerance"], low.get("modifier", ""), low.get("datums", []), "FRTZF" if comp else "lower")]
+        for tol, mod, datums, seg in rows:
+            if mod != "MMC":
+                continue
+            vc = mmc - tol if hole else mmc + tol
+            if not seg or seg in ("PLTZF", "upper"):
+                vc_of.setdefault(a.get("feature"), []).append((a, vc))
+            what = text(a) if not seg else f"{seg}: " + gdt.callout(a["characteristic"], fmt(tol), a.get("diameter", False),
+                                                                   mod, [tuple(d) for d in datums])
+            how = f"virtual condition: MMC {mmc:g} {'-' if hole else '+'} {tol:g}"
+            if seg == "FRTZF":
+                letters = "|".join(d for d, _ in datums)
+                how += ("; on " + letters + " only, the pins float" if letters else "; the pins float") + \
+                    " (no stops for the location datums)"
+            out.append({"element": ("gauge pin" if hole else "gauge hole") + (f" x{count}" if count > 1 else ""),
+                        "for": what, "size": vc, "feature": a.get("feature"), "how": how})
     for letter, feat in datum_feature.items():
         referenced = any(a["kind"] == "fcf" and any(d == letter and m == "MMC" for d, m in a.get("datums", []))
                          for a in annotations)

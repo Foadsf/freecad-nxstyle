@@ -105,11 +105,27 @@ def label_point(corners, size, direction, up, row):
     return tuple(centre[i] + right[i] * along_r + u[i] * along_u for i in range(3))
 
 
-def label_row(corners, size, direction, up, point):
-    """The row a label at point is in (the inverse of label_point)."""
+def label_row(corners, size, direction, up, point, exact=False):
+    """The row a label at point is in (the inverse of label_point); exact: unrounded, for a label that
+    spans rows and sits between them."""
     _, u, _ = frame(direction, up)
     top = max(_dot(c, u) for c in corners) + 0.1 * size
-    return round((top - _dot(point, u)) / (0.14 * size))
+    r = (top - _dot(point, u)) / (0.14 * size)
+    return r if exact else round(r)
+
+
+def rows_taken(centre, span):
+    """The rows a label spanning span rows, centred at row centre, occupies."""
+    first = round(centre - (span - 1) / 2)
+    return set(range(first, first + span))
+
+
+def free_rows(used, span):
+    """The first run of span rows none of which is used; returns the centre row of the run."""
+    r = 0
+    while any(x in used for x in range(r, r + span)):
+        r += 1
+    return r + (span - 1) / 2
 
 
 def shown(views, work):

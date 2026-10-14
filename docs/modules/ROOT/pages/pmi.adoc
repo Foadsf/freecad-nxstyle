@@ -14,11 +14,12 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 | Button | Does
 | *Tolerancing* | The part's standard, *ISO GPS* (the default) or *ASME Y14.5*, and its general tolerances, e.g. `ISO 2768-mK`: what a drawing's title block says. Stored with the part's PMI folder.
 | *Rapid Dimension* | A dimension on the model. Select one cylinder (diameter) or two faces (distance) first. The nominal is measured from the model and follows design changes. Give it an ISO 286 *tolerance class* (H7, g6 …: the dialog shows the limits), or upper and lower deviations, the *envelope* Ⓔ (ISO 14405), *theoretically exact*, and a quantity (4X).
-| *Feature Control Frame* | A geometrical tolerance on the selected face: characteristic, Ø zone, tolerance, Ⓜ or Ⓛ, up to three datums with modifiers. The same dialog as Drafting's.
+| *Feature Control Frame* | A geometrical tolerance on the selected face: characteristic, Ø zone, tolerance, Ⓜ or Ⓛ, up to three datums with modifiers. The same dialog as Drafting's. *Frame Style* makes it a two-row frame (below).
 | *Datum Feature Symbol* | A datum letter on the selected face.
 | *Inspection Plan* | Numbers the characteristics (the balloons on the model) and lists them with their limits, where the tolerance comes from, and how to measure them; the functional gauge sizes; the checks.
 | *Tolerance Stackup* | xref:tolerance-analysis.adoc[Tolerance analysis], with *Add from PMI*.
 | *Pin Location* | xref:pin-location.adoc[How precisely two pins locate a part], from the PMI of the pins and the holes.
+| *Position Evaluation*, *Gauge Study* | xref:inspection.adoc[Inspection]: a measured hole pattern against its frame, a gauge against its tolerance.
 | *Display in Views* | Which model views the selected PMI show in: tick one to move it, several to copy it, or *All views* (NX: RMB › Display › in Views).
 | *New Model View* | The current view direction as a new model view, made the work view.
 | *Show All PMI* | No work view: every PMI shows, whichever view it belongs to.
@@ -30,6 +31,34 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 Each PMI is attached to its faces by a link that FreeCAD's topological naming keeps on the same face.
 It is drawn at a constant size with a leader to the face; frames and datum symbols use the same drawing as NX-Style's Drafting dialogs.
 Its values are properties: change the *Fit*, the *Envelope* or a tolerance in the property view and everything that uses it follows, the stack-ups too.
+
+A deviation of zero is written as the digit 0, without a sign (ISO 129-1, and ASME Y14.5 for metric drawings): `4X Ø5.000 +0.200/0`, `Ø16.000 H7 (+0.018/0)`.
+
+Dimensions and frames also have a *Measurement uncertainty U*, the uncertainty of the method that checks them.
+The inspection plan turns it into a TUR and the ISO 14253-1 acceptance limits (xref:inspection.adoc[Inspection]).
+
+== Composite and stacked frames
+
+A pattern of holes often needs its holes held to each other more tightly than the pattern is held to the datums.
+ASME Y14.5 states this with a two-row frame (Cogorno ch. 12; Drake ch. 5).
+In the Feature Control Frame dialog, choose a *Frame Style* and fill in the lower row: its tolerance, its Ⓜ or Ⓛ, and its datums.
+
+[cols="1,3",options="header"]
+|===
+| Frame Style | Means
+| *Composite Frame* | One position symbol for both rows. The upper row, the pattern-locating zone framework (PLTZF), locates and orients the pattern to its datums. The lower row, the feature-relating zone framework (FRTZF), holds the features to each other and orients them to the datums it repeats, but never locates them. It may repeat only the upper row's datums, in their order.
+| *Stacked Frames* | Two single-segment frames, each with its own symbol. The lower row's datums locate as well as orient.
+|===
+
+image::tutorial-AA-01-dialog.png[The Feature Control Frame dialog with Frame Style Composite Frame]
+
+The checks require a two-row frame to be position or profile, the lower row to be tighter than the upper one, and a composite lower row to repeat the upper row's datums in their order.
+Under ISO GPS, a two-row frame gets a note: ISO states a pattern requirement with ISO 5458 (two frames, combined zone CZ).
+The inspection plan lists each row as a characteristic with its own bonus and method.
+The functional gauge has one gauge per row: the FRTZF gauge's pins float, with no stops for the location datums (Cogorno ch. 13).
+STEP AP242 receives the rows as two position tolerances, because OpenCASCADE's XCAF has no relationship that ties them together; the Information window says so.
+*Inherit PMI* draws the two-row frame on the sheet.
+xref:inspection.adoc[Position Evaluation] decides from CMM data whether a measured pattern passes both rows.
 
 == Model views
 

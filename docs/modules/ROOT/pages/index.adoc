@@ -25,6 +25,8 @@ NX's Assembly Clearance and space reservations for system layouts.
 Tabs, flanges and flat patterns, with the bend allowance worked out.
 * *xref:pin-location.adoc[Pin location]* +
 Fit, shift, rotation and pointing error of a part on two dowel pins.
+* *xref:inspection.adoc[Inspection]* +
+Composite position evaluated from CMM data; gauge studies, TUR and guard bands.
 * *xref:keyboard-shortcuts.adoc[Shortcuts]* +
 All 65 NX key bindings and what each one does here.
 
@@ -71,7 +73,10 @@ All 65 NX key bindings and what each one does here.
 | *PMI › STEP with PMI*: STEP AP242 with the semantic PMI (datums, sizes and locations with their ISO 286 classes, geometrical tolerances). See xref:pmi.adoc[].
 
 | Tolerance Stackup Validation
-| xref:tolerance-analysis.adoc[Tolerance Stackup]: measured from the model or from PMI; worst case, RSS, adjusted RSS, MRSS, Monte Carlo. xref:pin-location.adoc[Pin Location] for parts on two dowel pins.
+| xref:tolerance-analysis.adoc[Tolerance Stackup]: measured from the model or from PMI; worst case, RSS, adjusted RSS, MRSS, Monte Carlo. xref:pin-location.adoc[Pin Location] for parts on two dowel pins. xref:inspection.adoc[Position Evaluation and Gauge Study] for measured parts and gauges.
+
+| Populate Title Block, revision table
+| xref:drafting.adoc[Populate Title Block]: the ISO 7200 title block from the part's release, the revision block from its release history.
 
 | Sheet Metal
 | kbd:[Ctrl+Shift+M]: FreeCAD's SheetMetal add-on (bundled) with NX's names, Sheet Metal Preferences and Flat Pattern. See xref:sheet-metal.adoc[].

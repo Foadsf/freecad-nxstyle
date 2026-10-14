@@ -4,7 +4,7 @@ include::partial$generated/tutorial-meta.adoc[]
 
 Tutorials A to N are exercises from NX, GD&T and engineering-graphics textbooks, done in NX-Style the way the book tells an NX user to work.
 Tutorials O to R are Grasshopper video tutorials done on the xref:algorithmic-modeling.adoc[Algorithmic Modeling] canvas (Katydid).
-Tutorials S to Z are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, an opto-mechanical pin location, PMI organised in model views, and the model with its PMI exchanged through STEP AP242.
+Tutorials S to AC are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, an opto-mechanical pin location, PMI organised in model views, the model with its PMI exchanged through STEP AP242, a composite position frame evaluated from CMM data, the measurement capability of the inspection methods, and a drawing whose title block comes from the release.
 Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
 
 The step tables are not written by hand.
@@ -46,6 +46,9 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | Opto-mechanics: pin location, pointing error, thermal mismatch | xref:tutorials/x.adoc[X]
 | PMI model views: the work view, Display in Views, drawings from model views | xref:tutorials/y.adoc[Y]
 | MBD exchange: STEP AP242 out and in, datum reference frames | xref:tutorials/z.adoc[Z]
+| Composite position, functional gauges, evaluating CMM data | xref:tutorials/aa.adoc[AA]
+| Measurement uncertainty, TUR, guard bands, gauge R&R | xref:tutorials/ab.adoc[AB]
+| Title block and revision block from the release | xref:tutorials/ac.adoc[AC]
 |===
 
 == Results
@@ -65,6 +68,7 @@ include::partial$outcome-legend.adoc[]
 * Sham Tickoo, _Siemens NX 12.0 for Designers_, ch. 12: the default model views, tutorial Y.
 * Paul J. Drake, _Dimensioning and Tolerancing Handbook_ (McGraw-Hill), ch. 6 (ASME and ISO compared), ch. 9 (statistical tolerancing) and ch. 24 (pinned interfaces, tutorial X); Gene R. Cogorno (above), ch. 3, 7, 8 and 13: the checks, the fastener formulas and the gauge sizes.
 * Fischer (above), ch. 15: the lever of an angle error, tutorial X.
+* Cogorno (above), ch. 12 and 13: composite position and its graphic analysis, tutorial AA. Drake (above), ch. 20 and 25: measurement systems and the gauge study example, tutorial AB; ch. 4: the title and revision blocks, tutorial AC.
 * The PLM books of John Stark, Michael Grieves, and Antti Saaksvuori and Anselmi Immonen: release and engineering change, tutorial V.
 * Tutorial U's layout is ours; Assembly Clearance follows NX's.
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.

@@ -2662,7 +2662,7 @@
    "nx": "Rapid Dimension on the bore: Ø16 H7 (no envelope yet)",
    "replay": "bore selected + ribbon 'PMI › Dimension > Rapid Dimension'; 'H7' typed; MB2 = OK",
    "outcome": "differs",
-   "detail": "Ø16.000 H7 (+0.018/+0.000)"
+   "detail": "Ø16.000 H7 (+0.018/0)"
   },
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
@@ -2710,7 +2710,7 @@
    "nx": "The bore gets the envelope Ⓔ; the plan again",
    "replay": "the PMI's Envelope property; Inspection Plan",
    "outcome": "differs",
-   "detail": "6 characteristics, no errors or warnings; the length 30 inspected at 29.8 to 30.2 (ISO 2768-m); bore Ø16.000 H7 (+0.018/+0.000) Ⓔ"
+   "detail": "6 characteristics, no errors or warnings; the length 30 inspected at 29.8 to 30.2 (ISO 2768-m); bore Ø16.000 H7 (+0.018/0) Ⓔ"
   },
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
@@ -2726,7 +2726,7 @@
    "nx": "The bush with its PMI in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "6.2% of the view shows the part"
+   "detail": "5.3% of the view shows the part"
   },
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
@@ -2910,7 +2910,7 @@
    "nx": "Compare V1 with V2",
    "replay": "ribbon 'PLM › Versions > Compare', From V1, To V2",
    "outcome": "same",
-   "detail": "1 document changed · 2 feature changes: GuideBush | Diameter 16.000: 2 parameters |   Callout: Ø16.000 H7 (+0.018/+0.000) Ⓔ  →  Ø16.000 F7 (+0.034/+0.016) Ⓔ |   Fit: H7  →  F7 | ToleranceStackup: 8 parameters |   AdjustedMax: 0.0363213  →  0.0523213 |   AdjustedMin: 0.00467873  →  0.0206787 |   Nominal: 0.0205  →  0.0365 |   RSSMax: 0.0310475  →  0.0470475 |   RSSMin: 0.00995249  →  0.0259525 |   Report: Tolerance stack-up: ToleranceSta"
+   "detail": "1 document changed · 2 feature changes: GuideBush | Diameter 16.000: 2 parameters |   Callout: Ø16.000 H7 (+0.018/0) Ⓔ  →  Ø16.000 F7 (+0.034/+0.016) Ⓔ |   Fit: H7  →  F7 | ToleranceStackup: 8 parameters |   AdjustedMax: 0.0363213  →  0.0523213 |   AdjustedMin: 0.00467873  →  0.0206787 |   Nominal: 0.0205  →  0.0365 |   RSSMax: 0.0310475  →  0.0470475 |   RSSMin: 0.00995249  →  0.0259525 |   Report: Tolerance stack-up: ToleranceStackup\n"
   },
   {
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
@@ -3022,7 +3022,7 @@
    "nx": "The layout: a steel bench with two Ø6 pins 80 mm apart, an aluminium laser module with two Ø6 holes, the beam; PMI: holes G6, pins h6",
    "replay": "modelled by script, materials Steel-1C45 and Aluminum-6061-T6 assigned, PMI made as in tutorial T",
    "outcome": "differs",
-   "detail": "PMI ['Ø6.000 G6 (+0.012/+0.004)', 'Ø6.000 G6 (+0.012/+0.004)', 'Ø6.000 h6 (+0.000/-0.008)', 'Ø6.000 h6 (+0.000/-0.008)']; the beam must hit a target 2 m away within ±0.15 mm"
+   "detail": "PMI ['Ø6.000 G6 (+0.012/+0.004)', 'Ø6.000 G6 (+0.012/+0.004)', 'Ø6.000 h6 (0/-0.008)', 'Ø6.000 h6 (0/-0.008)']; the beam must hit a target 2 m away within ±0.15 mm"
   },
   {
    "tutorial": "X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)",
@@ -3070,7 +3070,7 @@
    "nx": "The bench, the module on its pins and the beam",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "2.5% of the view shows the part"
+   "detail": "2.4% of the view shows the part"
   },
   {
    "tutorial": "Y: PMI in model views",
@@ -3102,7 +3102,7 @@
    "nx": "Rapid Dimension on a hole: 4X Ø8 H11",
    "replay": "hole selected + ribbon 'PMI › Dimension > Rapid Dimension'; 'H11' typed, quantity 4; MB2 = OK",
    "outcome": "differs",
-   "detail": "4X Ø8.000 H11 (+0.090/+0.000); in view ['Top'], its label in that view's plane"
+   "detail": "4X Ø8.000 H11 (+0.090/0); in view ['Top'], its label in that view's plane"
   },
   {
    "tutorial": "Y: PMI in model views",
@@ -3190,7 +3190,7 @@
    "nx": "The mounting plate and its PMI: datums A, B, C; the holes Ø8 H11 positioned Ø0.2 (M) to A|B|C; B perpendicular to A; thickness 10 ±0.1 (a count such as 4X has no AP242 form in OpenCASCADE, so it is left off)",
    "replay": "modelled by script, the PMI made as in tutorials T and Y",
    "outcome": "differs",
-   "detail": "10.000 ±0.100; datum feature A; datum feature B; datum feature C; perpendicularity | 0.050 | A; position | Ø0.200 (M) | A | B | C; Ø8.000 H11 (+0.090/+0.000)"
+   "detail": "10.000 ±0.100; datum feature A; datum feature B; datum feature C; perpendicularity | 0.050 | A; position | Ø0.200 (M) | A | B | C; Ø8.000 H11 (+0.090/0)"
   },
   {
    "tutorial": "Z: MBD exchange, a part and its PMI through STEP AP242",
@@ -3230,7 +3230,143 @@
    "nx": "The imported plate with its PMI",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "5.9% of the view shows the part"
+   "detail": "5.5% of the view shows the part"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 1,
+   "nx": "The cover plate: four holes 4X Ø5 +0.2/0 on a 40 mm square; datums A (underside), B (left), C (front); ASME Y14.5",
+   "replay": "modelled by script, the datums and the size made as in tutorial T",
+   "outcome": "differs",
+   "detail": "datum feature A; datum feature B; datum feature C; 4X Ø5.000 +0.200/0"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 2,
+   "nx": "Feature Control Frame, Frame Style Composite: the pattern Ø0.2 (M) to A|B|C, the holes to each other Ø0.04 (M) oriented to A",
+   "replay": "4 face(s) selected + ribbon 'PMI › Annotation > Feature Control Frame'; Position, Ø ticked, 0.2, MMC, A B C; Frame Style Composite Frame, lower row 0.04, MMC, datum A; MB2 = OK",
+   "outcome": "same",
+   "detail": "position | Ø0.200 (M) | A | B | C / Ø0.040 (M) | A"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 3,
+   "nx": "Inspection Plan: one row per segment, one functional gauge per row",
+   "replay": "ribbon 'PMI › Inspection > Inspection Plan'",
+   "outcome": "differs",
+   "detail": "PLTZF Ø0.2 at MMC up to Ø0.4 at LMC, gauge pins Ø4.8 on A|B|C; FRTZF Ø0.04 up to Ø0.24, gauge pins Ø4.96 that float on A (Cogorno ch. 13: a composite frame takes two gauges). NX lists the frame; the plan and the gauges are NXStyle's"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 4,
+   "nx": "A composite lower row may only repeat the upper row's datums, in order",
+   "replay": "the frame's LowerDatumReferences set to B in the property view; Inspection Plan; set back to A",
+   "outcome": "differs",
+   "detail": "the check reports B as an error: the lower row orients to the datums it repeats, starting with the primary (Cogorno ch. 12, Drake ch. 5)"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 5,
+   "nx": "Analysis > Position Evaluation: the measured holes against both rows",
+   "replay": "the frame selected + ribbon 'Analysis › Tolerance > Position Evaluation'; the CMM's 12 values typed into the table; MB2 = OK",
+   "outcome": "differs",
+   "detail": "ACCEPT: the pattern-locating zones (with each hole's bonus) 63 % used; the feature-relating zones, moved and turned to fit, 72 % used. The paper gauge of Cogorno ch. 13 done numerically: a minimax fit. NX has no evaluation of measured data (that is a CMM program's job)"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 6,
+   "nx": "The same holes if the lower row could not turn (as if it repeated A|B)",
+   "replay": "the evaluation double-clicked, Lower row zones 'Translate only', MB2 = OK",
+   "outcome": "differs",
+   "detail": "REJECT: 103 % of the feature-relating zones. The datums a composite lower row repeats decide how its zones may move, and so whether the part passes"
+  },
+  {
+   "tutorial": "AA: Composite position of a hole pattern, evaluated from CMM data",
+   "n": 7,
+   "nx": "The cover plate with its composite frame",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "6.8% of the view shows the part"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 1,
+   "nx": "The bearing plate: a bore Ø20 positioned Ø0.2 to A|B|C (RFS, as in Drake's gauge study)",
+   "replay": "modelled by script, datums and frame made as in tutorial T",
+   "outcome": "differs",
+   "detail": "datum feature A; datum feature B; datum feature C; position | Ø0.200 | A | B | C"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 2,
+   "nx": "Rapid Dimension: the bore Ø20 H7, checked with a bore gauge, U = 0.002",
+   "replay": "1 face(s) selected + ribbon 'PMI › Dimension > Rapid Dimension'; 'H7' typed, measurement uncertainty 0.002 typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø20.000 H7 (+0.021/0)"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 3,
+   "nx": "Rapid Dimension: the thickness 12 ±0.05, measured with a micrometer, U = 0.01",
+   "replay": "2 face(s) selected + ribbon 'PMI › Dimension > Rapid Dimension'; ±0.05 and the uncertainty typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "12.000 ±0.050"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 4,
+   "nx": "Feature Control Frame: the top face flat to 0.01, on a surface plate with an indicator, U = 0.004",
+   "replay": "1 face(s) selected + ribbon 'PMI › Annotation > Feature Control Frame'; Flatness, 0.01, the uncertainty typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "flatness | 0.010"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 5,
+   "nx": "Inspection Plan: each method's TUR and the ISO 14253-1 acceptance limits",
+   "replay": "ribbon 'PMI › Inspection > Inspection Plan'",
+   "outcome": "differs",
+   "detail": "the bore is accepted only from 20.002 to 20.019, the thickness from 11.960 to 12.040: the specification less U at each limit, so no part is accepted on a doubtful reading. The flatness check uses 80 % of its tolerance (TUR 1.25): accept up to 0.006, or find a better method. NX has no measurement capability in its PMI"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 6,
+   "nx": "Gauge Study on the position Ø0.2: Drake's worked example (ten parts, two readings each)",
+   "replay": "the frame selected + ribbon 'Analysis › Tolerance > Gauge Study'; gauge, 20 readings and the spread typed; MB2 = OK",
+   "outcome": "differs",
+   "detail": "average range 0.032, σ = 0.0284, 3σ = 0.085 mm: 42.6 % of the tolerance, unacceptable (Drake: 42.6 %, over 30 %). With AIAG's 6σ it would be twice that"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 7,
+   "nx": "Gauge Study on the bore Ø20 H7 with an air gauge",
+   "replay": "the bore's PMI selected + ribbon 'Analysis › Tolerance > Gauge Study'; readings typed; 6σ; MB2 = OK",
+   "outcome": "differs",
+   "detail": "σ = 0.23 µm, 6σ uses 6.6 % of the 0.021 tolerance: acceptable. The study is kept in the part, beside the PMI it qualifies"
+  },
+  {
+   "tutorial": "AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies",
+   "n": 8,
+   "nx": "The bearing plate with its PMI",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "6.5% of the view shows the part"
+  },
+  {
+   "tutorial": "AC: The title block and revision block from the release (runs T and V first)",
+   "n": 1,
+   "nx": "The guide bush's drawing (tutorial T) in Drafting",
+   "replay": "Ctrl+Shift+D; the sheet selected in the Part Navigator",
+   "outcome": "same",
+   "detail": "template Default_Template_A4_Landscape.svg: FreeCAD's default sheet has no title block"
+  },
+  {
+   "tutorial": "AC: The title block and revision block from the release (runs T and V first)",
+   "n": 2,
+   "nx": "Drafting > Populate Title Block: from release B, the revision block from the releases",
+   "replay": "ribbon 'Home › Drawing > Populate Title Block'; the fields come filled; 'Revision block' ticked; OK button",
+   "outcome": "differs",
+   "detail": "dialog: {'drawing_number': 'BUSH-100', 'revision_index': 'B', 'title': 'Guide bush', 'general_tolerances': 'ISO 2768-mK'}; sheet: number BUSH-100, rev B, Released, by NX-Style replay, tolerancing 'ISO 2768-mK'; revision block rows [('A', 'Guide bush', '2026-10-14', 'NX-Style replay'), ('B', 'ECO-001: bore F7', '2026-10-14', 'NX-Style replay')]. NX: Populate Title Block from DB_PART_NO and DB_PART_REV (Teamcenter); here from Strata"
   }
  ],
  "info": {

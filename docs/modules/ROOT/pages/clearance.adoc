@@ -35,6 +35,10 @@ Double-click the set to run it again.
 
 The penetration depth is the smallest extent of the interference volume along its principal axes: for two overlapping blocks, how far one has to move out of the other.
 
+Parts are taken where their assembly puts them. A link or a body inside an assembly or an `App::Part` that has its own placement counts at that placement.
+A hidden part that links only show (the source of the instances) is not counted as a part of its own.
+Clearance and volume claims both do this. Before 2026-10-14 they used the part's own placement only, and a part in a moved assembly was checked where it would be without the move.
+
 == Volume claims
 
 In a high-tech system layout every module owns a volume: the space reserved for it (a space reservation, _ruimteclaim_).

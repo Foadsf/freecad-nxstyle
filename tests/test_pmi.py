@@ -35,6 +35,18 @@ def plate():
     ]
 
 
+class Text(unittest.TestCase):
+    def test_zero_deviation_is_the_digit_0(self):
+        a = {"kind": "dimension", "dim_type": "diameter", "nominal": 5.0, "plus": 0.2, "minus": 0.0, "count": 4}
+        self.assertEqual(pmi.dimension_text(a), "4X Ø5.000 +0.200/0")         # ISO 129-1, not "-0.000"
+        b = {"kind": "dimension", "dim_type": "diameter", "nominal": 6.0, "fit": "h6"}
+        self.assertEqual(pmi.dimension_text(b), "Ø6.000 h6 (0/-0.008)")
+
+    def test_zone_above_nominal(self):
+        a = {"kind": "dimension", "dim_type": "distance", "nominal": 10.0, "plus": 0.05, "minus": -0.02}
+        self.assertEqual(pmi.dimension_text(a), "10.000 +0.050/+0.020")
+
+
 class Checks(unittest.TestCase):
     def test_the_plate_is_clean(self):
         self.assertEqual(pmi.check(plate(), "ASME"), [])      # Cogorno's plate is an ASME drawing
@@ -114,7 +126,7 @@ class Plan(unittest.TestCase):
         self.assertIn("functional gauge", pos["method"])
 
     def test_texts(self):
-        self.assertEqual(pmi.text(self.ann[3]), "Ø0.505 +0.015/-0.000")
+        self.assertEqual(pmi.text(self.ann[3]), "Ø0.505 +0.015/0")
         self.assertEqual(pmi.text(self.ann[9]), "[4.000]")
         self.assertEqual(pmi.text(self.ann[8]), "position | Ø0.005 (M) | A | D (M) | B")
 
@@ -197,7 +209,7 @@ class IsoGps(unittest.TestCase):
         self.assertTrue(any(s == "error" and "shaft class" in m for s, _, m in f))
 
     def test_text(self):
-        self.assertEqual(pmi.text(shaft_part(envelope=True)[0]), "Ø20.000 H7 (+0.021/+0.000) Ⓔ")
+        self.assertEqual(pmi.text(shaft_part(envelope=True)[0]), "Ø20.000 H7 (+0.021/0) Ⓔ")
 
     def test_asme_flags_dropped_characteristics(self):
         ann = shaft_part()

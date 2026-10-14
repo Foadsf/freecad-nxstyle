@@ -26,6 +26,7 @@ from .qt import QtCore, QtGui, QtWidgets
 TYPES = ["Dimension", "Feature Control Frame", "Datum Feature"]
 DIM_TYPES = ["Distance", "Diameter", "Radius"]
 MODIFIERS = ["None", "MMC", "LMC"]
+FRAME_STYLES = ["Single Frame", "Composite Frame", "Stacked Frames"]
 PX_PER_MM = 4.0           # label images: 7 mm frame height = 28 px
 
 
@@ -61,6 +62,10 @@ class PMIFeature:
         _prop(obj, "App::PropertyLinkList", "Views", g, "The model views it is displayed in (empty: all views); "
               "PMI > Display in Views changes them")
         k = obj.PMIType
+        if k != "Datum Feature":
+            _prop(obj, "App::PropertyFloat", "Uncertainty", "Inspection", "Expanded measurement uncertainty U (k = 2) "
+                  "of the method that checks it (mm); 0 = not stated. Gives the TUR and the ISO 14253-1 acceptance "
+                  "limits in the inspection plan", 0.0)
         if k == "Dimension":
             d = "Dimension"
             _prop(obj, "App::PropertyEnumeration", "DimensionType", d, "Distance, Diameter or Radius")
@@ -86,6 +91,21 @@ class PMIFeature:
                 obj.MaterialCondition = MODIFIERS
             _prop(obj, "App::PropertyStringList", "DatumReferences", f,
                   "Primary, secondary, tertiary datum, e.g. A, D(M), B")
+            low = "Lower Row"
+            for name, kind_, doc_ in (
+                    ("FrameStyle", "App::PropertyEnumeration", "Single Frame; Composite Frame (ASME Y14.5: the lower "
+                     "row refines spacing and orientation only); Stacked Frames (two single-segment frames)"),
+                    ("LowerTolerance", "App::PropertyFloat", "The lower row's tolerance (mm), tighter than the upper"),
+                    ("LowerMaterialCondition", "App::PropertyEnumeration", "Modifier on the lower row's tolerance"),
+                    ("LowerDatumReferences", "App::PropertyStringList", "The lower row's datums (a composite frame "
+                     "repeats the upper row's, in order: they orient, never locate)")):
+                _prop(obj, kind_, name, low, doc_)
+            if not obj.getEnumerationsOfProperty("FrameStyle"):     # new, or a part from before two-row frames
+                obj.FrameStyle = FRAME_STYLES
+                obj.FrameStyle = "Single Frame"
+            if not obj.getEnumerationsOfProperty("LowerMaterialCondition"):
+                obj.LowerMaterialCondition = MODIFIERS
+                obj.LowerMaterialCondition = "None"
         elif k == "Datum Feature":
             _prop(obj, "App::PropertyString", "Letter", "Datum Feature", "Datum letter", "A")
 
@@ -120,6 +140,9 @@ class PMIFeature:
 def classify(shapes):
     if len(shapes) == 1:
         return refs.feature_type(shapes[0])
+    kinds = {refs.feature_type(s) for s in shapes}
+    if len(kinds) == 1 and kinds <= {"hole", "pin"}:      # a pattern (4X): its holes, or its pins
+        return kinds.pop()
     a, b = shapes[0], shapes[1]
     if refs.surface_kind(a) == "plane" and refs.surface_kind(b) == "plane":
         na, nb = refs.plane_normal(a), refs.plane_normal(b)
@@ -176,11 +199,20 @@ def semantic(obj):
         a.update(kind="fcf", characteristic=obj.Characteristic.lower(), tolerance=float(obj.Tolerance),
                  diameter=bool(obj.ZoneDiameter), modifier=mod, datums=[parse_datum(d) for d in obj.DatumReferences
                                                                        if d.strip()])
+        style = getattr(obj, "FrameStyle", "Single Frame")
+        if style != "Single Frame" and float(getattr(obj, "LowerTolerance", 0.0)) > 0:
+            lm = {"None": ""}.get(obj.LowerMaterialCondition, obj.LowerMaterialCondition)
+            a["frame"] = "composite" if style == "Composite Frame" else "single"
+            a["lower"] = {"tolerance": float(obj.LowerTolerance), "modifier": lm,
+                          "datums": [parse_datum(d) for d in obj.LowerDatumReferences if d.strip()]}
     else:
         a.update(kind="datum", letter=(obj.Letter or "").strip().upper())
     views = [v.Label for v in getattr(obj, "Views", []) or []]
     if views:
         a["views"] = views
+    u = float(getattr(obj, "Uncertainty", 0.0) or 0.0)
+    if u > 0:
+        a["uncertainty"] = u
     return a
 
 
@@ -470,11 +502,20 @@ def default_offset(obj):
         if view_of(p) != plane:
             continue                      # another view's column
         at = App.Vector(p.Anchor) + App.Vector(p.LabelOffset)
-        used.add(pmi_views.label_row(_corners(bb), size, *plane, (at.x, at.y, at.z)))
-    row = 0
-    while row in used:
-        row += 1
-    return label_position(obj, row) - App.Vector(obj.Anchor)
+        centre = pmi_views.label_row(_corners(bb), size, *plane, (at.x, at.y, at.z), exact=True)
+        used |= pmi_views.rows_taken(centre, label_rows(p))
+    return label_position(obj, pmi_views.free_rows(used, label_rows(obj))) - App.Vector(obj.Anchor)
+
+
+def label_rows(obj):
+    """How many rows of the label column a label takes: a datum symbol (its letter, stem and triangle) and
+    a two-row frame take two, so they do not run into the next label (labels keep their size on screen)."""
+    import math
+    try:
+        _, _, h = label_svg(obj)
+    except Exception:
+        return 1
+    return max(1, math.ceil(h / gdt.H - 0.05))       # a frame (7 mm) 1, a datum symbol (13) or two rows (14) 2
 
 
 # ------------------------------------------------------------------ the labels
@@ -482,6 +523,11 @@ def label_svg(obj):
     """(svg, width mm, height mm) of the label drawn in the graphics window."""
     a = semantic(obj)
     if a["kind"] == "fcf":
+        low = pmi.lower(a)
+        if low:
+            rows = [(f"{a['tolerance']:g}", a["diameter"], a["modifier"], [tuple(d) for d in a["datums"]]),
+                    (f"{low['tolerance']:g}", a["diameter"], low.get("modifier", ""), [tuple(d) for d in low["datums"]])]
+            return gdt.stacked_frame(a["characteristic"], rows, pmi.composite(a))
         svg, w = gdt.feature_control_frame(a["characteristic"], f"{a['tolerance']:g}", a["diameter"], a["modifier"],
                                            [tuple(d) for d in a["datums"]])
         return svg, w, gdt.H
@@ -530,7 +576,7 @@ def render_label(obj, number=0):
     else:
         svg, w, h = label_svg(obj)
         W, H = int(w * PX_PER_MM) + 2, int(h * PX_PER_MM) + 2
-    extra = int(H * 1.05) if number else 0
+    extra = int(min(H, int(gdt.H * PX_PER_MM) + 2) * 1.05) if number else 0     # room for a one-row balloon
     img = QtGui.QImage(W + extra, H, QtGui.QImage.Format_RGBA8888)
     img.fill(QtCore.Qt.transparent)
     p = QtGui.QPainter(img)
@@ -549,7 +595,7 @@ def render_label(obj, number=0):
     if number:
         p.setPen(QtGui.QPen(QtGui.QColor("#0b6e79"), 2))
         p.setBrush(QtGui.QColor("#ffffff"))
-        d = H - 4
+        d = min(H, int(gdt.H * PX_PER_MM) + 2) - 4        # one row's size, on a two-row frame too
         p.drawEllipse(1, 1, d, d)
         f = p.font()
         f.setPixelSize(int(d * 0.55))
@@ -699,13 +745,28 @@ class _Panel:
         Gui.Control.closeDialog()
         return True
 
+    def uncertainty_row(self):
+        """The inspection method's expanded uncertainty U: the plan then gives the TUR and the ISO 14253-1
+        acceptance limits (0 = not stated)."""
+        self.uncertainty = QtWidgets.QDoubleSpinBox()
+        self.uncertainty.setObjectName("uncertainty")
+        self.uncertainty.setRange(0.0, 10.0)
+        self.uncertainty.setDecimals(4)
+        self.uncertainty.setSingleStep(0.001)
+        self.uncertainty.setSuffix(" mm")
+        self.uncertainty.setToolTip(self.uncertainty_row.__doc__)
+        self.layout.addRow("Measurement uncertainty U", self.uncertainty)
+
     def accept(self):
         if not self.picks:
             QtWidgets.QMessageBox.information(self.form, self.title, "Select the face(s) the PMI belongs to first.")
             return False
         doc = App.ActiveDocument
         doc.openTransaction(self.title)
-        obj = create(self.kind, self.picks, doc, **self.values())
+        values = self.values()
+        if getattr(self, "uncertainty", None) is not None:
+            values["Uncertainty"] = self.uncertainty.value()
+        obj = create(self.kind, self.picks, doc, **values)
         doc.recompute()
         doc.commitTransaction()
         Gui.Control.closeDialog()
@@ -762,6 +823,7 @@ class DimensionPanel(_Panel):
                                 f"dimension takes {general or 'no general tolerance (set one: PMI › Tolerancing)'}")
         note.setWordWrap(True)
         self.layout.addRow(note)
+        self.uncertainty_row()
         self.shapes = shapes
         self.type.currentIndexChanged.connect(lambda *_: self.nominal.setText(self.measure(shapes)))
         self.fit.textChanged.connect(self.show_fit)
@@ -774,7 +836,8 @@ class DimensionPanel(_Panel):
         try:
             n = float(self.nominal.text().split()[0])
             up, lo = iso.deviations(t, n)
-            self.limits.setText(f"{t}: {up:+.3f} / {lo:+.3f} mm  ({n + lo:.3f} to {n + up:.3f})")
+            self.limits.setText(f"{t}: {pmi.deviation_text(up)} / {pmi.deviation_text(lo)} mm  "
+                                f"({n + lo:.3f} to {n + up:.3f})")
         except (ValueError, IndexError) as e:
             self.limits.setText(str(e))
 
@@ -837,6 +900,30 @@ class FramePanel(_Panel):
             r.addWidget(mod)
             self.layout.addRow(f"{name} datum", r)
             self.datums.append((letter, mod))
+        # NX's Frame Style: a composite frame's lower row (FRTZF) refines the pattern's spacing
+        self.style = QtWidgets.QComboBox()
+        self.style.setObjectName("frameStyle")
+        self.style.addItems(FRAME_STYLES)
+        self.layout.addRow("Frame Style", self.style)
+        self.lower_tol = QtWidgets.QLineEdit("")
+        self.lower_tol.setObjectName("lowerTolerance")
+        self.lower_mod = self._modifier("lowerMaterialCondition")
+        r = QtWidgets.QHBoxLayout()
+        r.addWidget(self.lower_tol)
+        r.addWidget(self.lower_mod)
+        self.layout.addRow("Lower row tolerance", r)
+        self.lower_datums = QtWidgets.QLineEdit("")
+        self.lower_datums.setObjectName("lowerDatums")
+        self.lower_datums.setPlaceholderText("e.g. A (repeats the upper row's, in order)")
+        self.layout.addRow("Lower row datums", self.lower_datums)
+
+        def style_changed(*_):
+            on = self.style.currentText() != "Single Frame"
+            for w in (self.lower_tol, self.lower_mod, self.lower_datums):
+                w.setEnabled(on)
+        self.style.currentIndexChanged.connect(style_changed)
+        style_changed()
+        self.uncertainty_row()
 
     @staticmethod
     def _modifier(name):
@@ -855,9 +942,18 @@ class FramePanel(_Panel):
             t = letter.text().strip().upper()
             if t:
                 ds.append(t + {"MMC": "(M)", "LMC": "(L)"}.get(m.currentText(), ""))
-        return {"Characteristic": self.characteristic.currentText(), "Tolerance": tol,
-                "ZoneDiameter": self.diameter.isChecked(), "MaterialCondition": self.modifier.currentText(),
-                "DatumReferences": ds}
+        out = {"Characteristic": self.characteristic.currentText(), "Tolerance": tol,
+               "ZoneDiameter": self.diameter.isChecked(), "MaterialCondition": self.modifier.currentText(),
+               "DatumReferences": ds, "FrameStyle": self.style.currentText()}
+        if self.style.currentText() != "Single Frame":
+            try:
+                low = float(self.lower_tol.text().replace(",", "."))
+            except ValueError:
+                low = 0.0
+            out.update(LowerTolerance=low, LowerMaterialCondition=self.lower_mod.currentText(),
+                       LowerDatumReferences=[d.strip().upper() for d in self.lower_datums.text().replace("|", ",")
+                                             .split(",") if d.strip()])
+        return out
 
 
 class DatumPanel(_Panel):
@@ -1179,6 +1275,11 @@ def inherit(view, objs=None):
             size_dim = size_dimension_on(page, o)
             params = {"characteristic": a["characteristic"], "tolerance": f"{a['tolerance']:g}",
                       "diameter": a["diameter"], "modifier": a["modifier"], "datums": [tuple(d) for d in a["datums"]]}
+            low = pmi.lower(a)
+            if low:                             # a two-row frame keeps its lower row on the drawing
+                params["lower"] = (f"{low['tolerance']:g}", low.get("modifier", ""),
+                                   [tuple(d) for d in low.get("datums", [])])
+                params["composite"] = pmi.composite(a)
             if size_dim is not None:
                 sym = gdt_ui.place_frame(params, page, "dimension", size_dim)
             else:
@@ -1224,13 +1325,22 @@ def size_dimension_on(page, o):
 
 def tolerancing_note(page):
     """The drawing's tolerancing note near the title block (ISO: 'Tolerancing ISO 8015', 'General
-    tolerances ISO 2768-mK'); one per sheet, updated in place."""
+    tolerances ISO 2768-mK'); one per sheet, updated in place. None when the sheet's title block has
+    a general tolerances field that is filled in: it says so there (Populate Title Block)."""
     doc = page.Document
     std, general = settings(doc)
     lines = (["Tolerancing ISO 8015"] if std == "ISO" else ["Dimensioning and tolerancing per ASME Y14.5"])
     if general:
         lines.append(f"General tolerances {general}")
     note = next((v for v in page.Views if getattr(v, "NX_Pmi", "") == "tolerancing-note"), None)
+    try:
+        in_title_block = bool(dict(page.Template.EditableTexts).get("general_tolerances", "").strip())
+    except Exception:
+        in_title_block = False
+    if in_title_block:
+        if note is not None:
+            doc.removeObject(note.Name)
+        return None
     if note is None:
         note = doc.addObject("TechDraw::DrawViewAnnotation", "TolerancingNote")
         page.addView(note)

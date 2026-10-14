@@ -199,6 +199,15 @@ def gen_ribbons():
 
 
 # ------------------------------------------------------------------------------------- tutorials
+def key_of(step):
+    """The tutorial's letter(s), from its title 'AA: ...' (A to Z, then AA, AB, ...)."""
+    return step["tutorial"].split(":", 1)[0].strip()
+
+
+def order(key):
+    return len(key), key
+
+
 def gen_tutorials():
     if not os.path.isfile(RESULTS):
         print(f"no {RESULTS}: tutorial step tables skipped")
@@ -206,8 +215,8 @@ def gen_tutorials():
     data = json.load(open(RESULTS, encoding="utf-8"))
     steps = data["steps"]
     by = collections.OrderedDict()
-    for s in steps:
-        by.setdefault(s["tutorial"][:1], []).append(s)
+    for s in sorted(steps, key=lambda s: (order(key_of(s)), s["n"])):
+        by.setdefault(key_of(s), []).append(s)
     badge = {"same": "[.outcome.same]#same#", "differs": "[.outcome.differs]#differs#",
              "limit": "[.outcome.limit]#limit#", "missing": "[.outcome.missing]#missing#",
              "skipped": "[.outcome.skipped]#skipped#", "FAILED": "[.outcome.failed]#FAILED#"}
@@ -242,9 +251,9 @@ def import_results(path):
     steps = data["steps"]
     # a run of some tutorials (--tutorials O) replaces those tutorials only; the others stay as published
     if os.path.isfile(RESULTS):
-        new = {s["tutorial"][:1] for s in steps}
-        old = [s for s in json.load(open(RESULTS, encoding="utf-8"))["steps"] if s["tutorial"][:1] not in new]
-        steps = sorted(old + steps, key=lambda s: (s["tutorial"][:1], s["n"]))
+        new = {key_of(s) for s in steps}
+        old = [s for s in json.load(open(RESULTS, encoding="utf-8"))["steps"] if key_of(s) not in new]
+        steps = sorted(old + steps, key=lambda s: (order(key_of(s)), s["n"]))
     keep = {"steps": steps, "info": {"FreeCAD": data.get("info", {}).get("FreeCAD", [])}}
     text = json.dumps(keep, indent=1, ensure_ascii=False)
     home = os.path.expanduser("~")

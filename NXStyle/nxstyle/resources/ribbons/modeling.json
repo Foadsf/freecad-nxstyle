@@ -150,7 +150,9 @@
       ]},
       {"name": "Tolerance", "items": [
         {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"},
-        {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"}
+        {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"},
+        {"cmd": "NXStyle_PositionEvaluation", "label": "Position Evaluation", "size": "large"},
+        {"cmd": "NXStyle_GaugeStudy", "label": "Gauge Study", "size": "large"}
       ]},
       {"name": "Space", "items": [
         {"cmd": "NXStyle_SimpleInterference", "label": "Simple Interference", "size": "large"},
@@ -172,7 +174,9 @@
       {"name": "Inspection", "items": [
         {"cmd": "NXStyle_PMIInspectionPlan", "label": "Inspection Plan", "size": "large"},
         {"cmd": "NXStyle_ToleranceStackup", "label": "Tolerance Stackup", "size": "large"},
-        {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"}
+        {"cmd": "NXStyle_PinLocation", "label": "Pin Location", "size": "large"},
+        {"cmd": "NXStyle_PositionEvaluation", "label": "Position Evaluation", "size": "large"},
+        {"cmd": "NXStyle_GaugeStudy", "label": "Gauge Study", "size": "large"}
       ]},
       {"name": "Model View", "items": [
         {"cmd": "NXStyle_PMIDisplayInViews", "label": "Display in Views", "size": "large"},

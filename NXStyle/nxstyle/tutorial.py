@@ -31,10 +31,12 @@ import FreeCADGui as Gui
 
 from .qt import QtCore, QtWidgets, Qt, mouse_event
 from .ribbon import CommandButton
+from .tutorial_inspection import InspectionTutorials
 from .tutorial_katydid import KatydidTutorials
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
@@ -87,7 +89,7 @@ class ModalWatcher(QtCore.QObject):
             w.close()
 
 
-class Replay(KatydidTutorials, PrecisionTutorials):
+class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -375,10 +377,12 @@ class Replay(KatydidTutorials, PrecisionTutorials):
         X = list(getattr(self, "X_STEPS", lambda: [])())
         Y = list(getattr(self, "Y_STEPS", lambda: [])())
         Z = list(getattr(self, "Z_STEPS", lambda: [])())
-        wanted = (os.environ.get("NXSTYLE_TUTORIALS")
-                  or "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z").upper().split(",")
+        AA, AB, AC = (list(getattr(self, f"{k}_STEPS", lambda: [])()) for k in ("AA", "AB", "AC"))
+        wanted = [w.strip() for w in (os.environ.get("NXSTYLE_TUTORIALS") or ALL_TUTORIALS).upper().split(",")]
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
+        if "AC" in wanted and "V" not in wanted:     # AC's sheet is the guide bush V released
+            wanted.insert(wanted.index("AC"), "V")
         if "V" in wanted and "T" not in wanted:      # V releases tutorial T's guide bush
             wanted.insert(wanted.index("V"), "T")
         if "KatydidWorkbench" not in Gui.listWorkbenches():
@@ -387,7 +391,8 @@ class Replay(KatydidTutorials, PrecisionTutorials):
             wanted = [w for w in wanted if w != "W"]          # SheetMetal off (--no-sheetmetal)
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
-                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z)):
+                           ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z),
+                           ("AA", AA), ("AB", AB), ("AC", AC)):
             if key in wanted:
                 yield from steps
 
@@ -5929,7 +5934,7 @@ class Replay(KatydidTutorials, PrecisionTutorials):
             last = self.rows[-1] if self.rows else {}
             with open(os.path.join(OUT, "progress.log"), "a", encoding="utf-8") as f:
                 f.write(f"{time.strftime('%H:%M:%S')} {mb:>6} MB  start {name}"
-                        f"  (last row: {last.get('tutorial', '')[:1]}{last.get('n', '')} {last.get('outcome', '')}"
+                        f"  (last row: {last.get('tutorial', '').split(':', 1)[0]}{last.get('n', '')} {last.get('outcome', '')}"
                         f" {last.get('detail', '')[:200]})\n")
                 f.flush()
                 os.fsync(f.fileno())

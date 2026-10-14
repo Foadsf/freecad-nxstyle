@@ -23,6 +23,31 @@ NX asks for the size, projection and scale in one Sheet dialog; in FreeCAD they 
 Changing the template later keeps the views where they are, as NX's *Edit Sheet* does.
 FreeCAD's default sheet is A4.
 
+=== Title block and revision block
+
+*Home › Drawing › Populate Title Block* fills the sheet's title block the way NX fills it from the part's attributes.
+A released drawing's title block carries the part number, the revision, the title, the material, the scale, the sheet, the tolerancing note, and who made and approved it and when (Drake, _Dimensioning and Tolerancing Handbook_, ch. 4; ISO 7200).
+The values come from these sources; the first one that has a value wins:
+
+. the part's newest xref:data-management.adoc[Strata] release: part number, revision, state, who released it, who approved it, and the date. The title is what the part's first release called it, because a later release's description says what changed.
+. the document's NX attributes `DB_PART_NO`, `DB_PART_REV`, `DB_PART_NAME` and `DB_PART_DESC`, in its `Meta`, as Teamcenter would fill them.
+. the document itself: its label, author and company.
+
+The drawing adds what it knows: the scale, the sheet number, the material and mass of the part it shows, and the general tolerance of its PMI (`ISO 2768-mK`).
+With no general tolerance, the field reads `ISO 8015` (or `ASME Y14.5-2018`). ISO 8015 needs no mention beside a general tolerance, because it applies whenever ISO GPS is invoked.
+The title block then states the tolerancing, so the note that *Inherit PMI* put on the sheet is removed and is not added again.
+The dialog shows the values to check before OK.
+
+If the sheet's template has no title block fields, as FreeCAD's default sheet has none, the dialog gives the sheet FreeCAD's ISO 5457 template of the same size, with an ISO 7200 title block.
+The template's sample texts are cleared.
+
+*Revision block* puts the revision history in the sheet's top right corner: one row per release, with its revision, its description (what changed), its date and who approved it.
+It is replaced when you run the command again.
+
+image::tutorial-AC-02-sheet.png[The guide bush's sheet: title block from release B, revision block with A and B]
+
+xref:tutorials/ac.adoc[Tutorial AC] fills the guide bush's sheet after its two releases.
+
 == Views
 
 [cols="1,3",options="header"]

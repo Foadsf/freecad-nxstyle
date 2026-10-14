@@ -67,7 +67,14 @@ class ClaimFeature:
     def execute(self, obj):
         import Part
         if obj.Source is not None and getattr(obj.Source, "Shape", None) is not None and obj.Source.Shape.Solids:
-            obj.Shape = Part.getShape(obj.Source, "", transform=True)     # where the source is
+            s = global_shape(obj.Source)                                  # where the source is, in its assembly
+            try:
+                own = obj.getGlobalPlacement().multiply(obj.Placement.inverse())   # the claim's own container
+            except Exception:
+                own = App.Placement()
+            if not own.isIdentity():
+                s.transformShape(own.inverse().toMatrix())
+            obj.Shape = s
             return
         pl = obj.Placement                         # a box at its own placement (assigning a shape resets it)
         obj.Shape = Part.makeBox(float(obj.Length), float(obj.Width), float(obj.Height))
@@ -153,11 +160,42 @@ def claims(doc):
     return [o for o in doc.Objects if isinstance(getattr(o, "Proxy", None), ClaimFeature)]
 
 
-def parts(doc):
-    """The solids of the layout that claims apply to: top-level parts, bodies and links (not the claims,
-    not features consumed by others, not the check's own result)."""
-    out = []
+def global_shape(o):
+    """o's shape where it really is: through the container it sits in (an assembly, an App::Part), whose
+    placement Part.getShape(o, transform=True) alone leaves out (measured: a link at y 50 in an assembly
+    moved to x 100 came out at x 0)."""
+    import Part
+    try:
+        parents = o.Parents
+    except Exception:
+        parents = []
+    if parents:
+        top, sub = parents[0]
+        return Part.getShape(top, sub, transform=True)
+    return Part.getShape(o, "", transform=True)
+
+
+def link_sources(doc):
+    """Names of hidden objects that links in the document show: the source of instances, not a part of the
+    layout itself (counting it put a second block at the origin)."""
+    out = set()
     for o in doc.Objects:
+        if o.TypeId == "App::Link" and o.LinkedObject is not None and o.LinkedObject.Document is doc:
+            src = o.LinkedObject
+            if not getattr(src, "Visibility", True):
+                out.add(src.Name)
+    return out
+
+
+def parts(doc):
+    """The solids of the layout that claims apply to: top-level parts, bodies and links, where they are in
+    their assembly (not the claims, not features consumed by others, not the hidden sources of links, not
+    the check's own result)."""
+    out = []
+    sources = link_sources(doc)
+    for o in doc.Objects:
+        if o.Name in sources:
+            continue
         if isinstance(getattr(o, "Proxy", None), ClaimFeature) or o.Name.startswith("ClaimViolations"):
             continue
         if o.isDerivedFrom("PartDesign::Feature") and not o.isDerivedFrom("PartDesign::Body"):
@@ -168,8 +206,7 @@ def parts(doc):
                for p in o.InList):
             continue
         try:
-            import Part
-            s = Part.getShape(o, "", transform=True)
+            s = global_shape(o)
         except Exception:
             continue
         if s.isNull() or not s.Solids:
@@ -206,7 +243,6 @@ def _grown(claim_shape, margin):
 def check(doc):
     """Check every claim. Returns (findings, offending solids); findings are dicts: kind ('outside',
     'intrusion', 'overlap', 'unclaimed'), claim, other, volume, text."""
-    import Part
     doc.recompute()
     cs = claims(doc)
     layout = parts(doc)
@@ -216,13 +252,13 @@ def check(doc):
         for m in c.Members:
             owner_of.setdefault(m.Name, []).append(c)
     for c in cs:
-        cshape = c.Shape
+        cshape = global_shape(c)
         margin = float(c.Margin)
         own = []
         if c.ClaimType == "Keep-in":
             inner = _inner(cshape, margin)
             for m in c.Members:
-                ms = Part.getShape(m, "", transform=True)
+                ms = global_shape(m)
                 out = ms.cut(inner)
                 if out.Volume > TOL:
                     findings.append({"kind": "outside", "claim": c.Label, "other": m.Label, "volume": out.Volume,
@@ -353,11 +389,10 @@ class ClaimPanel:
         mem.setObjectName("members")
         lay.addRow(mem)
         if self.members:
-            import Part
             bb = None
             for o in self.members:
                 try:
-                    b = Part.getShape(o, "", transform=True).BoundBox
+                    b = global_shape(o).BoundBox
                     bb = b if bb is None else bb.united(b)
                 except Exception:
                     continue

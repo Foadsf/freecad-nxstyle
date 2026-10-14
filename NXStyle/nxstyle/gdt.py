@@ -106,6 +106,34 @@ def feature_control_frame(characteristic, tolerance, diameter=False, modifier=""
     return _svg(width, H, frame + lines + "".join(parts)), width
 
 
+def stacked_frame(characteristic, rows, composite=True):
+    """SVG for a two-row frame (ASME Y14.5 composite, or two single-segment frames stacked).
+
+    rows: [(tolerance, diameter, modifier, datums), ...], the pattern-locating row first. A composite
+    frame has one symbol cell spanning the rows (the lower rows refine spacing and orientation only);
+    stacked single-segment frames repeat the symbol in each row. Returns (svg text, width, height mm)."""
+    if characteristic not in SYMBOLS:
+        raise ValueError(f"unknown characteristic {characteristic!r}")
+    body, width = [], CELL
+    for i, (tolerance, diameter, modifier, datums) in enumerate(rows):
+        svg, w = feature_control_frame(characteristic, tolerance, diameter, modifier, datums)
+        inner = svg[svg.index(">", svg.index("<svg")) + 1: svg.rindex("</svg>")]
+        if i:                                       # editable names stay unique across the rows
+            inner = inner.replace('freecad:editable="tolerance"', f'freecad:editable="tolerance{i + 1}"')
+            inner = inner.replace('freecad:editable="datum', f'freecad:editable="row{i + 1}_datum')
+        body.append(f'<g transform="translate(0,{i * H:.3f})">{inner}</g>')
+        width = max(width, w)
+    height = H * len(rows)
+    if composite and len(rows) > 1:                 # one symbol cell for all rows: blank the others, draw it once
+        body.append(f'<rect x="{STROKE:.3f}" y="{STROKE:.3f}" width="{CELL - 2 * STROKE:.3f}" '
+                    f'height="{height - 2 * STROKE:.3f}" fill="white" stroke="none"/>')
+        body.append(f'<rect x="{STROKE / 2:.3f}" y="{STROKE / 2:.3f}" width="{CELL - STROKE:.3f}" '
+                    f'height="{height - STROKE:.3f}" fill="none" stroke="black" stroke-width="{STROKE}"/>')
+        body.append(f'<g transform="translate(0,{(height - H) / 2:.3f})"><path d="{SYMBOLS[characteristic]}" '
+                    f'fill="none" stroke="black" stroke-width="{STROKE}" stroke-linejoin="round"/></g>')
+    return _svg(width, height, "".join(body)), width, height
+
+
 def datum_feature_symbol(letter, attach="bottom"):
     """SVG for a datum feature symbol: the letter in a square, a stem and a filled triangle.
 
@@ -152,3 +180,12 @@ def callout(characteristic, tolerance, diameter=False, modifier="", datums=()):
     tol = ("Ø" if diameter else "") + tolerance + (f" ({MODIFIERS[modifier]})" if MODIFIERS.get(modifier) else "")
     ds = [n + (f" ({MODIFIERS[m]})" if MODIFIERS.get(m) else "") for n, m in datums]
     return " | ".join([characteristic, tol] + ds)
+
+
+def stacked_callout(characteristic, rows, composite=True):
+    """A two-row frame as text: 'position | Ø0.25 (M) | A | B | C / Ø0.05 (M) | A' (composite: the
+    symbol once) or with the symbol repeated after the slash (two single-segment frames)."""
+    texts = [callout(characteristic, *row) for row in rows]
+    if composite:
+        texts = texts[:1] + [t[len(characteristic) + 3:] for t in texts[1:]]
+    return " / ".join(texts)

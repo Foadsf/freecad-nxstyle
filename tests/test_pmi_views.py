@@ -82,6 +82,14 @@ class Labels(unittest.TestCase):
             for row in (0, 3, 7):
                 p = pv.label_point(BOX, SIZE, *pv.STANDARD[name], row=row)
                 self.assertEqual(pv.label_row(BOX, SIZE, *pv.STANDARD[name], p), row, name)
+                self.assertAlmostEqual(pv.label_row(BOX, SIZE, *pv.STANDARD[name], p, exact=True), row, 9)
+
+    def test_tall_labels_take_two_rows(self):
+        used = pv.rows_taken(0, 1) | pv.rows_taken(1.5, 2)          # a frame, then a datum symbol
+        self.assertEqual(used, {0, 1, 2})
+        self.assertEqual(pv.free_rows(used, 1), 3)
+        self.assertEqual(pv.free_rows({0, 2}, 2), 3.5)               # row 1 alone is too small
+        self.assertEqual(pv.free_rows({0, 2}, 1), 1)
 
     def test_shown(self):
         self.assertTrue(pv.shown([], "Top"))                 # displayed in all views

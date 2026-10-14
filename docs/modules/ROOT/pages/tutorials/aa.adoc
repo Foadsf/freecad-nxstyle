@@ -1,0 +1,96 @@
+= Tutorial AA: Composite position, evaluated from CMM data
+:description: A cover plate whose four holes are located to the datums by one row of a composite frame and held to each other by the other row; the inspection plan's two rows and two gauges, the rule on the lower row's datums, and the measured holes evaluated against both rows.
+
+[horizontal]
+Books:: Cogorno, _Geometric Dimensioning and Tolerancing for Mechanical Design_, ch. 12 (composite position) and ch. 13 (graphic analysis); Drake, _Dimensioning and Tolerancing Handbook_, ch. 5
+Standards:: ASME Y14.5 (composite position tolerancing)
+You learn:: Frame Style Composite Frame, PLTZF and FRTZF, the gauges of a composite frame, Analysis › Position Evaluation
+Sizes:: A plate 80 × 80 × 10 with four holes Ø5 +0.2/0 on a 40 mm square, 20 mm from datums B and C
+
+A cover plate is bolted on with four screws, and the plate's holes must line up with the tapped holes underneath.
+The pattern may sit 0.2 mm off where datums B and C put it.
+The holes must stay within 0.04 mm of each other, square to A, because the screws go into a matching pattern.
+One composite frame says both things.
+
+The hole layout is that of Cogorno's graphic analysis example (ch. 13), converted to millimetres. The measured data are ours.
+
+== Step by step
+
+=== 1. The plate, its datums and its holes
+
+The plate is made by script. Its datums are A (underside), B (left) and C (front), and its holes are dimensioned 4X Ø5 +0.2/0, all on the four hole faces.
+The part's standard is ASME Y14.5.
+
+=== 2. The composite frame
+
+Select the four hole faces, then *PMI › Feature Control Frame*:
+
+* *Position*, Ø ticked, `0.2`, *MMC*, datums `A` `B` `C`;
+* *Frame Style* *Composite Frame*, lower row `0.04`, *MMC*, datum `A`.
+
+image::tutorial-AA-01-dialog.png[The Feature Control Frame dialog with the lower row]
+
+The label is a two-row frame with one position symbol: `position | Ø0.200 (M) | A | B | C / Ø0.040 (M) | A`.
+
+=== 3. The inspection plan
+
+*PMI › Inspection Plan* lists each row as its own characteristic:
+
+* *PLTZF*: Ø0.2 at MMC, up to Ø0.4 at LMC, which locates and orients the pattern to A|B|C;
+* *FRTZF*: Ø0.04 at MMC, up to Ø0.24 at LMC, which holds the spacing and the orientation to A.
+
+The functional gauge has two gauges.
+The first has pins of Ø4.8 on A, B and C.
+The second has pins of Ø4.96 that float on A, with no stops for B and C.
+
+image::tutorial-AA-02-plan.png[Two rows, two gauges]
+
+=== 4. The rule on the lower row's datums
+
+Set the frame's *LowerDatumReferences* to `B` in the property view: the plan's check reports an error.
+A composite lower row may only repeat the upper row's datums, in their order. They orient the row and never locate it.
+Then set it back to `A`.
+
+=== 5. Position Evaluation
+
+Select the frame, then *Analysis › Position Evaluation*.
+The table lists the true positions from B and from C, read from the model.
+Type the CMM's results into the table:
+
+[cols="1,1,1,1",options="header"]
+|===
+| Hole | From B | From C | Size
+| 1 | 19.94 | 20.06 | 5.12
+| 2 | 20.08 | 60.08 | 5.16
+| 3 | 60.12 | 59.96 | 5.20
+| 4 | 60.04 | 19.96 | 5.08
+|===
+
+The result is ACCEPT.
+
+* Each hole's bonus is its size less 5.0. With it, the pattern-locating zones are 63 % used.
+* The feature-relating zones may slide and turn on A. Fitted to the holes, they are 72 % used.
+
+image::tutorial-AA-03-evaluation.png[Both rows pass]
+
+=== 6. If the lower row could not turn
+
+Double-click the evaluation, then choose *Lower row zones* › *Translate only*.
+This is what a lower row repeating A|B would allow.
+The same holes now use 103 % of the zones: REJECT.
+The datums a composite lower row repeats decide whether this part passes.
+
+image::tutorial-AA-04-pmi.png[The plate with its composite frame]
+
+== The replay
+
+include::partial$generated/tutorial-AA.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX's Feature Control Frame has a composite frame style as well. NX-Style also checks the lower row's datums.
+* NX states the requirement but does not evaluate measured data; CMM software does that.
+  *Position Evaluation* is NX-Style's.
+* STEP AP242 receives the two rows as two position tolerances, because OpenCASCADE cannot link them.

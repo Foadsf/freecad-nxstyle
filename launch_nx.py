@@ -564,7 +564,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
                          "G Shaft Support assembly, H GD&T plate drawing, I Gasket (trim, fillet, "
@@ -572,7 +572,11 @@ def main(argv: list[str] | None = None) -> int:
                          "M U-Bracket (parent/child, suppress), N U-Bracket drawing (runs M first), "
                          "O Grasshopper basics, P waffle canopy, Q faceted planter, R masterclass tube, all on the Katydid canvas, "
                          "S tolerance stack-up of a pin, T guide bush documented to ISO GPS with 3D PMI and its drawing, "
-                         "U volume claims and assembly clearance, V release and engineering change (runs T first))")
+                         "U volume claims and assembly clearance, V release and engineering change (runs T first), "
+                         "W sheet metal bracket, X pin location of a laser module, Y PMI model views, "
+                         "Z MBD exchange through STEP AP242, AA composite position evaluated from CMM data, "
+                         "AB measurement capability (TUR, guard bands, gauge studies), "
+                         "AC title block and revision block from the release (runs T and V first))")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
@@ -680,7 +684,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{'PASS' if c['ok'] else 'FAIL'}  {c['name']}: {c.get('detail', '')}")
             return 1 if failed else 0
         for s in result.get("steps", []):
-            print(f"{s['tutorial'][:1]}{s['n']:>3} {s['outcome']:<8} {s['nx']}  [{s['replay']}]  {s['detail']}")
+            print(f"{s['tutorial'].split(':', 1)[0]}{s['n']:>3} {s['outcome']:<8} {s['nx']}  [{s['replay']}]  {s['detail']}")
         return 1 if any(s["outcome"] == "FAILED" for s in result.get("steps", [])) else 0
 
     kwargs = {}

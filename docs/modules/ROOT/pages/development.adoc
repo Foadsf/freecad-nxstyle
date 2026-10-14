@@ -50,12 +50,15 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `drf.py` | Datum reference frames: the degrees of freedom datums arrest, in order, and the motions left free (no FreeCAD).
 | `sheetmetal.py`, `sheetmetal_ui.py` | Bend allowance, bend deduction and flat length (no FreeCAD); Sheet Metal Preferences and Flat Pattern on the bundled SheetMetal add-on.
 | `alignment.py`, `alignment_ui.py` | Pin location: fit, translation, rotation, pointing error and thermal mismatch (no FreeCAD); the Pin Location analysis object and dialog.
+| `position_eval.py`, `position_ui.py` | Position of a measured pattern: bonus, the upper row against the datums, the lower row's minimax best fit (no FreeCAD); the Position Evaluation object and its measurement table.
+| `msa.py`, `msa_ui.py` | Measurement capability: gauge repeatability by the range method, TUR, ISO 14253-1 acceptance limits (no FreeCAD); the Gauge Study object.
+| `titleblock.py`, `titleblock_ui.py` | Title block values and the revision block SVG (no FreeCAD); Populate Title Block from Strata releases and part attributes.
 | `refs.py` | Picked faces as stable references; positions along a direction; hole or pin.
 | `prefs.py` | NX values in FreeCAD's parameter tree (they land in the NX profile's `user.cfg`).
 | `config.py` | Settings and their defaults (xref:settings.adoc[]).
 | `plm.py` | Strata as the data management.
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
-| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `tutorial_katydid.py` and `tutorial_precision.py` hold tutorials O–R and S–X.
+| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `tutorial_katydid.py`, `tutorial_precision.py` and `tutorial_inspection.py` hold tutorials O–R, S–Z and AA–AC.
 |===
 
 == Ribbon files

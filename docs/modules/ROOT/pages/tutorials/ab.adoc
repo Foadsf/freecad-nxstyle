@@ -1,0 +1,75 @@
+= Tutorial AB: Measurement capability
+:description: A bearing plate whose characteristics carry the uncertainty of the method that checks them: the inspection plan gives each TUR and the ISO 14253-1 acceptance limits; two gauge studies, one of them Drake's worked example.
+
+[horizontal]
+Books:: Drake, _Dimensioning and Tolerancing Handbook_, ch. 20 (measurement systems analysis) and ch. 25 (gauge repeatability and reproducibility)
+Standards:: ISO 14253-1 (decision rules), ANSI/NCSL Z540.3 (test uncertainty ratio), AIAG MSA
+You learn:: Measurement uncertainty U on PMI, TUR, guard-banded acceptance limits, Analysis › Gauge Study
+Sizes:: A plate 60 × 40 × 12 with a bore Ø20 H7
+
+A tolerance is only as good as the measurement that checks it.
+A caliper reading of 12.04 on a 12 ±0.05 thickness does not prove that the part is good.
+The inspection method's uncertainty belongs with the characteristic.
+
+The inspection methods' uncertainties are ours. The first gauge study uses the ranges of Drake's worked example.
+
+== Step by step
+
+=== 1. The plate
+
+The plate is made by script. Its datums are A, B and C, the bore is positioned Ø0.2 to A|B|C (RFS, as in Drake's gauge study), and the general tolerances are ISO 2768-mK.
+
+=== 2. The characteristics and their methods
+
+In each PMI dialog, *Measurement uncertainty U* is the expanded uncertainty of the method:
+
+[cols="2,1,2",options="header"]
+|===
+| Characteristic | U | Method
+| Bore Ø20 H7 | 0.002 | bore gauge
+| Thickness 12 ±0.05 | 0.01 | micrometer
+| Flatness 0.01 of the top | 0.004 | surface plate and indicator
+|===
+
+=== 3. The inspection plan
+
+*PMI › Inspection Plan* adds a TUR and the acceptance limits to each characteristic:
+
+----
+U 0.002: TUR 5.2:1 (meets 4:1); accept 20.002 to 20.019 (ISO 14253-1)
+U 0.010: TUR 5.0:1 (meets 4:1); accept 11.960 to 12.040 (ISO 14253-1)
+U 0.004: TUR 1.2:1 (below 4:1: guard band or a better method); accept 0.006 max (ISO 14253-1)
+----
+
+A bore reading of 20.020 is inside the tolerance but within U of its limit, so it proves nothing.
+The flatness check uses 80 % of its tolerance on uncertainty: accept up to 0.006, or measure it better.
+
+image::tutorial-AB-01-plan.png[TUR and acceptance limits in the inspection plan]
+
+=== 4. Drake's gauge study
+
+Select the position frame, then *Analysis › Gauge Study*: gauge `CMM`, ten parts with two readings each, and spread *3 sigma (Drake ch. 25)*.
+The average range is 0.032, so σ = 0.032 / 1.128 = 0.0284 and 3σ = 0.085: 42.6 % of the 0.2 tolerance.
+That is over 30 %, so the measurement system is not acceptable, as in the book.
+With AIAG's 6σ the share would be twice that.
+
+image::tutorial-AB-02-drake.png[Drake's example: 42.6 %, unacceptable]
+
+=== 5. An air gauge on the bore
+
+The same study on the bore H7 with an air gauge, at 6σ, uses under 7 % of the 0.021 tolerance: acceptable.
+The study stays in the Part Navigator beside the PMI it qualifies, and recomputes if the tolerance changes.
+
+image::tutorial-AB-03-air.png[The air gauge study]
+
+== The replay
+
+include::partial$generated/tutorial-AB.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+NX's PMI has no measurement uncertainty, TUR or gauge study; quality systems hold them.
+These tools are NX-Style's (xref:inspection.adoc[Inspection]).
+The range method of one operator gives repeatability only; studies with several operators (reproducibility) are not implemented.

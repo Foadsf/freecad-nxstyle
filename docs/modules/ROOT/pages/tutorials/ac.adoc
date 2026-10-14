@@ -1,0 +1,48 @@
+= Tutorial AC: Title block and revision block from the release
+:description: The guide bush's drawing gets its title block from its Strata release B and a revision block listing releases A and B, so the sheet says what the PLM record says.
+
+[horizontal]
+Books:: Drake, _Dimensioning and Tolerancing Handbook_, ch. 4 (title block, revision block); Wünsch, Pilz and Vajna, _Siemens NX für Einsteiger_, 6.3 (Titelfeld ausfüllen)
+Standards:: ISO 7200 (title block fields), ISO 5457 (sheet sizes and frame)
+You learn:: Drafting › Populate Title Block, the revision block from the release history
+Runs first:: xref:tutorials/t.adoc[T] (the guide bush and its drawing) and xref:tutorials/v.adoc[V] (releases A and B)
+
+The guide bush was released as BUSH-100 revision A, then changed (ECO-001: the bore became F7) and released as revision B.
+Its drawing should say so, without anyone retyping the PLM record.
+
+== Step by step
+
+=== 1. The drawing
+
+kbd:[Ctrl+Shift+D] switches to Drafting, and the sheet from tutorial T is selected.
+It uses FreeCAD's default template, which has no title block.
+
+=== 2. Populate Title Block
+
+*Home › Drawing › Populate Title Block*.
+The sheet has no title block, so the dialog gives it the A4 ISO 5457 template with an ISO 7200 title block.
+The fields come filled:
+
+* drawing number `BUSH-100` and revision `B`, from release B;
+* the title `Guide bush`, which is what release A called the part;
+* the status `Released`, who released it and the date;
+* the general tolerances from the PMI: `ISO 2768-mK`. The tolerancing note that Inherit PMI put on the sheet in tutorial T goes, because the title block states it now;
+* the scale and the sheet, from the drawing.
+
+*Revision block* is ticked: one row for A and one for B, each with what changed.
+
+image::tutorial-AC-01-dialog.png[The fields as they come from the release]
+
+image::tutorial-AC-02-sheet.png[The sheet with its title block and revision block]
+
+== The replay
+
+include::partial$generated/tutorial-AC.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX fills the title block from Teamcenter attributes such as `DB_PART_NO` and `DB_PART_REV`; here they come from Strata's release record, or from the same attributes in the document's `Meta`.
+* NX's revision table is a tabular note that you fill in. NX-Style draws it from the releases.
+* Zones (the revision's place on the sheet grid) are not recorded.

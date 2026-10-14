@@ -15,6 +15,7 @@
 * xref:sheet-metal.adoc[Sheet Metal]
 * xref:pmi.adoc[PMI and technical product documentation]
 * xref:tolerance-analysis.adoc[Tolerance analysis]
+* xref:inspection.adoc[Inspection: measured parts and gauges]
 * xref:pin-location.adoc[Pin location]
 * xref:clearance.adoc[Assembly clearance and volume claims]
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
@@ -50,6 +51,9 @@
 * xref:tutorials/x.adoc[X: Locating a laser module with two pins]
 * xref:tutorials/y.adoc[Y: PMI in model views]
 * xref:tutorials/z.adoc[Z: MBD exchange through STEP AP242]
+* xref:tutorials/aa.adoc[AA: Composite position, evaluated from CMM data]
+* xref:tutorials/ab.adoc[AB: Measurement capability]
+* xref:tutorials/ac.adoc[AC: Title block and revision block from the release]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

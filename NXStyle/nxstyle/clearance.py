@@ -108,8 +108,8 @@ def create(doc=None, objects=(), second=(), zone=0.0, label="Clearance Set"):
 
 # ------------------------------------------------------------------ geometry
 def solid_of(o):
-    import Part
-    s = Part.getShape(o, "", transform=True)
+    from . import claims
+    s = claims.global_shape(o)
     return s if not s.isNull() and s.Solids else None
 
 

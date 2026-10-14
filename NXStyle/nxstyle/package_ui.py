@@ -175,8 +175,9 @@ def export_pmi(doc, folder):
          "annotations": anns}, indent=1, ensure_ascii=False))
     plan = pmi.inspection_plan(anns, general=general)
     package.write_csv(os.path.join(folder, "inspection_plan.csv"), package.dict_rows(
-        plan, ["number", "requirement", "kind", "nominal", "lower", "upper", "tolerance_from", "upper_at_departure",
-               "datums", "feature", "method", "note"]))
+        plan, ["number", "requirement", "kind", "segment", "nominal", "lower", "upper", "tolerance_from",
+               "upper_at_departure", "uncertainty", "tur", "accept_lower", "accept_upper", "datums", "feature", "method",
+               "note"]))
     g = pmi.gauges(anns, general)
     if g:
         package.write_csv(os.path.join(folder, "functional_gauge.csv"), package.dict_rows(g, ["element", "size", "for",
