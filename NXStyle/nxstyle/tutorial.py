@@ -96,11 +96,15 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
         self.info = {}
         self.tutorial = ""
         self.retries = []          # actions a user would have had to repeat (reported, never hidden)
+        self.misread = []          # typed numbers a field read back as another value (fail the next step)
         self.modals = ModalWatcher()
         self.steps = list(self.plan())
 
     # ------------------------------------------------------------- report
     def step(self, nx, how, outcome, detail=""):
+        if self.misread:
+            outcome, detail = FAIL, "; ".join(self.misread) + f" | {detail}"
+            self.misread = []
         self.rows.append({"tutorial": self.tutorial, "n": sum(1 for r in self.rows if r["tutorial"] == self.tutorial) + 1,
                           "nx": nx, "replay": how, "outcome": outcome, "detail": str(detail)})
 
@@ -229,7 +233,29 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
         return w.objectName()
 
     @staticmethod
-    def type_into(w, value):
+    def typed_number(w, value):
+        """value as a user types it into w: with the decimal separator of the field's locale.
+
+        Qt's QDoubleSpinBox and FreeCAD's QuantitySpinBox both read numbers in the locale
+        (LC_NUMERIC on Linux): under nl_NL '.' is the group separator, so '0.05' is 5 and
+        '3.175' is 3175, while a Dutch user types '0,05'."""
+        return f"{float(value):.6g}".replace(".", w.locale().decimalPoint())
+
+    def check_typed(self, w, value, text):
+        """Read the field back: a typed number it took as another value fails the step."""
+        got = w.value() if isinstance(w, (QtWidgets.QDoubleSpinBox, QtWidgets.QSpinBox)) else w.property("rawValue")
+        if not isinstance(got, (int, float)):
+            return
+        # both fields show (and report) the value rounded: QDoubleSpinBox to its decimals, FreeCAD's
+        # QuantitySpinBox rawValue to the Decimals preference, though the feature gets the typed 3.175
+        decimals = w.decimals() if isinstance(w, QtWidgets.QDoubleSpinBox) else \
+            App.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals", 2)
+        tol = 1e-6 * max(1.0, abs(float(value))) + 0.5 * 10 ** -decimals
+        if abs(got - float(value)) > tol:
+            self.misread.append(f"typed '{text}' into {w.objectName() or type(w).__name__}, the field read {got:g} "
+                                f"(locale {w.locale().name()}, decimal '{w.locale().decimalPoint()}')")
+
+    def type_into(self, w, value):
         """Replace a quantity field's text with value, typed in the field's unit, then Tab out.
 
         Some FreeCAD dialogs only take the text when the field finishes editing, as a
@@ -238,9 +264,11 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
         w.setFocus()
         ed = w.lineEdit()
         ed.selectAll()
-        qtest().keyClicks(ed, f"{float(value):.6g}")
+        text = self.typed_number(w, value)
+        qtest().keyClicks(ed, text)
         qtest().keyClick(ed, *decode("Tab"))
         QtWidgets.QApplication.processEvents()
+        self.check_typed(w, value, text)
 
     @staticmethod
     def _matches(part, text):
@@ -4092,7 +4120,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
                 return False
             ed = spins[0].lineEdit()
             ed.selectAll()
-            qtest().keyClicks(ed, f"{float(value):.6g}")
+            qtest().keyClicks(ed, self.typed_number(spins[0], value))
             for box in w.findChildren(QtWidgets.QDialogButtonBox):
                 b = box.button(QtWidgets.QDialogButtonBox.Ok)
                 if b is not None:
@@ -5945,6 +5973,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
         self.progress("finish")
         self.info["unexpected modal dialogs"] = self.modals.seen
         self.info["actions repeated"] = self.retries
+        self.info["typed numbers misread after the last step"] = self.misread
+        self.info["decimal separator"] = QtCore.QLocale().decimalPoint()
         self.info["FreeCAD"] = App.Version()[:4]
         with open(os.path.join(OUT, "tutorial.json"), "w", encoding="utf-8") as f:
             json.dump({"steps": self.rows, "info": self.info}, f, indent=1, default=str)
