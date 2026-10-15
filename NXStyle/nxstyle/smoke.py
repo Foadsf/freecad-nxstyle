@@ -695,6 +695,7 @@ class Smoke:
         Gui.Control.closeDialog()
         from panel.multiplejoins import MultipleJoins           # the add-on's own task panel
         panel = MultipleJoins(join)
+        self.lc_qt6(panel)
         base, wall = doc.getObject("Base"), doc.getObject("Wall")
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection(base)
@@ -712,6 +713,32 @@ class Smoke:
                                         "tabs": [t.tab_name for t in panel.tabsList.faces]}
         panel.accept()
         self.info["laser cut join"] = join.Name
+
+    def lc_qt6(self, panel):
+        """The two calls that fail on PySide6 in upstream LCInterlocking: fixed in the bundled fork, patched
+        by nxstyle.lcinterlocking in an upstream copy."""
+        import inspect
+        from . import lcinterlocking
+        mod = inspect.getmodule(type(panel).__mro__[1])
+        src = inspect.getsourcefile(mod) or ""
+        try:
+            buttons = panel.getStandardButtons()
+        except Exception as e:
+            buttons = repr(e)
+        try:
+            panel.force_selection(None)
+            none = "ok"
+        except Exception as e:
+            none = repr(e)
+        self.info["laser cut qt6"] = {"buttons": buttons, "add with nothing selected": none,
+                                      "patched by NXStyle": bool(getattr(mod.TreePanel, lcinterlocking.MARK, False)),
+                                      "fixed in the add-on": "if index is None" in open(src, encoding="utf-8").read(),
+                                      "from": src}
+
+    def report_text(self):
+        report = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Report view")
+        return "\n".join(w.toPlainText() for w in (report.findChildren(QtWidgets.QTextEdit) +
+                                                   report.findChildren(QtWidgets.QPlainTextEdit))) if report else ""
 
     def s_laser_cut_result(self):
         if not self.shell._app("laser_cut"):
@@ -734,6 +761,12 @@ class Smoke:
             # LCInterlocking widens each tab by the laser kerf (thickness/15 by default): a press fit
             ok = (abs(removed - slot) < 0.01 * slot and slot <= added < 1.05 * slot and
                   abs(wall.BoundBox.ZMin) < 1e-6 and overlap < 0.1 * slot)
+        q = self.info.get("laser cut qt6", {})
+        errors = [ln for ln in self.report_text().splitlines() if "StandardButton" in ln or "NoneType, SelectionFlag" in ln]
+        self.check("LCInterlocking's task panel on Qt 6: OK and Cancel, Add with nothing selected, no TypeError "
+                   "(fixed in the bundled fork, patched in an upstream copy)",
+                   q.get("buttons") == 0x400400 and q.get("add with nothing selected") == "ok" and not errors,
+                   {**q, "report errors": errors[:3]})
         self.check(f"Laser Cut: two panels joined with {self.LC_TABS} tabs (one solid each, slots cut, "
                    f"tabs through the base)", ok, detail)
         if doc is not None:

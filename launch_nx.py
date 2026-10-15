@@ -390,9 +390,10 @@ def find_sheetmetal(profile: Path, disabled: bool = False) -> tuple[Path | None,
 
 
 # --------------------------------------------------------------------------
-# LCInterlocking: laser-cut panels with tabs and slots (execuc/LCInterlocking, LGPL-2.1) behind Laser Cut
+# LCInterlocking: laser-cut panels with tabs and slots (execuc/LCInterlocking, LGPL-2.1) behind Laser Cut;
+# bundled as a fork with two Qt 6 fixes, and NXStyle patches an upstream copy the same way (nxstyle/lcinterlocking.py)
 # --------------------------------------------------------------------------
-LCINTERLOCKING_DIR = HERE / "vendor" / "LCInterlocking"   # git submodule of github.com/execuc/LCInterlocking
+LCINTERLOCKING_DIR = HERE / "vendor" / "LCInterlocking"   # git submodule of github.com/Foadsf/LCInterlocking
 
 
 def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:

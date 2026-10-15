@@ -3,6 +3,7 @@
 
 *Application › Laser Cut* opens an application for parts cut from sheet, such as plywood, MDF or acrylic, on a laser cutter or a CNC router.
 NX has no such application. Its features come from https://github.com/execuc/LCInterlocking[LCInterlocking] (execuc, LGPL-2.1), which NX-Style bundles in `vendor/LCInterlocking` and the launcher loads.
+The bundled copy is https://github.com/Foadsf/LCInterlocking[a fork] with two fixes for FreeCAD 1.1, described under <<qt6>>.
 NX-Style gives it a ribbon with NX-style names. The add-on's own command name is shown in each button's tooltip (*FreeCAD: Slots* under *Tabs and Slots*).
 
 image::tutorial-AD-02-tray.png[A tray of five 3 mm panels joined by tabs and slots]
@@ -39,9 +40,18 @@ xref:tutorials/ad.adoc[Tutorial AD] joins a five-panel tray this way, checks eve
 `python launch_nx.py --no-lcinterlocking`, or `"laser_cut": "none"` in `nxstyle.json`, starts without the add-on, and Laser Cut is then not offered.
 An LCInterlocking already installed in the NX profile's `Mod` folder is used instead of the bundled one, never both.
 
+[#qt6]
+== FreeCAD 1.1 (Qt 6)
+
+Upstream LCInterlocking 1.5.1 has two errors on FreeCAD 1.1, which uses Qt 6:
+
+* opening the *Tabs and Slots* or *Cross Halving* task panel prints a `TypeError` about `StandardButton` in the Report view. The panel still gets its OK and Cancel buttons (https://github.com/execuc/LCInterlocking/issues/78[issue 78]);
+* *Add parts* or *Add faces* with nothing selected prints a `TypeError` instead of doing nothing (https://github.com/execuc/LCInterlocking/issues/75[issue 75]).
+
+The bundled fork fixes both in `panel/treepanel.py` (its `qt6-fixes` branch).
+If you install upstream LCInterlocking into the NX profile with the Addon Manager instead, NX-Style applies the same two fixes when the add-on's task panel code loads (`nxstyle/lcinterlocking.py`), without changing its files.
+
 == Limits
 
 * Make the panels as Part solids (*Block*, *Extrude* from the Part tools, imported STEP). The add-on ignores a PartDesign Body's own placement, so a moved Body is joined in the wrong place (https://github.com/execuc/LCInterlocking/issues/38[issue 38]).
-* On FreeCAD 1.1 (Qt 6), opening the *Tabs and Slots* or *Cross Halving* task panel prints a `TypeError` about `StandardButton` in the Report view. The panel still gets its OK and Cancel buttons and works (https://github.com/execuc/LCInterlocking/issues/78[issue 78]).
-* On FreeCAD 1.1, *Add parts* or *Add faces* with nothing selected prints a `TypeError` instead of doing nothing (https://github.com/execuc/LCInterlocking/issues/75[issue 75]).
 * The add-on's icons are 16-pixel bitmaps, so its ribbon buttons are small ones.

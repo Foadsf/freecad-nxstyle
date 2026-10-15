@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
-"""Laser Cut tutorial, on the bundled LCInterlocking add-on (github.com/execuc/LCInterlocking).
+"""Laser Cut tutorial, on the bundled LCInterlocking add-on (github.com/execuc/LCInterlocking; the fork
+github.com/Foadsf/LCInterlocking).
 
   AD  a tray from 3 mm sheet (our design): five flat panels, Tabs and Slots on the eight places where they
       meet, the joined parts checked solid by solid, then Export Flat Parts and an SVG for the cutter
