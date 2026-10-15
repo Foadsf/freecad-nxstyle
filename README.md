@@ -128,7 +128,7 @@ Unit tests (launcher, ISO 286 and ISO 2768, PMI, stack-ups, clearance, release p
 
 ## Requirements
 
-FreeCAD 1.0 or newer. Tested on Windows 11 with FreeCAD 1.0.2 (Qt 5.15) and 1.1.4 (Qt 6). The launcher also looks for FreeCAD on Linux and macOS, but those platforms have not been tested yet, and the hidden-desktop test mode is Windows-only. Any Python 3.8+ runs the launcher, including FreeCAD's own.
+FreeCAD 1.0 or newer. Tested on Windows 11 with FreeCAD 1.0.2 (Qt 5.15) and 1.1.4 (Qt 6). Also tested on Linux Mint 22.2 with the FreeCAD 1.1.4 AppImage (put it in a folder such as `~/Applications`; the self-test passes, run on an Xvfb display). macOS has not been tested yet. The hidden-desktop test mode is Windows-only; on Linux the self-test runs on whatever `DISPLAY` it is given. Any Python 3.8+ runs the launcher, including FreeCAD's own.
 
 Known FreeCAD 1.1.4 issue: a PartDesign Body whose origin planes stay visible disappears from the 3D view after a view fit (plain FreeCAD does this too). NXStyle therefore keeps the origin hidden; FreeCAD shows it while you pick a sketch plane.
 

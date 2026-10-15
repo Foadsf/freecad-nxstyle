@@ -68,19 +68,37 @@ def _console_exe(gui_exe: Path) -> Path | None:
     return None
 
 
+def _version_command(gui_exe: Path) -> list[str] | None:
+    """The command that prints the version, or None when only the GUI binary is at hand.
+
+    On Linux the GUI binary answers --version with a message box and waits for
+    OK, so it is never asked. An AppImage runs its bundled freecadcmd when that
+    is the first argument (AppRun starts usr/bin/<arg1> if it exists).
+    """
+    if gui_exe.suffix.lower() == ".appimage":
+        return [str(gui_exe), "freecadcmd", "--version"]
+    console = _console_exe(gui_exe)
+    if console:
+        return [str(console), "--version"]
+    if os.name == "nt":
+        return [str(gui_exe), "--version"]
+    return None
+
+
 def probe_version(gui_exe: Path) -> tuple[int, int, int] | None:
-    target = _console_exe(gui_exe) or gui_exe
-    try:
-        out = subprocess.run(
-            [str(target), "--version"], capture_output=True, text=True, timeout=60,
-            env=_clean_env(),
-        )
-        m = VERSION_RE.search(out.stdout + out.stderr)
-    except (OSError, subprocess.SubprocessError):
-        m = None
+    cmd = _version_command(gui_exe)
+    m = None
+    if cmd:
+        try:
+            out = subprocess.run(cmd, capture_output=True, text=True, timeout=60, env=_clean_env())
+            m = VERSION_RE.search(out.stdout + out.stderr)
+        except (OSError, subprocess.SubprocessError):
+            m = None
     if not m:
-        # Fall back to a version embedded in the folder name ("FreeCAD 1.0").
-        m = re.search(r"(\d+)\.(\d+)(?:\.(\d+))?", str(gui_exe.parent.parent.name))
+        # Fall back to a version embedded in the file name ("FreeCAD_1.1.4-Linux-x86_64.AppImage")
+        # or the folder name ("FreeCAD 1.0").
+        m = (re.search(r"[Ff]ree[Cc][Aa][Dd][ _-]?(\d+)\.(\d+)(?:\.(\d+))?", gui_exe.name)
+             or re.search(r"(\d+)\.(\d+)(?:\.(\d+))?", str(gui_exe.parent.parent.name)))
     if not m:
         return None
     return int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)

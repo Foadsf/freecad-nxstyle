@@ -89,6 +89,34 @@ class EnvTests(unittest.TestCase):
         self.assertEqual(cmd[-1], "a.FCStd")
 
 
+class VersionProbeTests(unittest.TestCase):
+    """On Linux the GUI binary shows --version in a message box; it must never be asked."""
+
+    def test_appimage_is_asked_through_its_bundled_freecadcmd(self):
+        img = Path("/opt/FreeCAD_1.1.4-Linux-x86_64-py311.AppImage")
+        self.assertEqual(launch_nx._version_command(img), [str(img), "freecadcmd", "--version"])
+
+    def test_console_binary_next_to_gui_is_preferred(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gui = Path(tmp) / "freecad"
+            gui.touch()
+            (Path(tmp) / "freecadcmd").touch()
+            self.assertEqual(launch_nx._version_command(gui), [str(Path(tmp) / "freecadcmd"), "--version"])
+
+    @unittest.skipIf(os.name == "nt", "the GUI binary prints --version on Windows")
+    def test_lone_gui_binary_is_not_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gui = Path(tmp) / "freecad"
+            gui.touch()
+            self.assertIsNone(launch_nx._version_command(gui))
+
+    def test_version_falls_back_to_appimage_file_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            img = Path(tmp) / "FreeCAD_1.1.4-Linux-x86_64-py311.AppImage"   # not executable: the probe fails
+            img.touch()
+            self.assertEqual(launch_nx.probe_version(img), (1, 1, 4))
+
+
 class StrataTests(unittest.TestCase):
     """Strata is on by default, loaded once: a copy in the NX profile wins over the bundled one."""
 

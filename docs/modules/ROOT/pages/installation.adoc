@@ -20,8 +20,8 @@ You need FreeCAD itself, the project folder, and Python to run the launcher.
 | To get the project with its submodules, and for xref:data-management.adoc[Strata] (version history), which runs `git` behind the scenes. On Windows, https://git-scm.com/download/win[Git for Windows] puts `git.exe` on the PATH.
 |===
 
-NOTE: Linux and macOS are supported by the launcher (it looks for FreeCAD in the usual places) but have not been tested yet.
-The hidden-desktop test mode is Windows-only.
+NOTE: Linux is tested on Linux Mint 22.2 with the FreeCAD 1.1.4 AppImage: put the AppImage in a folder in your home directory, such as `~/Applications`, and the launcher finds it. macOS is supported by the launcher (it looks for FreeCAD in the usual places) but has not been tested yet.
+The hidden-desktop test mode is Windows-only; on Linux the self-test runs on whatever `DISPLAY` it is given, for example an Xvfb display.
 
 == Get the project
 
