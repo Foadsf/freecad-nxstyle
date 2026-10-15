@@ -6,7 +6,9 @@
 FreeCAD NX-Style runs your normal, unmodified FreeCAD with a user interface laid out and behaving like Siemens NX: the ribbon, the Top Border Bar and the Resource Bar, NX's mouse buttons and keyboard shortcuts, and NX's command names.
 There is no fork and no patch, and your usual FreeCAD settings are never touched.
 
-image::ui-modeling.png[The Modeling application: NX ribbon, Top Border Bar, Resource Bar with the Part Navigator, and the graphics window]
+.The guide bush of xref:tutorials/t.adoc[tutorial T] on the PMI tab: ISO fits with the envelope, datums and geometrical tolerances in the model, listed in the Part Navigator
+[caption=]
+image::home-guide-bush-pmi.png["The NX ribbon on its PMI tab, the Top Border Bar, and the Part Navigator listing the PMI folder; in the graphics window a guide bush with datums A and B and six ballooned callouts: Ø25.000 k6 and Ø16.000 H7 with the envelope symbol, coaxiality Ø0.02 to A, perpendicularity 0.02 to A, 30.000 and 8.000 ±0.050"]
 
 [.nx-cards]
 * *xref:installation.adoc[Install]* +
