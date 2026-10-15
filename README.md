@@ -14,7 +14,7 @@ git clone --recursive https://github.com/Foadsf/freecad-nxstyle
 python launch_nx.py
 ```
 
-Strata (`vendor/freecad-strata`), Katydid (`vendor/Katydid`) and FreeCAD's SheetMetal add-on (`vendor/FreeCAD_SheetMetal`) are git submodules. In a copy cloned without `--recursive`, fetch them with `git submodule update --init`; until then NXStyle starts without them and the launcher says so.
+Strata (`vendor/freecad-strata`), Katydid (`vendor/Katydid`), FreeCAD's SheetMetal add-on (`vendor/FreeCAD_SheetMetal`) and LCInterlocking (`vendor/LCInterlocking`) are git submodules. In a copy cloned without `--recursive`, fetch them with `git submodule update --init`; until then NXStyle starts without them and the launcher says so.
 
 ## How it stays out of your normal FreeCAD
 
@@ -52,6 +52,7 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Measurement capability | Each PMI's measurement uncertainty U gives the TUR and ISO 14253-1 acceptance limits in the inspection plan; Analysis › Gauge Study: gauge repeatability by the range method against the PMI's tolerance (Drake ch. 25, AIAG) |
 | Drafting › Populate Title Block | The ISO 7200 title block from the part's Strata release (or its DB_PART_NO / DB_PART_REV attributes) and its PMI's general tolerances; a revision block from the release history |
 | Sheet Metal (Ctrl+Shift+M) | FreeCAD's SheetMetal add-on, bundled, with NX's ribbon: Tab, Flange, Bend, Hem Flange, Normal Cutout, Convert to Sheet Metal; Sheet Metal Preferences (thickness, bend radius, neutral factor, with bend allowance and deduction) and a Flat Pattern that uses them. Checked against Shih's hand-calculated flat length |
+| Laser Cut (Application tab) | The LCInterlocking add-on, bundled, on its own ribbon (NX has no laser-cut application): Panel Box, Tabs and Slots, Cross Halving, Living Hinge, Export Flat Parts. Flat panels joined by tabs and slots, then laid flat for the laser cutter |
 | Assemblies › Clearance Analysis, Simple Interference | NX's Assembly Clearance: clearance sets saved in the part, hard / containment / touching / soft interference, penetration depth, Clearance Browser with Study Interference, Restore Visibility, Exclude Pair and New/Gone status |
 | Assemblies › Volume Claim, Check Volume Claims | Space reservations for system layouts: keep-in and keep-out claims with margins; finds parts outside their claim, intrusions and space claimed twice |
 | PLM › Publish Release Package | NX's Publish Technical Data Package role: the released part (from Strata's release, not the working copy) as STEP, native file, drawing PDFs, PMI, inspection plan, stack-ups and mass properties, with a SHA-256 manifest (`python -m nxstyle.package verify`) |
@@ -134,4 +135,4 @@ Known FreeCAD 1.1.4 issue: a PartDesign Body whose origin planes stay visible di
 
 ## Licence and trademarks
 
-[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata and Katydid are separate projects under the same licence, included as submodules; so is FreeCAD's [SheetMetal add-on](https://github.com/shaise/FreeCAD_SheetMetal) (LGPL-2.1), unmodified. Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.
+[LGPL-2.1-or-later](LICENSE), matching FreeCAD. Strata and Katydid are separate projects under the same licence, included as submodules; so is FreeCAD's [SheetMetal add-on](https://github.com/shaise/FreeCAD_SheetMetal) (LGPL-2.1), unmodified, and [LCInterlocking](https://github.com/execuc/LCInterlocking) (LGPL-2.1), as [a fork](https://github.com/Foadsf/LCInterlocking) with two fixes for FreeCAD 1.1 (Qt 6). Siemens, NX and Teamcenter are trademarks of Siemens; this project is not affiliated with or endorsed by Siemens and uses no Siemens software, icons or documentation text.

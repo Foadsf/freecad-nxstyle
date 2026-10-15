@@ -120,6 +120,12 @@ class Smoke:
         yield self.s_katydid_shot, 100
         yield self.s_back, 2000
         yield self.s_katydid_after, 100
+        yield self.s_laser_cut, 2500
+        yield self.s_laser_cut_check, 300
+        yield self.s_laser_cut_join, 1500
+        yield self.s_laser_cut_result, 300
+        yield self.s_laser_cut_back, 2000
+        yield self.s_laser_cut_after, 100
         yield self.s_ap242, 300
         yield self.s_model_views, 300
         yield self.s_assembly_links, 200
@@ -620,6 +626,169 @@ class Smoke:
         dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "KatydidDock")
         self.check("Katydid canvas stays open after leaving Algorithmic Modeling (as documented)",
                    dock is not None and dock.isVisible(), None if dock is None else dock.isVisible())
+
+    # ---------------------------------------------------------------- Laser Cut (LCInterlocking)
+    LC_COMMANDS = ("make_box_command", "make_rounded_box_command", "multiple_tabs_command", "crosspiece",
+                   "livinghinge", "export_command")
+    LC_T = 3.0          # panel thickness, mm
+    LC_TABS = 3
+    LC_TAB_WIDTH = 10.0
+
+    def s_laser_cut(self):
+        """Laser Cut on LCInterlocking (github.com/execuc/LCInterlocking), on by default: two 3 mm panels,
+        a base and a wall standing on it, as Part solids (the add-on ignores a PartDesign Body's placement)."""
+        if not self.shell._app("laser_cut"):
+            return
+        doc = App.newDocument("SmokeLaserCut")
+        base = doc.addObject("Part::Box", "Base")
+        base.Length, base.Width, base.Height = 100, 60, self.LC_T
+        wall = doc.addObject("Part::Box", "Wall")
+        wall.Length, wall.Width, wall.Height = 100, self.LC_T, 40
+        wall.Placement.Base = App.Vector(0, 0, self.LC_T)
+        doc.recompute()
+        self.shell.switch_application("laser_cut")
+
+    def lc_button(self, cmd):
+        return next((b for b in self.shell.ribbon.findChildren(QtWidgets.QToolButton, "NXRibbonButton")
+                     if getattr(b, "command", None) == cmd), None)
+
+    def s_laser_cut_check(self):
+        want = os.environ.get("NXSTYLE_LCINTERLOCKING_EXPECTED", "1") == "1"
+        app = self.shell._app("laser_cut")
+        if not want:
+            self.check("LCInterlocking off as asked", app is None and
+                       "LCInterlockingWorkbench" not in Gui.listWorkbenches(), app)
+            return
+        self.check("Laser Cut application (LCInterlocking) offered", app is not None, sorted(Gui.listWorkbenches()))
+        if app is None:
+            return
+        r = self.shell.ribbon
+        cmds = {c: c in r.locations for c in self.LC_COMMANDS}
+        missing = [m for m in r.missing if str(m[-1]).startswith(("Part_", "Sketcher_")) or
+                   m[-1] in self.LC_COMMANDS]
+        self.check("Laser Cut ribbon with LCInterlocking's commands, and the Application tab",
+                   Gui.activeWorkbench().name() == "LCInterlockingWorkbench" and all(cmds.values()) and not missing
+                   and r.tab_names()[:1] == ["Home"] and "Application" in r.tab_names(),
+                   {"workbench": Gui.activeWorkbench().name(), "commands": cmds, "missing": missing,
+                    "tabs": r.tab_names()})
+        b = self.lc_button("multiple_tabs_command")
+        tip = b.toolTip() if b is not None else ""
+        self.check("Laser Cut buttons carry NX names, the add-on's own name in the tooltip",
+                   b is not None and b.text().replace("\n", " ") == "Tabs and Slots" and "FreeCAD: Slots" in tip, tip)
+        visible = [tb.objectName() for tb in self.shell.native_toolbars() if tb.isVisible()]
+        self.check("LCInterlocking's own toolbars hidden under the ribbon", not visible, visible)
+
+    def s_laser_cut_join(self):
+        """Tabs and Slots from the ribbon, then the add-on's own task panel: parts, the wall's bottom face as
+        a Tab joint, OK. Driven through the panel's methods, as its buttons call them."""
+        doc = App.getDocument("SmokeLaserCut") if "SmokeLaserCut" in App.listDocuments() else None
+        b = self.lc_button("multiple_tabs_command")
+        if doc is None or b is None:
+            return
+        App.setActiveDocument(doc.Name)
+        n0 = len(doc.Objects)
+        b.click()
+        join = next((o for o in doc.Objects[n0:] if o.Name.startswith("MultiJoin")), None)
+        self.info["laser cut dialog opened by the ribbon"] = bool(Gui.Control.activeDialog())
+        if join is None:
+            return
+        Gui.Control.closeDialog()
+        from panel.multiplejoins import MultipleJoins           # the add-on's own task panel
+        panel = MultipleJoins(join)
+        self.lc_qt6(panel)
+        base, wall = doc.getObject("Base"), doc.getObject("Wall")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(base)
+        Gui.Selection.addSelection(wall)
+        panel.add_parts()
+        face = next(f"Face{i + 1}" for i, f in enumerate(wall.Shape.Faces)
+                    if abs(f.CenterOfMass.z - self.LC_T) < 1e-6 and f.normalAt(0, 0).z < -0.9)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, wall.Name, face)
+        panel.add_tabs()
+        panel.selection_model.clearSelection()      # saves the tab's widget, so the values below stay
+        for t in panel.tabsList.faces:
+            t.tabs_number, t.tabs_width = self.LC_TABS, self.LC_TAB_WIDTH
+        self.info["laser cut panel"] = {"parts": [p.name for p in panel.partsList.part_list],
+                                        "tabs": [t.tab_name for t in panel.tabsList.faces]}
+        panel.accept()
+        self.info["laser cut join"] = join.Name
+
+    def lc_qt6(self, panel):
+        """The two calls that fail on PySide6 in upstream LCInterlocking: fixed in the bundled fork, patched
+        by nxstyle.lcinterlocking in an upstream copy."""
+        import inspect
+        from . import lcinterlocking
+        mod = inspect.getmodule(type(panel).__mro__[1])
+        src = inspect.getsourcefile(mod) or ""
+        try:
+            buttons = panel.getStandardButtons()
+        except Exception as e:
+            buttons = repr(e)
+        try:
+            panel.force_selection(None)
+            none = "ok"
+        except Exception as e:
+            none = repr(e)
+        self.info["laser cut qt6"] = {"buttons": buttons, "add with nothing selected": none,
+                                      "patched by NXStyle": bool(getattr(mod.TreePanel, lcinterlocking.MARK, False)),
+                                      "fixed in the add-on": "if index is None" in open(src, encoding="utf-8").read(),
+                                      "from": src}
+
+    def report_text(self):
+        report = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Report view")
+        return "\n".join(w.toPlainText() for w in (report.findChildren(QtWidgets.QTextEdit) +
+                                                   report.findChildren(QtWidgets.QPlainTextEdit))) if report else ""
+
+    def s_laser_cut_result(self):
+        if not self.shell._app("laser_cut"):
+            return
+        doc = App.listDocuments().get("SmokeLaserCut")
+        join = doc.getObject(self.info.get("laser cut join", "")) if doc else None
+        parts = {o.Name: o.Shape for o in (join.generatedParts if join else [])}
+        base, wall = parts.get("Base_tab"), parts.get("Wall_tab")
+        t, slot = self.LC_T, self.LC_TABS * self.LC_TAB_WIDTH * self.LC_T * self.LC_T
+        detail = {n: {"valid": sh.isValid(), "solids": len(sh.Solids), "volume": round(sh.Volume, 2),
+                      "zmin": round(sh.BoundBox.ZMin, 3)} for n, sh in parts.items()}
+        ok = (base is not None and wall is not None and all(sh.isValid() and len(sh.Solids) == 1
+                                                             for sh in (base, wall)))
+        if ok:
+            removed = 100 * 60 * t - base.Volume
+            added = wall.Volume - 100 * t * 40
+            overlap = base.common(wall).Volume
+            detail.update({"slots removed": round(removed, 2), "tabs added": round(added, 2),
+                           "overlap": round(overlap, 2), "expected": slot})
+            # LCInterlocking widens each tab by the laser kerf (thickness/15 by default): a press fit
+            ok = (abs(removed - slot) < 0.01 * slot and slot <= added < 1.05 * slot and
+                  abs(wall.BoundBox.ZMin) < 1e-6 and overlap < 0.1 * slot)
+        q = self.info.get("laser cut qt6", {})
+        errors = [ln for ln in self.report_text().splitlines() if "StandardButton" in ln or "NoneType, SelectionFlag" in ln]
+        self.check("LCInterlocking's task panel on Qt 6: OK and Cancel, Add with nothing selected, no TypeError "
+                   "(fixed in the bundled fork, patched in an upstream copy)",
+                   q.get("buttons") == 0x400400 and q.get("add with nothing selected") == "ok" and not errors,
+                   {**q, "report errors": errors[:3]})
+        self.check(f"Laser Cut: two panels joined with {self.LC_TABS} tabs (one solid each, slots cut, "
+                   f"tabs through the base)", ok, detail)
+        if doc is not None:
+            v = Gui.getDocument(doc.Name).ActiveView
+            v.viewIsometric()
+            v.fitAll()
+            QtWidgets.QApplication.processEvents()
+            self.shot("10_laser_cut.png")
+
+    def s_laser_cut_back(self):
+        if self.shell._app("laser_cut"):
+            self.shell.switch_application("modeling")
+
+    def s_laser_cut_after(self):
+        if not self.shell._app("laser_cut"):
+            return
+        r = self.shell.ribbon
+        self.check("back in Modeling after Laser Cut",
+                   Gui.activeWorkbench().name() == "PartDesignWorkbench" and "NXStyle_Extrude" in r.locations,
+                   r.tab_names())
+        if "SmokeLaserCut" in App.listDocuments():
+            App.closeDocument("SmokeLaserCut")
 
     def s_expressions(self):
         Gui.runCommand("NXStyle_Expressions")

@@ -8,6 +8,7 @@
       {"id": "assemblies", "title": "Assemblies", "workbench": "AssemblyWorkbench", "ribbon": "modeling.json", "first_tab": "Assemblies"},
       {"id": "algorithmic_modeling", "title": "Algorithmic Modeling", "workbench": "KatydidWorkbench", "ribbon": "algorithmic.json"},
       {"id": "sheet_metal", "title": "Sheet Metal", "workbench": "SMWorkbench", "ribbon": "sheet_metal.json", "shortcut": "Ctrl+Shift+M"},
+      {"id": "laser_cut", "title": "Laser Cut", "workbench": "LCInterlockingWorkbench", "ribbon": "laser_cut.json"},
       {"id": "part", "title": "Basic Modeling (Part)", "workbench": "PartWorkbench", "ribbon": null}
     ]},
     {"name": "Simulation", "apps": [

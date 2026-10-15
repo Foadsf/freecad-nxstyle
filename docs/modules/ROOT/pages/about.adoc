@@ -6,6 +6,7 @@
 FreeCAD NX-Style is free software under the {repo}/blob/main/LICENSE[LGPL-2.1-or-later], the same licence as FreeCAD.
 {strata}[Strata] and https://github.com/Foadsf/Katydid[Katydid] are separate projects under the same licence, included as git submodules.
 FreeCAD's https://github.com/shaise/FreeCAD_SheetMetal[SheetMetal add-on] (Shai Seger and contributors, LGPL-2.1) is included the same way, unmodified, for the Sheet Metal application.
+https://github.com/execuc/LCInterlocking[LCInterlocking] (execuc and contributors, LGPL-2.1) is included for the Laser Cut application as https://github.com/Foadsf/LCInterlocking[a fork] with two fixes for FreeCAD 1.1 (Qt 6), under the same licence.
 Katydid is not affiliated with Robert McNeel & Associates; Grasshopper is their trademark, named only to describe the style of tool.
 
 == Trademarks

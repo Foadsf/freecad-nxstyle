@@ -390,6 +390,31 @@ def find_sheetmetal(profile: Path, disabled: bool = False) -> tuple[Path | None,
 
 
 # --------------------------------------------------------------------------
+# LCInterlocking: laser-cut panels with tabs and slots (execuc/LCInterlocking, LGPL-2.1) behind Laser Cut;
+# bundled as a fork with two Qt 6 fixes, and NXStyle patches an upstream copy the same way (nxstyle/lcinterlocking.py)
+# --------------------------------------------------------------------------
+LCINTERLOCKING_DIR = HERE / "vendor" / "LCInterlocking"   # git submodule of github.com/Foadsf/LCInterlocking
+
+
+def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:
+    """The LCInterlocking folder to load with -M, or None, and why; one copy only, as for Strata. A copy
+    the Addon Manager installed into the NX profile is loaded by FreeCAD itself."""
+    if disabled:
+        return None, "off (--no-lcinterlocking)"
+    cfg = read_settings(profile)
+    if cfg.get("laser_cut", "lcinterlocking") != "lcinterlocking":
+        return None, f"off (nxstyle.json: laser_cut = {cfg.get('laser_cut')!r})"
+    mods = profile / "data" / "Mod"
+    if mods.is_dir():
+        for mod in sorted(mods.iterdir()):
+            if (mod / "lasercut" / "join.py").is_file():
+                return None, f"installed in the NX profile ({mod})"
+    if (LCINTERLOCKING_DIR / "InitGui.py").is_file():
+        return LCINTERLOCKING_DIR, f"bundled ({LCINTERLOCKING_DIR})"
+    return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
+
+
+# --------------------------------------------------------------------------
 # Hidden desktop (Windows): run the self-test without windows on the user's screen
 # --------------------------------------------------------------------------
 # A test run gets a hard memory ceiling. On 2026-10-12 a tutorial replay grew
@@ -582,7 +607,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
                          "G Shaft Support assembly, H GD&T plate drawing, I Gasket (trim, fillet, "
@@ -594,7 +619,8 @@ def main(argv: list[str] | None = None) -> int:
                          "W sheet metal bracket, X pin location of a laser module, Y PMI model views, "
                          "Z MBD exchange through STEP AP242, AA composite position evaluated from CMM data, "
                          "AB measurement capability (TUR, guard bands, gauge studies), "
-                         "AC title block and revision block from the release (runs T and V first))")
+                         "AC title block and revision block from the release (runs T and V first), "
+                         "AD a laser-cut tray with tabs and slots)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
@@ -607,6 +633,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without Katydid (the node-based Algorithmic Modeling canvas; on by default)")
     ap.add_argument("--no-sheetmetal", action="store_true",
                     help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
+    ap.add_argument("--no-lcinterlocking", action="store_true",
+                    help="start without the LCInterlocking add-on (Laser Cut; on by default)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -643,11 +671,15 @@ def main(argv: list[str] | None = None) -> int:
     extra["NXSTYLE_KATYDID_EXPECTED"] = "1" if katydid or "NX profile" in katydid_why else "0"
     sheetmetal, sheetmetal_why = find_sheetmetal(profile.resolve(), disabled=args.no_sheetmetal)
     extra["NXSTYLE_SHEETMETAL_EXPECTED"] = "1" if sheetmetal or "NX profile" in sheetmetal_why else "0"
-    cmd = build_command(install, args.files, passthrough, tuple(m for m in (strata, katydid, sheetmetal) if m))
+    lcinterlocking, lcinterlocking_why = find_lcinterlocking(profile.resolve(), disabled=args.no_lcinterlocking)
+    extra["NXSTYLE_LCINTERLOCKING_EXPECTED"] = "1" if lcinterlocking or "NX profile" in lcinterlocking_why else "0"
+    cmd = build_command(install, args.files, passthrough,
+                        tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
-                          "sheetmetal": sheetmetal_why, "command": cmd}, indent=2))
+                          "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "command": cmd},
+                         indent=2))
         return 0
 
     paths = prepare_profile(profile, reset=reset)
@@ -658,6 +690,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Strata: {strata_why}")
     print(f"Katydid: {katydid_why}")
     print(f"SheetMetal: {sheetmetal_why}")
+    print(f"LCInterlocking: {lcinterlocking_why}")
 
     if harness:
         if os.name == "nt":

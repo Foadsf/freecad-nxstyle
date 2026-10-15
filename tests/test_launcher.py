@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 """Launcher tests that need no FreeCAD: profile isolation, env, command line."""
 
+import contextlib
+import io
+import json
 import os
 import sys
 import tempfile
@@ -264,6 +267,73 @@ class SheetMetalTests(unittest.TestCase):
         where, why = launch_nx.find_sheetmetal(self.profile)
         self.assertIsNone(where)
         self.assertIn("submodule", why)
+
+
+class LCInterlockingTests(unittest.TestCase):
+    """The LCInterlocking add-on behind Laser Cut: bundled, loaded once, switched off on its own."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.bundled = root / "vendor" / "LCInterlocking"
+        self.bundled.mkdir(parents=True)
+        (self.bundled / "InitGui.py").write_text("")
+        self.profile = root / "profile"
+        self._saved = launch_nx.LCINTERLOCKING_DIR
+        launch_nx.LCINTERLOCKING_DIR = self.bundled
+
+    def tearDown(self):
+        launch_nx.LCINTERLOCKING_DIR = self._saved
+        self.tmp.cleanup()
+
+    def dry_run(self, *flags):
+        exe = Path(self.tmp.name) / "FreeCAD"          # never run: a lone GUI binary is not asked its version
+        exe.write_text("")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            launch_nx.main(["--freecad", str(exe), "--profile", str(self.profile), "--dry-run", *flags])
+        return json.loads(out.getvalue())
+
+    def test_bundled_copy_by_default(self):
+        self.assertEqual(launch_nx.find_lcinterlocking(self.profile)[0], self.bundled)
+
+    def test_profile_install_is_not_loaded_twice(self):
+        pkg = self.profile / "data" / "Mod" / "LCInterlocking" / "lasercut"
+        pkg.mkdir(parents=True)
+        (pkg / "join.py").write_text("")
+        where, why = launch_nx.find_lcinterlocking(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("NX profile", why)
+
+    def test_switched_off_by_flag_or_config(self):
+        self.assertIsNone(launch_nx.find_lcinterlocking(self.profile, disabled=True)[0])
+        (self.profile / "config").mkdir(parents=True)
+        (self.profile / "config" / "nxstyle.json").write_text('{"laser_cut": "none"}')
+        where, why = launch_nx.find_lcinterlocking(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("laser_cut", why)
+
+    def test_missing_submodule_says_how_to_get_it(self):
+        (self.bundled / "InitGui.py").unlink()
+        where, why = launch_nx.find_lcinterlocking(self.profile)
+        self.assertIsNone(where)
+        self.assertIn("submodule", why)
+
+    def test_loaded_with_M_after_the_others(self):
+        cmd = self.dry_run()["command"]
+        self.assertEqual(cmd[-2:], ["-M", str(self.bundled)])
+
+    def test_flag_keeps_it_off_the_command_line(self):
+        res = self.dry_run("--no-lcinterlocking")
+        self.assertNotIn(str(self.bundled), res["command"])
+        self.assertIn("--no-lcinterlocking", res["lcinterlocking"])
+
+    def test_real_submodule_is_a_freecad_workbench(self):
+        real = self._saved
+        if not (real / "InitGui.py").is_file():
+            self.skipTest("vendor/LCInterlocking not checked out (git submodule update --init)")
+        self.assertIn("LCInterlockingWorkbench", (real / "InitGui.py").read_text(encoding="utf-8"))
+        self.assertTrue((real / "lasercut" / "join.py").is_file())    # what a profile copy is recognised by
 
 
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")

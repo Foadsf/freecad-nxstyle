@@ -13,6 +13,7 @@
 * xref:assemblies.adoc[Assemblies]
 * xref:drafting.adoc[Drafting and GD&T]
 * xref:sheet-metal.adoc[Sheet Metal]
+* xref:laser-cut.adoc[Laser Cut (LCInterlocking)]
 * xref:pmi.adoc[PMI and technical product documentation]
 * xref:tolerance-analysis.adoc[Tolerance analysis]
 * xref:inspection.adoc[Inspection: measured parts and gauges]
@@ -54,6 +55,7 @@
 * xref:tutorials/aa.adoc[AA: Composite position, evaluated from CMM data]
 * xref:tutorials/ab.adoc[AB: Measurement capability]
 * xref:tutorials/ac.adoc[AC: Title block and revision block from the release]
+* xref:tutorials/ad.adoc[AD: A laser-cut tray with tabs and slots]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

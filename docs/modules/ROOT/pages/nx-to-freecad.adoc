@@ -29,6 +29,10 @@ include::partial$generated/ribbon-algorithmic.adoc[]
 
 include::partial$generated/ribbon-sheet_metal.adoc[]
 
+== Laser Cut
+
+include::partial$generated/ribbon-laser_cut.adoc[]
+
 == Applications
 
 include::partial$generated/applications.adoc[]

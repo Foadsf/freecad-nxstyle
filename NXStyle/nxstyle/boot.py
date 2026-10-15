@@ -48,4 +48,10 @@ def schedule():
     except Exception:
         import traceback
         App.Console.PrintError("NXStyle: preparing Strata failed:\n" + traceback.format_exc() + "\n")
+    try:   # before any LCInterlocking panel module is imported (its workbench, or a document that has one)
+        from . import lcinterlocking
+        lcinterlocking.install()
+    except Exception:
+        import traceback
+        App.Console.PrintError("NXStyle: the LCInterlocking Qt 6 patch failed:\n" + traceback.format_exc() + "\n")
     QtCore.QTimer.singleShot(0, _start)

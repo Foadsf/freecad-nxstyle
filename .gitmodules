@@ -7,3 +7,6 @@
 [submodule "vendor/FreeCAD_SheetMetal"]
 	path = vendor/FreeCAD_SheetMetal
 	url = https://github.com/shaise/FreeCAD_SheetMetal.git
+[submodule "vendor/LCInterlocking"]
+	path = vendor/LCInterlocking
+	url = https://github.com/Foadsf/LCInterlocking.git

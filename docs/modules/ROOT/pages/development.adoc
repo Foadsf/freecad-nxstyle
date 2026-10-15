@@ -49,6 +49,8 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `ap242.py` | STEP AP242 with semantic PMI: the mapping onto OpenCASCADE's XCAF enumerations and back, the file checks and signed tolerances (no FreeCAD), the writer and the reader through pythonocc.
 | `drf.py` | Datum reference frames: the degrees of freedom datums arrest, in order, and the motions left free (no FreeCAD).
 | `sheetmetal.py`, `sheetmetal_ui.py` | Bend allowance, bend deduction and flat length (no FreeCAD); Sheet Metal Preferences and Flat Pattern on the bundled SheetMetal add-on.
+| `resources/ribbons/laser_cut.json` | Laser Cut: the bundled LCInterlocking add-on's commands under NX-style names.
+| `lcinterlocking.py` | An import hook that gives an upstream LCInterlocking (from the Addon Manager) the bundled fork's two Qt 6 fixes when its task panel module loads (no FreeCAD).
 | `alignment.py`, `alignment_ui.py` | Pin location: fit, translation, rotation, pointing error and thermal mismatch (no FreeCAD); the Pin Location analysis object and dialog.
 | `position_eval.py`, `position_ui.py` | Position of a measured pattern: bonus, the upper row against the datums, the lower row's minimax best fit (no FreeCAD); the Position Evaluation object and its measurement table.
 | `msa.py`, `msa_ui.py` | Measurement capability: gauge repeatability by the range method, TUR, ISO 14253-1 acceptance limits (no FreeCAD); the Gauge Study object.
