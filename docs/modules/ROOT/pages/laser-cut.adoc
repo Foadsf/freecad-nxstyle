@@ -48,7 +48,7 @@ Upstream LCInterlocking 1.5.1 has two errors on FreeCAD 1.1, which uses Qt 6:
 * opening the *Tabs and Slots* or *Cross Halving* task panel prints a `TypeError` about `StandardButton` in the Report view. The panel still gets its OK and Cancel buttons (https://github.com/execuc/LCInterlocking/issues/78[issue 78]);
 * *Add parts* or *Add faces* with nothing selected prints a `TypeError` instead of doing nothing (https://github.com/execuc/LCInterlocking/issues/75[issue 75]).
 
-The bundled fork fixes both in `panel/treepanel.py` (its `qt6-fixes` branch).
+The bundled fork fixes both in `panel/treepanel.py` (its `qt6-fixes` branch, offered upstream as https://github.com/execuc/LCInterlocking/pull/82[pull request 82]).
 If you install upstream LCInterlocking into the NX profile with the Addon Manager instead, NX-Style applies the same two fixes when the add-on's task panel code loads (`nxstyle/lcinterlocking.py`), without changing its files.
 
 == Limits
