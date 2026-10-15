@@ -246,9 +246,11 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials):
         got = w.value() if isinstance(w, (QtWidgets.QDoubleSpinBox, QtWidgets.QSpinBox)) else w.property("rawValue")
         if not isinstance(got, (int, float)):
             return
-        tol = 1e-6 * max(1.0, abs(float(value)))
-        if isinstance(w, QtWidgets.QDoubleSpinBox):
-            tol += 0.5 * 10 ** -w.decimals()
+        # both fields show (and report) the value rounded: QDoubleSpinBox to its decimals, FreeCAD's
+        # QuantitySpinBox rawValue to the Decimals preference, though the feature gets the typed 3.175
+        decimals = w.decimals() if isinstance(w, QtWidgets.QDoubleSpinBox) else \
+            App.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals", 2)
+        tol = 1e-6 * max(1.0, abs(float(value))) + 0.5 * 10 ** -decimals
         if abs(got - float(value)) > tol:
             self.misread.append(f"typed '{text}' into {w.objectName() or type(w).__name__}, the field read {got:g} "
                                 f"(locale {w.locale().name()}, decimal '{w.locale().decimalPoint()}')")
