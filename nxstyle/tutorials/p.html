@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial P: Waffle canopy :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/p.html">
+    <link rel="prev" href="o.html">
+    <link rel="next" href="q.html">
+    <meta name="description" content="A ribbed canopy from one profile curve: mirror, two arches, a four-sided surface, contour slices offset into ribs and extruded.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#0b6e79">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/keyboard-shortcuts.html">Shortcuts</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="p.html">P: Waffle canopy (Katydid)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/p.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial P: Waffle canopy</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Video
+</td>
+<td class="hdlist2">
+<p><a href="https://www.youtube.com/watch?v=q0rWnXPHeFQ">Grasshopper Tutorial For beginners</a> (YouTube, channel Rhino Grasshopper)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Application
+</td>
+<td class="hdlist2">
+<p><a href="../algorithmic-modeling.html" class="xref page">Algorithmic Modeling</a> (Katydid)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>Mirroring in a plane, merging points into a curve, a surface from boundary curves, contours, offset and ruled surfaces, extruding by a computed thickness</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>Millimetres: a 58 × 70 profile, a 90 mm span, 13 ribs 4 mm deep</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The canopy grows from one curve.
+Its mirror gives the far side, two arches close it at the bottom and the top, a surface spans the four, and parallel slices of that surface become the ribs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_profile"><a class="anchor" href="#_1_the_profile"></a>1. The profile</h3>
+<div class="paragraph">
+<p>The video draws half of the profile in Rhino&#8217;s Front view and references it into a <strong>Curve</strong> parameter.
+Katydid cannot reference a FreeCAD sketch yet, so the profile is drawn on the canvas instead: five <strong>Construct Point</strong> components, their X and Z typed with right-click › <strong>Set value…</strong>, all wired into one <strong>Interpolate</strong> with <kbd>Shift</kbd> held, so they arrive in order.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-01-profile.png" alt="Five points interpolated into the profile curve">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_bottom_and_top_points"><a class="anchor" href="#_2_the_bottom_and_top_points"></a>2. The Bottom and Top points</h3>
+<div class="paragraph">
+<p>Two more Construct Points stand in for the two Rhino points: <strong>Bottom</strong> (X 14, Y 45) sets the mirror plane and the bulge at the base, <strong>Top</strong> (X 44, Y 20, Z 84) the height and depth of the top arch.
+Sliders move them, as the Gumball does in Rhino.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-02-points.png" alt="Bottom and Top points driven by sliders">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_mirror"><a class="anchor" href="#_3_mirror"></a>3. Mirror</h3>
+<div class="paragraph">
+<p><strong>Mirror</strong> with the profile in <strong>G</strong>, the Bottom point in <strong>P</strong> and the normal <strong>N</strong> typed <code>0, 1, 0</code>: the mirror plane is the XZ plane through the Bottom point.
+Grasshopper builds that plane with an <strong>XZ Plane</strong> component; Katydid&#8217;s Mirror takes the point and the normal itself.
+Dragging <strong>Half span</strong> now widens or narrows the canopy.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-03-mirror.png" alt="The profile and its mirror image" width="90 mm apart">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_end_points"><a class="anchor" href="#_4_end_points"></a>4. End points</h3>
+<div class="paragraph">
+<p>Four <strong>Evaluate Curve</strong> components with <strong>t</strong> = 0 and <strong>t</strong> = 1 give the start and end of both curves (Grasshopper&#8217;s <strong>End Points</strong>; Katydid&#8217;s <strong>t</strong> always runs from 0 to 1).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_the_two_arches"><a class="anchor" href="#_5_the_two_arches"></a>5. The two arches</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Bottom arch</strong>: the profile&#8217;s start, the Bottom point and the mirror&#8217;s start, Shift-wired into an Interpolate in that order. Several wires into one input merge their data in order, as Grasshopper&#8217;s <strong>Merge</strong> does.</p>
+</li>
+<li>
+<p><strong>Top arch</strong>: the same through the Top point <strong>projected</strong> onto the mirror plane. Two <strong>Deconstruct</strong> components and a Construct Point take the Top point&#8217;s X and Z and the Bottom point&#8217;s Y.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-04-arches.png" alt="The bottom and top arches closing the outline">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_6_the_surface"><a class="anchor" href="#_6_the_surface"></a>6. The surface</h3>
+<div class="paragraph">
+<p>The video spans the four curves with <strong>Edge Surface</strong>, which Katydid does not have yet.
+A <strong>Loft</strong> through three sections stands in: the profile, a middle section from the Bottom point through the profile&#8217;s midpoint to the projected Top point, and the mirror.
+It passes through both arches at their middle, where the bulge is.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-05-surface.png" alt="The canopy surface lofted through three sections">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7_contours"><a class="anchor" href="#_7_contours"></a>7. Contours</h3>
+<div class="paragraph">
+<p><strong>Contour</strong> the surface along Y: <strong>N</strong> typed <code>0, 1, 0</code>, and <strong>D</strong> a <strong>Series</strong> of plane offsets.
+The span is the <strong>Distance</strong> between the two start points; an <strong>Expression</strong> divides it by the <strong>Count</strong> slider (12), and an <strong>Addition</strong> gives count + 1 planes: 13 ribs.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The video subtracts 0.001 from the spacing so the last slice is not lost on the edge. Katydid&#8217;s Contour cuts a fine mesh, where a plane that close to the edge splits into fragments, so the first and last planes sit 1 mm inside instead.
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-06-contours.png" alt="Thirteen contour curves across the surface">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_8_rib_strips"><a class="anchor" href="#_8_rib_strips"></a>8. Rib strips</h3>
+<div class="paragraph">
+<p><strong>Offset Curve</strong> moves each contour by the <strong>Rib depth</strong> (4 mm) in its own plane.
+<strong>Ruled Surface</strong> spans each contour and its offset, both inputs Flattened (right-click › <strong>Flatten</strong>), so the curves pair up one to one.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-07-strips.png" alt="Flat strips between the contours and their offsets">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_9_thickness"><a class="anchor" href="#_9_thickness"></a>9. Thickness</h3>
+<div class="paragraph">
+<p><strong>Multiplication</strong> of the spacing and a <strong>Thickness ratio</strong> slider (0.3) gives the rib thickness, <strong>Vector XYZ</strong> turns it into a Y vector, and <strong>Extrude</strong> gives the strips their thickness: 13 solid ribs.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-08-ribs.png" alt="Thirteen solid ribs">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_10_bake"><a class="anchor" href="#_10_bake"></a>10. Bake</h3>
+<div class="paragraph">
+<p>Select the Extrude and click <strong>Home › Algorithm › Bake</strong>: the ribs become 13 Part solids in the Part Navigator.
+Katydid has no <strong>Custom Preview</strong> colours yet, and there is nothing to internalise, since the profile is on the canvas.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-P-09-baked.png" alt="The baked ribs">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rhino&#8217;s Front view; open Grasshopper</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+N + Application &gt; Algorithmic Modeling</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">an empty canvas on the new part</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draw half of the profile in Rhino&#8217;s Front view; Curve &gt; Set one Curve</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">stand-in: five Construct Points (X and Z typed with Set value&#8230;&#8203;) Shift-wired into Interpolate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">profile from Vector (0.0, 0.0, 0.0) to Vector (58.0, 0.0, 70.0), length 108.4 mm. Katydid has no Curve parameter that follows a FreeCAD sketch yet (asked for): the points are typed instead of drawn</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Two Rhino points, Bottom and Top, referenced into Point parameters (moved with the Gumball)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">stand-in: two Construct Points driven by sliders</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bottom Vector (14.0, 45.0, 0.0), top Vector (44.0, 20.0, 84.0); sliders move them, as the Gumball does in Rhino</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">XZ Plane at the Bottom point; Mirror the curve in it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mirror: G = the profile, P = the Bottom point, N typed 0, 1, 0 (Katydid&#8217;s Mirror takes the plane as a point and a normal)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mirrored profile at y = 90.0; the span is twice the Bottom point&#8217;s Y</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">End Points of both curves</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">stand-in: Evaluate Curve at t = 0 and t = 1 on each</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">{'s0': (0.0, 0.0, 0.0), 'e0': (58.0, 0.0, 70.0), 's1': (0.0, 90.0, 0.0), 'e1': (58.0, 90.0, 70.0)}. Katydid has no End Points component yet (asked for); Evaluate Curve&#8217;s t runs from 0 to 1 along the curve</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bottom arch: Merge (start, Bottom point, mirrored start) into Interpolate; top arch the same through the Top point Projected onto the mirror plane</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Merge: the three points Shift-wired into Interpolate&#8217;s V in order; Project stand-in: Deconstruct the Top point, its Y replaced by the Bottom point&#8217;s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">arches pass through the Bottom point and the projected Top point at (0.0, 0.0) mm. Shift-wiring several sources into one input merges them in order (Grasshopper does the same); Katydid has no Merge or Project component yet</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Edge Surface from the four boundary curves (a loft would ignore the arches)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">stand-in: Loft through the profile, a middle section (Bottom point, the profile&#8217;s midpoint on the mirror plane, the projected Top point) and the mirrored profile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">surface area 9023 mm^2; it passes through the Bottom point and the projected Top point ((0.0, 0.0) mm), so it follows the arches at their middle. Katydid has no Edge Surface yet (asked for)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Contour the surface along Unit Y; distance = span / count (Distance, Division); edge fix x - 0.001</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Contour with N typed 0, 1, 0 and D = a Series of offsets: 1 mm, then (span - 2) / count apart, count + 1 of them, so the first and last planes sit 1 mm inside the edges</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13 contour curves for count 12, 7.333333333333333 mm apart; per plane [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]. Katydid&#8217;s Contour takes one plane offset per item, so a Series lists them; Division is an Expression here</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Offset Curve by the rib depth; Ruled Surface between each contour and its offset (both Flattened)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Offset Curve with a 'Rib depth' slider; Ruled Surface: A = the contours, B = their offsets, both inputs Flattened (right-click &gt; Flatten)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13 flat rib strips, 19395 mm^2 in all</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude the strips along Y by spacing x a thickness ratio (Multiplication, Unit Y)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multiplication (spacing x 'Thickness ratio' 0.3) into Vector XYZ&#8217;s Y, into Extrude&#8217;s D</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13 solid ribs, 41284 mm^3; thickness [2.2] mm (spacing 7.333333333333333 x 0.3 = 2.2000)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Custom Preview with a Colour Swatch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Katydid previews everything in one colour (red, green when selected); per-component colours are not there yet (asked for)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">P12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bake the ribs; Internalise the referenced curve</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">select Extrude + ribbon 'Home › Algorithm &gt; Bake'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13 rib solids in the Part Navigator, 41284 mm^3. Nothing to internalise: the profile&#8217;s points are typed on the canvas, not referenced</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="o.html">O: Grasshopper basics (Katydid)</a></span>
+  <span class="next"><a href="q.html">Q: Faceted planter (Katydid)</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

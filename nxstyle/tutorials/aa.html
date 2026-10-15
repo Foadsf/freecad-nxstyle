@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial AA: Composite position, evaluated from CMM data :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/aa.html">
+    <link rel="prev" href="z.html">
+    <link rel="next" href="ab.html">
+    <meta name="description" content="A cover plate whose four holes are located to the datums by one row of a composite frame and held to each other by the other row; the inspection plan's two rows and two gauges, the rule on the lower row's datums, and the measured holes evaluated against both rows.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#0b6e79">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/keyboard-shortcuts.html">Shortcuts</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="aa.html">AA: Composite position, evaluated from CMM data</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/aa.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial AA: Composite position, evaluated from CMM data</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Books
+</td>
+<td class="hdlist2">
+<p>Cogorno, <em>Geometric Dimensioning and Tolerancing for Mechanical Design</em>, ch. 12 (composite position) and ch. 13 (graphic analysis); Drake, <em>Dimensioning and Tolerancing Handbook</em>, ch. 5</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Standards
+</td>
+<td class="hdlist2">
+<p>ASME Y14.5 (composite position tolerancing)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>Frame Style Composite Frame, PLTZF and FRTZF, the gauges of a composite frame, Analysis › Position Evaluation</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>A plate 80 × 80 × 10 with four holes Ø5 +0.2/0 on a 40 mm square, 20 mm from datums B and C</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A cover plate is bolted on with four screws, and the plate&#8217;s holes must line up with the tapped holes underneath.
+The pattern may sit 0.2 mm off where datums B and C put it.
+The holes must stay within 0.04 mm of each other, square to A, because the screws go into a matching pattern.
+One composite frame says both things.</p>
+</div>
+<div class="paragraph">
+<p>The hole layout is that of Cogorno&#8217;s graphic analysis example (ch. 13), converted to millimetres. The measured data are ours.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_plate_its_datums_and_its_holes"><a class="anchor" href="#_1_the_plate_its_datums_and_its_holes"></a>1. The plate, its datums and its holes</h3>
+<div class="paragraph">
+<p>The plate is made by script. Its datums are A (underside), B (left) and C (front), and its holes are dimensioned 4X Ø5 +0.2/0, all on the four hole faces.
+The part&#8217;s standard is ASME Y14.5.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_composite_frame"><a class="anchor" href="#_2_the_composite_frame"></a>2. The composite frame</h3>
+<div class="paragraph">
+<p>Select the four hole faces, then <strong>PMI › Feature Control Frame</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Position</strong>, Ø ticked, <code>0.2</code>, <strong>MMC</strong>, datums <code>A</code> <code>B</code> <code>C</code>;</p>
+</li>
+<li>
+<p><strong>Frame Style</strong> <strong>Composite Frame</strong>, lower row <code>0.04</code>, <strong>MMC</strong>, datum <code>A</code>.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AA-01-dialog.png" alt="The Feature Control Frame dialog with the lower row">
+</div>
+</div>
+<div class="paragraph">
+<p>The label is a two-row frame with one position symbol: <code>position | Ø0.200 (M) | A | B | C / Ø0.040 (M) | A</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_the_inspection_plan"><a class="anchor" href="#_3_the_inspection_plan"></a>3. The inspection plan</h3>
+<div class="paragraph">
+<p><strong>PMI › Inspection Plan</strong> lists each row as its own characteristic:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>PLTZF</strong>: Ø0.2 at MMC, up to Ø0.4 at LMC, which locates and orients the pattern to A|B|C;</p>
+</li>
+<li>
+<p><strong>FRTZF</strong>: Ø0.04 at MMC, up to Ø0.24 at LMC, which holds the spacing and the orientation to A.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The functional gauge has two gauges.
+The first has pins of Ø4.8 on A, B and C.
+The second has pins of Ø4.96 that float on A, with no stops for B and C.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AA-02-plan.png" alt="Two rows" width="two gauges">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_the_rule_on_the_lower_rows_datums"><a class="anchor" href="#_4_the_rule_on_the_lower_rows_datums"></a>4. The rule on the lower row&#8217;s datums</h3>
+<div class="paragraph">
+<p>Set the frame&#8217;s <strong>LowerDatumReferences</strong> to <code>B</code> in the property view: the plan&#8217;s check reports an error.
+A composite lower row may only repeat the upper row&#8217;s datums, in their order. They orient the row and never locate it.
+Then set it back to <code>A</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_position_evaluation"><a class="anchor" href="#_5_position_evaluation"></a>5. Position Evaluation</h3>
+<div class="paragraph">
+<p>Select the frame, then <strong>Analysis › Position Evaluation</strong>.
+The table lists the true positions from B and from C, read from the model.
+Type the CMM&#8217;s results into the table:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Hole</th>
+<th class="tableblock halign-left valign-top">From B</th>
+<th class="tableblock halign-left valign-top">From C</th>
+<th class="tableblock halign-left valign-top">Size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19.94</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20.06</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.12</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.16</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">59.96</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.20</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60.04</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19.96</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.08</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The result is ACCEPT.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Each hole&#8217;s bonus is its size less 5.0. With it, the pattern-locating zones are 63 % used.</p>
+</li>
+<li>
+<p>The feature-relating zones may slide and turn on A. Fitted to the holes, they are 72 % used.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AA-03-evaluation.png" alt="Both rows pass">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_6_if_the_lower_row_could_not_turn"><a class="anchor" href="#_6_if_the_lower_row_could_not_turn"></a>6. If the lower row could not turn</h3>
+<div class="paragraph">
+<p>Double-click the evaluation, then choose <strong>Lower row zones</strong> › <strong>Translate only</strong>.
+This is what a lower row repeating A|B would allow.
+The same holes now use 103 % of the zones: REJECT.
+The datums a composite lower row repeats decide whether this part passes.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AA-04-pmi.png" alt="The plate with its composite frame">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cover plate: four holes 4X Ø5 +0.2/0 on a 40 mm square; datums A (underside), B (left), C (front); ASME Y14.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">modelled by script, the datums and the size made as in tutorial T</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">datum feature A; datum feature B; datum feature C; 4X Ø5.000 +0.200/0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Feature Control Frame, Frame Style Composite: the pattern Ø0.2 (M) to A|B|C, the holes to each other Ø0.04 (M) oriented to A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 face(s) selected + ribbon 'PMI › Annotation &gt; Feature Control Frame'; Position, Ø ticked, 0.2, MMC, A B C; Frame Style Composite Frame, lower row 0.04, MMC, datum A; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">position | Ø0.200 (M) | A | B | C / Ø0.040 (M) | A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inspection Plan: one row per segment, one functional gauge per row</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'PMI › Inspection &gt; Inspection Plan'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PLTZF Ø0.2 at MMC up to Ø0.4 at LMC, gauge pins Ø4.8 on A|B|C; FRTZF Ø0.04 up to Ø0.24, gauge pins Ø4.96 that float on A (Cogorno ch. 13: a composite frame takes two gauges). NX lists the frame; the plan and the gauges are NXStyle&#8217;s</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A composite lower row may only repeat the upper row&#8217;s datums, in order</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the frame&#8217;s LowerDatumReferences set to B in the property view; Inspection Plan; set back to A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the check reports B as an error: the lower row orients to the datums it repeats, starting with the primary (Cogorno ch. 12, Drake ch. 5)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Analysis &gt; Position Evaluation: the measured holes against both rows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the frame selected + ribbon 'Analysis › Tolerance &gt; Position Evaluation'; the CMM&#8217;s 12 values typed into the table; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ACCEPT: the pattern-locating zones (with each hole&#8217;s bonus) 63 % used; the feature-relating zones, moved and turned to fit, 72 % used. The paper gauge of Cogorno ch. 13 done numerically: a minimax fit. NX has no evaluation of measured data (that is a CMM program&#8217;s job)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same holes if the lower row could not turn (as if it repeated A|B)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the evaluation double-clicked, Lower row zones 'Translate only', MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">REJECT: 103 % of the feature-relating zones. The datums a composite lower row repeats decide how its zones may move, and so whether the part passes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AA7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cover plate with its composite frame</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">render of the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.8% of the view shows the part</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX&#8217;s Feature Control Frame has a composite frame style as well. NX-Style also checks the lower row&#8217;s datums.</p>
+</li>
+<li>
+<p>NX states the requirement but does not evaluate measured data; CMM software does that.
+<strong>Position Evaluation</strong> is NX-Style&#8217;s.</p>
+</li>
+<li>
+<p>STEP AP242 receives the two rows as two position tolerances, because OpenCASCADE cannot link them.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="z.html">Z: MBD exchange through STEP AP242</a></span>
+  <span class="next"><a href="ab.html">AB: Measurement capability</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Sheet Metal :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/sheet-metal.html">
+    <link rel="prev" href="drafting.html">
+    <link rel="next" href="laser-cut.html">
+    <meta name="description" content="NX Sheet Metal on FreeCAD's SheetMetal add-on: tabs, flanges, bends, hems, cutouts and flat patterns, with the neutral factor, bend allowance and bend deduction worked out.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#0b6e79">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/keyboard-shortcuts.html">Shortcuts</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="sheet-metal.html">Sheet Metal</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/sheet-metal.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Sheet Metal</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd></span> opens the <strong>Sheet Metal</strong> application, as in NX.
+Its features come from FreeCAD&#8217;s <a href="https://github.com/shaise/FreeCAD_SheetMetal">SheetMetal add-on</a> (LGPL), which NX-Style bundles in <code>vendor/FreeCAD_SheetMetal</code> and the launcher loads.
+NX-Style gives it NX&#8217;s ribbon and names, and adds what NX keeps per part: the <strong>Sheet Metal Preferences</strong> and a <strong>Flat Pattern</strong> that uses them.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/tutorial-W-01-ribbon.png" alt="The Sheet Metal application&#8217;s Home tab">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_home_tab"><a class="anchor" href="#_the_home_tab"></a>The Home tab</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX</th>
+<th class="tableblock halign-left valign-top">Add-on command</th>
+<th class="tableblock halign-left valign-top">Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Tab</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make Base Wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A plate of the material thickness from a closed sketch (or a bent profile from an open one).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Flange</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make Wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A flange on selected edges: length, angle, bend radius, <strong>Length Spec</strong> (Leg, Outer Sharp, Inner Sharp, Tangential) and <strong>Bend Type</strong> (Material Inside or Outside, Thickness Outside, Offset).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bend</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fold a Wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bends a flat sheet along a sketched line.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Hem Flange</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make Hem</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A hem on an edge.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Extend Face</strong>, <strong>Extend by Sketch</strong>, <strong>Base Shape</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extend Face, Extend by Sketch, Add base shape</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Lengthen a wall; a ready-made bracket or channel.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Convert to Sheet Metal</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Convert to Sheet Metal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Turns a shelled solid into sheet metal.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Rip</strong>, <strong>Bend on Edge</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make Junction, Make Bend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Splits a corner; adds a bend between two walls of a converted solid.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bend Relief</strong>, <strong>Corner Relief</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Make Relief, Add Corner Relief</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reliefs at bends and corners.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Normal Cutout</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extruded Cutout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A cutout through the sheet.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Wrapped Cutout</strong>, <strong>Form Feature</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Wrap Cutout, Make Forming in Wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A sketch&#8217;s cutout wrapped onto bent sheet; a formed (stamped) feature.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Flat Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unfold (NX-Style&#8217;s)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The flat pattern, with the preferred neutral factor.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Sheet Metal Preferences</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">NX-Style&#8217;s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Thickness, bend radius, neutral factor.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The <strong>Analysis</strong>, <strong>PMI</strong>, <strong>View</strong>, <strong>Tools</strong>, <strong>PLM</strong> and <strong>Application</strong> tabs are those of Modeling.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sheet_metal_preferences"><a class="anchor" href="#_sheet_metal_preferences"></a>Sheet Metal Preferences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Material Thickness</strong>, <strong>Bend Radius</strong> and <strong>Neutral Factor</strong> for new features.
+They are the add-on&#8217;s own defaults, so <strong>Tab</strong> and <strong>Flange</strong> start from them, and <strong>Flat Pattern</strong> unfolds with the neutral factor (the add-on&#8217;s own Unfold starts at a fixed 0.4).</p>
+</div>
+<div class="paragraph">
+<p>The dialog shows what the values give for a 90° bend, and checks the neutral factor:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the <strong>neutral factor</strong> K places the neutral layer, the one that keeps its length, at K × T from the inside of the bend. Shih gives 0.25 to 0.5 as the practical range, and his exercise uses 0.41, which is also NX-Style&#8217;s starting value; values outside 0.25 to 0.5 are flagged, values outside 0 to 0.5 refused. DIN 6935 quotes k = 2K, so a DIN value typed here is refused rather than silently doubling the bend allowance;</p>
+</li>
+<li>
+<p>a bend radius smaller than the thickness is noted: check the material&#8217;s minimum bend radius.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bend_allowance_and_flat_length"><a class="anchor" href="#_bend_allowance_and_flat_length"></a>Bend allowance and flat length</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For a bend through the angle A (90° for a right-angle flange), inside radius R, thickness T (Shih, <em>Parametric Modeling with Siemens NX</em>, ch. 13):</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>bend allowance     BA   = A (R + K T)            A in radians
+outside setback    OSSB = tan(A/2) (R + T)
+bend deduction     BD   = 2 OSSB − BA</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>dimensioned between bend tangent lines: flat length = the straight lengths + BA per bend;</p>
+</li>
+<li>
+<p>dimensioned to the outside (outer sharp to outer sharp): flat length = the outside lengths − BD per bend.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>nxstyle/sheetmetal.py</code> has both; its unit tests reproduce Shih&#8217;s hand calculation of the actuator bracket.
+<a href="tutorials/w.html" class="xref page">Tutorial W</a> builds that bracket and compares the add-on&#8217;s flat pattern with the book: 67.0523 mm against 2 × 1.31992 in = 67.0519 mm (the book rounds to five places).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_switching_it_off"><a class="anchor" href="#_switching_it_off"></a>Switching it off</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>python launch_nx.py --no-sheetmetal</code>, or <code>"sheet_metal": "none"</code> in <code>nxstyle.json</code>, starts without the add-on; <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd></span> then explains how to get it.
+An add-on already installed in the NX profile&#8217;s <code>Mod</code> folder is used instead of the bundled one, never both.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX keeps the sheet metal preferences per part; the add-on keeps them per user.</p>
+</li>
+<li>
+<p>NX&#8217;s Flat Pattern is a feature with its own drawing view type; here the flat pattern is a solid (with sketches of its outline and bend lines) that a drawing views from above.</p>
+</li>
+<li>
+<p>NX&#8217;s Contour Flange, Lofted Flange, Jog and Gusset have no add-on equivalent; a Tab from an open, bent profile covers the contour flange.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="drafting.html">Drafting and GD&amp;T</a></span>
+  <span class="next"><a href="laser-cut.html">Laser Cut (LCInterlocking)</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

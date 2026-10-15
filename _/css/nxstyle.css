@@ -1,0 +1,94 @@
+/* FreeCAD NX-Style documentation: NXStyle's accent (#0b6e79, the same teal as the add-on's theme)
+   layered on Antora's default UI. The default UI compiles its colours to fixed values, so they are
+   overridden by selector here, not by its custom properties. */
+:root {
+  --nx-accent: #0b6e79;
+  --nx-accent-dark: #095a63;
+  --nx-accent-soft: #e6f2f3;
+  --nx-accent-tint: #c7e3e7;
+}
+
+/* header */
+.navbar { background: var(--nx-accent); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08); }
+
+/* links in the page, the menu and the page outline */
+.doc a, .doc a code { color: var(--nx-accent); }
+.doc a:hover { color: var(--nx-accent-dark); }
+.nav-menu .is-current-page > .nav-link { color: var(--nx-accent); }
+.toc .toc-menu a.is-active { border-left-color: var(--nx-accent); color: var(--nx-accent-dark); }
+.toc .toc-menu a:hover { color: var(--nx-accent); }
+.pagination a:hover { color: var(--nx-accent); }
+.navbar-brand .navbar-item { color: #fff; }
+.nx-brand { font-weight: 600; letter-spacing: 0.01em; gap: 0.55rem; display: flex; align-items: center;
+  white-space: nowrap; flex-shrink: 0; }
+.nx-title-short { display: none; }
+@media screen and (max-width: 599.5px) {
+  .nx-title { display: none; }
+  .nx-title-short { display: inline; }
+  .navbar-brand .navbar-item.search { flex: 1 1 auto; min-width: 0; padding-left: 0.5rem; padding-right: 0.25rem; }
+  #search-input { width: 100%; }
+}
+/* the project's own mark (docs/ui/img/logo.svg); a white ring keeps it apart from the teal bar */
+.site-logo { width: 1.9rem; height: 1.9rem; border-radius: 9px; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
+  flex-shrink: 0; }
+@media screen and (min-width: 1024px) {
+  .navbar-end > a.navbar-item, .navbar-end .navbar-link { color: #fff; }
+  .navbar-end > a.navbar-item:hover { background: var(--nx-accent-dark); color: #fff; }
+}
+.nx-github { font-weight: 600; }
+#search-input { border-radius: 4px; border: 1px solid transparent; }
+#search-input:focus { border-color: var(--nx-accent-tint); outline: none; }
+
+/* reading comfort */
+.doc { color: #1f2a33; line-height: 1.65; }
+.doc h1.page { color: #12303a; }
+.doc h2 { border-bottom: 1px solid #e3e8ec; padding-bottom: 0.2em; }
+.doc .paragraph.lead > p { font-size: 1.15em; color: #3b4650; }
+
+/* screenshots: framed, never wider than the column, readable on phones */
+.doc .imageblock img { max-width: 100%; height: auto; border: 1px solid #d5dde3; border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(16, 42, 54, 0.08); }
+.doc .imageblock .title { font-style: normal; color: #5f6b7a; font-size: 0.9em; }
+.doc .imageblock.borderless img { border: 0; box-shadow: none; }
+
+/* keyboard keys */
+.doc kbd {
+  border: 1px solid #c5ced6; border-bottom-width: 2px; border-radius: 4px; background: #f7f9fa;
+  padding: 0.05em 0.4em; font-size: 0.85em; color: #24313b; white-space: nowrap;
+}
+
+/* tutorial outcome badges (generated tables) */
+.doc .outcome { display: inline-block; padding: 0.05em 0.5em; border-radius: 999px; font-size: 0.82em; font-weight: 600; }
+.doc .outcome.same { background: #e3f4e8; color: #1a6b35; }
+.doc .outcome.differs { background: var(--nx-accent-soft); color: var(--nx-accent-dark); }
+.doc .outcome.limit { background: #fff1d6; color: #8a5a00; }
+.doc .outcome.missing { background: #f0e8fb; color: #5b3a8c; }
+.doc .outcome.skipped { background: #eef1f4; color: #5f6b7a; }
+.doc .outcome.failed { background: #fde7e7; color: #b42318; }
+.doc table.steps { font-size: 0.88em; }
+.doc table.steps td:first-child { white-space: nowrap; font-weight: 600; color: #5f6b7a; }
+
+/* wide reference tables scroll sideways on small screens instead of squeezing */
+@media screen and (max-width: 1023.5px) {
+  .doc table.tableblock { display: block; overflow-x: auto; max-width: 100%; }
+  /* cells keep a readable width; the table scrolls sideways inside its block instead */
+  .doc table.tableblock th.tableblock, .doc table.tableblock td.tableblock { min-width: 6.5rem; }
+  .doc table.steps th.tableblock:first-child, .doc table.steps td.tableblock:first-child { min-width: 2.5rem; }
+}
+
+/* "at a glance" cards on the home page */
+.doc .ulist.nx-cards ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.8rem;
+  list-style: none; margin: 1rem 0 0; padding: 0; }
+.doc .ulist.nx-cards li { border: 1px solid #dfe6eb; border-radius: 8px; padding: 0.8rem 1rem; background: #fafcfd;
+  margin: 0; }
+.doc .ulist.nx-cards li:hover { border-color: var(--nx-accent-tint); background: var(--nx-accent-soft); }
+.doc .ulist.nx-cards li p { margin: 0; }
+.doc .ulist.nx-cards li a { font-weight: 600; }
+
+/* admonitions in the accent */
+.doc .admonitionblock.tip td.icon .icon-tip::before { color: var(--nx-accent); }
+.doc .admonitionblock.note td.icon .icon-note::before { color: var(--nx-accent); }
+
+/* footer */
+.footer { background: #f3f6f8; color: #5f6b7a; font-size: 0.85rem; }
+.footer a { color: var(--nx-accent); }

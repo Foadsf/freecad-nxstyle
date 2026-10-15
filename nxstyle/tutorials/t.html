@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial T: A guide bush documented to ISO GPS :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/t.html">
+    <link rel="prev" href="s.html">
+    <link rel="next" href="u.html">
+    <meta name="description" content="Technical product documentation in the model: ISO 286 fits, the envelope, ISO 2768 general tolerances, datums and geometrical tolerances as 3D PMI, the inspection plan and its checks, the fit as a stack-up, and the drawing inheriting the PMI.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#0b6e79">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/keyboard-shortcuts.html">Shortcuts</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="t.html">T: A guide bush to ISO GPS (PMI)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/t.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial T: A guide bush documented to ISO GPS</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Book
+</td>
+<td class="hdlist2">
+<p>The PMI workflow of Wünsch, Pilz and Vajna, <em>Siemens NX für Einsteiger – kurz und bündig</em>, 4th ed., section 6.10 (PMI tab, Rapid Dimension on a cylindrical face, tolerances, the PMI folder); the part is ours</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Standards
+</td>
+<td class="hdlist2">
+<p>ISO 16792 (3D annotation), ISO 286 (fits), ISO 14405 (the envelope), ISO 8015 (independency), ISO 2768 (general tolerances), ISO 1101 and ISO 5459 (geometrical tolerances and datums)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>PMI › Tolerancing, Rapid Dimension with a tolerance class, the envelope, datums, frames, Inspection Plan, the ISO 8015 trap, a fit as a stack-up, STEP with PMI, Inherit PMI</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>A flange Ø40 × 8, a body Ø25 × 30 pressed into a housing, a bore Ø16 for a sliding shaft</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The bush&#8217;s body is pressed into a housing (Ø25 k6 in an H7 hole); its shoulder seats on the housing; a Ø16 g6 shaft slides in its bore.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_part_and_its_standard"><a class="anchor" href="#_1_the_part_and_its_standard"></a>1. The part and its standard</h3>
+<div class="paragraph">
+<p>The bush is modelled by script; the exercise is the documentation.
+<strong>PMI › Tolerancing</strong>: <strong>ISO GPS</strong>, general tolerances <code>ISO 2768-mK</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_sizes_with_their_fits"><a class="anchor" href="#_2_sizes_with_their_fits"></a>2. Sizes with their fits</h3>
+<div class="paragraph">
+<p>Select the body&#8217;s cylinder, <strong>PMI › Rapid Dimension</strong>: tolerance class <code>k6</code>, <strong>Envelope</strong> ticked, OK: <em>Ø25.000 k6 (+0.015/+0.002) Ⓔ</em>.
+Then the bore: <code>H7</code>, without the envelope for now.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_datums_and_geometrical_tolerances"><a class="anchor" href="#_3_datums_and_geometrical_tolerances"></a>3. Datums and geometrical tolerances</h3>
+<div class="paragraph">
+<p><strong>Datum Feature Symbol</strong> A on the body&#8217;s cylinder, B on the shoulder.
+<strong>Feature Control Frame</strong>: coaxiality Ø0.02 to A on the bore; perpendicularity 0.02 to A on the shoulder.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_dimensions_without_a_tolerance_of_their_own"><a class="anchor" href="#_4_dimensions_without_a_tolerance_of_their_own"></a>4. Dimensions without a tolerance of their own</h3>
+<div class="paragraph">
+<p><strong>Rapid Dimension</strong> between the shoulder and the top: 30, nothing typed; the flange 8 ±0.05.
+The 30 is covered by ISO 2768-m: ±0.2 (over 6 up to and including 30).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-T-03-pmi.png" alt="The bush with its PMI: fits with the envelope" width="datums A and B" height="two frames">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_the_inspection_plan_and_the_iso_8015_trap"><a class="anchor" href="#_5_the_inspection_plan_and_the_iso_8015_trap"></a>5. The inspection plan, and the ISO 8015 trap</h3>
+<div class="paragraph">
+<p><strong>PMI › Inspection Plan</strong> numbers the six characteristics and checks the PMI.
+It flags the bore: <em>H7 is a fit, but under ISO 8015 independency the size controls only two-point sizes, not form</em>.
+A bore within H7 at every section can still be bent or barrel-shaped enough to bind the shaft.
+Tick the bore&#8217;s <strong>Envelope</strong> in the property view and run the plan again: no warnings.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-T-02-plan.png" alt="The inspection plan: characteristics with their limits" width="where each tolerance comes from" height="and the checks">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_6_the_fit_as_a_stack_up"><a class="anchor" href="#_6_the_fit_as_a_stack_up"></a>6. The fit as a stack-up</h3>
+<div class="paragraph">
+<p><strong>Tolerance Stackup</strong>, select the bore&#8217;s PMI dimension, <strong>Add from PMI</strong>; <strong>Add Typed</strong> for the shaft: 16, direction −, class <code>g6</code>.
+The worst case is a clearance of 0.006 to 0.035 mm, as ISO 286 gives for Ø16 H7/g6.
+The stack-up reads the bore&#8217;s class from the PMI: change it, and the fit follows (<a href="v.html" class="xref page">tutorial V</a> does).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7_step_with_pmi"><a class="anchor" href="#_7_step_with_pmi"></a>7. STEP with PMI</h3>
+<div class="paragraph">
+<p><strong>PMI › STEP with PMI</strong>, a file name, OK.
+The file holds the bush and its PMI as STEP AP242 data: datums A and B, the two diameters with H7 and k6, the 8 ±0.05 as a size, the 30 as a location, the coaxiality and perpendicularity frames with their datums.
+OpenCASCADE reads it back: 2 datum references, 4 dimensions, 2 geometrical tolerances.
+The envelopes and the ISO 2768 note are listed as not written: AP242 in OpenCASCADE has no place for them.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-T-06-step.png" alt="The Information window after STEP with PMI: what the file holds" width="what was not written" height="and what OpenCASCADE read back">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_8_the_drawing_inherits_the_pmi"><a class="anchor" href="#_8_the_drawing_inherits_the_pmi"></a>8. The drawing inherits the PMI</h3>
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></span>, <strong>New Sheet</strong>, a top view and a front view at 2:1.
+Select each view and click <strong>Inherit PMI</strong>: the diameters with k6 and H7 and Ⓔ, the 30 and the 8 ±0.05, the frames, the datum symbols, and the note <em>Tolerancing ISO 8015 · General tolerances ISO 2768-mK</em>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-T-05-drawing.png" alt="The drawing made from the PMI">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The guide bush: flange Ø40 x 8, body Ø25 x 30, bore Ø16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">modelled by script (the exercise is the documentation)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 17139.0 mm^3, expected 17139.0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PMI tab &gt; Tolerancing: ISO GPS, general tolerances ISO 2768-mK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'PMI › Standard &gt; Tolerancing', 'ISO 2768-mK' typed, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">standard ISO, general ISO 2768-mK: what a drawing&#8217;s title block says (NX keeps it in the drafting standard and a general note); stored with the PMI folder of the part</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rapid Dimension on the body&#8217;s cylinder: Ø25 k6 with the envelope Ⓔ (it is pressed into the housing)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">body selected + ribbon 'PMI › Dimension &gt; Rapid Dimension'; 'k6' typed, Envelope ticked; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ø25.000 k6 (+0.015/+0.002) Ⓔ; NX: the cylindrical face is picked in the graphics window and the PMI placed with a click; here it is placed beside the face</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datum Feature Symbol A on the Ø25 body (its axis)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">body selected + ribbon 'PMI › Annotation &gt; Datum Feature Symbol'; letter A; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">datum feature A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datum Feature Symbol B on the shoulder that seats on the housing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">shoulder selected + ribbon 'PMI › Annotation &gt; Datum Feature Symbol'; letter B; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">datum feature B</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rapid Dimension on the bore: Ø16 H7 (no envelope yet)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bore selected + ribbon 'PMI › Dimension &gt; Rapid Dimension'; 'H7' typed; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ø16.000 H7 (+0.018/0)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Coaxiality of the bore Ø0.02 to A (ISO 1101; the symbol ASME calls concentricity)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bore selected + ribbon 'PMI › Annotation &gt; Feature Control Frame'; concentricity, Ø0.02, datum A; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">concentricity | Ø0.020 | A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Perpendicularity of the shoulder 0.02 to A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">shoulder selected + ribbon 'PMI › Annotation &gt; Feature Control Frame'; perpendicularity, 0.02, datum A; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">perpendicularity | 0.020 | A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rapid Dimension: the body&#8217;s length 30, no tolerance of its own (ISO 2768-m, over 6 up to 30: ±0.2)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">shoulder, top selected + ribbon 'PMI › Dimension &gt; Rapid Dimension'; nothing typed; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30.000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rapid Dimension: the flange 8 ±0.05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">under, shoulder selected + ribbon 'PMI › Dimension &gt; Rapid Dimension'; +0.05 and −0.05 typed; MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8.000 ±0.050</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inspection Plan: the characteristics, numbered, and the checks</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'PMI › Inspection &gt; Inspection Plan'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the check finds the bore&#8217;s H7 without the envelope: under ISO 8015 a size controls only local two-point sizes, so the fit is not guaranteed. NX has no such check</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bore gets the envelope Ⓔ; the plan again</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the PMI&#8217;s Envelope property; Inspection Plan</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6 characteristics, no errors or warnings; the length 30 inspected at 29.8 to 30.2 (ISO 2768-m); bore Ø16.000 H7 (+0.018/0) Ⓔ</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The fit Ø16 H7/g6 as a stack-up: bore from the PMI, shaft by its ISO 286 class</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add from PMI (the bore&#8217;s dimension) + Add Typed: 16, '-', class g6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">clearance 0.006 to 0.035 mm worst case, as ISO 286 gives for 16 H7/g6 (0.006 to 0.035); a later change of the PMI&#8217;s class follows</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bush with its PMI in the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">render of the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.3% of the view shows the part</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PMI &gt; STEP with PMI: the bush and its PMI as STEP AP242 data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'PMI › Exchange &gt; STEP with PMI', the file name typed, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">schema AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF; datums A, B (2 datum systems); sizes: 2 diameter, 1 thickness; locations: 1; with ± tolerances: 3; fits: H7, k6; geometric tolerances: 1 coaxiality, 1 perpendicularity; read back by OpenCASCADE: {'datums': 2, 'dimensions': 4, 'geometric_tolerances': 2}. NX writes PMI to STEP AP242 too; FreeCAD&#8217;s own STEP export drops it. The envelope Ⓔ and the ISO 2768 note have no semantic AP242 form in OpenCASCADE and are listed as not written</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drafting: New Sheet, a top view and a front view at 2:1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+Shift+D, ribbon 'New Sheet', twice 'Base View' with the body selected</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the second Base View stands in for a projected view, as in tutorial H</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inherit PMI on each view: the dimensions with their ISO classes and the envelope, the frames, the datum symbols, and the tolerancing note</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">each view selected + ribbon 'Drafting &gt; Inherit PMI'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 dimensions [8.0, 16.0, 25.0, 30.0] (⌀%.3w k6 Ⓔ; ⌀%.3w H7 Ⓔ; %.2w; %.2w), 4 symbols, note ['Tolerancing ISO 8015', 'General tolerances ISO 2768-mK']. NX inherits PMI from a model view into a drawing view; FreeCAD has no PMI, NXStyle adds both</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX places each PMI with a click; here a PMI is placed beside its face. This bush&#8217;s PMI are made with no work view, so they show in every model view; <a href="y.html" class="xref page">tutorial Y</a> works in model views.</p>
+</li>
+<li>
+<p>NX has no ISO 8015 check and no inspection plan; NX-Style&#8217;s come from the PMI&#8217;s semantics.</p>
+</li>
+<li>
+<p>NX writes PMI into STEP AP242 and JT; NX-Style writes STEP AP242 with semantic PMI only (no graphical PMI, no JT).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="s.html">S: Tolerance stack-up of a pin</a></span>
+  <span class="next"><a href="u.html">U: Volume claims and clearance</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>
