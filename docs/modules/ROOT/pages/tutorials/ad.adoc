@@ -1,0 +1,68 @@
+= Tutorial AD: A laser-cut tray with tabs and slots
+:description: Five flat panels joined by tabs and slots with the LCInterlocking add-on, every joined part checked, then laid flat and exported for the laser cutter.
+
+[horizontal]
+Source:: The LCInterlocking add-on's own workflow (its interlocking and export guides). NX has no laser-cut application, and the tray is ours
+You learn:: Application › Laser Cut, panels as Part solids, Tabs and Slots, the kerf, Export Flat Parts, an SVG for the cutter
+Sizes:: 3 mm sheet; a 120 × 80 base; two 120 × 40 long walls on it; two short walls (74 × 40) between them
+
+== Step by step
+
+=== 1. The Laser Cut application
+
+kbd:[Ctrl+N], then *Application › Laser Cut*.
+The Home tab has the add-on's commands under NX-style names (xref:laser-cut.adoc[Laser Cut]).
+
+image::tutorial-AD-01-ribbon.png[The Laser Cut application's Home tab]
+
+=== 2. Five panels
+
+Click *Block* five times and type each block's size and position into its properties:
+
+[cols="1,2,2",options="header"]
+|===
+| Panel | Length × Width × Height | Position
+| Base | 120 × 80 × 3 | 0, 0, 0
+| Front | 120 × 3 × 40 | 0, 0, 3
+| Back | 120 × 3 × 40 | 0, 77, 3
+| Left | 3 × 74 × 40 | 0, 3, 3
+| Right | 3 × 74 × 40 | 117, 3, 3
+|===
+
+The walls stand on the base, and the short walls sit between the long ones.
+The add-on works best with Part solids such as these. It ignores a PartDesign Body's own placement, so a moved Body would be joined in the wrong place.
+
+=== 3. Tabs and Slots
+
+*Tabs and Slots*. In its task panel, select the five panels and click *Add parts*. Each panel is found to be 3 mm thick.
+
+Then select the eight faces where a panel meets another: the bottom face of each wall, and both end faces of each short wall.
+Choose *Tab* and click *Add faces*.
+Each face gets one 10 mm tab (the panel's default), and the panel it touches gets the slot.
+
+=== 4. OK
+
+MB2.
+The five joined parts replace the panels, which are kept hidden in a group.
+The volume grows by 14.4 mm³: eight tabs, each 0.2 mm wider than its slot (the kerf, thickness ÷ 15), so the parts press-fit after cutting.
+
+image::tutorial-AD-02-tray.png[The tray, joined]
+
+=== 5. Flat parts for the cutter
+
+Select the five joined parts and click *Export Flat Parts*.
+A new document has them lying flat side by side, each 3 mm thick, with a 2D outline of each.
+*File › Export* writes the outlines as SVG (or DXF) for the laser cutter.
+
+image::tutorial-AD-03-flat.png[The five parts laid flat]
+
+== The replay
+
+include::partial$generated/tutorial-AD.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX has no laser-cut application. In NX the tabs and slots would be extrudes and subtracts on each body, and the flat parts would come from exporting each body's face.
+* The replay types the panels' sizes into their properties. FreeCAD's *Block* first makes a 10 mm cube, while NX's Block asks for the sizes before it makes the block.

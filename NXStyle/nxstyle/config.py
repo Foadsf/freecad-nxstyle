@@ -51,6 +51,7 @@ DEFAULTS = {
     "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
     "sheet_metal": "sheetmetal",       # NX Sheet Metal: FreeCAD's "sheetmetal" add-on (bundled), or "none"
+    "laser_cut": "lcinterlocking",     # Laser Cut: the "lcinterlocking" add-on (bundled), or "none"
 }
 
 BACKGROUNDS = {

@@ -1,2 +1,2 @@
-# FreeCAD's SheetMetal add-on is bundled unmodified as a submodule; it is linted by its own project.
-extend-exclude = ["vendor/FreeCAD_SheetMetal"]
+# FreeCAD's SheetMetal add-on and LCInterlocking are bundled unmodified as submodules; each is linted by its own project.
+extend-exclude = ["vendor/FreeCAD_SheetMetal", "vendor/LCInterlocking"]

@@ -1,0 +1,32 @@
+{
+  "_comment": "Laser Cut: flat panels joined by tabs and slots, on the LCInterlocking add-on (github.com/execuc/LCInterlocking, bundled as vendor/LCInterlocking). NX has no laser-cut application; the names follow NX's wording where one fits. The add-on registers its commands when its workbench (LCInterlockingWorkbench) starts, which switching to this application does. Its icons are 16 px, so its buttons are small ones. Panels are best Part solids (Block, Extrude): the add-on ignores a PartDesign Body's own placement (its issue 38).",
+  "title": "Laser Cut",
+  "workbench": "LCInterlockingWorkbench",
+  "preload": ["SketcherWorkbench", "PartWorkbench"],
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "Panel", "items": [
+        {"cmd": "Sketcher_NewSketch", "label": "Sketch", "size": "large"},
+        {"cmd": "Part_Extrude", "label": "Extrude", "size": "large"},
+        {"cmd": "Part_Box", "label": "Block"}
+      ]},
+      {"name": "Box", "items": [
+        {"cmd": "make_box_command", "label": "Panel Box"},
+        {"cmd": "make_rounded_box_command", "label": "Rounded Panel Box"}
+      ]},
+      {"name": "Joint", "items": [
+        {"cmd": "multiple_tabs_command", "label": "Tabs and Slots"},
+        {"cmd": "crosspiece", "label": "Cross Halving"},
+        {"cmd": "livinghinge", "label": "Living Hinge"}
+      ]},
+      {"name": "Output", "items": [
+        {"cmd": "export_command", "label": "Export Flat Parts"}
+      ]}
+    ]},
+    {"include": "modeling:Analysis"},
+    {"include": "common:View"},
+    {"include": "common:Tools"},
+    {"include": "common:PLM"},
+    {"include": "common:Application"}
+  ]
+}
