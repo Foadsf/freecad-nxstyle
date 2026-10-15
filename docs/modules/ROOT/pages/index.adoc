@@ -81,6 +81,9 @@ All 65 NX key bindings and what each one does here.
 | Sheet Metal
 | kbd:[Ctrl+Shift+M]: FreeCAD's SheetMetal add-on (bundled) with NX's names, Sheet Metal Preferences and Flat Pattern. See xref:sheet-metal.adoc[].
 
+| Laser Cut (not in NX)
+| Flat panels joined by tabs and slots, cross halvings and living hinges, laid flat for the cutter: the LCInterlocking add-on (bundled). See xref:laser-cut.adoc[].
+
 | Assembly Clearance, Simple Interference
 | The same four kinds of interference and the Clearance Browser; plus volume claims. See xref:clearance.adoc[].
 

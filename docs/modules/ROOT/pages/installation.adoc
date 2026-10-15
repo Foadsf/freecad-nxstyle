@@ -25,7 +25,7 @@ The hidden-desktop test mode is Windows-only; on Linux the self-test runs on wha
 
 == Get the project
 
-Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata`, xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid` and FreeCAD's xref:sheet-metal.adoc[SheetMetal add-on] in `vendor/FreeCAD_SheetMetal`.
+Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata`, xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid`, FreeCAD's xref:sheet-metal.adoc[SheetMetal add-on] in `vendor/FreeCAD_SheetMetal` and xref:laser-cut.adoc[LCInterlocking] in `vendor/LCInterlocking`.
 
 [source,bash]
 ----
@@ -39,7 +39,7 @@ If you cloned without `--recursive`, or downloaded a ZIP of the repository, fetc
 git submodule update --init
 ----
 
-NX-Style still starts without them; the launcher then prints `Strata: not found`, `Katydid: not found` or `SheetMetal: not found` and how to get them.
+NX-Style still starts without them; the launcher then prints `Strata: not found`, `Katydid: not found`, `SheetMetal: not found` or `LCInterlocking: not found` and how to get them.
 
 == Start it
 
@@ -59,6 +59,7 @@ NX profile: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1
 Strata: bundled (...\freecad-nxstyle\vendor\freecad-strata)
 Katydid: bundled (...\freecad-nxstyle\vendor\Katydid)
 SheetMetal: bundled (...\freecad-nxstyle\vendor\FreeCAD_SheetMetal)
+LCInterlocking: bundled (...\freecad-nxstyle\vendor\LCInterlocking)
 ----
 
 Open files directly by naming them:
@@ -94,6 +95,9 @@ python launch_nx.py part.FCStd
 
 | `--no-sheetmetal`
 | Starts without the SheetMetal add-on (Sheet Metal). To switch it off for good, set `"sheet_metal": "none"`.
+
+| `--no-lcinterlocking`
+| Starts without the LCInterlocking add-on (Laser Cut). To switch it off for good, set `"laser_cut": "none"`.
 
 | `--dry-run`
 | Prints the FreeCAD executable, the profile and the command line, and starts nothing.

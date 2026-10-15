@@ -5,6 +5,7 @@ include::partial$generated/tutorial-meta.adoc[]
 Tutorials A to N are exercises from NX, GD&T and engineering-graphics textbooks, done in NX-Style the way the book tells an NX user to work.
 Tutorials O to R are Grasshopper video tutorials done on the xref:algorithmic-modeling.adoc[Algorithmic Modeling] canvas (Katydid).
 Tutorials S to AC are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, an opto-mechanical pin location, PMI organised in model views, the model with its PMI exchanged through STEP AP242, a composite position frame evaluated from CMM data, the measurement capability of the inspection methods, and a drawing whose title block comes from the release.
+Tutorial AD joins a laser-cut tray with tabs and slots and lays its parts flat for the cutter.
 Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
 
 The step tables are not written by hand.
@@ -44,6 +45,7 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | STEP AP242 with semantic PMI | xref:tutorials/t.adoc[T], xref:tutorials/v.adoc[V]
 | Sheet metal: tab, flanges, flat pattern, bend allowance | xref:tutorials/w.adoc[W]
 | Opto-mechanics: pin location, pointing error, thermal mismatch | xref:tutorials/x.adoc[X]
+| Laser-cut parts: tabs and slots, flat parts for the cutter | xref:tutorials/ad.adoc[AD]
 | PMI model views: the work view, Display in Views, drawings from model views | xref:tutorials/y.adoc[Y]
 | MBD exchange: STEP AP242 out and in, datum reference frames | xref:tutorials/z.adoc[Z]
 | Composite position, functional gauges, evaluating CMM data | xref:tutorials/aa.adoc[AA]
