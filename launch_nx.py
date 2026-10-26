@@ -29,6 +29,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -426,6 +427,74 @@ def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | N
 # keeps working.
 HARNESS_MEMORY_GB = 4.0
 STATUS_NO_MEMORY = 0xC0000017      # exit code of a run ended at the memory ceiling
+
+# The result a harness run must leave (written by NXStyle/nxstyle/harness_result.py, same schema)
+HARNESS_SCHEMA = "nxstyle-harness/1"
+RESULT_FILES = {"smoke": "smoke.json", "tutorial": "tutorial.json"}
+EXIT_INVALID_RESULT = 6            # stale, empty, truncated, unfinished or another run's result
+EXIT_CHILD_FAILED = 7              # FreeCAD exited with an error code
+
+
+def judge_result(path: Path, harness: str, run_id: str, child_code: int | None,
+                 require_all: bool = False) -> int:
+    """The exit code of a harness run, from its result file and FreeCAD's exit code. Prints the checks or
+    steps. Only a result that names this run, says it is complete and lists every planned step as run is
+    believed: an old file left in the output folder, '{}', empty lists or a truncated file fail
+    (EXIT_INVALID_RESULT), and so does a FreeCAD that exited with an error (EXIT_CHILD_FAILED), even when an
+    earlier, passing result is still in the folder."""
+    def bad(why: str, code: int = EXIT_INVALID_RESULT) -> int:
+        print(f"{harness} run not accepted: {why}", file=sys.stderr)
+        return code
+
+    if not path.is_file():
+        if child_code:
+            return bad(f"FreeCAD exited with code {child_code} and left no result", 2)
+        return bad("no result (FreeCAD crashed or NXStyle failed to load)", 2)
+    try:
+        result = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        return bad(f"{path.name} cannot be read ({e}): a truncated or corrupted file")
+    if not isinstance(result, dict):
+        return bad(f"{path.name} is not a result object")
+    if result.get("schema") != HARNESS_SCHEMA or result.get("harness") != harness:
+        return bad(f"{path.name} is not a {harness} result of schema {HARNESS_SCHEMA} "
+                   f"(schema {result.get('schema')!r}, harness {result.get('harness')!r}): left by an older run?")
+    if result.get("run_id") != run_id:
+        return bad(f"{path.name} is from another run ({result.get('run_id')!r}), not this one ({run_id}): "
+                   "this run left no result of its own")
+    if result.get("status") != "complete":
+        return bad(f"the run did not finish (status {result.get('status')!r})")
+    planned, ran = result.get("planned"), result.get("ran")
+    if not isinstance(planned, list) or not planned:
+        return bad("the result lists no planned steps")
+    if not isinstance(ran, list) or sorted(ran) != sorted(planned):
+        missing = sorted(set(planned) - set(ran or []))
+        return bad(f"not every planned step ran: {missing[:10]}{' …' if len(missing) > 10 else ''}")
+    key = "checks" if harness == "smoke" else "steps"
+    rows = result.get(key)
+    if not isinstance(rows, list) or not rows:
+        return bad(f"the result has no {key}")
+    if harness == "smoke":
+        counts = {"pass": 0, "fail": 0, "skipped": 0}
+        for c in rows:
+            status = c.get("status") or ("pass" if c.get("ok") else "fail")
+            status = status if status in counts else "fail"
+            counts[status] += 1
+            label = {"pass": "PASS", "fail": "FAIL", "skipped": "SKIP"}[status]
+            print(f"{label}  {c.get('name')}: {c.get('detail', '')}")
+        print(f"{len(rows)} checks: {counts['pass']} passed, {counts['fail']} failed, {counts['skipped']} skipped")
+        failed = counts["fail"] or (require_all and counts["skipped"])
+    else:
+        for s in rows:
+            print(f"{s['tutorial'].split(':', 1)[0]}{s['n']:>3} {s['outcome']:<8} {s['nx']}  [{s['replay']}]  "
+                  f"{s['detail']}")
+        dropped = result.get("dropped") or []
+        if dropped:
+            print(f"{len(dropped)} steps not run after a failure in their tutorial: {dropped}")
+        failed = any(s.get("outcome") == "FAILED" for s in rows)
+    if child_code:
+        return bad(f"FreeCAD exited with code {child_code} after writing its result", EXIT_CHILD_FAILED)
+    return 1 if failed else 0
 HARNESS_MUTEX = "Local\\FreeCAD-NXStyle-harness"
 
 
@@ -622,6 +691,9 @@ def main(argv: list[str] | None = None) -> int:
                          "AC title block and revision block from the release (runs T and V first), "
                          "AD a laser-cut tray with tabs and slots)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
+    ap.add_argument("--require-all", action="store_true",
+                    help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "
+                         "no FEM, no QtTest) fails the run instead of being reported apart")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
     ap.add_argument("--max-memory-gb", type=float, default=HARNESS_MEMORY_GB,
@@ -655,8 +727,9 @@ def main(argv: list[str] | None = None) -> int:
         out = (args.smoke_test or args.tutorial).resolve()
         out.mkdir(parents=True, exist_ok=True)
         profile = args.profile or Path(tempfile.mkdtemp(prefix=f"nxstyle-{harness}-"))
+        run_id = uuid.uuid4().hex             # the result must carry it: a file from another run is rejected
         extra = {f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1",
-                 "NXSTYLE_TUTORIALS": args.tutorials}
+                 "NXSTYLE_TUTORIALS": args.tutorials, "NXSTYLE_RUN_ID": run_id}
         # a throwaway profile by default; a --profile given is kept between runs (a second start sees
         # what the first one saved), unless --reset-profile is given too
         reset = args.reset_profile if args.profile else True
@@ -717,26 +790,14 @@ def main(argv: list[str] | None = None) -> int:
         else:
             proc = subprocess.Popen(cmd, env=env)
             try:
-                proc.wait(timeout=600)
+                code = proc.wait(timeout=600)
             except subprocess.TimeoutExpired:
                 proc.kill()
                 print(f"{harness} run timed out", file=sys.stderr)
                 return 3
-        result_file = out / ("smoke.json" if harness == "smoke" else "tutorial.json")
-        if not result_file.is_file():
-            print(f"{harness} run produced no result (FreeCAD crashed or NXStyle failed to load)", file=sys.stderr)
-            return 2
-        result = json.loads(result_file.read_text(encoding="utf-8"))
         if not args.profile:
             shutil.rmtree(profile, ignore_errors=True)
-        if harness == "smoke":
-            failed = [c for c in result.get("checks", []) if not c.get("ok")]
-            for c in result.get("checks", []):
-                print(f"{'PASS' if c['ok'] else 'FAIL'}  {c['name']}: {c.get('detail', '')}")
-            return 1 if failed else 0
-        for s in result.get("steps", []):
-            print(f"{s['tutorial'].split(':', 1)[0]}{s['n']:>3} {s['outcome']:<8} {s['nx']}  [{s['replay']}]  {s['detail']}")
-        return 1 if any(s["outcome"] == "FAILED" for s in result.get("steps", [])) else 0
+        return judge_result(out / RESULT_FILES[harness], harness, run_id, code, require_all=args.require_all)
 
     kwargs = {}
     if os.name == "nt" and not args.wait:

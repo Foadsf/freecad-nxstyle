@@ -30,6 +30,7 @@ def _prop(obj, kind, name, group, doc, value=None, mode=None):
 def tolerance_of(p):
     """(tolerance span, its text) of a PMI characteristic, from the inspection plan."""
     from . import pmi_ui
+    pmi_ui.require_valid(p)
     general = pmi_ui.settings(p.Document)[1]
     anns = pmi.number([pmi_ui.semantic(o) for o in pmi_ui.all_pmi(p.Document)], general=general)   # no write-back
     rows = [r for r in pmi.inspection_plan(anns, general=general) if r["id"] == p.Name]

@@ -59,6 +59,9 @@ class PMIFeature:
         _prop(obj, "App::PropertyVector", "Anchor2", g, "Second attachment point (distance)", mode=2)
         _prop(obj, "App::PropertyString", "FeatureType", g, "plane, hole, pin, width or other", mode=1)
         _prop(obj, "App::PropertyString", "Callout", g, "The annotation as text", mode=1)
+        _prop(obj, "App::PropertyBool", "Valid", g, "Measured from its faces at the last recompute; when false the "
+              "Callout says why, and the inspection plan, drawings, analyses and exports do not use its old values",
+              True, mode=1)
         _prop(obj, "App::PropertyLinkList", "Views", g, "The model views it is displayed in (empty: all views); "
               "PMI > Display in Views changes them")
         k = obj.PMIType
@@ -119,22 +122,49 @@ class PMIFeature:
         return None
 
     def execute(self, obj):
-        picks = [(o, s) for o, subs in obj.References for s in (subs or [""])]
-        if not picks:
-            return
-        try:
-            shapes = [refs.resolve(o, s) for o, s in picks]
-        except Exception as e:
-            obj.Callout = f"error: {e}"
-            return
-        obj.Anchor = refs.anchor(shapes[0])
-        obj.FeatureType = classify(shapes)
-        if obj.PMIType == "Dimension":
-            measure_dimension(obj, shapes)
-        try:
-            obj.Callout = pmi.text(semantic(obj))
-        except ValueError as e:                  # e.g. a fit class ISO 286 does not cover
-            obj.Callout = f"error: {e}"
+        """Measure from the faces and write the callout; any failure makes the PMI invalid (Valid false, the
+        reason in Callout) instead of leaving the last good value looking current (measured: a diameter whose
+        face became a plane kept its old nominal and callout)."""
+        before = obj.Callout
+        error = evaluate(obj)
+        if "Valid" in obj.PropertiesList and obj.Valid != (error is None):
+            obj.Valid = error is None
+        if error is not None:
+            obj.Callout = f"error: {error}"
+        if obj.Callout != before:
+            schedule_refresh(obj.Document)         # drawings that inherited it show the new callout
+
+
+def evaluate(obj):
+    """Measure obj from its references and set its callout; returns the reason it is not valid, or None."""
+    picks = [(o, s) for o, subs in obj.References for s in (subs or [""])]
+    if not picks:
+        return "it is attached to nothing (its faces were removed)"
+    try:
+        shapes = [refs.resolve(o, s) for o, s in picks]
+    except Exception as e:
+        return f"its face cannot be found ({e})"
+    obj.Anchor = refs.anchor(shapes[0])
+    obj.FeatureType = classify(shapes)
+    if obj.PMIType == "Dimension":
+        problem = measure_dimension(obj, shapes)
+        if problem:
+            return problem
+    try:
+        obj.Callout = pmi.text(semantic(obj))
+    except ValueError as e:                      # e.g. a fit class ISO 286 does not cover
+        return str(e)
+    return None
+
+
+def valid(obj):
+    return bool(getattr(obj, "Valid", True))
+
+
+def require_valid(obj):
+    """Raise ValueError when a PMI an analysis reads is not valid: its values are not current."""
+    if obj is not None and not valid(obj):
+        raise ValueError(f"{obj.Label} is not valid ({obj.Callout}): fix its references first")
 
 
 def classify(shapes):
@@ -153,24 +183,24 @@ def classify(shapes):
 
 
 def measure_dimension(obj, shapes):
+    """Set Nominal (and Anchor2) from the shapes; returns why it cannot be measured, or None."""
     kind = obj.DimensionType
     if kind in ("Diameter", "Radius"):
         k = refs.surface_kind(shapes[0])
         if k not in ("cylinder", "circle"):
-            obj.Callout = "error: a diameter needs a cylindrical face or a circular edge"
-            return
+            return f"a {kind.lower()} needs a cylindrical face or a circular edge, not a {k}"
         r = shapes[0].Surface.Radius if k == "cylinder" else shapes[0].Curve.Radius
         obj.Nominal = 2 * r if kind == "Diameter" else r
         obj.Anchor2 = obj.Anchor
-        return
+        return None
     if len(shapes) < 2:
-        obj.Callout = "error: a distance needs two faces"
-        return
+        return "a distance needs two faces"
     a, b = shapes[0], shapes[1]
     axis = refs.default_axis(a, b)
     d = refs.signed_distance(a, b, axis)
     obj.Nominal = abs(d)
     obj.Anchor2 = obj.Anchor + axis * d
+    return None
 
 
 def feature_key(obj):
@@ -213,6 +243,9 @@ def semantic(obj):
     u = float(getattr(obj, "Uncertainty", 0.0) or 0.0)
     if u > 0:
         a["uncertainty"] = u
+    if not valid(obj):
+        a["valid"] = False
+        a["invalid"] = (obj.Callout or "").replace("error: ", "", 1)
     return a
 
 
@@ -569,7 +602,11 @@ def render_label(obj, number=0):
     a = semantic(obj)
     QtSvg = _qtsvg()
     text = None
-    if a["kind"] == "dimension":
+    if not pmi.is_valid(a):                        # say what is wrong, never the last good value
+        text = obj.Callout or "error"
+        fm = QtGui.QFontMetricsF(label_font())
+        W, H = int(fm.horizontalAdvance(text) + 14), int(gdt.H * PX_PER_MM) + 2
+    elif a["kind"] == "dimension":
         text = pmi.dimension_text(a).replace("[", "").replace("]", "")
         fm = QtGui.QFontMetricsF(label_font())
         W, H = int(fm.horizontalAdvance(text) + 14), int(gdt.H * PX_PER_MM) + 2
@@ -582,11 +619,13 @@ def render_label(obj, number=0):
     p = QtGui.QPainter(img)
     p.setRenderHint(QtGui.QPainter.Antialiasing)
     if text is not None:
+        bad = not pmi.is_valid(a)
         box = QtCore.QRectF(extra + 1, 1, W - 3, H - 3)
         p.setBrush(QtGui.QColor(255, 255, 255, 230))
-        p.setPen(QtGui.QPen(QtGui.QColor("#000000"), 1.4) if a.get("basic") else QtCore.Qt.NoPen)
+        p.setPen(QtGui.QPen(QtGui.QColor("#c62828"), 1.4) if bad else
+                 QtGui.QPen(QtGui.QColor("#000000"), 1.4) if a.get("basic") else QtCore.Qt.NoPen)
         p.drawRect(box)
-        p.setPen(QtGui.QColor("#000000"))
+        p.setPen(QtGui.QColor("#c62828" if bad else "#000000"))
         p.setFont(label_font())
         p.drawText(box, QtCore.Qt.AlignCenter, text)
     elif QtSvg is not None:
@@ -1046,7 +1085,8 @@ def plan_text(doc):
 def stack_values(o, part="tolerance"):
     """(nominal, plus, minus) a stack-up row takes from a PMI object (Fischer's conversions): a
     dimension's deviations, from its ISO 286 class or the part's ISO 2768 general tolerance if it
-    has none of its own."""
+    has none of its own. Raises ValueError for an invalid PMI: its values are not current."""
+    require_valid(o)
     a = semantic(o)
     general = settings(o.Document)[1]
     if a["kind"] == "dimension":
@@ -1239,24 +1279,29 @@ def pmi_for_view(view, mode=None):
     return picked, "aligned to the drawing (entire part)"
 
 
-def inherit(view, objs=None):
+def inherit(view, objs=None, refresh=True):
     """Put the model's PMI on a drawing view: diameters and distances as TechDraw dimensions on the edges
     that show their faces, with the PMI's ISO class or tolerance, stacked outside the view; datum symbols on
     the edge that shows their face; a frame under its feature's size dimension, or against that edge.
+    What the sheet shows already is brought up to date first (refresh_inherited).
     Returns (created objects, skipped PMI with the reason)."""
     from . import gdt_ui
     page = gdt_ui.owning_page(view)
     doc = view.Document
     made, skipped = [], []
     anns = {a["id"]: a for a in annotations(doc)}
+    refreshed = refresh_inherited(doc, page) if refresh else set()
     on_sheet = {getattr(v, "NX_Pmi", "") for v in page.Views}
     objs = objs if objs is not None else all_pmi(doc)
     # dimensions first, so a frame can go under its feature's size dimension
     for o in sorted(objs, key=lambda o: o.PMIType != "Dimension"):
         if o.Name in on_sheet:                  # one PMI is shown once on a sheet, in the first view that shows it
-            skipped.append((o.Label, "already on this sheet"))
+            skipped.append((o.Label, "already on this sheet" + (", updated" if o.Name in refreshed else "")))
             continue
         a = anns.get(o.Name) or semantic(o)
+        if not pmi.is_valid(a):
+            skipped.append((o.Label, f"not valid, its values are not current: {a.get('invalid', '')}"))
+            continue
         if a["kind"] == "dimension":
             dim = inherit_dimension(view, page, o, a)
             if dim is None:
@@ -1295,8 +1340,12 @@ def inherit(view, objs=None):
                 continue
             sym = gdt_ui.place_datum(a["letter"], page, "edge", (view, hit[1]))
         gdt_ui.tag(sym, pmi=o.Name)
+        mark_inherited(sym, o, view)
         made.append(sym)
         on_sheet.add(o.Name)
+    for dim in made:
+        if dim.isDerivedFrom("TechDraw::DrawViewDimension"):
+            mark_inherited(dim, doc.getObject(dim.NX_Pmi), view)
     note = tolerancing_note(page)
     if note is not None:
         made.append(note)
@@ -1307,6 +1356,103 @@ def inherit(view, objs=None):
 
 last_inherit = {}
 last_inherit_how = {}
+
+
+# ---------------------------------------------- inherited annotations follow their PMI
+def _tag(obj, name, value, doc):
+    if name not in obj.PropertiesList:
+        obj.addProperty("App::PropertyString", name, "NX", doc)
+    setattr(obj, name, value)
+
+
+def mark_inherited(ann, o, view):
+    """Remember what an inherited annotation was made from: the PMI's callout then, and its view."""
+    if ann is None or o is None:
+        return
+    _tag(ann, "NX_PmiCallout", o.Callout, "The PMI's callout when this annotation was made from it")
+    _tag(ann, "NX_View", view.Name, "The drawing view it was inherited into")
+
+
+def inherited(doc, page=None):
+    """[(annotation, page, PMI name)] of the annotations Inherit PMI made (not the tolerancing note)."""
+    out = []
+    for p in ([page] if page is not None else [o for o in doc.Objects if o.isDerivedFrom("TechDraw::DrawPage")]):
+        for v in p.Views:
+            name = getattr(v, "NX_Pmi", "")
+            if name and name != "tolerancing-note":
+                out.append((v, p, name))
+    return out
+
+
+def stale_inherited(doc, page=None):
+    """[(annotation, reason)] of inherited annotations that no longer show their PMI as it is: the PMI was
+    deleted, is not valid, or its callout changed (a fit, a tolerance, a datum letter, a lower row)."""
+    out = []
+    for ann, _, name in inherited(doc, page):
+        o = doc.getObject(name)
+        if o is None:
+            out.append((ann, f"its PMI {name} was deleted"))
+        elif not valid(o):
+            out.append((ann, f"its PMI {o.Label} is not valid ({o.Callout})"))
+        elif "NX_PmiCallout" in ann.PropertiesList and ann.NX_PmiCallout != o.Callout:
+            out.append((ann, f"{o.Label} changed: '{ann.NX_PmiCallout}' is now '{o.Callout}'"))
+    return out
+
+
+def refresh_inherited(doc, page=None):
+    """Bring the inherited annotations up to date: one whose PMI changed is made again from it, where the
+    drafter had placed it; one whose PMI was deleted goes. One whose PMI is not valid stays as it is and
+    stays reported by stale_inherited (a release package refuses it). Returns the names of the PMI updated."""
+    done = set()
+    for ann, pg, name in inherited(doc, page):
+        o = doc.getObject(name)
+        if o is None:
+            doc.removeObject(ann.Name)
+            continue
+        if not valid(o) or "NX_PmiCallout" not in ann.PropertiesList or ann.NX_PmiCallout == o.Callout:
+            continue
+        if ann.isDerivedFrom("TechDraw::DrawViewDimension") and ann.References2D:
+            view = ann.References2D[0][0]
+        else:
+            view = doc.getObject(getattr(ann, "NX_View", "")) or next(
+                (v for v in pg.Views if v.isDerivedFrom("TechDraw::DrawViewPart")), None)
+        if view is None:
+            continue
+        x, y = float(ann.X), float(ann.Y)
+        ann.NX_Pmi = ""             # the page lists a removed view until it recomputes (measured: the new one
+        doc.removeObject(ann.Name)  # was then skipped as "already on this sheet")
+        made, skipped = inherit(view, [o], refresh=False) if (pg.Name, name) not in done else ([], [])
+        for m in made:
+            if getattr(m, "NX_Pmi", "") == name:
+                m.X, m.Y = x, y                    # where the drafter had it
+        last_refresh[name] = {"view": view.Name, "made": [m.Name for m in made], "skipped": skipped}
+        done.add((pg.Name, name))
+    if done:
+        doc.recompute()
+    return {name for _, name in done}
+
+
+_pending_refresh = set()
+last_refresh = {}                    # PMI name -> what its last refresh made or skipped; "error": a failure
+
+
+def schedule_refresh(doc):
+    """Refresh the document's inherited annotations once the current recompute is over (changing other
+    objects from inside a recompute is not safe)."""
+    if not App.GuiUp or doc.Name in _pending_refresh:
+        return
+    _pending_refresh.add(doc.Name)
+
+    def run():
+        _pending_refresh.discard(doc.Name)
+        if doc.Name in App.listDocuments() and inherited(doc):
+            try:
+                refresh_inherited(doc)
+            except Exception as e:
+                import traceback
+                last_refresh["error"] = traceback.format_exc()
+                App.Console.PrintWarning(f"NXStyle: inherited PMI not updated: {e}\n")
+    QtCore.QTimer.singleShot(0, run)
 
 
 def size_dimension_on(page, o):

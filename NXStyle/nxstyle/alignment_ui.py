@@ -71,6 +71,7 @@ def feature_of(dim):
 
 def size_limits(dim, general=None):
     from . import pmi_ui
+    pmi_ui.require_valid(dim)
     a = pmi_ui.semantic(dim)
     lo, hi = pmi.size_limits(a, general)
     if a.get("dim_type") == "radius":

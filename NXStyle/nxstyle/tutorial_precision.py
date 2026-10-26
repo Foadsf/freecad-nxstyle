@@ -972,11 +972,14 @@ class PrecisionTutorials:
         self.p_button("excludePair")
         rows, gone = clearance.results_of(self._u_set)
         counts = self.u_counts(self._u_set)
-        ok = counts["hard"] == 0 and len(gone) == 1 and any("Cover screw" in r for r in self._u_set.PairRules)
+        screw = next(o.Name for o in App.ActiveDocument.Objects if o.Label == "Cover screw")
+        ok = (counts["hard"] == 0 and len(gone) == 1 and any(screw in r for r in self._u_set.PairRules)
+              and not self._u_set.RuleProblems)
         self.step("Exclude Pair: the screw's thread engagement is intended; the analysis runs again",
                   "hard row picked + 'Exclude Pair'", SAME if ok else FAIL,
-                  f"{counts}; gone since the last run: {gone}; the rule is kept in the set's PairRules, so the next "
-                  "check after a design change skips it too")
+                  f"{counts}; gone since the last run: {gone}; the rule {list(self._u_set.PairRules)} is kept in the "
+                  "set's PairRules by object name (a renamed part keeps it), so the next check after a design change "
+                  "skips it too")
         self.wait = 300
 
     # ================================================================ tutorial V
@@ -1146,12 +1149,22 @@ class PrecisionTutorials:
         bore.Fit = "F7"
         doc.recompute()
         s = stackup_ui.stackups(doc)[-1]
+        # the drawing inherited in tutorial T follows the change by itself (the refresh runs after the recompute)
+        self.wait_for("v_eco: the drawing follows the PMI", lambda: not pmi_ui.stale_inherited(doc), timeout_ms=4000)
+        doc.recompute()
+        dims = [v for v, _, name in pmi_ui.inherited(doc) if name == bore.Name]
+        on_drawing = [getattr(v, "FormatSpec", "") for v in dims]
+        if not dims:
+            self.info["v_eco refresh"] = {k: str(v) for k, v in pmi_ui.last_refresh.items()}
+            self.info["v_eco stale"] = [(a.Label, r) for a, r in pmi_ui.stale_inherited(doc)]
         self.key("Ctrl+S")
         QtWidgets.QApplication.processEvents()
-        ok = bore.Callout.startswith("Ø16.000 F7 (+0.034/+0.016)") and abs(s.WorstCaseMin - 0.022) < 1e-9
+        ok = (bore.Callout.startswith("Ø16.000 F7 (+0.034/+0.016)") and abs(s.WorstCaseMin - 0.022) < 1e-9
+              and len(dims) == 1 and any("F7" in f for f in on_drawing) and not pmi_ui.stale_inherited(doc))
         self.step("ECO-001: the bore Ø16 H7 becomes F7 (the shaft runs warmer); save", "the PMI's Fit property; Ctrl+S",
                   DIFFERS if ok else FAIL, f"{bore.Callout}; the fit's stack-up follows: clearance "
-                  f"{s.WorstCaseMin:.3f} to {s.WorstCaseMax:.3f}; the save is recorded in the history")
+                  f"{s.WorstCaseMin:.3f} to {s.WorstCaseMax:.3f}; the drawing's inherited bore dimension follows too "
+                  f"({on_drawing}, one, where it was); the save is recorded in the history")
         self.wait = 800
 
     def v_version2(self):

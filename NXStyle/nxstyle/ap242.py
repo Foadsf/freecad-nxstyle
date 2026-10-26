@@ -387,7 +387,13 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
         return q
 
     objs_by_id = {p.Name: p for p in pmi_objs}
-    anns = [pmi_ui.semantic(p) for p in pmi_objs]
+    anns = []
+    for p in pmi_objs:
+        a = pmi_ui.semantic(p)
+        if pmi.is_valid(a):
+            anns.append(a)
+        else:                                  # its values are not current: not written as if they were
+            problems.append(f"{p.Label}: not valid ({a.get('invalid', '')}); not written")
     datum_faces = {}
     for a in anns:
         if a["kind"] == "datum":

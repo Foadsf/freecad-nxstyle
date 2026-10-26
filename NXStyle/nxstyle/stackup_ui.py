@@ -65,6 +65,8 @@ class StackupFeature:
             _prop(obj, "App::PropertyFloat", name, r, doc, mode=1)
         _prop(obj, "App::PropertyString", "Verdict", r, "Worst case and adjusted RSS against the requirement", mode=1)
         _prop(obj, "App::PropertyString", "Report", r, "The stack-up report", mode=2)
+        _prop(obj, "App::PropertyBool", "Valid", r, "Every contributor resolved at the last recompute; when false the "
+              "results are cleared and the Verdict says what is broken", True, mode=1)
 
     def onDocumentRestored(self, obj):
         self.setup(obj)
@@ -79,14 +81,16 @@ class StackupFeature:
         try:
             cs, measured, anchors, problems = evaluate(obj)
         except Exception as e:
-            obj.Verdict = f"error: {e}"
-            return
+            cs, measured, anchors, problems = [], [], [], [f"error: {e}"]
         obj.Measured = measured
         obj.Anchors = anchors
-        if not cs:
-            obj.Verdict = "no contributors"
-            obj.Report = ""
+        if problems or not cs:
+            # a contributor that cannot be resolved makes the whole stack-up unknown: dropping it, or keeping its
+            # old values, gives a plausible result that is wrong (a deleted pick removed the row from the sum)
+            invalidate(obj, problems or ["no contributors"])
             return
+        if "Valid" in obj.PropertiesList and not obj.Valid:
+            obj.Valid = True
         lsl = obj.Minimum if obj.CheckMinimum else None
         usl = obj.Maximum if obj.CheckMaximum else None
         r = stackup.analyse(cs, lsl, usl, factor=obj.RSSFactor, samples=max(0, obj.Samples), seed=obj.Seed)
@@ -96,13 +100,25 @@ class StackupFeature:
         obj.RSSMin, obj.RSSMax = r.limits["RSS"]
         obj.AdjustedMin, obj.AdjustedMax = r.limits[adj]
         obj.MonteCarloPPM = r.mc["ppm"] if r.mc else 0.0
-        verdict = f"worst case {r.verdicts['worst case'] or '-'}, adjusted RSS {r.verdicts[adj] or '-'}"
-        if problems:
-            verdict += "; " + "; ".join(problems)
-        obj.Verdict = verdict
+        obj.Verdict = f"worst case {r.verdicts['worst case'] or '-'}, adjusted RSS {r.verdicts[adj] or '-'}"
         d = obj.Direction
         obj.Report = stackup.report(cs, r, f"Tolerance stack-up: {obj.Label}",
                                     direction=f"({d.x:.3f}, {d.y:.3f}, {d.z:.3f})")
+
+
+RESULTS = ("Nominal", "WorstCaseMin", "WorstCaseMax", "RSSMin", "RSSMax", "AdjustedMin", "AdjustedMax",
+           "MonteCarloPPM")
+
+
+def invalidate(obj, problems):
+    """No result rather than a wrong one: the numbers cleared, Valid false, the Verdict naming what broke."""
+    for name in RESULTS:
+        if name in obj.PropertiesList:
+            setattr(obj, name, 0.0)
+    if "Valid" in obj.PropertiesList:
+        obj.Valid = False
+    obj.Verdict = "INVALID, not computed: " + "; ".join(problems)
+    obj.Report = f"Tolerance stack-up: {obj.Label}\n{obj.Verdict}"
 
 
 def rows_of(obj):
@@ -124,9 +140,11 @@ def pmi_values(row, doc):
     deviations, a feature control frame half its zone (Fischer: a zone T is +/- T/2), its bonus
     row half the size tolerance of the feature."""
     name = row.get("pmi")
-    o = doc.getObject(name) if name else None
-    if o is None:
+    if not name:
         return None
+    o = doc.getObject(name)
+    if o is None:
+        raise ValueError(f"its PMI {name} was deleted")
     from . import pmi_ui
     return pmi_ui.stack_values(o, row.get("pmi_part", "tolerance"))
 
@@ -160,7 +178,11 @@ def evaluate(obj):
                 nominal, direction = abs(value), (1 if value >= 0 else -1)
             except Exception as e:
                 problems.append(f"row {i + 1}: {e}")
-        pv = pmi_values(row, obj.Document)
+        try:
+            pv = pmi_values(row, obj.Document)
+        except ValueError as e:
+            problems.append(f"row {i + 1} ({row.get('name', '')}): {e}")
+            pv = None
         if pv is not None:
             if not row.get("measured"):
                 nominal = pv[0]
@@ -654,7 +676,13 @@ def stackups(doc):
 
 
 def csv_rows(obj):
-    cs, _, _, _ = evaluate(obj)
+    """The stack-up as CSV rows; a stack-up with a contributor that does not resolve gives no numbers."""
+    try:
+        cs, _, _, problems = evaluate(obj)
+    except Exception as e:
+        cs, problems = [], [str(e)]
+    if problems or not cs:
+        return [["status", "problems"], ["INVALID, not computed", "; ".join(problems or ["no contributors"])]]
     lsl = obj.Minimum if obj.CheckMinimum else None
     usl = obj.Maximum if obj.CheckMaximum else None
     r = stackup.analyse(cs, lsl, usl, factor=obj.RSSFactor, samples=max(0, obj.Samples), seed=obj.Seed)

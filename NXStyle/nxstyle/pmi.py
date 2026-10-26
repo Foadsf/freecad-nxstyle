@@ -22,6 +22,9 @@ A PMI annotation is a dict, as stored in the model (see pmi_ui) and in a release
   number        characteristic number for inspection (set by number())
   uncertainty   expanded measurement uncertainty U (k = 2) of the method that checks it, mm (optional:
                 the inspection plan then gives the TUR and the ISO 14253-1 acceptance limits; msa.py)
+  valid         False when it could not be measured from its faces at the last recompute (a face gone or
+                of the wrong kind); "invalid" says why. Its values are then not current: it is left out of
+                the inspection plan and the gauges and reported by the checks as an error
 
 The part's tolerancing standard is ISO GPS by default (technical product documentation: ISO 1101,
 ISO 5459, ISO 8015, ISO 14405, ISO 286, ISO 2768), or ASME Y14.5. They differ where it matters:
@@ -135,6 +138,10 @@ def composite(a):
     return lower(a) is not None and a.get("frame", "composite") == "composite"
 
 
+def is_valid(a):
+    return a.get("valid", True)
+
+
 def text(a, digits=3):
     """The annotation as one line of text."""
     k = a["kind"]
@@ -158,6 +165,10 @@ def text(a, digits=3):
 def check(annotations, standard="ISO", general=None):
     """Consistency checks. Returns [(severity, id, message)], severity "error", "warning" or "note"."""
     out = []
+    for a in annotations:
+        if not is_valid(a):
+            out.append(("error", a["id"], f"not valid, its values are not current: {a.get('invalid', 'unknown')}"))
+    annotations = [a for a in annotations if is_valid(a)]
     datums = {}
     std = standard.upper()
     g = iso.parse_general(general) if general else None
@@ -286,7 +297,10 @@ def _check_dimension(a, std, g, general, form_on):
 # ------------------------------------------------------------------------ characteristics
 def characteristic(a, general=None):
     """What an inspector measures and records: dimensions with a tolerance (their own, a fit
-    class, or the general tolerance) and geometrical tolerances."""
+    class, or the general tolerance) and geometrical tolerances. An invalid annotation is none: its
+    values are not current (the checks report it)."""
+    if not is_valid(a):
+        return False
     if a["kind"] == "fcf":
         return True
     if a["kind"] != "dimension" or a.get("basic"):
@@ -327,6 +341,7 @@ def method(a):
 def inspection_plan(annotations, digits=3, general=None):
     """One row per characteristic: number, requirement, nominal, lower and upper limit, where the
     tolerance comes from, feature, datums, method. Frames at MMC also give the tolerance at LMC."""
+    annotations = [a for a in annotations if is_valid(a)]
     sizes = {a.get("feature"): a for a in annotations if a["kind"] == "dimension" and not a.get("basic")}
     rows = []
     for a in annotations:
@@ -425,6 +440,7 @@ def segment_method(a, mod, seg):
 def gauges(annotations, general=None):
     """Functional gauge elements for frames at MMC on features of size, and datum feature
     simulators at MMC (MMB). Returns rows: element, for, size, how."""
+    annotations = [a for a in annotations if is_valid(a)]
     sizes = {a.get("feature"): a for a in annotations if a["kind"] == "dimension" and not a.get("basic")
              and a.get("feature_type") in SIZE_FEATURES}
     datum_feature = {a["letter"]: a.get("feature") for a in annotations if a["kind"] == "datum"}

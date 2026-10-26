@@ -70,7 +70,7 @@
    "nx": "Extrude: End = Value 2.5, Boolean None, OK",
    "replay": "typed into 'lengthEdit', MB2 = OK",
    "outcome": "same",
-   "detail": "volume 130584.4 mm^3, expected 130584.4"
+   "detail": "volume 130584.4 mm^3, expected 130584.4; same solid as the reference: 0 mm³ differ, box within 0 mm, 8 faces (8 in the reference)"
   },
   {
    "tutorial": "A: The Adjuster (book in inches, typed in mm)",
@@ -118,7 +118,7 @@
    "nx": "Slot depth 0.75, OK",
    "replay": "'lengthEdit' = 19.05 mm, MB2 = OK",
    "outcome": "same",
-   "detail": "volume 121366.7 mm^3, expected 121366.7; 1 solid(s)"
+   "detail": "volume 121366.7 mm^3, expected 121366.7; 1 solid(s); same solid as the reference: 0 mm³ differ, box within 0 mm, 12 faces (12 in the reference)"
   },
   {
    "tutorial": "A: The Adjuster (book in inches, typed in mm)",
@@ -126,15 +126,15 @@
    "nx": "The finished part is shown in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "26.7% of the view shows the part"
+   "detail": "26.7% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "A: The Adjuster (book in inches, typed in mm)",
    "n": 17,
    "nx": "Save (Ctrl+S)",
-   "replay": "Ctrl+S is bound to Save (tested by the self-test); file saved",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "saved as Adjuster.FCStd (FreeCAD format, not .prt)"
+   "detail": "Adjuster.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "A: The Adjuster (book in inches, typed in mm)",
@@ -142,7 +142,7 @@
    "nx": "Reopened part is shown",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "26.7% of the view shows the part"
+   "detail": "26.7% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "B: First part, cylinder and cone (mm)",
@@ -254,15 +254,15 @@
    "nx": "The finished part is shown in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "11.3% of the view shows the part"
+   "detail": "11.3% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "B: First part, cylinder and cone (mm)",
    "n": 15,
    "nx": "Save (Ctrl+S)",
-   "replay": "file saved",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "FirstPart.FCStd"
+   "detail": "FirstPart.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "C: Rod-Guide (book in inches, typed in mm)",
@@ -2614,7 +2614,7 @@
    "nx": "The pin and its stack-up loop in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "10.9% of the view shows the part"
+   "detail": "10.9% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
@@ -2726,7 +2726,7 @@
    "nx": "The bush with its PMI in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "5.3% of the view shows the part"
+   "detail": "5.3% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)",
@@ -2838,7 +2838,7 @@
    "nx": "Exclude Pair: the screw's thread engagement is intended; the analysis runs again",
    "replay": "hard row picked + 'Exclude Pair'",
    "outcome": "same",
-   "detail": "{'hard': 0, 'containment': 1, 'touching': 2, 'soft': 1}; gone since the last run: [{'gone': 'Part003|Part004'}]; the rule is kept in the set's PairRules, so the next check after a design change skips it too"
+   "detail": "{'hard': 0, 'containment': 1, 'touching': 2, 'soft': 1}; gone since the last run: [{'gone': 'Part003|Part004'}]; the rule ['Part003|Part004=exclude'] is kept in the set's PairRules by object name (a renamed part keeps it), so the next check after a design change skips it too"
   },
   {
    "tutorial": "U: Volume claims and assembly clearance in a system layout",
@@ -2894,7 +2894,7 @@
    "nx": "ECO-001: the bore Ø16 H7 becomes F7 (the shaft runs warmer); save",
    "replay": "the PMI's Fit property; Ctrl+S",
    "outcome": "differs",
-   "detail": "Ø16.000 F7 (+0.034/+0.016) Ⓔ; the fit's stack-up follows: clearance 0.022 to 0.051; the save is recorded in the history"
+   "detail": "Ø16.000 F7 (+0.034/+0.016) Ⓔ; the fit's stack-up follows: clearance 0.022 to 0.051; the drawing's inherited bore dimension follows too (['⌀%.3w F7 Ⓔ'], one, where it was); the save is recorded in the history"
   },
   {
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
@@ -2910,7 +2910,7 @@
    "nx": "Compare V1 with V2",
    "replay": "ribbon 'PLM › Versions > Compare', From V1, To V2",
    "outcome": "same",
-   "detail": "1 document changed · 2 feature changes: GuideBush | Diameter 16.000: 2 parameters |   Callout: Ø16.000 H7 (+0.018/0) Ⓔ  →  Ø16.000 F7 (+0.034/+0.016) Ⓔ |   Fit: H7  →  F7 | ToleranceStackup: 8 parameters |   AdjustedMax: 0.0363213  →  0.0523213 |   AdjustedMin: 0.00467873  →  0.0206787 |   Nominal: 0.0205  →  0.0365 |   RSSMax: 0.0310475  →  0.0470475 |   RSSMin: 0.00995249  →  0.0259525 |   Report: Tolerance stack-up: ToleranceStackup\n"
+   "detail": "1 document changed · 7 feature changes: GuideBush | Dimension004: Added · DrawViewDimension | Dimension001: Deleted · DrawViewDimension | Diameter 16.000: 2 parameters |   Callout: Ø16.000 H7 (+0.018/0) Ⓔ  →  Ø16.000 F7 (+0.034/+0.016) Ⓔ |   Fit: H7  →  F7 | ToleranceStackup: 8 parameters |   AdjustedMax: 0.0363213  →  0.0523213 |   AdjustedMin: 0.00467873  →  0.0206787 |   Nominal: 0.0205  →  0.0365 |   RSSMax: 0.0310475  →  0.0470475 "
   },
   {
    "tutorial": "V: Release and engineering change of the guide bush (Strata), with release packages",
@@ -3366,7 +3366,7 @@
    "nx": "Drafting > Populate Title Block: from release B, the revision block from the releases",
    "replay": "ribbon 'Home › Drawing > Populate Title Block'; the fields come filled; 'Revision block' ticked; OK button",
    "outcome": "differs",
-   "detail": "dialog: {'drawing_number': 'BUSH-100', 'revision_index': 'B', 'title': 'Guide bush', 'general_tolerances': 'ISO 2768-mK'}; sheet: number BUSH-100, rev B, Released, by NX-Style replay, tolerancing 'ISO 2768-mK'; revision block rows [('A', 'Guide bush', '2026-10-14', 'NX-Style replay'), ('B', 'ECO-001: bore F7', '2026-10-14', 'NX-Style replay')]. NX: Populate Title Block from DB_PART_NO and DB_PART_REV (Teamcenter); here from Strata"
+   "detail": "dialog: {'drawing_number': 'BUSH-100', 'revision_index': 'B', 'title': 'Guide bush', 'general_tolerances': 'ISO 2768-mK'}; sheet: number BUSH-100, rev B, Released, by NX-Style replay, tolerancing 'ISO 2768-mK'; revision block rows [('A', 'Guide bush', '2026-10-26', 'NX-Style replay'), ('B', 'ECO-001: bore F7', '2026-10-26', 'NX-Style replay')]. NX: Populate Title Block from DB_PART_NO and DB_PART_REV (Teamcenter); here from Strata"
   },
   {
    "tutorial": "AD: A laser-cut tray with tabs and slots (LCInterlocking)",

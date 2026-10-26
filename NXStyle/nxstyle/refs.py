@@ -59,10 +59,13 @@ def stable(sel_obj, subname):
         mine = None
     if picked is None or mine is None or leaf[:4] != "Face" or same_face(mine, picked):
         return body, leaf
-    for i, f in enumerate(body.Shape.Faces):          # the feature's face is a different one of the Body's
-        if same_face(f, picked):
-            return body, f"Face{i + 1}"
-    return body, leaf
+    # the feature's face is a different one of the Body's: find it by geometry. With no match, or more than
+    # one, keep the face as picked (right, though it will not follow later features) rather than guess: the
+    # Body face with the same number was taken before, which can be another face altogether
+    matches = [i for i, f in enumerate(body.Shape.Faces) if same_face(f, picked)]
+    if len(matches) == 1:
+        return body, f"Face{matches[0] + 1}"
+    return sel_obj, subname
 
 
 def selection_refs():

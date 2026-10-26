@@ -51,6 +51,10 @@ The stack-up's results are properties: `Nominal`, `WorstCaseMin`, `WorstCaseMax`
 Double-click the stack-up in the Part Navigator to edit it.
 A xref:release-package.adoc[release package] includes every stack-up as a report and a CSV table.
 
+If a contributor cannot be resolved at a recompute, the stack-up gives no result at all rather than a wrong one. This happens when a measured row's face is gone or its picks are missing, when a row's PMI was deleted or is invalid, or when its fit class is unknown.
+`Valid` turns false, the results are cleared, and `Verdict` says *INVALID, not computed* and which row broke.
+Earlier versions left such a row out of the sum, or kept its last values, and reported a plausible result; a release package now refuses an invalid stack-up.
+
 == Fits
 
 A fit is a stack-up of two contributors: the bore from its PMI, the shaft by its ISO 286 class, against the stack direction.

@@ -19,7 +19,6 @@ committed memory, so a run stopped by the launcher's memory ceiling still
 shows where it was.
 """
 
-import json
 import math
 import os
 import re
@@ -100,6 +99,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         self.misread = []          # typed numbers a field read back as another value (fail the next step)
         self.modals = ModalWatcher()
         self.steps = list(self.plan())
+        self.planned = [fn.__name__ for fn in self.steps]
+        self.ran, self.dropped = [], []      # run, and skipped after a failure in their tutorial
 
     # ------------------------------------------------------------- report
     def step(self, nx, how, outcome, detail=""):
@@ -530,9 +531,10 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         App.ActiveDocument.recompute()
         want = (2.5 * 2.5 - 1.75 * 1.75) * 2.5 * IN ** 3
         got = self.solid_volume()
-        ok = abs(got - want) < 1e-3 * want and not Gui.Control.activeDialog()
+        same, how_same = self.a_compare(slot=False)
+        ok = abs(got - want) < 1e-3 * want and same and not Gui.Control.activeDialog()
         self.step("Extrude: End = Value 2.5, Boolean None, OK", f"typed into '{field}', MB2 = OK",
-                  SAME if ok else FAIL, f"volume {got:.1f} mm^3, expected {want:.1f}")
+                  SAME if ok else FAIL, f"volume {got:.1f} mm^3, expected {want:.1f}; {how_same}")
         self.shot("A1_extrude.png")
         self.wait = 600
 
@@ -606,10 +608,25 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         want = (base - 0.75 * 1.0 * 0.75) * IN ** 3
         got = self.solid_volume()
         solids = len(self.body().Shape.Solids)
-        ok = abs(got - want) < 1e-3 * want and solids == 1 and not Gui.Control.activeDialog()
+        same, how_same = self.a_compare(slot=True)
+        ok = abs(got - want) < 1e-3 * want and solids == 1 and same and not Gui.Control.activeDialog()
         self.step("Slot depth 0.75, OK", f"'{field}' = 19.05 mm, MB2 = OK", SAME if ok else FAIL,
-                  f"volume {got:.1f} mm^3, expected {want:.1f}; {solids} solid(s)")
+                  f"volume {got:.1f} mm^3, expected {want:.1f}; {solids} solid(s); {how_same}")
         self.wait = 400
+
+    def a_compare(self, slot):
+        """The Adjuster against the same part made with the Part API: the L section (legs 0.75 thick, 2.5
+        long) extruded 2.5 along Z, and the slot 0.75 x 1.0 (Z 0.75 to 1.75), 0.75 deep, in the top of the
+        vertical leg. Equal volume alone would pass a slot cut in the wrong place."""
+        import Part
+        from . import geomcheck
+        pts = [(0, 0), (2.5, 0), (2.5, 0.75), (0.75, 0.75), (0.75, 2.5), (0, 2.5), (0, 0)]
+        wire = Part.makePolygon([App.Vector(x * IN, y * IN, 0) for x, y in pts])
+        ref = Part.Face(wire).extrude(App.Vector(0, 0, 2.5 * IN))
+        if slot:
+            ref = ref.cut(Part.makeBox(0.75 * IN, 0.75 * IN, 1.0 * IN, App.Vector(0, 1.75 * IN, 0.75 * IN)))
+        body = self.body()
+        return geomcheck.compare(body.Shape if body is not None else None, ref)
 
     def fit(self):
         Gui.Selection.clearSelection()
@@ -674,20 +691,45 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         self.view().saveImage(png, 900, 600, "Current")
         frac = self.drawn_fraction(png)
         self.step(label, "render of the graphics window", SAME if frac > 0.02 else FAIL,
-                  f"{frac:.1%} of the view shows the part")
+                  f"{frac:.1%} of the view shows the part (an occupancy check: something is drawn; the shape "
+                  "itself is checked by its geometry)")
+
+    def save_ctrl_s(self, name):
+        """Save the way the book does, with Ctrl+S. A new part's first save opens the operating system's
+        file dialog, which the replay cannot drive, so the file name is given once by script; then the part
+        is changed and Ctrl+S is pressed, and the file on disk must be rewritten and the part left unmodified.
+        Returns (outcome, how, detail): FAIL when Ctrl+S did not save, whatever the scripted save did."""
+        doc = App.ActiveDocument
+        path = os.path.join(OUT, name)
+        doc.saveAs(path)
+        before = os.path.getmtime(path)
+        time.sleep(1.1)                                     # mtime resolution on some file systems
+        doc.Comment = f"saved with Ctrl+S by the replay {time.strftime('%H:%M:%S')}"
+        gdoc = Gui.getDocument(doc.Name)
+        modified = getattr(gdoc, "Modified", True)
+        self.key("Ctrl+S")
+        QtWidgets.QApplication.processEvents()
+        self.wait_for("Ctrl+S: file rewritten", lambda: os.path.getmtime(path) > before, timeout_ms=10000)
+        after = os.path.getmtime(path)
+        saved = after > before and not getattr(gdoc, "Modified", False)
+        how = ("file name given once by script (the system file dialog is not driven); a change, then the "
+               "Ctrl+S key")
+        detail = (f"{name} rewritten by Ctrl+S ({after - before:.1f} s later), part unmodified afterwards "
+                  f"(modified before the key: {modified}); FreeCAD format, not .prt" if saved else
+                  f"Ctrl+S did not save: file time unchanged {after <= before}, still modified "
+                  f"{getattr(gdoc, 'Modified', '?')}")
+        return (SAME if saved else FAIL), how, detail, path
 
     def a_save(self):
         self.check_drawn("The finished part is shown in the graphics window", "A_live_check.png")
-        path = os.path.join(OUT, "Adjuster.FCStd")
+        outcome, how, detail, path = self.save_ctrl_s("Adjuster.FCStd")
         doc = App.ActiveDocument
-        doc.saveAs(path)
         App.closeDocument(doc.Name)
         App.openDocument(path)
         QtWidgets.QApplication.processEvents()
         Gui.SendMsgToActiveView("ViewFit")
         QtWidgets.QApplication.processEvents()
-        self.step("Save (Ctrl+S)", "Ctrl+S is bound to Save (tested by the self-test); file saved",
-                  SAME, "saved as Adjuster.FCStd (FreeCAD format, not .prt)")
+        self.step("Save (Ctrl+S)", how, outcome, detail)
         self.check_drawn("Reopened part is shown", "A_reopened_check.png")
         self.wait = 300
 
@@ -839,8 +881,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         d = self.view().getViewDirection()
         self.step("F8 snaps to the nearest standard view", "F8 key", SAME if ok else FAIL, f"view {d}")
         self.check_drawn("The finished part is shown in the graphics window", "B_live_check.png")
-        App.ActiveDocument.saveAs(os.path.join(OUT, "FirstPart.FCStd"))
-        self.step("Save (Ctrl+S)", "file saved", SAME, "FirstPart.FCStd")
+        outcome, how, detail, _ = self.save_ctrl_s("FirstPart.FCStd")
+        self.step("Save (Ctrl+S)", how, outcome, detail)
         self.shot("B2_snapped.png")
         self.wait = 200
 
@@ -5908,9 +5950,13 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
             tb = traceback.format_exc()
             self.info[f"traceback {fn.__name__}"] = tb
             self.step(fn.__name__, "-", FAIL, tb.splitlines()[-1])
-            # skip the rest of this tutorial
-            prefix = fn.__name__[:2]
-            self.steps = [s for s in self.steps if not s.__name__.startswith(prefix)]
+            # skip the rest of this tutorial: the steps that follow with its prefix (aa_ for aa_part, not a_),
+            # up to the next tutorial's first step; a shared helper (p_modeling) is followed by another
+            # tutorial's steps, so it drops nothing (fn.__name__[:2] made "p_" drop tutorial P)
+            prefix = fn.__name__.split("_")[0] + "_"
+            while self.steps and self.steps[0].__name__.startswith(prefix):
+                self.dropped.append(self.steps.pop(0).__name__)
+        self.ran.append(fn.__name__)
         QtCore.QTimer.singleShot(self.wait, self.next)
 
     def clean_slate(self):
@@ -5979,8 +6025,10 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         self.info["typed numbers misread after the last step"] = self.misread
         self.info["decimal separator"] = QtCore.QLocale().decimalPoint()
         self.info["FreeCAD"] = App.Version()[:4]
-        with open(os.path.join(OUT, "tutorial.json"), "w", encoding="utf-8") as f:
-            json.dump({"steps": self.rows, "info": self.info}, f, indent=1, default=str)
+        from . import harness_result
+        harness_result.write(os.path.join(OUT, "tutorial.json"), "tutorial",
+                             {"steps": self.rows, "info": self.info, "dropped": self.dropped},
+                             self.planned, self.ran + self.dropped)
         if os.environ.get("NXSTYLE_SMOKE_EXIT", "1") == "1":
             for name in list(App.listDocuments()):
                 App.closeDocument(name)

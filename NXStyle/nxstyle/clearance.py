@@ -48,18 +48,29 @@ class ClearanceSet:
         _prop(obj, "App::PropertyLength", "ClearanceZone", g, "Default clearance zone: closer pairs are soft "
               "interferences", 0.0)
         _prop(obj, "App::PropertyStringList", "PairRules", g,
-              "One per line: 'A|B=exclude' leaves a pair out, 'A|B=0.5' gives it its own zone (object labels)")
+              "One per line: 'A|B=exclude' leaves a pair out, 'A|B=0.5' gives it its own zone (object names, or labels "
+              "that only one object has)")
         _prop(obj, "App::PropertyBool", "IgnoreTouching", g, "Do not report touching pairs (mating faces)", False)
         _prop(obj, "App::PropertyStringList", "Results", "Results", "One JSON line per interference", mode=2)
         _prop(obj, "App::PropertyStringList", "Previous", "Results", "The run before (for New / Gone)", mode=2)
         for k in cc.KINDS:
             _prop(obj, "App::PropertyInteger", k.capitalize(), "Results", f"{k} interferences found", 0, mode=1)
+        _prop(obj, "App::PropertyString", "Fingerprint", "Results", "The analysed parts' names, positions and sizes "
+              "at the last run (JSON), to tell when the results are out of date", mode=2)
+        _prop(obj, "App::PropertyBool", "Stale", "Results", "The parts changed since the last Perform Analysis: the "
+              "results describe the earlier layout", False, mode=1)
+        _prop(obj, "App::PropertyStringList", "RuleProblems", "Results", "Pair rules that named no object, or a label "
+              "several objects share (not applied)", mode=1)
 
     def onDocumentRestored(self, obj):
         self.setup(obj)
 
     def execute(self, obj):
-        pass                       # analysis runs on request (Perform Analysis), as in NX
+        # the analysis runs on request (Perform Analysis), as in NX; a recompute only says whether its results
+        # still describe the parts (a moved part used to leave the old interferences looking current)
+        stale = is_stale(obj)
+        if obj.Stale != stale:
+            obj.Stale = stale
 
     def dumps(self):
         return None
@@ -159,14 +170,73 @@ def analyse_pair(a, b, sa, sb, zone):
     return row, (common if cv > cc.VOLUME_TOL else None)
 
 
+def analysed(cset):
+    first = list(cset.Objects) or candidates(cset.Document)
+    return first, list(cset.SecondObjects)
+
+
+def fingerprint(objs):
+    """Name -> (volume, bounding box) of each object's solid where it is: changes when a part moves, is
+    resized or is deleted."""
+    out = {}
+    for o in objs:
+        s = solid_of(o)
+        if s is None:
+            out[o.Name] = None
+            continue
+        b = s.BoundBox
+        out[o.Name] = [round(s.Volume, 4)] + [round(v, 5) for v in (b.XMin, b.YMin, b.ZMin, b.XMax, b.YMax, b.ZMax)]
+    return out
+
+
+def is_stale(cset):
+    """Whether the parts are no longer those the last Perform Analysis saw (never analysed: not stale)."""
+    if not getattr(cset, "Fingerprint", ""):
+        return False
+    try:
+        before = json.loads(cset.Fingerprint)
+    except ValueError:
+        return True
+    first, second = analysed(cset)
+    return fingerprint(first + second) != before
+
+
+def resolve_rules(rules, objs):
+    """Pair rules keyed by object names. A rule may name objects by Name or by Label; a label that several
+    objects share is ambiguous and the rule is not applied (it would hit the wrong pair). Returns
+    (rules by name pair, problems)."""
+    by_name = {o.Name: o.Name for o in objs}
+    labels = {}
+    for o in objs:
+        labels.setdefault(o.Label, []).append(o.Name)
+    out, problems = {}, []
+    for key, value in rules.items():
+        names = []
+        for part in key.split("|"):
+            if part in by_name:
+                names.append(part)
+            elif len(labels.get(part, [])) == 1:
+                names.append(labels[part][0])
+            elif part in labels:
+                problems.append(f"'{key}': the label {part} names {len(labels[part])} objects "
+                                f"({', '.join(labels[part])}); use the object name")
+                break
+            else:
+                problems.append(f"'{key}': no object {part}")
+                break
+        else:
+            if len(names) == 2:
+                out[cc.pair_key(*names)] = value
+    return out, problems
+
+
 def perform(cset):
     """Run the analysis of a clearance set; writes its Results and returns (rows, interference solids)."""
     import Part
     doc = cset.Document
     doc.recompute()
-    first = list(cset.Objects) or candidates(doc)
-    second = list(cset.SecondObjects)
-    rules = cc.parse_rules(cset.PairRules)
+    first, second = analysed(cset)
+    rules, cset.RuleProblems = resolve_rules(cc.parse_rules(cset.PairRules), first + second)
     shapes = {o.Name: solid_of(o) for o in first + second}
     pairs = []
     if second:
@@ -178,7 +248,7 @@ def perform(cset):
         sa, sb = shapes.get(a.Name), shapes.get(b.Name)
         if sa is None or sb is None:
             continue
-        rule = rules.get(cc.pair_key(a.Label, b.Label))
+        rule = rules.get(cc.pair_key(a.Name, b.Name))
         if rule == "exclude":
             continue
         zone = float(rule) if isinstance(rule, float) else float(cset.ClearanceZone)
@@ -208,6 +278,8 @@ def perform(cset):
         [json.dumps({"gone": k}) for k in gone]
     for k in cc.KINDS:
         setattr(cset, k.capitalize(), sum(1 for r in rows if r["kind"] == k))
+    cset.Fingerprint = json.dumps(fingerprint(first + second), sort_keys=True)
+    cset.Stale = False
     res = doc.getObject(RESULT)
     if solids:
         res = res or doc.addObject("Part::Feature", RESULT)
@@ -236,7 +308,13 @@ def report(cset):
     rows, gone = results_of(cset)
     lines = [f"Assembly clearance: {cset.Label}",
              f"Default clearance zone {float(cset.ClearanceZone):g} mm; " + ", ".join(
-                 f"{getattr(cset, k.capitalize())} {k}" for k in cc.KINDS), ""]
+                 f"{getattr(cset, k.capitalize())} {k}" for k in cc.KINDS)]
+    if is_stale(cset):
+        lines.append("OUT OF DATE: parts moved, changed or were deleted since this analysis; run Perform Analysis "
+                     "again before trusting these results")
+    for p in getattr(cset, "RuleProblems", []) or []:
+        lines.append(f"pair rule not applied: {p}")
+    lines.append("")
     lines.append(f"{'Object 1':<22} {'Object 2':<22} {'Interference':<12} {'Distance':>9} {'Penetration':>11} "
                  f"{'Volume mm³':>11}  Status")
     for r in sorted(rows, key=lambda r: (cc.KINDS.index(r["kind"]), -r["volume"], r["distance"])):
@@ -368,7 +446,8 @@ class BrowserPanel:
         r = self.current()
         if r is None:
             return
-        self.cset.PairRules = list(self.cset.PairRules) + [f"{r['a']}|{r['b']}=exclude"]
+        # by object name: a label can change or be shared by several parts
+        self.cset.PairRules = list(self.cset.PairRules) + [f"{r['a_name']}|{r['b_name']}=exclude"]
         self.run()
 
     def accept(self):

@@ -32,6 +32,10 @@ image::tutorial-U-03-clearance.png[The Clearance Browser: a hard interference, a
 The set is a document object (*Clearance Set* in the Part Navigator).
 Its properties are what NX's Clearance Analysis dialog holds: *Objects* (empty: every solid), *SecondObjects* (two collections: the first checked against the second only), *ClearanceZone*, *IgnoreTouching* and *PairRules*, one rule per line: `Bolt|Plate=exclude` leaves a pair out, `Shaft|Bushing=0.5` gives it its own zone.
 Double-click the set to run it again.
+As in NX, the analysis runs on request, not at every recompute.
+The set remembers the parts it analysed: if they move, change or are deleted, its *Stale* property turns true and its report starts with *OUT OF DATE* until you run it again.
+Pair rules name parts by their object name, which is what *Exclude Pair* writes, or by a label only one part has.
+A label several parts share is ambiguous: the rule is not applied, and the report lists it under *pair rule not applied*.
 
 The penetration depth is the smallest extent of the interference volume along its principal axes: for two overlapping blocks, how far one has to move out of the other.
 

@@ -737,11 +737,36 @@ class Shell(QtCore.QObject):
             self._blank_titles()
             self._hide_stale_overlays()
             self.hide_stray_tab_bars()
+            self.label_navigation()
         state = (dialog, len(App.listDocuments()))
         if state != self._nav_state:
             if not dialog:
                 self.show_part_navigator()
             self._nav_state = state
+
+    NAV_LABEL = "NX (NXStyle)"
+
+    def label_navigation(self):
+        """FreeCAD's status bar names its navigation style, here Blender, the base NXStyle's own mouse
+        handling sits on (MB2, the MB3 hold, MB2 = OK); it would tell the user the wrong mouse model. While
+        NXStyle handles the mouse the button says so; its menu still switches FreeCAD's style. Returns the
+        relabelled widgets (for tests)."""
+        from . import prefs
+        if not prefs.uses_own_navigation(self.cfg):
+            return []
+        base = prefs.NX_BASE_STYLE.split("::")[-1].replace("NavigationStyle", "")      # "Blender"
+        out = []
+        bar = self.mw.statusBar()
+        for w in bar.findChildren(QtWidgets.QAbstractButton) + bar.findChildren(QtWidgets.QLabel):
+            try:
+                if w.text().strip() == base:          # FreeCAD pads the name with spaces
+                    w.setText(self.NAV_LABEL)
+                    w.setToolTip("Mouse: NXStyle's NX handling (MB2 rotates, MB2 click is OK, hold MB3 for the radial "
+                                 f"menu) on top of FreeCAD's {base} navigation style, which supplies the rest")
+                    out.append(w)
+            except RuntimeError:
+                continue
+        return out
 
     def hide_stray_tab_bars(self):
         """A dock area's tab strip is only needed for two or more tabbed panels. When panels move

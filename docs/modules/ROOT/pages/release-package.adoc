@@ -46,6 +46,31 @@ python -m nxstyle.package verify BUSH-100_B
 It recomputes every checksum and lists changed, missing and unlisted files (exit code 1), or says that all files match.
 Run it from the `NXStyle` folder, or with that folder on `PYTHONPATH`; it needs no FreeCAD.
 
+Matching checksums prove only that the files are the ones listed, so `verify` also checks that the package is a release at all.
+It needs:
+
+* a manifest of the right format that names the part number and revision and lists at least one file;
+* the files its *profile* needs.
+  A `release` package needs the model as STEP and as the native file.
+  A `geometry` package needs the STEP only and does not claim complete PMI.
+  A `partial` package holds whatever parts of the package were chosen.
+* no *critical loss*.
+
+The manifest lists the losses met while making the package.
+Some are things STEP AP242 cannot carry through OpenCASCADE, such as the envelope Ⓔ, a 4X count, ISO 2768 or the link between a composite frame's rows. These are listed, and `pmi_complete` says false; `pmi.json` keeps them.
+Others are critical, and fail a release:
+
+* a PMI that is not valid;
+* a stack-up without a valid result;
+* an inherited drawing annotation that no longer shows its PMI;
+* PMI the STEP lost for another reason.
+
+Values that are not current must not be released.
+
+A package is made in a staging folder and verified before it replaces an earlier package of the same revision.
+A package that does not verify, or one whose making fails half way, leaves the earlier package and its zip as they were.
+Before 2026-10-26 the earlier package was deleted first, and an empty manifest passed `verify`.
+
 == What differs from NX
 
 * NX publishes PMI in 3D PDF or JT and in STEP AP242 with semantic PMI. NX-Style's package has the semantic PMI in its STEP file (see xref:pmi.adoc#_step_ap242_with_semantic_pmi[STEP AP242 with semantic PMI]) and everything else in `pmi.json` and the inspection plan; there is no 3D PDF or JT.

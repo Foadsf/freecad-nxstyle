@@ -28,9 +28,9 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It checks 77 behaviours, among them:
+It ends with the count of checks passed, failed and skipped (90 checks on FreeCAD 1.1.4, 2026-10-26). Among them:
 
-* every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key;
+* every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
 * the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;
 * metric units even when the profile was set to US customary;
@@ -39,9 +39,26 @@ It checks 77 behaviours, among them:
 * the eight PMI model views look as FreeCAD's own standard views do, a new PMI goes into the work view, switching views hides the others' PMI, and Display in Views copies one;
 * a plate with PMI written as STEP AP242: datums, the H7 and g6 classes with their right IT grades, position with Ⓜ and flatness in the file, and OpenCASCADE reading back the dimensions and tolerances; the file imported again gives the same PMI;
 * a linked part inside a moved assembly is where the assembly puts it for volume claims and clearance, and its hidden source is not counted;
-* a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block.
+* a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block;
+* broken references are reported, not papered over:
+** a diameter whose face became a plane is invalid, shows its error, and is kept out of the inspection plan, the stack-up and the STEP export, then valid again when repaired;
+** a stack-up whose PMI was deleted gives no result;
+** clearance results are out of date after a part moves;
+** a pair rule naming a label two parts share is not applied;
+* the geometry comparison the tutorials use tells a solid from a different one of the same volume;
+* the status bar names NX-Style's mouse handling rather than FreeCAD's Blender base style alone.
 
-It writes `out/smoke.json` and screenshots, and exits non-zero on any failure.
+A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.
+It writes `out/smoke.json` and screenshots.
+
+== What the launcher accepts
+
+A result file counts only when it is this run's and the run finished.
+The launcher passes each run a new ID, and the result (written atomically by `nxstyle/harness_result.py`) must carry that ID, the schema `nxstyle-harness/1`, status `complete`, and every planned step listed as run.
+A tutorial that fails part way lists the steps it then skipped.
+So a passing `smoke.json` left in the folder by an earlier run cannot pass a run that crashed, and neither can `{}`, empty lists, a truncated file or a run that stopped half way.
+A FreeCAD that exits with an error after writing a good result fails too.
+`tests/test_harness_result.py` covers each of these, through `launch_nx.main` with the FreeCAD run replaced by a stub.
 
 == Tutorial replay [[tutorial-replay]]
 
@@ -54,7 +71,11 @@ The replay works through the xref:tutorials/index.adoc[tutorials] the way the bo
 On the Katydid canvas (tutorials O to R) it double-clicks the empty canvas and types each component's name, drags wires from grip to grip (kbd:[Shift] adds), sets Graft, Flatten and input values from the grips' right-click menu, and types slider values into the slider's dialog; after each step it saves a screenshot with the floating canvas laid over the lower half of the graphics window.
 Dimension values are applied through FreeCAD's API, the equivalent of typing them into Rapid Dimension; everything else is real UI input.
 
-Each feature is checked by its volume against the same operation done directly with FreeCAD's Part API, and the final part must be drawn in the graphics window.
+Each feature is checked by its volume against the same operation done directly with FreeCAD's Part API.
+Volume alone does not prove the shape: a slot cut in the wrong place has the same volume.
+Tutorial A therefore also compares the part with a reference solid built with the Part API: their symmetric difference and their bounding boxes must agree (`nxstyle/geomcheck.py`).
+The final part must also be drawn in the graphics window. That is an occupancy check (something is drawn), not a check of the image.
+Save steps press the real kbd:[Ctrl+S] and check that the file was rewritten; only a new part's first file name is given by script, because the replay cannot drive the system file dialog.
 Tutorials S to X check engineering results: the stack-up against Fischer's figures, the fit against ISO 286, the STEP file's PMI and what OpenCASCADE reads back, the inherited dimensions on the sheet, the clearance kinds and penetration depth, the release states in Strata and the release packages against their manifests, the flat pattern against Shih's hand calculation, and the pin location against Drake's formulas.
 Dialogs that Strata opens are answered by the replay the way a user fills them in.
 Tutorials AA to AC check the composite frame's plan rows and gauges, the evaluation of measured holes, the TUR and acceptance limits, Drake's gauge study result, and the title block against the Strata release.
@@ -63,6 +84,7 @@ A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed ou
 
 The replay writes `out/tutorial.json`, a `progress.log` and screenshots.
 Exit code 1 means a step FAILED.
+The *same*, *differs* and *missing* outcomes are the replay's own judgement of each step against the book; they are not an independently measured equivalence with NX.
 
 == Hidden desktop and memory ceiling
 
@@ -82,6 +104,8 @@ Run one at a time.
 | 3 | Timed out
 | 4 | Stopped at the memory ceiling
 | 5 | Refused to start, for example because another test run is going
+| 6 | The result is not this run's, or is incomplete, empty or unreadable
+| 7 | FreeCAD exited with an error code
 |===
 
 == Testing a second start

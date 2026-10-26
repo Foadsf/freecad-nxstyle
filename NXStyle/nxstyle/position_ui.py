@@ -150,6 +150,8 @@ def evaluate(obj):
     if obj.Size is None:
         obj.Size = size_dimension(frame)
     obj.PMI = [x for x in (frame, obj.Size) if x is not None]
+    pmi_ui.require_valid(frame)
+    pmi_ui.require_valid(obj.Size)
     a = pmi_ui.semantic(frame)
     axes, basics = coordinates(frame)
     obj.Basic = [f"{u:.4f} {v:.4f}" for u, v in basics]

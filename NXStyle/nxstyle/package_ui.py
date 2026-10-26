@@ -205,15 +205,51 @@ def export_analysis(doc, folder):
     return n
 
 
+FORMAT_LIMITS = ("has no AP242 semantic form", "OCCT has no form variance")
+
+
+def losses_of(src, info):
+    """What the package does not carry as it is in the model: [{"what", "critical"}]. A loss the STEP format
+    cannot hold through OpenCASCADE (FORMAT_LIMITS: pmi.json keeps it) is listed; values that are not current
+    (an invalid PMI, a stack-up without a valid result) or PMI the STEP lost for another reason are critical."""
+    from . import pmi_ui, stackup_ui
+    out = []
+    for p in info.get("step_pmi_not_written", []) or []:
+        out.append({"what": f"STEP: {p}", "critical": not any(k in p for k in FORMAT_LIMITS)
+                    and "not valid" not in p})
+    for o in pmi_ui.all_pmi(src):
+        if not pmi_ui.valid(o):
+            out.append({"what": f"PMI {o.Label} is not valid: {o.Callout}", "critical": True})
+    for s in stackup_ui.stackups(src):
+        if not getattr(s, "Valid", True):
+            out.append({"what": f"stack-up {s.Label}: {s.Verdict}", "critical": True})
+    for ann, reason in pmi_ui.stale_inherited(src):
+        out.append({"what": f"drawing annotation {ann.Label} is out of date: {reason}", "critical": True})
+    return out
+
+
+def profile_of(parts):
+    if {"step", "native"} <= set(parts):
+        return "release"
+    return "geometry" if "step" in parts else "partial"
+
+
 def publish(doc, out_root, meta, parts=None, released_file=None, make_zip=True):
     """Write the package for doc (or for released_file, a released copy that is opened, exported and
-    closed) into out_root/<PN>_<rev>/. Returns (folder, manifest, zip path or None)."""
+    closed) into out_root/<PN>_<rev>/. It is made in a staging folder and verified (package.verify: hashes,
+    the files its profile needs, no critical loss) before it replaces an earlier package of the same
+    revision; one that fails raises package.PackageError and leaves the earlier one. Returns (folder,
+    manifest, zip path or None)."""
     parts = parts or {"step", "native", "pdf", "pmi", "analysis"}
     name = f"{package.safe_name(meta.get('part_number', doc.Label))}_{package.safe_name(meta.get('revision', '-'))}"
     folder = os.path.join(out_root, name)
-    if os.path.isdir(folder):
-        shutil.rmtree(folder)
-    os.makedirs(folder)
+    os.makedirs(out_root, exist_ok=True)
+    m, z = package.publish_atomically(folder, lambda staging: _build(doc, staging, name, meta, parts, released_file),
+                                      make_zip=make_zip)
+    return folder, m, z
+
+
+def _build(doc, folder, name, meta, parts, released_file):
     src = doc
     opened = None
     if released_file:
@@ -249,6 +285,7 @@ def publish(doc, out_root, meta, parts=None, released_file=None, make_zip=True):
             info.update(export_pmi(src, os.path.join(folder, "pmi")))
         if "analysis" in parts:
             info["stackups"] = export_analysis(src, os.path.join(folder, "analysis"))
+        losses = losses_of(src, info)
     finally:
         if opened is not None:
             App.closeDocument(opened.Name)
@@ -262,9 +299,7 @@ def publish(doc, out_root, meta, parts=None, released_file=None, make_zip=True):
     full["digital_product_definition"] = "ISO 16792" if full["standard"].startswith("ISO") else "ASME Y14.41"
     full["created"] = package.today()
     full["created_with"] = "FreeCAD " + ".".join(App.Version()[:3]) + " with FreeCAD NX-Style"
-    m = package.write_manifest(folder, full)
-    z = package.zip_folder(folder, folder + ".zip") if make_zip else None
-    return folder, m, z
+    return package.write_manifest(folder, full, profile_of(parts), losses)
 
 
 # ------------------------------------------------------------------ dialog
@@ -351,6 +386,11 @@ class PublishPanel:
                         "source_document": os.path.basename(self.doc.FileName or self.doc.Label)}
                 released = None
             folder, m, z = publish(self.doc, self.out.text(), meta, parts, released, self.parts["zip"].isChecked())
+        except package.PackageError as e:
+            QtWidgets.QMessageBox.warning(self.form, "Publish Release Package",
+                                          "Not published: the package did not verify, so an earlier package of this "
+                                          "revision was kept as it was.\n\n" + "\n".join(e.problems))
+            return False
         except Exception as e:
             import traceback
             App.Console.PrintError(traceback.format_exc())

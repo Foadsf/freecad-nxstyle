@@ -32,6 +32,15 @@ Each PMI is attached to its faces by a link that FreeCAD's topological naming ke
 It is drawn at a constant size with a leader to the face; frames and datum symbols use the same drawing as NX-Style's Drafting dialogs.
 Its values are properties: change the *Fit*, the *Envelope* or a tolerance in the property view and everything that uses it follows, the stack-ups too.
 
+A PMI that cannot be measured from its faces at a recompute becomes *invalid*: its face was deleted, it became a different kind of surface (a diameter on what is now a plane), or a distance lost one of its two faces.
+Its *Valid* property turns false, its label turns red and says why, and nothing uses its last good values:
+* the inspection plan and the functional gauge leave it out, and the checks report it as an error;
+* Pin Location, Position Evaluation, Gauge Study and the stack-ups refuse it;
+* STEP with PMI does not write it;
+* Inherit PMI skips it;
+* a release package fails.
+Reattach it to the right face and it is valid again.
+
 A deviation of zero is written as the digit 0, without a sign (ISO 129-1, and ASME Y14.5 for metric drawings): `4X Ø5.000 +0.200/0`, `Ø16.000 H7 (+0.018/0)`.
 
 Dimensions and frames also have a *Measurement uncertainty U*, the uncertainty of the method that checks them.
@@ -115,6 +124,12 @@ In Drafting, select a view and click *Inherit PMI*:
 * the sheet gets the tolerancing note: _Tolerancing ISO 8015_, _General tolerances ISO 2768-mK_.
 
 A PMI is placed once per sheet, in the first view that shows it.
+The drawing follows the PMI.
+When a PMI's callout changes (its fit, tolerance, datum letter, modifier or lower row), its inherited annotation is made again from it, where you had placed it.
+When a PMI is deleted, its annotation goes.
+An annotation whose PMI is invalid stays as it is, and a release package refuses the drawing until the PMI is fixed.
+Inherit PMI also updates what is already on the sheet.
+Annotations inherited before 2026-10-26 do not record what they were made from: inherit them again once to have them follow.
 Dimensions covered by the general tolerance show no tolerance of their own, as on a drawing.
 
 Which PMI a view inherits is its *NX_InheritPMI* property, NX's _Settings › Common › PMI › Inherit PMI_ (Wünsch, Pilz and Vajna, 6.10):

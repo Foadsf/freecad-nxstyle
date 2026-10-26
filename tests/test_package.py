@@ -19,10 +19,19 @@ class Package(unittest.TestCase):
         self.dir = os.path.join(self.tmp.name, "PLT-100_B")
         os.makedirs(os.path.join(self.dir, "model"))
         os.makedirs(os.path.join(self.dir, "pmi"))
-        with open(os.path.join(self.dir, "model", "PLT-100_B.step"), "wb") as f:
-            f.write(b"ISO-10303-21;\nEND-ISO-10303-21;\n")
-        package.write_csv(os.path.join(self.dir, "pmi", "inspection_plan.csv"), [["number", "requirement"], [1, "Ø6"]])
+        self.fill(self.dir)
         self.meta = {"part_number": "PLT-100", "revision": "B", "state": "Released", "description": "Plate"}
+
+    @staticmethod
+    def fill(folder, step=True, native=True):
+        os.makedirs(os.path.join(folder, "model"), exist_ok=True)
+        if step:
+            with open(os.path.join(folder, "model", "PLT-100_B.step"), "wb") as f:
+                f.write(b"ISO-10303-21;\nEND-ISO-10303-21;\n")
+        if native:
+            with open(os.path.join(folder, "model", "PLT-100_B.FCStd"), "wb") as f:
+                f.write(b"PK native")
+        package.write_csv(os.path.join(folder, "pmi", "inspection_plan.csv"), [["number", "requirement"], [1, "Ø6"]])
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -30,8 +39,8 @@ class Package(unittest.TestCase):
     def test_manifest_lists_every_file_with_its_hash(self):
         m = package.write_manifest(self.dir, self.meta)
         paths = [e["path"] for e in m["files"]]
-        self.assertEqual(paths, ["model/PLT-100_B.step", "pmi/inspection_plan.csv"])
-        step = m["files"][0]
+        self.assertEqual(paths, ["model/PLT-100_B.FCStd", "model/PLT-100_B.step", "pmi/inspection_plan.csv"])
+        step = m["files"][1]
         want = hashlib.sha256(b"ISO-10303-21;\nEND-ISO-10303-21;\n").hexdigest()
         self.assertEqual(step["sha256"], want)
         self.assertEqual(step["role"], "model (STEP), model")
@@ -72,6 +81,79 @@ class Package(unittest.TestCase):
 
     def test_safe_name(self):
         self.assertEqual(package.safe_name("PLT 100/B"), "PLT_100_B")
+
+
+class Completeness(unittest.TestCase):
+    """Hashes prove the files are those listed; these prove the package is a release at all."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = os.path.join(self.tmp.name, "PLT-100_B")
+        os.makedirs(self.dir)
+        self.meta = {"part_number": "PLT-100", "revision": "B", "state": "Released"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_empty_manifest_in_an_empty_folder_fails(self):
+        with open(os.path.join(self.dir, package.MANIFEST), "w", encoding="utf-8") as f:
+            f.write("{}")
+        problems = package.verify(self.dir)
+        self.assertTrue(any("lists no files" in p for p in problems), problems)
+        self.assertTrue(any("format" in p for p in problems), problems)
+
+    def test_empty_but_well_formed_manifest_fails(self):
+        package.write_manifest(self.dir, self.meta)
+        self.assertTrue(any("lists no files" in p for p in package.verify(self.dir)))
+
+    def test_release_without_its_model_fails_and_a_geometry_package_needs_no_native_file(self):
+        Package.fill(self.dir, native=False)
+        package.write_manifest(self.dir, self.meta, profile="release")
+        self.assertTrue(any("model (FreeCAD, native)" in p for p in package.verify(self.dir)))
+        package.write_manifest(self.dir, self.meta, profile="geometry")
+        self.assertEqual(package.verify(self.dir), [])
+
+    def test_missing_identity_fails(self):
+        Package.fill(self.dir)
+        package.write_manifest(self.dir, {"part_number": "PLT-100"})
+        self.assertTrue(any("identify the release" in p for p in package.verify(self.dir)))
+
+    def test_critical_loss_fails_a_release_and_a_format_limit_does_not(self):
+        Package.fill(self.dir)
+        package.write_manifest(self.dir, self.meta, losses=[{"what": "STEP: envelope (E)", "critical": False}])
+        self.assertEqual(package.verify(self.dir), [])
+        m = json.load(open(os.path.join(self.dir, package.MANIFEST), encoding="utf-8"))
+        self.assertFalse(m["pmi_complete"])
+        package.write_manifest(self.dir, self.meta, losses=[{"what": "PMI Diameter is not valid", "critical": True}])
+        self.assertEqual(package.verify(self.dir), ["critical loss: PMI Diameter is not valid"])
+
+    def test_failed_publication_keeps_the_earlier_package(self):
+        folder = os.path.join(self.tmp.name, "out", "PLT-100_B")
+
+        def good(staging):
+            Package.fill(staging)
+            return package.write_manifest(staging, self.meta)
+
+        def incomplete(staging):
+            Package.fill(staging, step=False)
+            return package.write_manifest(staging, self.meta)
+
+        def crash(staging):
+            Package.fill(staging)
+            raise RuntimeError("export failed half way")
+        os.makedirs(os.path.dirname(folder))
+        m, z = package.publish_atomically(folder, good)
+        self.assertEqual(package.verify(folder), [])
+        before = sorted(os.listdir(folder))
+        with self.assertRaises(package.PackageError):
+            package.publish_atomically(folder, incomplete)
+        with self.assertRaises(RuntimeError):
+            package.publish_atomically(folder, crash)
+        self.assertEqual(sorted(os.listdir(folder)), before)
+        self.assertEqual(package.verify(folder), [])
+        self.assertEqual(sorted(os.listdir(os.path.dirname(folder))), ["PLT-100_B", "PLT-100_B.zip"])
+        with zipfile.ZipFile(z) as zf:
+            self.assertIn("PLT-100_B/manifest.json", zf.namelist())       # the final name, not the staging one
 
 
 if __name__ == "__main__":

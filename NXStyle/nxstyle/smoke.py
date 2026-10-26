@@ -6,7 +6,6 @@ command lookups, application switching, sketch edit mode. Results go to
 OUTDIR/smoke.json and screenshots to OUTDIR/*.png.
 """
 
-import json
 import os
 import time
 import traceback
@@ -44,9 +43,15 @@ class Smoke:
         self.checks = []
         self.info = {}
         self.steps = list(self.plan())
+        self.planned = [fn.__name__ for fn, _ in self.steps]
+        self.ran = []
 
     def check(self, name, ok, detail=""):
-        self.checks.append({"name": name, "ok": bool(ok), "detail": str(detail)})
+        self.checks.append({"name": name, "ok": bool(ok), "status": "pass" if ok else "fail", "detail": str(detail)})
+
+    def skip(self, name, detail):
+        """A check this FreeCAD cannot run (the capability is absent): counted as skipped, not as passed."""
+        self.checks.append({"name": name, "ok": True, "status": "skipped", "detail": str(detail)})
 
     def shot(self, name, widget=None):
         try:
@@ -129,6 +134,8 @@ class Smoke:
         yield self.s_ap242, 300
         yield self.s_model_views, 300
         yield self.s_assembly_links, 200
+        yield self.s_geometry_oracle, 100
+        yield self.s_validity, 300
         yield self.s_inspection, 300
         yield self.s_expressions, 800
         yield self.s_final, 100
@@ -363,7 +370,19 @@ class Smoke:
     def s_snap(self):
         Gui.runCommand("NXStyle_SnapView")
 
+    def s_navigation_label(self):
+        """The status bar names the mouse handling in use, not only FreeCAD's base style under it."""
+        from . import prefs
+        self.shell.label_navigation()
+        bar = Gui.getMainWindow().statusBar()
+        texts = [w.text().strip() for w in bar.findChildren(QtWidgets.QAbstractButton) +
+                 bar.findChildren(QtWidgets.QLabel) if w.isVisible()]
+        if prefs.uses_own_navigation(self.shell.cfg):
+            self.check("status bar names NXStyle's mouse handling, not just FreeCAD's base style",
+                       self.shell.NAV_LABEL in texts and "Blender" not in texts, texts)
+
     def s_mouse(self):
+        self.s_navigation_label()
         d = self.view().getViewDirection()
         self.check("Snap View (F8) aligns to an axis", max(abs(d.x), abs(d.y), abs(d.z)) > 0.999, d)
         Gui.runCommand("Std_ViewTrimetric")
@@ -448,7 +467,7 @@ class Smoke:
             QtTest.QTest.keyClick(target, Qt.Key_B, Qt.ControlModifier | Qt.ShiftModifier)
             self.check("Ctrl+Shift+B key press inverts visibility", pressed_hidden and box.ViewObject.Visibility)
         except ImportError as e:
-            self.check("Ctrl+Shift+B key press inverts visibility", True, f"QtTest unavailable, skipped: {e}")
+            self.skip("Ctrl+Shift+B key press inverts visibility", f"QtTest unavailable: {e}")
         from . import showhide
         dlg = showhide.show_dialog()
         rows = dlg.grid.rowCount()
@@ -467,7 +486,7 @@ class Smoke:
         self.info["last_command"] = commands.last_command["name"]
         Gui.runCommand("NXStyle_RepeatCommand")
         doc.recompute()
-        self.check("Repeat Command (F4)", len(doc.Objects) == n0 + 2 and commands.last_command["name"] == "Part_Cylinder",
+        self.check("Repeat Command (Quick Access Toolbar; F4 is Touch Mode, as in NXtips)", len(doc.Objects) == n0 + 2 and commands.last_command["name"] == "Part_Cylinder",
                    f"objects {n0} -> {len(doc.Objects)}, last={commands.last_command['name']}")
 
     def s_sketch_enter(self):
@@ -487,7 +506,8 @@ class Smoke:
         self.check("no overlay box over the view in sketch mode", not boxes, boxes)
         self.shot("02_sketch.png")
         tested, bad = self.press_keys("sketch")
-        self.check(f"sketch key presses reach their commands ({tested} keys)", tested and not bad, bad)
+        self.check(f"sketch key presses reach their commands through Qt's shortcut dispatch ({tested} keys; "
+                   "dispatch only)", tested and not bad, bad)
 
     def s_sketch_leave(self):
         Gui.ActiveDocument.resetEdit()
@@ -512,7 +532,7 @@ class Smoke:
 
     def s_auto_check(self):
         if not self.shell._app("simulation"):
-            self.check("auto ribbon (FEM)", True, "FEM not installed; skipped")
+            self.skip("auto ribbon from workbench toolbars (FEM)", "FEM not installed")
             return
         r = self.shell.ribbon
         page = r.stack.widget(0)
@@ -821,8 +841,38 @@ class Smoke:
         self.shell.ribbon.select("Home")
 
     # ------------------------------------------------------ keyboard tests
+    def s_keys_in_text_field(self):
+        """A single-letter NX key typed into a text field is text: X in the Command Finder must not reach
+        Extrude (a shortcut that fires while the user types would run commands by accident)."""
+        try:
+            from PySide6 import QtTest
+        except ImportError:
+            from PySide2 import QtTest
+        inst = shortcuts.instance()
+        act = inst.targets.get(shortcuts.norm("X"))
+        field = self.shell.finder
+        if act is None or field is None:
+            self.check("an NX letter key typed into a text field stays text", False, "no X action or no finder")
+            return
+        app = QtWidgets.QApplication.instance()
+        probe = ShortcutProbe()
+        app.installEventFilter(probe)
+        try:
+            field.setFocus()
+            field.clear()
+            QtTest.QTest.keyClick(field, Qt.Key_X)
+            reached = [h for h in probe.hits if h[0] == cpp(act)]
+            text = field.text()
+        finally:
+            app.removeEventFilter(probe)
+            field.clear()
+            self.nav().widget.setFocus()
+        self.check("an NX letter key typed into a text field stays text (X in the Command Finder)",
+                   not reached and text.lower() == "x", f"typed {text!r}; reached Extrude: {bool(reached)}")
+
     def press_keys(self, context):
-        """Press every key of one context; the probe eats the shortcut event so nothing runs."""
+        """Press every key of one context and check which action Qt's shortcut dispatch picks; the probe
+        eats the shortcut event, so this tests dispatch, not that the command then works."""
         try:
             from PySide6 import QtTest
         except ImportError:
@@ -896,7 +946,9 @@ class Smoke:
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection(doc.Name, "Box")
         tested, bad = self.press_keys("doc")
-        self.check(f"real key presses reach their commands ({tested} keys)", tested and not bad, bad)
+        self.check(f"real key presses reach their commands through Qt's shortcut dispatch ({tested} keys; "
+                   "dispatch only: the probe stops the command from running)", tested and not bad, bad)
+        self.s_keys_in_text_field()
         # independent of Qt's dispatch: no other action holds an NX key or a chord starting with it
         inst = shortcuts.instance()
         ours = {id(a) for a in inst.targets.values()}
@@ -963,7 +1015,8 @@ class Smoke:
         import Part
         from . import ap242, pmi_ui
         if not ap242.available():
-            self.check("STEP AP242 with semantic PMI", True, "this FreeCAD has no pythonocc; skipped")
+            self.skip("STEP AP242 with semantic PMI (written, ISO 286 grades right, read back by OCCT)",
+                      "this FreeCAD has no pythonocc")
             return
         before = App.ActiveDocument
         doc = App.newDocument("SmokeAP242")
@@ -1085,6 +1138,104 @@ class Smoke:
             if before is not None and before.Name in App.listDocuments():
                 App.setActiveDocument(before.Name)
                 Gui.getDocument(before.Name)
+
+    def s_validity(self):
+        """Broken references make PMI, stack-ups and clearance results say so, instead of keeping their last
+        good values: a diameter whose face became a plane, a stack-up whose PMI was deleted, a clearance
+        result after a part moved, a pair rule naming a label two parts share."""
+        import Part
+        from . import ap242, clearance, pmi, pmi_ui, stackup_ui
+        before = App.ActiveDocument
+        doc = App.newDocument("SmokeValidity")
+        try:
+            plate = doc.addObject("Part::Feature", "Plate")
+            plate.Shape = Part.makeBox(60, 40, 10).cut(Part.makeCylinder(5, 10, App.Vector(30, 20, 0)))
+            doc.recompute()
+            hole = "Face%d" % next(i for i, f in enumerate(plate.Shape.Faces, 1)
+                                   if f.Surface.__class__.__name__ == "Cylinder")
+            top = "Face%d" % next(i for i, f in enumerate(plate.Shape.Faces, 1)
+                                  if f.Surface.__class__.__name__ == "Plane" and abs(f.CenterOfMass.z - 10) < 1e-6)
+            dia = pmi_ui.create("Dimension", [(plate, hole)], doc, DimensionType="Diameter", Fit="H7")
+            good = (dia.Valid, dia.Callout)
+            dia.References = [(plate, top)]                  # the face it measured is now a plane
+            doc.recompute()
+            bad = (dia.Valid, dia.Callout)
+            anns = [pmi_ui.semantic(o) for o in pmi_ui.all_pmi(doc)]
+            in_plan = any(r["id"] == dia.Name for r in pmi.inspection_plan(pmi.number(anns)))
+            flagged = any(s == "error" and i == dia.Name for s, i, _ in pmi.check(anns))
+            refused = False
+            try:
+                pmi_ui.stack_values(dia)
+            except ValueError:
+                refused = True
+            written = [r["id"] for r in ap242.plan([a for a in anns if pmi.is_valid(a)])]
+            dia.References = [(plate, hole)]
+            doc.recompute()
+            back = (dia.Valid, dia.Callout)
+            self.check("an invalid PMI says why and is not used: model, plan, checks, stack-up, export",
+                       good[0] and not bad[0] and bad[1].startswith("error:") and "Ø10" not in bad[1]
+                       and not in_plan and flagged and refused and dia.Name not in written
+                       and back == good, f"valid {good}; face became a plane {bad}; in plan {in_plan}, "
+                       f"flagged {flagged}, stack-up refused {refused}; repaired {back}")
+
+            # a stack-up row following a PMI that is then deleted
+            s = stackup_ui.create(doc)
+            stackup_ui.set_rows(s, [{"name": "bore", "pmi": dia.Name, "nominal": 10, "plus": 0, "minus": 0}], [])
+            doc.recompute()
+            ok_before = s.Valid and abs(s.WorstCaseMax - s.Nominal) > 0
+            doc.removeObject(dia.Name)
+            s.touch()
+            doc.recompute()
+            self.check("a stack-up whose PMI was deleted gives no result, not the old one",
+                       ok_before and not s.Valid and s.Verdict.startswith("INVALID") and s.WorstCaseMax == 0.0
+                       and stackup_ui.csv_rows(s)[1][0].startswith("INVALID"), s.Verdict)
+
+            # clearance: out of date after a part moves; a rule naming a shared label is not applied
+            a = doc.addObject("Part::Box", "BlockA")
+            b = doc.addObject("Part::Box", "BlockB")
+            c = doc.addObject("Part::Box", "BlockC")
+            # FreeCAD makes labels unique unless duplicates are allowed (Preferences > Document); with them, and
+            # across linked documents, two parts can share a label
+            pd = App.ParamGet("User parameter:BaseApp/Preferences/Document")
+            dup = pd.GetBool("DuplicateLabels", False)
+            pd.SetBool("DuplicateLabels", True)
+            a.Label = "Block"
+            c.Label = "Block"
+            pd.SetBool("DuplicateLabels", dup)
+            b.Placement.Base = App.Vector(5, 0, 0)
+            doc.recompute()
+            cset = clearance.create(doc, [a, b, c])
+            cset.PairRules = ["Block|BlockB=exclude"]
+            clearance.perform(cset)
+            fresh = not clearance.is_stale(cset)
+            b.Placement.Base = App.Vector(50, 0, 0)
+            doc.recompute()
+            stale = clearance.is_stale(cset) and cset.Stale and "OUT OF DATE" in clearance.report(cset)
+            self.check("clearance results are marked out of date after a part moves; an ambiguous pair rule is "
+                       "reported, not applied", fresh and stale and any("names 2 objects" in p for p in cset.RuleProblems),
+                       f"fresh {fresh}, stale {stale}, labels {a.Label}/{c.Label}, rule problems "
+                       f"{list(cset.RuleProblems)}")
+        finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+
+    def s_geometry_oracle(self):
+        """The tutorials' geometry comparison tells solids of equal volume apart (a negative control), and
+        accepts the same solid built another way (a positive one)."""
+        import Part
+        from . import geomcheck
+        ref = Part.makeBox(20, 10, 10)
+        same = Part.makeBox(10, 10, 10).fuse(Part.makeBox(10, 10, 10, App.Vector(10, 0, 0)))
+        other = Part.makeBox(10, 10, 20)                      # the same 2000 mm³, a different block
+        moved = Part.makeBox(20, 10, 10, App.Vector(0.5, 0, 0))
+        ok_same, d_same = geomcheck.compare(same, ref)
+        ok_other, d_other = geomcheck.compare(other, ref)
+        ok_moved, d_moved = geomcheck.compare(moved, ref)
+        self.check("geometry comparison: the same solid passes, an equal-volume different or moved one fails",
+                   ok_same and not ok_other and not ok_moved and abs(other.Volume - ref.Volume) < 1e-9,
+                   f"same: {d_same} | other: {d_other} | moved: {d_moved}")
 
     def s_assembly_links(self):
         """Volume claims and clearance see a linked part where its assembly puts it, and not its hidden source."""
@@ -1213,12 +1364,13 @@ class Smoke:
         except Exception:
             self.check(f"step {fn.__name__}", False, traceback.format_exc().splitlines()[-1])
             self.info[f"traceback {fn.__name__}"] = traceback.format_exc()
+        self.ran.append(fn.__name__)
         QtCore.QTimer.singleShot(delay, self.next)
 
     def finish(self):
+        from . import harness_result
         result = {"checks": self.checks, "info": self.info, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-        with open(os.path.join(OUT, "smoke.json"), "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=1, default=str)
+        harness_result.write(os.path.join(OUT, "smoke.json"), "smoke", result, self.planned, self.ran)
         if os.environ.get("NXSTYLE_SMOKE_EXIT") == "1":
             for name in list(App.listDocuments()):
                 App.closeDocument(name)
