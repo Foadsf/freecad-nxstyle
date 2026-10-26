@@ -1,0 +1,65 @@
+= Tutorial AG: Impeller Lower Casing
+:description: The sketch of an impeller's lower casing: a line, two tangent arcs and a line, dimensioned from a fixed point, then copied with Move Curve into the casing wall, its edge and the flange (NX 12 for Engineering Design, 3.5.2).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.2. The book's chapter 4.4 then revolves this sketch into the casing.
+You learn:: Profile with tangent arcs, a fixed point to dimension from, radius dimensions, Move Curve with Copy Original, joining curve ends with lines
+Sizes:: the book's, in inches, typed in millimetres. Line 1 is 15 below the origin and 7.3 long. Curve 1 has a radius of 33 and Curve 2 of 8. Line 2 is 8.1 below the origin and 1.0 long. The copies are 0.5 up (the wall), 1.5 down (the edge), and the flange is 0.5 wide.
+
+== Step by step
+
+=== 1. A new part and a sketch
+
+kbd:[Ctrl+N]. The book makes an inch part. NX-Style parts are metric, so the sizes are typed in millimetres (15 in = 381 mm).
+Click *Sketch*, pick the XC-YC plane and press MB2.
+
+=== 2. The inner curve
+
+Press kbd:[Z] for *Profile*.
+Draw Line 1 below the origin, from left to right.
+Press kbd:[M] three times for a tangent arc and click Curve 1's end.
+Press kbd:[M] three times again for the second tangent arc, Curve 2, which bends the other way. After an arc, FreeCAD starts with a tangent line, so it takes three presses again.
+Click Line 2's end and press MB2.
+Every joint is tangent.
+
+=== 3. A point at the origin, and the dimensions
+
+Click *Point* and click the origin. The point snaps to it, which fixes it there.
+In NX you type the point's coordinates and click *Fixed*. FreeCAD's *Fixed* keeps a point where it already is.
+
+Dimension from the point: Line 1 15 below it and Line 2 8.1 below it (*Distance*), Curve 1 radius 33 and Curve 2 radius 8 (*Radius / Diameter*), Line 1 7.3 long and Line 2 1.0 long.
+One degree of freedom is left: nothing places the curve along X. The book leaves it too, because the casing is later revolved about the X axis.
+
+image::tutorial-AG-01-dimensioned.png[The inner curve of the casing, dimensioned]
+
+Select the dimensions and hide them.
+
+=== 4. Move Curve: the wall, the edge and the flange
+
+Select the four curves and click *Move Curve*.
+Set *Copies* to 1 so that the curves are copied, not moved (NX: *Copy Original*).
+Click a base point, then type the move in the fields beside the pointer: length 12.7 mm, angle 90°.
+Join the two ends with lines (kbd:[L]). That closes the casing wall.
+
+Copy the four curves again, 38.1 mm at -90° (1.5 in down), and join their ends to the inner curve. That is the edge, which the next chapter extrudes.
+
+At the small end, copy the edge's end line 12.7 mm at 180° (0.5 in along -XC), and join the two lines at the top and the bottom. That is the flange.
+The sketch now has 19 curves.
+
+image::tutorial-AG-02-casing.png[The finished casing sketch: wall, edge and flange]
+
+kbd:[Ctrl+Q], and save with kbd:[Ctrl+S].
+
+== The replay
+
+include::partial$generated/tutorial-AG.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each of the 19 curves is compared with the book's figure, rebuilt from its dimensions.
+
+== What differs from NX
+
+* FreeCAD gives Move Curve's distance as a length and an angle. NX takes a distance along a chosen vector.
+* *Copies* = 1 is NX's *Copy Original*. With 0, FreeCAD moves the curves.
+* FreeCAD hides sketch dimensions by moving them to its "virtual space". That command is not on the ribbon or the MB3 menu.
