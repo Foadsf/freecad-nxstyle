@@ -406,8 +406,7 @@ class MstCasingTutorials:
     """Mixin for tutorial.Replay: tutorial AG."""
 
     def AG_STEPS(self):
-        return [self.p_modeling, self.ag_new, self.ag_sketch, self.ag_plane, self.ag_profile, self.ag_repair,
-                self.ag_point, self.ag_tangent, self.ag_dimensions, self.ag_hide, self.ag_copy_up, self.ag_join_wall,
+        return [self.p_modeling, self.ag_new, self.ag_sketch, self.ag_plane, self.ag_profile, self.ag_point, self.ag_tangent, self.ag_dimensions, self.ag_hide, self.ag_copy_up, self.ag_join_wall,
                 self.ag_copy_down, self.ag_join_edge, self.ag_flange, self.ag_flange_join, self.ag_check,
                 self.ag_finish, self.ag_save, self.ag_fit, self.ag_show]
 
@@ -434,16 +433,7 @@ class MstCasingTutorials:
         return 3 - pos if g in self._ag_reversed else pos
 
     def ag_frame(self):
-        """Frame the casing, after FreeCAD's camera animation into the sketch has finished: clicks made while
-        the camera still moves land off the points (the Profile session found this)."""
-        from .tutorial import qtest
-        last = None
-        for _ in range(40):
-            pos = tuple(self.view().getCameraNode().position.getValue())
-            if pos == last:
-                break
-            last = pos
-            qtest().qWait(100)
+        """Frame the casing (frame_sketch waits for FreeCAD's camera animation into the sketch to end)."""
         xs = [p[0] * IN for p in AG_ROUGH]
         ys = [p[1] * IN for p in AG_ROUGH] + [0.0, 5 * IN]
         self.frame_sketch(self._ag_sk, (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2, (max(xs) - min(xs)) * 0.7)
@@ -532,8 +522,9 @@ class MstCasingTutorials:
         QtWidgets.QApplication.processEvents()
         tool = self.nav().sketch_tool_active()
         # M cycles the next segment: tangent line, perpendicular line, free line, tangent arc, ... After a line the
-        # next starts free (3 presses to a tangent arc); after an arc it starts tangent (3 presses too)
-        presses = {2: self.AF_ARC_PRESSES, 3: 3}
+        # next starts free (3 presses to a tangent arc); after an arc it starts tangent (3 presses too, and 2 to a
+        # free line, NX's Line, which gets its Horizontal; the Tangent step adds that joint's tangency)
+        presses = {2: self.AF_ARC_PRESSES, 3: 3, 4: self.AF_LINE_PRESSES}
         trace = []
         for i, (x, y) in enumerate(AG_ROUGH):
             for _ in range(presses.get(i, 0)):
@@ -543,8 +534,9 @@ class MstCasingTutorials:
             self.mb1_click(self.screen_point(sk, x * IN, y * IN))
             trace.append({"click": i, "geo": len(sk.Geometry), "new": [f"{c.Type} {c.First}/{c.FirstPos} {c.Second}/"
                                                                         f"{c.SecondPos}" for c in sk.Constraints[n0:]]})
-        self.mb2_click(self.screen_point(sk, -12 * IN, 4 * IN))
-        ended = not self.nav().sketch_tool_active()
+        away = self.screen_point(sk, -12 * IN, 4 * IN)
+        self.mb2_click(away)
+        ended = not self.sketch_tool_running(away)
         App.ActiveDocument.recompute()
         geo = list(range(len(sk.Geometry)))
         kinds = [self.ag_kind(g) for g in geo]
@@ -556,27 +548,16 @@ class MstCasingTutorials:
                     (sk.getPoint(g, 1) - sk.getPoint(g - 1, 2)).Length:
                 self._ag_reversed.add(g)
         tangents = sum(1 for c in sk.Constraints if c.Type == "Tangent")
-        first_h = any(c.Type == "Horizontal" and c.First == 0 for c in sk.Constraints)
+        horizontal = [any(c.Type == "Horizontal" and c.First == g for c in sk.Constraints) for g in (0, 3)]
         self.info["AG profile clicks"] = trace
         dof, _, _ = self.sk_state(sk)
         self.step("Profile: Line 1, Curve 1, Curve 2, Line 2", f"Z key, 5 MB1 clicks, M ({self.AF_ARC_PRESSES}x) before "
-                  "Curve 1's end and 3x before Curve 2's, MB2",
-                  SAME if tool and ended and kinds == ["line", "arc", "arc", "line"] and tangents == 3 and first_h
-                  else FAIL, f"curves {kinds}; tangent joints {tangents} of 3; Line 1 Horizontal {first_h}; DoF {dof}")
+                  f"Curve 1's end, 3x before Curve 2's and {self.AF_LINE_PRESSES}x before Line 2's (NX's Line), MB2",
+                  SAME if tool and ended and kinds == ["line", "arc", "arc", "line"] and tangents == 2 and all(horizontal)
+                  else FAIL, f"curves {kinds}; tangent joints {tangents} (Line 1-Curve 1, Curve 1-Curve 2; Line 2 is "
+                  f"drawn as a plain line); Horizontal on Line 1 {horizontal[0]}, on Line 2 {horizontal[1]}; tool ended "
+                  f"by MB2 {ended}; DoF {dof}")
         self.wait = 300
-
-    def ag_repair(self):
-        sk = self._ag_sk
-        done = []
-        for g in (0, 3):
-            if not any(c.Type == "Horizontal" and c.First == g for c in sk.Constraints):
-                d, where = self.sk_constrain(sk, "Horizontal", [self.ag_edge(g)])
-                done.append(f"Horizontal on Line {1 if g == 0 else 2} ({d})")
-        ok = all(any(c.Type == "Horizontal" and c.First == g for c in sk.Constraints) for g in (0, 3))
-        dof, _, _ = self.sk_state(sk)
-        self.step("(not in the book) Horizontal on Line 1 and Line 2", "line + ribbon 'Horizontal' where missing",
-                  DIFFERS if ok else FAIL, f"{'; '.join(done) or 'nothing missing'}; DoF {dof}. NX infers Horizontal "
-                  "while drawing; FreeCAD's Profile does not for its first line, nor for a line after an arc")
 
     def ag_point(self):
         """A point at the origin, then Fixed. FreeCAD's Fixed keeps the point where it is; a point on the origin is

@@ -19,8 +19,9 @@ Press kbd:[Z] for *Profile*.
 Draw Line 1 below the origin, from left to right.
 Press kbd:[M] three times for a tangent arc and click Curve 1's end.
 Press kbd:[M] three times again for the second tangent arc, Curve 2, which bends the other way. After an arc, FreeCAD starts with a tangent line, so it takes three presses again.
-Click Line 2's end and press MB2.
-Every joint is tangent.
+Press kbd:[M] twice for a plain line (NX's *Line*; FreeCAD would hold it tangent to the arc), click Line 2's end and press MB2.
+Line 1 and Line 2 get Horizontal as they are drawn.
+Then click *Tangent* where it is missing, between Curve 2 and Line 2; the other joints are tangent already.
 
 === 3. A point at the origin, and the dimensions
 
