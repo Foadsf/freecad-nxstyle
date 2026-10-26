@@ -78,7 +78,7 @@
    "nx": "Extrude, pick the top face as sketch plane, Boolean Subtract",
    "replay": "select face + ribbon 'Home › Feature > Extrude (Subtract)'",
    "outcome": "differs",
-   "detail": "FreeCAD has no Boolean option in Extrude: the subtracting extrude is its own button (Home > Feature > Extrude (Subtract))"
+   "detail": "the Extrude dialog's Boolean list has Subtract (tutorial AE uses it); this replay uses the Extrude (Subtract) button, which starts the same command with Subtract chosen"
   },
   {
    "tutorial": "A: The Adjuster (book in inches, typed in mm)",
@@ -670,7 +670,7 @@
    "nx": "Extrude on the right vertical face of the upright",
    "replay": "select face + ribbon 'Home › Feature > Extrude (Subtract)'",
    "outcome": "differs",
-   "detail": "Face5; subtracting extrude is its own button"
+   "detail": "Face5; the button starts Extrude with Boolean Subtract chosen"
   },
   {
    "tutorial": "E: Saddle Bracket (book in inches, typed in mm)",
@@ -742,7 +742,7 @@
    "nx": "The finished part is shown in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "21.7% of the view shows the part"
+   "detail": "21.7% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "F: Dryer Housing (book in inches, typed in mm)",
@@ -966,7 +966,7 @@
    "nx": "The finished part is shown in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "8.3% of the view shows the part"
+   "detail": "8.3% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "G: Shaft Support assembly (metric parts of the replay's own)",
@@ -3431,6 +3431,206 @@
    "replay": "the outlines exported as SVG (FreeCAD's importSVG, what File > Export > SVG runs)",
    "outcome": "differs",
    "detail": "Tray_flat.svg: 108 paths for 5 outlines, 28612 bytes. NX writes DXF from File > Export; FreeCAD writes DXF the same way, SVG needs no extra library"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 1,
+   "nx": "File > New (Ctrl+N), Model template",
+   "replay": "Ctrl+N",
+   "outcome": "same",
+   "detail": "new document ['Unnamed3']"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 2,
+   "nx": "Extrude (X) with nothing selected, pick the XC-YC plane",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane); command controller started: True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 3,
+   "nx": "Rectangle (R) 40 x 30 from the origin, MB2",
+   "replay": "R key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "tool True; 4 curves; ended True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 4,
+   "nx": "Finish Sketch: the Extrude dialog, Boolean inferred None (New Body)",
+   "replay": "Ctrl+Q; the NX command box above FreeCAD's Pad panel",
+   "outcome": "same",
+   "detail": "Boolean 'None' (list enabled True); Intersect offered but disabled True; status 'None (a new body): ready (OK or MB2 commits one undo step)'; OK enabled True; not supported shown: True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 5,
+   "nx": "End = Value 20, OK",
+   "replay": "'lengthEdit' = 20 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 6 faces (6 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 6,
+   "nx": "Top face selected, Extrude (X): circle 8 mm radius",
+   "replay": "select face + X; O key + 2 MB1 clicks + MB2; size applied",
+   "outcome": "same",
+   "detail": "sketch on [(<PartDesign::Pad>, ('Face6',))]"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 7,
+   "nx": "Boolean inferred Unite (the part has a solid)",
+   "replay": "the NX command box",
+   "outcome": "same",
+   "detail": "Boolean 'Unite'; status 'Unite: ready (OK or MB2 commits one undo step)'; OK True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 8,
+   "nx": "Boolean Intersect",
+   "replay": "chose 'Intersect' in the Boolean list",
+   "outcome": "differs",
+   "detail": "refused in the panel, not approximated: 'Intersect refused: Intersect is not offered: PartDesign has no intersecting extrude, and NX-Style does not approximate it.'; Boolean back to 'Unite', the Pad unchanged True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 9,
+   "nx": "End = Value 10, Boolean Unite, OK",
+   "replay": "'lengthEdit' = 10 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 8 faces (8 in the reference); controller: committed unite, undo step 'Extrude', 1 step(s) added"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 10,
+   "nx": "Top face, Extrude (X): rectangle 8 x 6 near the corner",
+   "replay": "select face + X; R key + 2 MB1 clicks + MB2; sizes applied",
+   "outcome": "same",
+   "detail": "tool True; 4 curves"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 11,
+   "nx": "Boolean Subtract (was inferred Unite)",
+   "replay": "'Subtract' in the Boolean list",
+   "outcome": "same",
+   "detail": "Boolean 'Unite' -> 'Subtract'; the preview Pad replaced by a Pocket (2 Pads left), no undo step added (0); status 'Subtract: ready (OK or MB2 commits one undo step)'"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 12,
+   "nx": "End = Value 5 into the part, OK",
+   "replay": "'lengthEdit' = 5 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); controller: committed subtract, undo step 'Extrude', 1 step(s) added; Subtract cuts against the sketch normal unless Reversed (NX keeps the direction and you reverse it)"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 13,
+   "nx": "Extrude (X), pick the XC-ZC plane (Type Filter set to Edge before)",
+   "replay": "X key, plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XZ-plane (Base plane); Type Filter during the command: 'Edge', gate None, enabled False"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 14,
+   "nx": "Circle 6 mm radius, 100 mm from the part",
+   "replay": "O key + 2 MB1 clicks + MB2; size applied",
+   "outcome": "same",
+   "detail": "tool True; 1 curves"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 15,
+   "nx": "Inferred Unite with a section that misses the part; MB2",
+   "replay": "MB2 = OK",
+   "outcome": "same",
+   "detail": "error shown: 'Unite would leave a separate solid: the extrusion does not touch the part (choose None for a new body)'; OK enabled False; dialog still open after MB2 True (NX: 'tool body does not intersect the target')"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 16,
+   "nx": "Boolean None (a new body)",
+   "replay": "'None' in the Boolean list",
+   "outcome": "same",
+   "detail": "bodies ['Body', 'Body001']; status 'None (a new body): ready (OK or MB2 commits one undo step)'; OK True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 17,
+   "nx": "End = Value 15, Boolean None (a new body), OK",
+   "replay": "'lengthEdit' = 15 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "new body Body001: same solid as the reference: 0 mm³ differ, box within 0 mm, 3 faces (3 in the reference); the first body unchanged: same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added; made of ['SubShapeBinder', 'Pad']; active Body still Body; Type Filter afterwards 'Edge', gate edge, enabled True"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 18,
+   "nx": "MB3 on the first Extrude in the Part Navigator > Edit Parameters",
+   "replay": "MB3 menu entry",
+   "outcome": "same",
+   "detail": "menu entries ['Edit Pad', 'Set Face Colors', 'Suppressed', 'Set Tip', 'Move Object To…', 'Move Feature After…', 'Toggle Freeze', 'Placement', 'Edit Parameters', 'Toggle Visibility', 'Show Selection', 'Hide Selection']; panel open True; Boolean 'None' locked True (changing it would replace the feature)"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 19,
+   "nx": "Preview 35 mm, then Cancel",
+   "replay": "'lengthEdit' = 35 mm, Cancel button",
+   "outcome": "same",
+   "detail": "preview showed Length 35 mm (top at 35 mm); after Cancel Length 20 mm, same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); undo steps added 0; objects left to recompute []"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 20,
+   "nx": "Design change: Edit Parameters, End 20 -> 25, OK",
+   "replay": "ribbon 'Home › Edit Feature > Edit Parameters' (panel True), 'lengthEdit' = 25 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); the boss and the pocket follow the top face; the separate body unchanged True; controller: committed new_body, undo step 'Edit Extrude', 1 step(s) added"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 21,
+   "nx": "Undo (Ctrl+Z) twice, Redo (Ctrl+Y) twice",
+   "replay": "Ctrl+Z, Ctrl+Z, Ctrl+Y, Ctrl+Y",
+   "outcome": "same",
+   "detail": "first undo takes back the edit (same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference)); the second the whole New Body extrude (1 body left, binders left []); redo restores both (same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); cylinder True)"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 22,
+   "nx": "Command Finder: 'Extrude (Subtract)', Enter; Cancel the plane pick",
+   "replay": "typed into the Command Finder + Enter; Cancel button",
+   "outcome": "same",
+   "detail": "command started True (Boolean asked: None); ended cancelled: no section: the plane pick was cancelled; objects +0, undo steps +0"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 23,
+   "nx": "Save (Ctrl+S)",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "ExtrudeAE.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 24,
+   "nx": "Reopen the part",
+   "replay": "close, File > Open (by script)",
+   "outcome": "same",
+   "detail": "part: same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); cylinder: same solid as the reference: 0 mm³ differ, box within 3.6e-15 mm, 3 faces (3 in the reference); Extrudes read back as ['new_body', 'unite', 'subtract', 'new_body']"
+  },
+  {
+   "tutorial": "AE: One Extrude, every way (command controller acceptance)",
+   "n": 25,
+   "nx": "Reopened part: Edit Parameters on the pocket, 12 mm, Esc",
+   "replay": "ribbon 'Home › Edit Feature', typed 12, Esc",
+   "outcome": "same",
+   "detail": "Boolean read back 'Subtract'; after Esc depth 5 mm, same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); undo steps added 0; popup open at Esc: QListView  visible True"
   }
  ],
  "info": {

@@ -25,6 +25,38 @@ xref:nx-to-freecad.adoc[] lists every button with the FreeCAD command behind it.
 
 TIP: To see FreeCAD's own names on the buttons (Pad, Pocket, Fillet …), set `"labels": "freecad"` in the xref:settings.adoc[settings].
 
+=== A narrow window [[narrow-window]]
+
+The reference is NX 2212's ribbon: tabs whose groups collapse into a single group button when the window narrows. Designcenter's application clusters are not imitated.
+The order in which groups give up room, the *More* menu and the sizes are NX-Style's own and have not yet been compared with NX 2212 itself.
+
+The ribbon fits the window instead of running off its edge.
+When a tab's groups do not fit, they give up room in three stages:
+
+. *Compact*: the small buttons show only their icon. The name stays in the tooltip.
+. *Collapsed*: the group becomes a single button with the group's name. Click it, or press kbd:[Space] when it has the focus, for a menu of the group's commands.
+. *More*: the group moves into the *More* menu at the right end of the ribbon.
+
+The groups holding an application's main commands give up room last: in Modeling, the groups with Sketch, Extrude, Revolve, Hole, Edge Blend, Chamfer, Pattern Feature, Edit Parameters and the assembly commands.
+All the other groups are compacted and then collapsed before one of these loses a label.
+Among groups of equal importance, all of them are compacted before any collapses, starting with the rightmost; the More menu comes last.
+Every command therefore stays at most two clicks away, at any window size and display scaling.
+
+Right-click a group to choose how it behaves:
+
+* *Automatic*: as above.
+* *Keep Expanded*: the group gives up room only after all the others.
+* *Always Collapsed*: the group stays a single button even when there is room.
+* *Reset Ribbon Layout*: back to Automatic everywhere.
+
+These choices are kept for each application, and so is a minimised ribbon (double-click a tab, or the arrow at the right).
+They are saved straight away in `nxstyle.ribbon.json` in the profile's `config` folder, so they survive a restart.
+
+When the ribbon is minimised, clicking a tab drops its page down over the graphics window. Running a command, or clicking elsewhere, closes it again.
+A window less than 420 pixels high (at the display's scaling, for example 1366x768 at 200 %) minimises the ribbon by itself. The ribbon comes back when the window is taller, and this does not change your saved choice.
+
+In a narrow window the Command Finder gets narrower first. If the tabs still do not fit, arrows at the end of the tab row scroll them, and Quick Access buttons that do not fit move into the toolbar's » menu.
+
 === Applications
 
 An NX application is a FreeCAD workbench behind the scenes.
@@ -35,8 +67,24 @@ image::ui-applications.png[Application tab with the NX applications]
 
 include::partial$generated/applications.adoc[]
 
-.A generated ribbon: Pre/Post (FreeCAD's FEM workbench)
-image::ui-simulation.png[Pre/Post application with a ribbon generated from FEM's toolbars]
+=== Pre/Post: a guided analysis
+
+The Pre/Post application (FreeCAD's FEM workbench) puts an analysis in order on its *Home* tab.
+The groups are the steps: *1 Analysis*, *2 Material*, *3 Loads and Constraints*, *4 Mesh*, *5 Solve* and *6 Results*.
+Each step gets a tick when the active analysis has what it needs, and the next step is underlined in teal:
+
+* *Analysis*: an analysis exists;
+* *Material*: the analysis has a material;
+* *Loads and Constraints*: it has at least one constraint or load;
+* *Mesh*: it has a mesh;
+* *Solve*: it has a solver and results;
+* *Results*: highlighted once there are results to look at.
+
+The ticks show what the analysis contains. They do not check that the setup is complete or correct, for example that the supports remove every rigid-body motion.
+The *Loads*, *Mesh and Solve* and *Results* tabs hold the full sets: thermal, electromagnetic and fluid boundary conditions, beam and shell sections, Elmer's solver and equations, and the post-processing filters.
+
+.The guided Pre/Post ribbon
+image::ui-simulation.png[Pre/Post application: the Home tab shows the analysis steps 1 to 6]
 
 == Quick Access Toolbar and Command Finder
 
@@ -49,6 +97,7 @@ Type part of a name and press kbd:[Enter] to run the first match.
 
 * *Menu* opens every FreeCAD menu (File, Edit, View, Tools, Macro, Windows, Help and the workbench's own).
 * The *Type Filter* (No Selection Filter, Curve, Datums, Edge, Face, Feature, Point, Sketch, Solid Body) restricts what you can pick in the graphics window, as in NX.
+* The *Selection Scope* (Entire Assembly, Within Work Part and Components, Within Work Part Only) limits picks to the work part. See xref:selection.adoc[].
 * *Previous Selection*, *Next Selection*, *Rectangle* selection, *Select All*, *Find in Navigator* and *Deselect All*.
 
 == Resource Bar and navigators
@@ -59,13 +108,15 @@ The vertical bar on the left opens the panels; the open ones share one tab strip
 |===
 | Button | Panel
 
-| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu.
+| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu. Above the tree: the work part, the active body, suppressed and failed features, and what is selected (xref:selection.adoc#_part_navigator_status[]).
 | History | Recently opened parts; double-click one to open it.
 | Information | FreeCAD's report view: messages, warnings, the output of Object Information (kbd:[Ctrl+I]) and Measure Bodies.
 | Journal (Python) | FreeCAD's Python console.
 | Selection | What is selected, with sub-elements.
 | Versions and history | xref:data-management.adoc[Strata]'s panel: every save, versions, workspaces.
 |===
+
+Panels in one strip share a height, so Strata's *Versions and history* panel scrolls when the window is short. Otherwise it would keep the whole window at least 628 pixels high, more than fits on a 1366x768 screen at 125 %.
 
 The *Dialog* tab holds the open feature dialog (FreeCAD's task panel).
 When no dialog is open, NX-Style brings the Part Navigator back to the front, also after you switch applications.
@@ -83,6 +134,7 @@ image::ui-radial-menu.png[Radial menu with Fit, Snap View, Trimetric, Isometric 
 == Cue line
 
 The bottom-left of the window tells you what the current tool expects, like NX's cue line: for example "Sketch: choose a curve or constraint tool, or select curves. Ctrl+Q = Finish Sketch".
+When a pick is refused it says why, in red (xref:selection.adoc#_why_a_pick_is_refused[]).
 
 == Show and Hide
 
@@ -98,5 +150,6 @@ image::ui-show-hide.png[Show and Hide panel,320]
 == Look and theme
 
 NX-Style layers one light theme over FreeCAD's own *FreeCAD Light* stylesheet: a single teal accent with its tints, line icons on the Resource Bar, the left panels in one tab strip, and the document tabs above the graphics window.
-The colour tokens are at the top of `NXStyle/nxstyle/resources/nx_theme.qss`.
+Every colour of the theme is a token defined once in `NXStyle/nxstyle/theme.py`.
+The stylesheets (`nx_theme.qss`, `ribbon.qss`) name a token as `@nx-accent`, `@nx-chrome` and so on, and the Python code reads the same table.
 Set `"theme": "none"` in the xref:settings.adoc[settings] to keep FreeCAD's look.

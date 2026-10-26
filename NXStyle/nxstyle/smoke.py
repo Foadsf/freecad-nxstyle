@@ -99,6 +99,8 @@ class Smoke:
         yield self.s_static, 200
         yield self.s_document, 1500
         yield self.s_gates, 100
+        yield self.s_layout_matrix, 300
+        yield self.s_layout_controls, 300
         yield self.s_snap, 900
         yield self.s_strata, 2500
         yield self.s_mouse, 300
@@ -110,7 +112,10 @@ class Smoke:
         yield self.s_visibility, 300
         yield self.s_keys_doc, 300
         yield self.s_new_commands, 500
-        yield self.s_finder, 100
+        yield self.s_finder, 300
+        yield self.s_finder_check, 100
+        yield self.s_finder_click, 300
+        yield self.s_finder_check, 100
         yield self.s_repeat, 800
         yield self.s_sketch_enter, 1500
         yield self.s_sketch_check, 100
@@ -135,9 +140,12 @@ class Smoke:
         yield self.s_laser_cut_result, 300
         yield self.s_laser_cut_back, 2000
         yield self.s_laser_cut_after, 100
+        yield self.s_layout_persist, 2500          # switches applications: after the other switching steps
+        yield self.s_layout_persist_check, 300
         yield self.s_ap242, 300
         yield self.s_model_views, 300
         yield self.s_assembly_links, 200
+        yield self.s_selection, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -282,10 +290,145 @@ class Smoke:
         vp = page.viewport()
         bad = []
         for lab in page.widget().findChildren(QtWidgets.QLabel, "NXRibbonGroupLabel"):
+            if not lab.isVisibleTo(page):           # a collapsed or overflowed group shows no label
+                continue
             bottom = lab.mapTo(vp, QtCore.QPoint(0, lab.height())).y()
             if bottom > vp.height():
                 bad.append(f"{lab.text()} ({bottom}>{vp.height()})")
         return bad
+
+    # ----------------------------------------------------- responsive ribbon
+    SMOKE_WINDOW = (1600, 1000)
+
+    def layout_matrix(self, app):
+        """Window-size matrix (ribbon_layout.matrix_cells) for the current application, measured from widget
+        geometry; one check per application, the cells' details in info."""
+        from . import layout_check
+        results = layout_check.run_matrix(self.shell)
+        Gui.getMainWindow().resize(*self.SMOKE_WINDOW)
+        layout_check.settle()
+        failed = [f"{c['cell']}: {c['problems'][:4]}" for c in results if not c["ok"]]
+        self.info[f"layout matrix {app}"] = results
+        self.check(f"{app} ribbon at 1366x768 and 1920x1080, 100-200 % scale: nothing clipped, every command "
+                   "and the essential ones reachable", len(results) == 8 and not failed,
+                   failed[:3] or [f"{c['cell']}: {c['reach']}" for c in results])
+        return results
+
+    def s_layout_matrix(self):
+        from . import layout_check
+        screen = QtWidgets.QApplication.primaryScreen()
+        self.info["screen"] = {"logical": [screen.size().width(), screen.size().height()],
+                               "device_pixel_ratio": screen.devicePixelRatio()}
+        results = self.layout_matrix("Modeling")
+        # the narrowest cell must actually exercise collapse and overflow, or the matrix proves nothing
+        narrow = min(results, key=lambda c: c["window"][0])
+        stages = {s for tab in narrow["tabs"].values() for s in tab.values()}
+        self.check("narrow window collapses ribbon groups (positive control of the reduction)",
+                   {"collapsed"} & stages and narrow["reach"]["group"] + narrow["reach"]["overflow"] > 0,
+                   f"{narrow['cell']}: {narrow['tabs'].get('Home')}")
+        short = {c["cell"]: c.get("ribbon") for c in results}
+        self.check("a window too short for the ribbon minimises it, a tab drops its page down, and it comes "
+                   "back when the window is taller", short.get("1366x768@200%") == "minimised automatically"
+                   and short.get("1366x768@100%") == "expanded" and not self.shell.ribbon.is_collapsed(), short)
+        wide = max(results, key=lambda c: c["window"][0])
+        home = layout_check.measure_page(self.shell.ribbon.stack.widget(0), "Home")
+        self.check("Modeling essentials one click away at 1920x1080 100 %",
+                   all(v == "direct" for v in wide["essential"].values()), wide["essential"])
+        self.info["home stages at smoke size"] = home["stages"]
+
+    def s_layout_controls(self):
+        """Negative controls: the checks must catch a ribbon that clips (reduction switched off) and a
+        collapsed group whose menu lost a command."""
+        from . import layout_check, ribbon_layout
+        r = self.shell.ribbon
+        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: ribbon expanded, narrow
+        Gui.getMainWindow().resize(*cell["window"])
+        r.select("Home")
+        layout_check.settle()
+        page = r.stack.currentWidget()
+        page.layout_enabled = False
+        page.refit()
+        layout_check.settle()
+        off = layout_check.measure_page(page, "Home")
+        page.layout_enabled = True
+        page.refit()
+        layout_check.settle()
+        on = layout_check.measure_page(page, "Home")
+        self.check("layout check catches a ribbon that does not reduce (negative control)",
+                   (off["clipped"] or off["scroll"] > 0 or off["unreachable"]) and not on["clipped"]
+                   and on["scroll"] == 0 and not on["unreachable"],
+                   f"reduction off: scroll {off['scroll']}px, {len(off['clipped'])} clipped, "
+                   f"{len(off['unreachable'])} unreachable; on: scroll {on['scroll']}px, {len(on['clipped'])} clipped")
+        group = next((g for g in page.groups if g.stage == ribbon_layout.COLLAPSED and len(g.entries()) > 1), None)
+        if group is None:
+            self.check("layout check catches a command missing from a collapsed group's menu (negative control)",
+                       False, f"no collapsed group on Home at {cell['name']}: {on['stages']}")
+        else:
+            real = group.populate
+
+            def lossy(menu):
+                real(menu)
+                menu.removeAction(menu.actions()[-1])
+            group.populate = lossy
+            broken = layout_check.measure_page(page, "Home")
+            del group.populate
+            fixed = layout_check.measure_page(page, "Home")
+            self.check("layout check catches a command missing from a collapsed group's menu (negative control)",
+                       broken["unreachable"] and not fixed["unreachable"], broken["unreachable"])
+        Gui.getMainWindow().resize(*self.SMOKE_WINDOW)
+        layout_check.settle()
+
+    def s_layout_persist(self):
+        """Always Collapsed (the group's right-click menu) is saved with the profile and survives rebuilding
+        the ribbon; the collapsed group's menu entry runs the command as the button does."""
+        from . import layout_check, ribbon_layout
+        if (self.shell.current_app or {}).get("id") != "modeling":
+            self.shell.switch_application("modeling")
+        r = self.shell.ribbon
+        r.select("View")
+        layout_check.settle()
+        group = next(g for _t, g in r.groups("View") if g.title == "Orientation")
+        r.set_group_preference("View", group, ribbon_layout.COLLAPSED)
+        layout_check.settle()
+        self._persist = {"path": r.store.path, "collapsed_now": group.stage == ribbon_layout.COLLAPSED}
+        ran, prev = [], r.on_run
+        r.on_run = ran.append
+        menu = QtWidgets.QMenu()
+        group.populate(menu)
+        act = next((a for a in menu.actions() if a.data() == "Std_ViewFitAll"), None)
+        if act is not None:
+            act.trigger()
+        r.on_run = prev
+        menu.deleteLater()
+        self.check("a collapsed group's menu entry runs its command (Orientation › Fit)",
+                   act is not None and ran == ["Std_ViewFitAll"], ran)
+        r.set_collapsed(True)
+        self._persist["minimized_saved"] = r.store.minimized
+        r.set_collapsed(False)
+        self.shell.switch_application("drafting")
+        self.shell.switch_application("modeling")
+
+    def s_layout_persist_check(self):
+        from . import layout_check, ribbon_layout
+        r = self.shell.ribbon
+        r.select("View")                           # a page fits its width once it is shown
+        layout_check.settle()
+        group = next(g for _t, g in r.groups("View") if g.title == "Orientation")
+        reread = ribbon_layout.LayoutStore(os.path.dirname(self._persist["path"]))
+        rebuilt = (group.preference, group.stage)
+        ok = (self._persist["collapsed_now"] and self._persist["minimized_saved"]
+              and rebuilt == (ribbon_layout.COLLAPSED, ribbon_layout.COLLAPSED)
+              and reread.preference("modeling", "View", "Orientation") == ribbon_layout.COLLAPSED
+              and not reread.minimized and not reread.error)
+        r.set_group_preference("View", group, ribbon_layout.AUTO)
+        layout_check.settle()
+        cleared = ribbon_layout.LayoutStore(os.path.dirname(self._persist["path"]))
+        after = group.stage
+        r.select("Home")
+        self.check("ribbon group layout saved in the profile and kept after the ribbon is rebuilt",
+                   ok and cleared.preference("modeling", "View", "Orientation") == ribbon_layout.AUTO
+                   and after == ribbon_layout.FULL,
+                   f"{self._persist}, after rebuild: {rebuilt}, file: {reread.data}, back to Automatic: {after}")
 
     def check_units(self):
         """Metric by default, and an imperial schema left in the profile is switched back."""
@@ -481,7 +624,48 @@ class Smoke:
 
     def s_finder(self):
         hits = self.shell.finder.find("Edge Blend")
-        self.check("Command Finder finds NX names", "PartDesign_Fillet" in hits, hits[:5])
+        self.check("Command Finder finds NX names", "NXStyle_EdgeBlend" in hits, hits[:5])
+        self.finder_type("Enter")
+        from .tutorial import qtest
+        qtest().keyClick(self.shell.finder, Qt.Key_Return)
+        self._finder_popup_after = self.shell.finder.completer.popup().isVisible()
+
+    def finder_type(self, how):
+        """Type a harmless command's name into the Command Finder so its completer popup opens, and count
+        the commands it runs."""
+        from .tutorial import qtest
+        from .finder import ROLE_CMD
+        cf = self.shell.finder
+        title = next((cf.model.item(r).text().split("  —  ")[0] for r in range(cf.model.rowCount())
+                      if cf.model.item(r).data(ROLE_CMD) == "Std_ViewFitAll"), "Fit all")
+        self._finder_runs = []
+        self._finder_on_run = cf.on_run
+        cf.on_run = self._finder_runs.append
+        cf.setFocus()
+        cf.clear()
+        qtest().keyClicks(cf, title)
+        QtWidgets.QApplication.processEvents()
+        self._finder_how = how
+        self._finder_popup_before = cf.completer.popup().isVisible()
+
+    def s_finder_check(self):
+        cf = self.shell.finder
+        cf.on_run = self._finder_on_run
+        p = QtWidgets.QApplication.activePopupWidget()
+        # Enter: also right after the key, before the command's timers ran
+        after = cf.completer.popup().isVisible() or (self._finder_how == "Enter" and self._finder_popup_after)
+        self.nav().widget.setFocus()
+        self.check(f"Command Finder: {self._finder_how} runs the command once and closes the popup",
+                   self._finder_popup_before and not after and len(self._finder_runs) == 1,
+                   f"popup before {self._finder_popup_before}, after {after}; ran {self._finder_runs}; "
+                   f"active popup {type(p).__name__ if p is not None else None}")
+
+    def s_finder_click(self):
+        from .tutorial import qtest
+        self.finder_type("click")
+        popup = self.shell.finder.completer.popup()
+        rect = popup.visualRect(popup.model().index(0, 0))
+        qtest().mouseClick(popup.viewport(), Qt.LeftButton, Qt.NoModifier, rect.center())
 
     def s_repeat(self):
         doc = App.ActiveDocument
@@ -529,6 +713,7 @@ class Smoke:
                    and "TechDraw_View" in r.locations, r.tab_names())
         self.info["missing_drafting_commands"] = r.missing
         self.shot("03_drafting.png")
+        self.layout_matrix("Drafting")
 
     def tasks_to_front(self):
         """Put FreeCAD's Tasks panel (the Dialog tab) in front, as FreeCAD itself may do; returns the front tab."""
@@ -576,16 +761,57 @@ class Smoke:
 
     def s_auto_check(self):
         if not self.shell._app("simulation"):
-            self.skip("auto ribbon from workbench toolbars (FEM)", "FEM not installed")
+            self.skip("guided Simulation ribbon (FEM)", "FEM not installed")
             return
         r = self.shell.ribbon
-        page = r.stack.widget(0)
-        groups = page.widget().findChildren(QtWidgets.QFrame, "NXRibbonGroup")
-        self.check("auto ribbon from workbench toolbars (FEM)", r.tab_names()[:1] == ["Pre/Post"] and len(groups) > 2,
-                   f"{r.tab_names()[:2]}, {len(groups)} groups")
+        steps = [(g.title, g.step) for _t, g in r.groups("Home")]
+        self.info["missing_simulation_commands"] = r.missing
+        self.check("guided Simulation ribbon: Home tab is the analysis workflow in order, every command found",
+                   r.tab_names()[:4] == ["Home", "Loads", "Mesh and Solve", "Results"]
+                   and [s for _t, s in steps] == ["analysis", "material", "loads", "mesh", "solve", "results"]
+                   and not r.missing, f"{r.tab_names()}, {steps}, missing {r.missing}")
         visible = [tb.objectName() for tb in self.shell.native_toolbars() if tb.isVisible()]
         self.check("FEM toolbars hidden", not visible, visible)
+        self.fem_guide()
+        self.layout_matrix("Simulation")
         self.shot("04_simulation.png")
+
+    def fem_guide(self):
+        """The guide follows the analysis: nothing -> step 1 next; analysis, material and a fixed support ->
+        steps 1-3 ticked and the mesh next. Checked through the ribbon's labels, on a document of its own."""
+        from . import fem_guide
+        before = App.ActiveDocument
+        doc = App.newDocument("NXFemGuide")
+        try:
+            r = self.shell.ribbon
+            empty = self.shell.update_guide()
+            labels_empty = {g.step: g.label.text() for _t, g in r.groups("Home")}
+            import ObjectsFem
+            import Part  # noqa: F401
+            box = doc.addObject("Part::Box", "Block")
+            doc.recompute()
+            analysis = ObjectsFem.makeAnalysis(doc, "Analysis")
+            analysis.addObject(ObjectsFem.makeMaterialSolid(doc, "Steel"))
+            fixed = ObjectsFem.makeConstraintFixed(doc, "Fixed")
+            fixed.References = [(box, "Face1")]
+            analysis.addObject(fixed)
+            doc.recompute()
+            states = self.shell.update_guide()
+            labels = {g.step: (g.label.text(), g.property("nxstep")) for _t, g in r.groups("Home")}
+            self.info["fem guide"] = {"empty": empty, "set up": states, "labels": labels,
+                                      "members": fem_guide.active_members(doc)}
+            self.check("Simulation guide: an empty document's next step is the analysis; with analysis, material "
+                       "and a fixed support the mesh is next and steps 1-3 are ticked",
+                       empty is not None and empty["analysis"] == "next" and "✓" not in "".join(labels_empty.values())
+                       and states == {"analysis": "done", "material": "done", "loads": "done", "mesh": "next",
+                                      "solve": "", "results": ""}
+                       and labels["loads"][0].endswith("✓") and labels["mesh"][1] == "next",
+                       f"empty {empty}; set up {states}; labels {labels}")
+        finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+            self.shell.update_guide()
 
     def s_katydid(self):
         """Katydid (github.com/Foadsf/Katydid), on by default: NX's Algorithmic Modeling application."""
@@ -1311,6 +1537,12 @@ class Smoke:
             if before is not None and before.Name in App.listDocuments():
                 App.setActiveDocument(before.Name)
                 Gui.getDocument(before.Name)
+
+    def s_selection(self):
+        """Selection scope and look-alike occurrences, QuickPick, select-through, gate layers, collectors in
+        both orders, curve chains and the Part Navigator's marks (smoke_selection.py)."""
+        from . import smoke_selection
+        smoke_selection.run(self)
 
     def s_model_views(self):
         """PMI model views: the eight look as FreeCAD's standard views do, and the work view filters PMI."""

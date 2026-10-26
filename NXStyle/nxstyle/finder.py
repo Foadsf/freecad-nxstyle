@@ -79,6 +79,9 @@ class CommandFinder(QtWidgets.QLineEdit):
         # Choosing from the popup with Enter fires both activated and returnPressed
         self._busy = True
         QtCore.QTimer.singleShot(50, lambda: setattr(self, "_busy", False))
+        # Enter reaches returnPressed before the completer hides its popup; a popup left open stays the
+        # active popup and takes keys (Esc) meant for the command that starts now.
+        self.completer.popup().hide()
         if self.on_run:
             self.on_run(name)
         QtCore.QTimer.singleShot(0, lambda: Gui.runCommand(name))

@@ -1,0 +1,145 @@
+{
+  "_comment": "Simulation (Pre/Post) over FreeCAD's FEM workbench, laid out as the analysis is done: the Home tab's groups are the workflow steps in order (step = the key fem_guide.py checks: finished steps are ticked, the next one is highlighted). The other tabs hold the full sets. 'optional' = a command only some FreeCAD builds have.",
+  "title": "Pre/Post",
+  "workbench": "FemWorkbench",
+  "essential": ["FEM_Analysis", "FEM_MaterialSolid", "FEM_ConstraintFixed", "FEM_ConstraintForce",
+                "FEM_MeshGmshFromShape", ["FEM_SolverCalculiX", "FEM_SolverCalculiXCcxTools", "FEM_SolverCalculixCxxtools"],
+                "FEM_SolverRun", "FEM_ResultShow"],
+  "tabs": [
+    {"name": "Home", "groups": [
+      {"name": "1 Analysis", "step": "analysis", "items": [
+        {"cmd": "FEM_Analysis", "label": "New Analysis", "size": "large"},
+        {"cmd": "FEM_Examples", "label": "Examples", "optional": true}
+      ]},
+      {"name": "2 Material", "step": "material", "items": [
+        {"cmd": "FEM_MaterialSolid", "label": "Solid Material", "size": "large"},
+        {"cmd": "FEM_MaterialFluid", "label": "Fluid Material"},
+        {"cmd": "FEM_MaterialMechanicalNonlinear", "label": "Nonlinear Material"},
+        {"cmd": "FEM_MaterialEditor", "label": "Material Editor", "optional": true}
+      ]},
+      {"name": "3 Loads and Constraints", "step": "loads", "items": [
+        {"cmd": "FEM_ConstraintFixed", "label": "Fixed", "size": "large"},
+        {"cmd": "FEM_ConstraintForce", "label": "Force", "size": "large"},
+        {"cmd": "FEM_ConstraintPressure", "label": "Pressure"},
+        {"cmd": "FEM_ConstraintDisplacement", "label": "Enforced Displacement"},
+        {"cmd": "FEM_ConstraintSelfWeight", "label": "Gravity"},
+        {"cmd": "FEM_ConstraintContact", "label": "Contact"}
+      ]},
+      {"name": "4 Mesh", "step": "mesh", "items": [
+        {"cmd": "FEM_MeshGmshFromShape", "label": "Mesh (Gmsh)", "size": "large"},
+        {"cmd": "FEM_MeshNetgenFromShape", "label": "Mesh (Netgen)"},
+        {"cmd": "FEM_MeshRegion", "label": "Local Refinement"},
+        {"cmd": "FEM_MeshDisplayInfo", "label": "Mesh Information"}
+      ]},
+      {"name": "5 Solve", "step": "solve", "items": [
+        {"cmd": ["FEM_SolverCalculiX", "FEM_SolverCalculiXCcxTools", "FEM_SolverCalculixCxxtools"], "label": "CalculiX Solver", "size": "large"},
+        {"cmd": "FEM_SolverRun", "label": "Solve", "size": "large"},
+        {"cmd": "FEM_SolverControl", "label": "Solver Job Control", "optional": true}
+      ]},
+      {"name": "6 Results", "step": "results", "items": [
+        {"cmd": "FEM_ResultShow", "label": "Show Results", "size": "large"},
+        {"cmd": "FEM_PostPipelineFromResult", "label": "Post-processing Pipeline"},
+        {"cmd": "FEM_ResultsPurge", "label": "Purge Results"}
+      ]}
+    ]},
+    {"name": "Loads", "groups": [
+      {"name": "Mechanical", "items": [
+        {"cmd": "FEM_ConstraintFixed", "label": "Fixed", "size": "large"},
+        {"cmd": "FEM_ConstraintForce", "label": "Force", "size": "large"},
+        {"cmd": "FEM_ConstraintPressure", "label": "Pressure", "size": "large"},
+        {"cmd": "FEM_ConstraintDisplacement", "label": "Enforced Displacement"},
+        {"cmd": "FEM_ConstraintSelfWeight", "label": "Gravity"},
+        {"cmd": "FEM_ConstraintCentrif", "label": "Centrifugal Load"},
+        {"cmd": "FEM_ConstraintBearing", "label": "Bearing Load"},
+        {"cmd": "FEM_ConstraintSpring", "label": "Spring"},
+        {"cmd": "FEM_ConstraintRigidBody", "label": "Rigid Body", "optional": true},
+        {"cmd": "FEM_ConstraintPlaneRotation", "label": "Plane Rotation"},
+        {"cmd": "FEM_ConstraintTransform", "label": "Local Coordinate System"}
+      ]},
+      {"name": "Connections", "items": [
+        {"cmd": "FEM_ConstraintContact", "label": "Contact", "size": "large"},
+        {"cmd": "FEM_ConstraintTie", "label": "Tie"},
+        {"cmd": "FEM_ConstraintSectionPrint", "label": "Section Print"}
+      ]},
+      {"name": "Thermal", "items": [
+        {"cmd": "FEM_ConstraintTemperature", "label": "Temperature", "size": "large"},
+        {"cmd": "FEM_ConstraintInitialTemperature", "label": "Initial Temperature"},
+        {"cmd": "FEM_ConstraintHeatflux", "label": "Heat Flux"},
+        {"cmd": "FEM_ConstraintBodyHeatSource", "label": "Body Heat Source"}
+      ]},
+      {"name": "Electromagnetic", "items": [
+        {"cmd": "FEM_ConstraintElectrostaticPotential", "label": "Electrostatic Potential", "size": "large"},
+        {"cmd": "FEM_ConstraintCurrentDensity", "label": "Current Density"},
+        {"cmd": "FEM_ConstraintMagnetization", "label": "Magnetization"},
+        {"cmd": "FEM_ConstraintElectricChargeDensity", "label": "Charge Density", "optional": true}
+      ]},
+      {"name": "Fluid", "items": [
+        {"cmd": "FEM_ConstraintFlowVelocity", "label": "Flow Velocity", "size": "large"},
+        {"cmd": "FEM_ConstraintInitialFlowVelocity", "label": "Initial Flow Velocity"},
+        {"cmd": "FEM_ConstraintInitialPressure", "label": "Initial Pressure"}
+      ]},
+      {"name": "Element Properties", "items": [
+        {"cmd": "FEM_ElementGeometry2D", "label": "Shell Thickness", "size": "large"},
+        {"cmd": "FEM_ElementGeometry1D", "label": "Beam Section"},
+        {"cmd": "FEM_ElementRotation1D", "label": "Beam Rotation"},
+        {"cmd": "FEM_ElementFluid1D", "label": "Fluid Section"}
+      ]}
+    ]},
+    {"name": "Mesh and Solve", "groups": [
+      {"name": "Mesh", "items": [
+        {"cmd": "FEM_MeshGmshFromShape", "label": "Mesh (Gmsh)", "size": "large"},
+        {"cmd": "FEM_MeshNetgenFromShape", "label": "Mesh (Netgen)", "size": "large"},
+        {"cmd": "FEM_MeshRegion", "label": "Local Refinement"},
+        {"cmd": "FEM_MeshBoundaryLayer", "label": "Boundary Layer"},
+        {"cmd": "FEM_MeshGroup", "label": "Mesh Group"},
+        {"cmd": "FEM_MeshDisplayInfo", "label": "Mesh Information"},
+        {"cmd": "FEM_MeshClear", "label": "Clear Mesh"},
+        {"cmd": "FEM_FEMMesh2Mesh", "label": "FEM Mesh to Mesh"}
+      ]},
+      {"name": "Solvers", "items": [
+        {"cmd": ["FEM_SolverCalculiX", "FEM_SolverCalculiXCcxTools", "FEM_SolverCalculixCxxtools"], "label": "CalculiX", "size": "large"},
+        {"cmd": "FEM_SolverElmer", "label": "Elmer", "optional": true},
+        {"cmd": "FEM_SolverMystran", "label": "Mystran", "optional": true},
+        {"cmd": "FEM_SolverZ88", "label": "Z88", "optional": true},
+        {"cmd": "FEM_SolverRun", "label": "Solve", "size": "large"},
+        {"cmd": "FEM_SolverControl", "label": "Solver Job Control", "optional": true}
+      ]},
+      {"name": "Equations (Elmer)", "items": [
+        {"cmd": "FEM_EquationElasticity", "label": "Elasticity", "optional": true},
+        {"cmd": "FEM_EquationHeat", "label": "Heat", "optional": true},
+        {"cmd": "FEM_EquationFlow", "label": "Flow", "optional": true},
+        {"cmd": "FEM_EquationElectrostatic", "label": "Electrostatic", "optional": true},
+        {"cmd": "FEM_EquationMagnetodynamic", "label": "Magnetodynamic", "optional": true},
+        {"cmd": "FEM_EquationDeformation", "label": "Deformation", "optional": true}
+      ]}
+    ]},
+    {"name": "Results", "groups": [
+      {"name": "Results", "items": [
+        {"cmd": "FEM_ResultShow", "label": "Show Results", "size": "large"},
+        {"cmd": "FEM_ResultsPurge", "label": "Purge Results"}
+      ]},
+      {"name": "Post-processing", "items": [
+        {"cmd": "FEM_PostPipelineFromResult", "label": "Pipeline from Result", "size": "large"},
+        {"cmd": "FEM_PostFilterWarp", "label": "Warp", "size": "large"},
+        {"cmd": "FEM_PostFilterClipScalar", "label": "Scalar Clip"},
+        {"cmd": "FEM_PostFilterClipRegion", "label": "Region Clip"},
+        {"cmd": "FEM_PostFilterCutFunction", "label": "Function Cut"},
+        {"cmd": "FEM_PostFilterContours", "label": "Contours", "optional": true},
+        {"cmd": "FEM_PostFilterGlyph", "label": "Glyph", "optional": true},
+        {"cmd": "FEM_PostFilterCalculator", "label": "Calculator", "optional": true}
+      ]},
+      {"name": "Probe", "items": [
+        {"cmd": "FEM_PostFilterDataAlongLine", "label": "Data along Line", "size": "large"},
+        {"cmd": "FEM_PostFilterDataAtPoint", "label": "Data at Point"},
+        {"cmd": "FEM_PostFilterLinearizedStresses", "label": "Linearized Stresses", "optional": true}
+      ]},
+      {"name": "Section", "items": [
+        {"cmd": "FEM_ClippingPlaneAdd", "label": "Clipping Plane", "size": "large"},
+        {"cmd": "FEM_ClippingPlaneRemoveAll", "label": "Remove Clipping Planes"}
+      ]}
+    ]},
+    {"include": "common:View"},
+    {"include": "common:Tools"},
+    {"include": "common:Application"}
+  ]
+}

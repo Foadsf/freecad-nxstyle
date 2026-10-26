@@ -16,11 +16,12 @@ Strata's engine and UI stay upstream; nothing here copies or patches them.
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import config
+from . import config, theme
 from .qt import QtCore, QtWidgets, Qt
 
-# NX accent (THEME_TOKENS in shell.py) for Strata's light tokens; dark keeps Strata's own
-NX_TOKENS = {"accent": "#0B6E79", "accent_hover": "#095A63", "accent_soft": "#C7E3E7", "selected": "#C7E3E7"}
+# NX accent (theme.py) for Strata's light tokens; dark keeps Strata's own
+NX_TOKENS = {"accent": theme.color("accent"), "accent_hover": theme.color("accent-pressed"),
+             "accent_soft": theme.color("tint2"), "selected": theme.color("tint2")}
 _state = {}
 
 
@@ -120,6 +121,7 @@ def _place(shell, sb):
         # hidden; show() repairs that and (since 392952b) does not change Strata's saved choice
         panel.show()
         model.raise_()
+        shell.scroll_tall_docks()          # its 383 px minimum would set the window's (scrolls instead)
     # Strata's own QActions (enabled with the active project) on the resource bar and the PLM tab
     acts = sb.actions()
     ribbon.HOST_ACTIONS.update(acts)
