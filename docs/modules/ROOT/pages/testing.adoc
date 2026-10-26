@@ -30,11 +30,15 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It ends with the count of checks passed, failed and skipped (110 checks on FreeCAD 1.1.4, 2026-10-26). Among them:
+It ends with the count of checks passed, failed and skipped (121 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-26). Among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
 * the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;
+* the window-size matrix (xref:#window-matrix[below]) for Modeling, Drafting and Pre/Post: nothing clipped and every command reachable at 1366x768 and 1920x1080, each at 100, 125, 150 and 200 % scaling;
+* a window too short for the ribbon minimises it, a tab then drops its page down, and the ribbon comes back when the window is taller;
+* a group set to *Always Collapsed* stays so after the ribbon is rebuilt and is saved in `nxstyle.ribbon.json`, and its menu entry runs the command;
+* the guided Pre/Post ribbon: the Home tab is the analysis workflow in order, and an analysis with a material and a fixed support ticks steps 1 to 3 and makes the mesh the next step;
 * metric units even when the profile was set to US customary;
 * Strata starts and sits with the navigators;
 * the Algorithmic Modeling application opens Katydid's canvas, floating, with Canvas, Bake and the Application tab on the ribbon; Canvas is on the Tools tab before Katydid's workbench has started; the selected category tab has a readable label; the canvas stays open after switching back to Modeling;
@@ -62,6 +66,38 @@ It ends with the count of checks passed, failed and skipped (110 checks on FreeC
 
 A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.
 It writes `out/smoke.json` and screenshots.
+
+=== Window sizes and display scaling [[window-matrix]]
+
+The self-test resizes the main window to each cell of a matrix and measures widget rectangles, not screenshots:
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Screen | 100 % | 125 % | 150 % | 200 %
+
+| 1366x768 | 1366x689 | 1092x535 | 910x433 | 683x305
+| 1920x1080 | 1920x1001 | 1536x785 | 1280x641 | 960x461
+|===
+
+The window sizes are in Qt's logical pixels: the screen divided by the scale, less 48 px for the Windows taskbar and 31 px for the title bar.
+Qt lays a window out in logical pixels and scales fonts and icons with the display, so a logical size stands for that resolution and scale.
+The window is resized twice, because a short window minimises the ribbon, which lowers the window's minimum height; a maximised window is then given the screen's work area again.
+A screen smaller than the cell limits the height. On a 1920x1080 screen at 125 %, for instance, the 1920x1001 cell is measured 844 px high, and the result notes it. This makes the vertical checks harder and leaves the ribbon's width the same; a width that differs fails the cell.
+When the ribbon is minimised (the 683x305 cell), each tab is measured in the drop-down a click on it shows, and the drop-down must lie inside the window.
+For each cell and each ribbon tab it checks that:
+
+* every shown ribbon control and group label lies wholly inside the ribbon page, and no page needs sideways scrolling;
+* the File button, Quick Access Toolbar, tabs, Command Finder and collapse button lie inside the tab row, and tabs or Quick Access buttons that do not fit have their scroll or extension buttons;
+* every command of the tab is reachable: on a button that is fully shown, or in the menu of a collapsed group or of the More button, which must itself be fully shown;
+* the application's essential commands (`"essential"` in its ribbon file) are reachable, and in Modeling at 1920x1080 and 100 % they are one click away;
+* the ribbon and bars lie inside the window, and the graphics area keeps at least 80 px of height.
+
+Two negative controls show that the checks can fail: with the reduction switched off, the narrowest Modeling cell is reported as clipped or scrolling; and a collapsed group whose menu has lost a command is reported as unreachable.
+The narrowest cell must also have collapsed some groups, so that the matrix exercises the reduction and does not merely find wide windows.
+The results of every cell are in `smoke.json` under `info`.
+
+The matrix does not change Qt's real scale factor during a run.
+Rounding of fractional scales and the platform's font hinting can differ by a pixel or so from a real display at that scale.
 
 == What the launcher accepts
 

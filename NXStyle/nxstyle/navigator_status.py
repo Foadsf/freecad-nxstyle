@@ -14,7 +14,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from . import selection_filter as sf
-from .qt import QtGui, QtWidgets, Qt
+from .qt import QtCore, QtGui, QtWidgets, Qt
 
 RED = "#C62828"
 GREY = "#8A9199"
@@ -93,6 +93,12 @@ class NavigatorStatus(QtWidgets.QFrame):
         self.last = None
         self.decorated = {}          # (doc, name) -> 'suppressed' | 'error'
         self.ticks = 0
+
+    def minimumSizeHint(self):
+        # Wrapped labels in a narrow Part Navigator would set the whole window's minimum height (the docks
+        # share it), so a short window could not fit 1366x768 at 200 %. Even one line is too much there, so
+        # the strip may fold away; the tree items keep their suppressed and error marks.
+        return QtCore.QSize(super().minimumSizeHint().width(), 0)
 
     def text(self):
         """The strip as plain text (for tests)."""

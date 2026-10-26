@@ -163,6 +163,14 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
                 break
             qtest().qWait(100)
         self.info.setdefault("ribbon clicks while disabled", []).extend([] if b.isEnabled() else [label])
+        how, _via = self.shell.ribbon.reach(b)
+        if how in ("group", "overflow"):
+            # the window is too narrow for the group: a user opens the collapsed group's (or More) menu
+            self.info.setdefault("ribbon clicks through a menu", []).append(label)
+            act = self.shell.ribbon.menu_action(b)
+            if act is not None:
+                act.trigger()
+                return b, where
         qtest().mouseClick(b, Qt.LeftButton)
         return b, where
 
