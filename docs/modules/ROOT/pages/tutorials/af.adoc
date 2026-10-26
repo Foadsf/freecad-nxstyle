@@ -1,0 +1,61 @@
+= Tutorial AF: Arbor Press Base
+:description: A sketch drawn roughly with Profile, brought to size with geometric constraints and dimensions until it is fully defined, then extruded 60 mm (NX 12 for Engineering Design, 3.5.1).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.1
+You learn:: Profile with lines and an arc, geometric constraints before dimensions, Equal, Collinear, Tangent, a fully defined sketch, Extrude from a selected sketch
+Sizes:: from the book's dimension figure: 130 wide, 190.94 high; the outer sides 125; the top 95 wide with a notch 65 wide and 65 deep; a slot 40 wide ending in a semicircle whose centre is the origin, 35 above the bottom edge; extruded 60 mm
+
+== Step by step
+
+=== 1. A new part and a sketch
+
+kbd:[Ctrl+N] for a new part.
+Click *Sketch* on the Home tab, pick the XC-YC plane and press MB2.
+
+=== 2. Profile: lines and one arc
+
+Press kbd:[Z] for *Profile*.
+Start at the bottom left and click round the outline: along the bottom to the slot, up its left side, then press kbd:[M] three times to switch to a tangent arc and click the slot's right side.
+Continue with lines down the slot, along the bottom, up the right side, through the notch at the top and down the left side, back to the first point.
+Draw it roughly. The constraints bring it to shape.
+FreeCAD has no automatic dimensions to switch off, so the book's note about Continuous Auto Dimensioning does not apply.
+
+Today the replay has to finish the outline by hand. The last click does not close it, the first line gets no Horizontal, and the line after the arc is tangent but not vertical. Pick the last and first points and click *Coincident*, then add *Horizontal* and *Vertical*.
+
+=== 3. Geometric constraints first
+
+* The arc's centre on both axes: pick the centre and the Y axis and click *Coincident*, then the centre and the X axis. With a point and a curve picked, *Coincident* makes a point-on-curve constraint.
+* *Equal*: the two slanted lines, then the two long vertical lines.
+* The bottom lines collinear and equal: pick the end of one and the other line and click *Coincident*, then pick both lines and click *Equal*.
+* *Tangent*: the arc and the slot's sides. Profile already made both.
+* The book makes the slot's two short sides *Equal*. Here FreeCAD reports that as redundant, because the tangency and the centre on the X axis already make them equal, so leave it out.
+* The two short top lines: collinear and *Equal*, as at the bottom. The notch's two sides are then equal too.
+
+=== 4. Dimensions, biggest first
+
+Click *Distance* with the picks selected and type each value: the height 190.94, the width 130, the right side 125, the top 95, the notch 65 wide and 65 deep, the slot 40, and the centre 35 above the bottom.
+The Dialog panel then says *Fully constrained* and the sketch turns green.
+
+image::tutorial-AF-01-constrained.png[The Arbor Press Base sketch, fully constrained]
+
+=== 5. Extrude 60 and save
+
+kbd:[Ctrl+Q] finishes the sketch.
+Select the sketch, press kbd:[X], type 60 and press MB2.
+Save with kbd:[Ctrl+S].
+
+== The replay
+
+include::partial$generated/tutorial-AF.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The solid is compared with the same solid built with FreeCAD's Part API (`nxstyle/geomcheck.py`), and every corner of the sketch with the book's figure.
+
+== What differs from NX
+
+* The Sketch tab has no *Point on Curve* or *Collinear* button. *Coincident* does both: a point picked with a curve stays on it, and an end point placed on the other line makes two lines collinear.
+* NX places all the dimensions first and then edits their values. FreeCAD asks for each value as the dimension is made, so the replay types them biggest first, as the book recommends.
+* FreeCAD's *Profile* switches to an arc with kbd:[M]. NX has Line and Arc buttons in the Profile toolbar.
+* FreeCAD rejects a constraint that is already implied, and reports it as redundant.

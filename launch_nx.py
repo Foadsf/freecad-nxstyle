@@ -676,7 +676,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
                          "G Shaft Support assembly, H GD&T plate drawing, I Gasket (trim, fillet, "
@@ -690,7 +690,8 @@ def main(argv: list[str] | None = None) -> int:
                          "AB measurement capability (TUR, guard bands, gauge studies), "
                          "AC title block and revision block from the release (runs T and V first), "
                          "AD a laser-cut tray with tabs and slots, AE one Extrude through the command controller: "
-                         "None (new body), Unite, Subtract, edit, cancel, undo, reopen)")
+                         "None (new body), Unite, Subtract, edit, cancel, undo, reopen, "
+                         "AF Arbor Press Base: a sketch constrained to size, extruded)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "
