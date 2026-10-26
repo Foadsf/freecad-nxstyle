@@ -16,6 +16,7 @@ ruff check --select F,E9 .
 ----
 
 The unit tests cover the engineering computations, checked against the books' worked examples: the tolerance stack-up (Fischer's pin and ground plate, Drake's MRSS factor, Cogorno's fastener and boundary formulas), ISO 286 limits and fits (against the ISO 286-1 formulas and published values) and ISO 2768, the PMI semantics (ISO 8015 and ASME Y14.5 checks, inspection plan, gauge sizes), the release package manifest and its verification, the clearance classification, the AP242 mapping of the PMI (and the correction of OpenCASCADE's IT grade), sheet metal bend allowance and flat length (Shih's actuator bracket), pin location (Drake ch. 24, Fischer's lever), composite position frames and the pattern evaluation (its fit checked against a brute-force search), measurement capability (Drake's gauge study example, 42.6 %; TUR and ISO 14253-1 acceptance limits), and the title block values and revision block.
+They cover the command controller's decisions too (`nxstyle/command_core.py`). Typed lengths are read with their units and the field's decimal separator; `3.175` in a field whose separator is a comma is refused, not guessed. Every Extrude Boolean is either built (New Body, Unite, Subtract) or refused with a reason (Intersect), and the Boolean NX would infer is checked.
 They also cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata, Katydid, SheetMetal and LCInterlocking it loads and where it reads `nxstyle.json`, that every application's ribbon has the Application tab, that the Laser Cut ribbon names only commands LCInterlocking registers, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
 FreeCAD is not needed.
 GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).
@@ -79,6 +80,16 @@ Save steps press the real kbd:[Ctrl+S] and check that the file was rewritten; on
 Tutorials S to X check engineering results: the stack-up against Fischer's figures, the fit against ISO 286, the STEP file's PMI and what OpenCASCADE reads back, the inherited dimensions on the sheet, the clearance kinds and penetration depth, the release states in Strata and the release packages against their manifests, the flat pattern against Shih's hand calculation, and the pin location against Drake's formulas.
 Dialogs that Strata opens are answered by the replay the way a user fills them in.
 Tutorials AA to AC check the composite frame's plan rows and gauges, the evaluation of measured holes, the TUR and acceptance limits, Drake's gauge study result, and the title block against the Strata release.
+Tutorial AE is the acceptance case for the command controller (xref:modeling.adoc#extrude[Extrude]). It does New, Sketch, then Extrude four times through the real UI: New Body, Unite, Subtract chosen in the Boolean list, and a separate New Body.
+It also checks what must not happen:
+
+* choosing Intersect changes nothing and the dialog gives the reason;
+* a Unite that misses the part leaves OK unavailable, and MB2 does not close the dialog;
+* changing the Boolean adds no undo step.
+
+Then it edits the first extrude. From the Part Navigator's MB3 menu it previews a new length and presses Cancel. The value must come back, with no undo step added and nothing left to recompute. It edits again from the ribbon and presses OK, which must add one undo step. Ctrl+Z twice takes back the edit and then the whole New Body extrude, and Ctrl+Y twice restores both. *Extrude (Subtract)* is then started from the Command Finder and cancelled at the plane pick, which must leave no object and no undo step. Finally it saves, reopens and edits again, and kbd:[Esc] cancels.
+The radial menu's *Edit Parameters* runs the same command as the ribbon's, but the replay does not drive the radial menu itself.
+Every solid is compared with `nxstyle/geomcheck.py`, and every command must add exactly one undo step.
 `--tutorials G,H` picks some; N runs M first, V runs T first, AC runs T and V first.
 A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed out; the canvas tutorials O to R take about 20 minutes together.
 

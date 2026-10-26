@@ -73,6 +73,7 @@ include::partial$outcome-legend.adoc[]
 * Cogorno (above), ch. 12 and 13: composite position and its graphic analysis, tutorial AA. Drake (above), ch. 20 and 25: measurement systems and the gauge study example, tutorial AB; ch. 4: the title and revision blocks, tutorial AC.
 * The PLM books of John Stark, Michael Grieves, and Antti Saaksvuori and Anselmi Immonen: release and engineering change, tutorial V.
 * Tutorial U's layout is ours; Assembly Clearance follows NX's.
+* Tutorial AE is ours: the acceptance case of the Extrude command (New Body, Unite, Subtract, edit, cancel, undo, reopen).
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.
 
 == The videos

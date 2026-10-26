@@ -1,0 +1,81 @@
+= Tutorial AE: One Extrude, every way
+:description: New, Sketch and Extrude with New Body, Unite and Subtract, then edit, cancel, undo and reopen: the acceptance case of the Extrude command.
+
+[horizontal]
+Source:: Our design. It is the acceptance case of NX-Style's Extrude command (xref:modeling.adoc#extrude[Extrude]), not a book exercise
+You learn:: the Extrude dialog's Boolean list, what Cancel and Esc leave behind (nothing), one undo step per command, Edit Parameters from the MB3 menu and the ribbon
+Sizes:: a 40 × 30 × 20 block; an 8 mm radius boss 10 high on top; an 8 × 6 pocket 5 deep in the top; a separate 6 mm radius cylinder 15 long, 100 mm away
+
+== Step by step
+
+=== 1. The block: Boolean None (New Body)
+
+kbd:[Ctrl+N], then kbd:[X] with nothing selected.
+Pick the XC-YC plane and draw a 40 × 30 rectangle from the origin (kbd:[R]).
+kbd:[Ctrl+Q] opens the Extrude dialog.
+The part has no solid yet, so the Boolean is *None (New Body)*.
+Type 20 for the distance and press MB2.
+
+image::tutorial-AE-01-new-body.png[The Extrude dialog with Boolean New Body]
+
+=== 2. The boss: Unite
+
+Select the top face and press kbd:[X]. The sketch opens on the face.
+Draw an 8 mm radius circle in the middle (kbd:[O]) and press kbd:[Ctrl+Q].
+The Boolean is now *Unite*, because the part has a solid.
+*Intersect* is in the list but greyed out. Choosing it anyway changes nothing, and the dialog says why.
+Type 10 and press MB2.
+
+image::tutorial-AE-02-unite.png[The Extrude dialog with Boolean Unite]
+
+=== 3. The pocket: Subtract
+
+Select the top face again and press kbd:[X].
+Draw an 8 × 6 rectangle near a corner, then kbd:[Ctrl+Q].
+Choose *Subtract* in the Boolean list. The preview changes from adding material to cutting it, and no undo step is added.
+Type 5 and press MB2. The pocket cuts into the part.
+
+=== 4. A separate body: New Body
+
+kbd:[X] with nothing selected. Pick the XC-ZC plane and draw a 6 mm radius circle 100 mm from the part.
+The Boolean *Unite* is inferred, but the circle misses the part.
+The dialog shows the error and OK is unavailable, so MB2 does nothing.
+Choose *New Body*, type 15 and press MB2.
+The cylinder is a second Body. The first one is unchanged.
+
+image::tutorial-AE-03-new-body.png[A Unite that misses the part, changed to New Body]
+
+=== 5. Edit, Cancel, edit, OK
+
+MB3 on the first extrude in the Part Navigator, then *Edit Parameters*.
+Type 35: the preview grows.
+Press *Cancel*. The distance is 20 again, and the undo list is unchanged.
+Select the extrude again and click *Edit Parameters* on the ribbon. Type 25 and press MB2.
+The boss and the pocket move up with the top face.
+This edit is one undo step, *Edit Extrude*.
+
+=== 6. Undo, Redo, reopen
+
+kbd:[Ctrl+Z] takes back the edit.
+A second kbd:[Ctrl+Z] takes back the whole New Body extrude: the Body, its binder and the Pad go together.
+kbd:[Ctrl+Y] twice brings both back.
+
+Type `Extrude (Subtract)` into the Command Finder and press Enter. The plane pick appears; *Cancel* it. Nothing is added to the part or to the undo list.
+
+Save (kbd:[Ctrl+S]), close and reopen the part.
+Then *Edit Parameters* on the pocket: the Boolean reads *Subtract*. Type 12 and press kbd:[Esc], which leaves the pocket as it was.
+
+== The replay
+
+include::partial$generated/tutorial-AE.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each solid is compared with the same solid built with FreeCAD's Part API (`nxstyle/geomcheck.py`). Equal volume alone would not show that a pocket is in the wrong place.
+
+== What differs from NX
+
+* The dialog has two parts: the NX command box (section, body, Boolean, errors) above FreeCAD's own Pad or Pocket panel (limits, direction, draft).
+* Subtract cuts into the part by default. NX keeps the sketch normal for every Boolean, so there you reverse the direction.
+* Unite and Subtract work on the Body that holds the sketch. NX lets you pick the target body.
+* A sketch made inside Extrude stays as its own undo steps. Undoing the extrude leaves the sketch.

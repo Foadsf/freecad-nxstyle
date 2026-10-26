@@ -614,14 +614,63 @@ class SketchFirstFeature:
         Gui.runCommand("PartDesign_NewSketch")
 
 
+class ControlledFeature(SketchFirstFeature):
+    """A feature run by the command controller (controller.py): the same sketch-first start, then the NX
+    command panel with the Boolean, one undo step, and Cancel that leaves nothing behind."""
+
+    def __init__(self, adapter, boolean, title, tip, pixmap_from):
+        super().__init__(None, title, tip, pixmap_from)
+        self.adapter, self.boolean = adapter, boolean
+
+    # IsActive as SketchFirstFeature: the open panel already blocks a second command. Asking the controller
+    # too left X greyed out: FreeCAD refreshes the actions when the panel closes, a moment before the
+    # controller notices the close.
+
+    def Activated(self):
+        from . import controller
+        controller.CONTROLLER.begin(controller.ADAPTERS[self.adapter], self.boolean)
+
+
+class EditParameters:
+    """NX Edit Parameters: a feature the controller has an adapter for opens in its command panel; any other
+    feature opens FreeCAD's own dialog (Std_Edit)."""
+
+    @staticmethod
+    def _feature():
+        from . import controller
+        sel = Gui.Selection.getSelection()
+        return sel[0] if len(sel) == 1 and controller.adapter_for(sel[0]) is not None else None
+
+    def GetResources(self):
+        return {"MenuText": "Edit Parameters",
+                "ToolTip": "Reopen the selected feature's dialog; an Extrude opens in the NX command panel",
+                "Pixmap": _pixmap("Std_Edit", "Std_DlgParameter")}
+
+    def IsActive(self):
+        return _has_doc() and not Gui.Control.activeDialog() and bool(Gui.Selection.getSelection())
+
+    def Activated(self):
+        from . import controller
+        feat = self._feature()
+        if feat is None:
+            Gui.runCommand("Std_Edit")
+            return
+        controller.CONTROLLER.edit(controller.adapter_for(feat), feat)
+
+
 def continue_pending_feature(sketch):
-    """Called by the shell when a sketch leaves edit mode."""
+    """Called by the shell when a sketch leaves edit mode. A pending command that is a callable (the
+    command controller) is told the sketch, or None when it was cancelled or left empty."""
     cmd = pending_feature["command"]
     pending_feature["command"] = None
-    if not cmd or sketch is None or sketch.Document is None:
+    if not cmd:
         return False
-    if not sketch.Geometry:          # sketch cancelled or left empty
+    if sketch is None or sketch.Document is None or not sketch.Geometry:   # sketch cancelled or left empty
+        if callable(cmd):
+            cmd(None)
         return False
+    if callable(cmd):
+        return cmd(sketch)
     Gui.Selection.clearSelection()
     Gui.Selection.addSelection(sketch)
     Gui.runCommand(cmd)
@@ -647,11 +696,12 @@ def register(apps):
         "NXStyle_ObjectInfo": ObjectInfo(),
         "NXStyle_MeasureBodies": MeasureBodies(),
         "NXStyle_TouchMode": TouchMode(),
-        "NXStyle_Extrude": SketchFirstFeature("PartDesign_Pad", "Extrude",
-                                              "Extrude a sketch; with nothing selected, sketch first (NX: X)",
-                                              "PartDesign_Pad"),
-        "NXStyle_ExtrudeSubtract": SketchFirstFeature("PartDesign_Pocket", "Extrude (Subtract)",
-                                                      "Extrude a sketch and subtract it", "PartDesign_Pocket"),
+        "NXStyle_Extrude": ControlledFeature("Extrude", None, "Extrude",
+                                             "Extrude a sketch: New Body, Unite or Subtract; with nothing selected, "
+                                             "sketch first (NX: X)", "PartDesign_Pad"),
+        "NXStyle_ExtrudeSubtract": ControlledFeature("Extrude", "subtract", "Extrude (Subtract)",
+                                                     "Extrude a sketch with Boolean Subtract", "PartDesign_Pocket"),
+        "NXStyle_EditParameters": EditParameters(),
         "NXStyle_Revolve": SketchFirstFeature("PartDesign_Revolution", "Revolve",
                                               "Revolve a sketch; with nothing selected, sketch first",
                                               "PartDesign_Revolution"),
@@ -681,6 +731,8 @@ def register(apps):
         table[f"NXStyle_App_{app['id']}"] = SwitchApplication(app)
     for name, cmd in table.items():
         Gui.addCommand(name, cmd)
+    from . import controller
+    controller.install_context_menu()
     # FreeCAD 1.0 creates a Python command's QAction only when the command is
     # placed in a toolbar or menu. A global custom toolbar (hidden by the shell)
     # makes FreeCAD create the actions, so shortcuts and ribbon buttons work.
