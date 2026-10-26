@@ -35,12 +35,38 @@ It holds the Sketch, Curve, Edit Curve and Constraints groups with NX's names; x
 | kbd:[E] | Quick Extend | Extend
 | kbd:[F] | Fillet | Fillet (pick the two curves, then the radius)
 | kbd:[D] | Rapid Dimension | Dimension
-| kbd:[C] | Geometric Constraints | Coincident (FreeCAD applies one constraint type per tool)
+| kbd:[C] | Geometric Constraints | NX's constraint gallery as a menu; the choice runs FreeCAD's tool (see below)
 | kbd:[Shift+F8] | Orient View to Sketch | View sketch
 | kbd:[Ctrl+Q] | Finish Sketch | Leave sketch
 |===
 
-*MB2* ends the active curve tool, as in NX (kbd:[Esc] does the same).
+*MB2* ends the active curve tool, as in NX.
+FreeCAD's kbd:[Esc] ends an open profile first and the tool only with a second press; MB2 ends both at once.
+
+Profile::
+A click on the profile's first point closes it, as in NX: the last line gets a coincidence with the first point and the profile is done.
+Lines get Horizontal or Vertical when they are drawn within 2° of it.
+After an arc, FreeCAD carries on with a line held tangent to the arc and infers no Horizontal or Vertical on it.
+NX's book clicks *Line* in the Profile dialog there; in FreeCAD press kbd:[M] twice (tangent line, perpendicular line, line) to get the plain line, then add *Tangent* if you want it.
+
+== Geometric constraints
+
+kbd:[C] (or *Geometric Constraints* on the Sketch tab) opens NX's gallery: Coincident, Point on Curve, Tangent, Parallel, Perpendicular, Horizontal, Vertical, Horizontal and Vertical Alignment, Midpoint, Collinear, Concentric, Equal Length and Equal Radius, Fixed and Fully Fixed.
+A choice applies to what is selected; with nothing selected FreeCAD's tool starts and you pick the curves, as in NX's dialog.
+Some have no FreeCAD tool of their own and use the one that does the same with that pick: Horizontal or Vertical with two points aligns them, Symmetric with a line and a point is Midpoint, Coincident on two arcs or circles is Concentric, and Equal covers lengths and radii.
+
+*Point on Curve* and *Collinear* are on the Sketch tab too.
+NX gives neither a key, and neither has one here.
+
+Collinear::
+FreeCAD has no collinear constraint.
+Select the line to move, then the line to align it with, then *Collinear*: both ends of the first line go on the line through the second, as point-on-curve constraints.
+When the two lines are already parallel (both horizontal, say), one end is enough and only one is added, so the sketch gets no redundant constraint.
+It is one undo step.
+Collinear takes a selection; it does not start a pick mode as FreeCAD's own tools do.
+
+Not offered::
+NX's Constant Length, Constant Angle, Point on String, Uniform and Non-Uniform Scale and Slope of Curve have no FreeCAD equivalent; a driving dimension does what Constant Length and Constant Angle do.
 
 == Constraints and degrees of freedom
 

@@ -1422,7 +1422,7 @@
    "nx": "Undo, then Coincident: the left corner on the sketch origin",
    "replay": "Ctrl+Z (DoF back to 2); Vertex1 + origin + ribbon 'Sketch › Constraints > Coincident'",
    "outcome": "same",
-   "detail": "corner at (0.000, 0.000); DoF 0; 'Fully constrained'"
+   "detail": "corner at (0.000, -0.000); DoF 0; 'Fully constrained'"
   },
   {
    "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
@@ -1502,7 +1502,7 @@
    "nx": "The part is shown in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "6.4% of the view shows the part"
+   "detail": "6.4% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
@@ -3652,53 +3652,45 @@
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 3,
    "nx": "Profile (Z): lines, and an arc for the semicircle (Continuous Auto Dimensioning off)",
-   "replay": "Z key, 15 MB1 clicks (the last on the first point), M (3x) before the arc's end, MB2",
-   "outcome": "FAILED",
-   "detail": "14 curves (13 lines, 1 arc), the arc tangent at both ends; closed by the last click False; first line Horizontal False (every other straight line got its Horizontal or Vertical); DoF 20. FreeCAD has no automatic dimensions to switch off"
+   "replay": "Z key, 15 MB1 clicks (the last on the first point), M 3x before the arc's end and 2x after it (the book clicks Line), MB2",
+   "outcome": "same",
+   "detail": "14 curves (13 lines, 1 arc); closed by the last click True; Horizontal/Vertical inferred on every straight line except the two slanted ones; arc tangent to ['Edge2']; tool ended by MB2 True; DoF 17. FreeCAD has no automatic dimensions to switch off"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 4,
-   "nx": "(not in the book) Close the profile, Horizontal on the first line, Vertical after the arc",
-   "replay": "picks + ribbon 'Coincident', 'Horizontal', 'Vertical'",
-   "outcome": "differs",
-   "detail": "Coincident last point on first (1); Horizontal first line (1); Vertical after the arc (1); closed True; DoF 16. NX's Profile closes on the first point and infers these"
+   "nx": "Point on Curve: the arc's centre on the Y axis, then on the X axis",
+   "replay": "axis + centre + ribbon 'Sketch › Constraints > Point on Curve', twice",
+   "outcome": "same",
+   "detail": "centre at (-0.000, 0.000); made ['PointOnObject 2/3 -2', 'PointOnObject 2/3 -1']; DoF 15 ('Under-constrained: / 15 Degrees of Freedom')"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 5,
-   "nx": "Point on Curve: the arc's centre on the Y axis, then on the X axis",
-   "replay": "centre + axis + ribbon 'Sketch › Constraints > Coincident', twice",
-   "outcome": "differs",
-   "detail": "centre at (0.000, 0.000); the Sketch tab has no Point on Curve button: FreeCAD's Coincident makes a point-on-curve constraint when a point and a curve are picked"
+   "nx": "Equal Length: the two slanted lines, then the two long vertical lines",
+   "replay": "two lines + ribbon 'Sketch › Constraints > Equal', twice",
+   "outcome": "same",
+   "detail": "slanted 66.88 / 66.88, verticals 124.68 / 124.68 mm; DoF 13"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 6,
-   "nx": "Equal Length: the two slanted lines, then the two long vertical lines",
-   "replay": "two lines + ribbon 'Sketch › Constraints > Equal', twice",
+   "nx": "Collinear, then Equal Length: the two bottom lines",
+   "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
    "outcome": "same",
-   "detail": "slanted 66.87 / 66.87, verticals 125.09 / 125.09 mm; DoF 12"
+   "detail": "the bottom lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 40.19 / 40.19 mm; DoF 11"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 7,
-   "nx": "Collinear, then Equal Length: the two bottom lines",
-   "replay": "end point + other line + ribbon 'Sketch › Constraints > Coincident'; two lines + 'Equal'",
-   "outcome": "differs",
-   "detail": "the bottom lines 0.0000 mm apart, lengths 40.26 / 40.26 mm; DoF 10. The Sketch tab has no Collinear: an end point placed on the other line makes them collinear"
+   "nx": "Tangent: the arc and each vertical line at its ends (only where it is missing)",
+   "replay": "arc + line + ribbon 'Tangent' where missing",
+   "outcome": "same",
+   "detail": "already tangent from Profile: ['Edge2']; added [('Edge4', 0)]; arc radius 21.379 mm about (-0.000, 0.000); DoF 10"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 8,
-   "nx": "Tangent: the arc and each vertical line at its ends (only where it is missing)",
-   "replay": "none missing",
-   "outcome": "same",
-   "detail": "already tangent from Profile: ['Edge2', 'Edge4']; added none; arc radius 20.010 mm about (0.000, 0.000); DoF 10"
-  },
-  {
-   "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 9,
    "nx": "Equal Length: the slot's two vertical lines",
    "replay": "two lines + ribbon 'Sketch › Constraints > Equal', then Ctrl+Z",
    "outcome": "differs",
@@ -3706,23 +3698,23 @@
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 10,
+   "n": 9,
    "nx": "Collinear, then Equal: the two short lines at the top",
-   "replay": "end point + other line + ribbon 'Sketch › Constraints > Coincident'; two lines + 'Equal'",
+   "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
+   "outcome": "same",
+   "detail": "the top lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 17.97 / 17.97 mm; DoF 8; the notch's two sides are then equal too (the book's last Equal is implied)"
+  },
+  {
+   "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
+   "n": 10,
+   "nx": "Rapid Dimension: eight dimensions, then the values, biggest first; the sketch is fully defined",
+   "replay": "picks + ribbon 'Sketch › Constraints > Distance', the value typed in FreeCAD's dimension dialog, 8 times",
    "outcome": "differs",
-   "detail": "the top lines 0.0000 mm apart, lengths 16.13 / 16.13 mm; DoF 8; the notch's two sides are then equal too (the book's last Equal is implied)"
+   "detail": "height 190.94, width 130, side 125, top 95, notch width 65, notch depth 65, slot 40, centre 35; DoF 0, fully constrained True ('Fully constrained'); corners within 2.0e-14 mm of the book's figure. NX places all dimensions first and edits them; FreeCAD asks for each value as the dimension is made"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 11,
-   "nx": "Rapid Dimension: eight dimensions, then the values, biggest first; the sketch is fully defined",
-   "replay": "picks + ribbon 'Sketch › Constraints > Distance', the value typed in FreeCAD's dimension dialog, 8 times",
-   "outcome": "differs",
-   "detail": "height 190.94, width 130, side 125, top 95, notch width 65, notch depth 65, slot 40, centre 35; DoF 0, fully constrained True ('Fully constrained'); corners within 1.4e-14 mm of the book's figure. NX places all dimensions first and edits them; FreeCAD asks for each value as the dimension is made"
-  },
-  {
-   "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 12,
    "nx": "Finish Sketch",
    "replay": "Ctrl+Q",
    "outcome": "same",
@@ -3730,7 +3722,7 @@
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 13,
+   "n": 12,
    "nx": "Select the sketch, Extrude (X): Z direction, 60 mm, Boolean None",
    "replay": "sketch selected + X; 'lengthEdit' = 60 mm, MB2 = OK",
    "outcome": "same",
@@ -3738,11 +3730,11 @@
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 14,
+   "n": 13,
    "nx": "Save and close the file",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "Arborpress_base.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+   "detail": "Arborpress_base.FCStd rewritten by Ctrl+S (1.5 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3750,7 +3742,7 @@
    "nx": "Create a new file in inches (Impeller_lower_casing)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']"
+   "detail": "new document ['Unnamed1']"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3772,37 +3764,29 @@
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
    "n": 4,
    "nx": "Profile: Line 1, Curve 1, Curve 2, Line 2",
-   "replay": "Z key, 5 MB1 clicks, M (3x) before Curve 1's end and 3x before Curve 2's, MB2",
-   "outcome": "FAILED",
-   "detail": "curves ['line', 'arc', 'arc', 'line']; tangent joints 3 of 3; Line 1 Horizontal True; DoF 8"
+   "replay": "Z key, 5 MB1 clicks, M (3x) before Curve 1's end, 3x before Curve 2's and 2x before Line 2's (NX's Line), MB2",
+   "outcome": "same",
+   "detail": "curves ['line', 'arc', 'arc', 'line']; tangent joints 2 (Line 1-Curve 1, Curve 1-Curve 2; Line 2 is drawn as a plain line); Horizontal on Line 1 True, on Line 2 True; tool ended by MB2 True; DoF 8"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
    "n": 5,
-   "nx": "(not in the book) Horizontal on Line 1 and Line 2",
-   "replay": "line + ribbon 'Horizontal' where missing",
+   "nx": "A point at the origin (0, 0, 0), then Fixed",
+   "replay": "ribbon 'Sketch › Curve > Point', MB1 at the origin",
    "outcome": "differs",
-   "detail": "Horizontal on Line 2 (1); DoF 7. NX infers Horizontal while drawing; FreeCAD's Profile does not for its first line, nor for a line after an arc"
+   "detail": "point at (0.0000, 0.0000) mm; the click snapped to the origin; DoF 8. FreeCAD's Fixed keeps a point where it is, so Coincident with the origin puts it at (0, 0, 0), as NX's typed coordinates do"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
    "n": 6,
-   "nx": "A point at the origin (0, 0, 0), then Fixed",
-   "replay": "ribbon 'Sketch › Curve > Point', MB1 at the origin",
-   "outcome": "differs",
-   "detail": "point at (0.0000, 0.0000) mm; the click snapped to the origin; DoF 7. FreeCAD's Fixed keeps a point where it is, so Coincident with the origin puts it at (0, 0, 0), as NX's typed coordinates do"
+   "nx": "Tangent at every curve-line and curve-curve joint",
+   "replay": "ribbon 'Tangent' where missing",
+   "outcome": "same",
+   "detail": "made by Profile; added ['3-4 (0)']"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
    "n": 7,
-   "nx": "Tangent at every curve-line and curve-curve joint",
-   "replay": "none missing",
-   "outcome": "same",
-   "detail": "made by Profile; added none"
-  },
-  {
-   "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 8,
    "nx": "Dimensions: p1 15, p2 7.3, R 33, R 8, p6 8.1, p4 1.0",
    "replay": "picks + ribbon 'Sketch › Constraints > Distance' and 'Radius / Diameter', each value typed in FreeCAD's dimension dialog (biggest first)",
    "outcome": "differs",
@@ -3810,7 +3794,7 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 9,
+   "n": 8,
    "nx": "Select all the dimensions, MB3 > Hide",
    "replay": "dimensions selected, FreeCAD's 'Switch virtual space'",
    "outcome": "differs",
@@ -3818,15 +3802,15 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 10,
+   "n": 9,
    "nx": "Move Curve: the 4 curves, Distance 0.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 1.9e-04 mm"
+   "detail": "4 copies made; largest error 1.6e-05 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 11,
+   "n": 10,
    "nx": "Join the end points at the two ends: the casing wall is closed",
    "replay": "L key, MB1 on each end point, MB2 (2 lines)",
    "outcome": "same",
@@ -3834,15 +3818,15 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 12,
+   "n": 11,
    "nx": "Move Curve: the lower curve, -1.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 5.6e-07 mm"
+   "detail": "4 copies made; largest error 1.8e-04 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 13,
+   "n": 12,
    "nx": "Straight lines join it with the inside curve: a closed chain",
    "replay": "L key, MB1 on each end point, MB2 (2 lines)",
    "outcome": "same",
@@ -3850,15 +3834,15 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 14,
+   "n": 13,
    "nx": "Move Curve: the outer end line, -0.5 along XC, Copy Original",
    "replay": "1 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "1 copies made; largest error 2.0e-07 mm"
+   "detail": "1 copies made; largest error 4.6e-07 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 15,
+   "n": 14,
    "nx": "Straight lines join the two lines: the flange's rectangle",
    "replay": "L key, MB1 on each end point, MB2 (2 lines)",
    "outcome": "same",
@@ -3866,7 +3850,7 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 16,
+   "n": 15,
    "nx": "The sketch: 19 curves (the casing wall, its edge, the flange)",
    "replay": "compared with the book's figure",
    "outcome": "same",
@@ -3874,7 +3858,7 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 17,
+   "n": 16,
    "nx": "Finish Sketch",
    "replay": "Ctrl+Q",
    "outcome": "same",
@@ -3882,7 +3866,7 @@
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
-   "n": 18,
+   "n": 17,
    "nx": "Save and close the file",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
@@ -3894,7 +3878,7 @@
    "nx": "Create a new file in inches (Impeller_impeller)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed1']"
+   "detail": "new document ['Unnamed2']"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -3966,7 +3950,7 @@
    "nx": "Rapid Dimension: the radii 1.5 and 0.5 at the ends, 18 and 15 between",
    "replay": "arc + ribbon 'Radius / Diameter', the value typed in FreeCAD's dialog, 4 times",
    "outcome": "differs",
-   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 3.5e-11 mm of the solved figure (centres, radii, ends); Radius / Diameter was greyed out, so FreeCAD's Radius command was run for R18, R15, R1.5, R0.5"
+   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 2.3e-13 mm of the solved figure (centres, radii, ends); Radius / Diameter was greyed out, so FreeCAD's Radius command was run for R18, R15, R1.5, R0.5"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -3990,7 +3974,7 @@
    "nx": "A new part (mm)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']"
+   "detail": "new document ['Unnamed3']"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",

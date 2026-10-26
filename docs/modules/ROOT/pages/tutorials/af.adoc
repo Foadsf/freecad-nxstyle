@@ -17,20 +17,21 @@ Click *Sketch* on the Home tab, pick the XC-YC plane and press MB2.
 
 Press kbd:[Z] for *Profile*.
 Start at the bottom left and click round the outline: along the bottom to the slot, up its left side, then press kbd:[M] three times to switch to a tangent arc and click the slot's right side.
-Continue with lines down the slot, along the bottom, up the right side, through the notch at the top and down the left side, back to the first point.
+Where the book clicks *Line* in the Profile dialog, press kbd:[M] twice: FreeCAD would otherwise carry on with a line held tangent to the arc.
+Continue with lines down the slot, along the bottom, up the right side, through the notch at the top and down the left side, and click the first point: that closes the outline.
+MB2 ends Profile.
 Draw it roughly. The constraints bring it to shape.
+Each straight line gets Horizontal or Vertical as it is drawn, except the two slanted ones.
 FreeCAD has no automatic dimensions to switch off, so the book's note about Continuous Auto Dimensioning does not apply.
-
-Today the replay has to finish the outline by hand. The last click does not close it, the first line gets no Horizontal, and the line after the arc is tangent but not vertical. Pick the last and first points and click *Coincident*, then add *Horizontal* and *Vertical*.
 
 === 3. Geometric constraints first
 
-* The arc's centre on both axes: pick the centre and the Y axis and click *Coincident*, then the centre and the X axis. With a point and a curve picked, *Coincident* makes a point-on-curve constraint.
+* *Point on Curve*: pick the Y axis and the arc's centre and click *Point on Curve*, then the X axis and the centre.
 * *Equal*: the two slanted lines, then the two long vertical lines.
-* The bottom lines collinear and equal: pick the end of one and the other line and click *Coincident*, then pick both lines and click *Equal*.
-* *Tangent*: the arc and the slot's sides. Profile already made both.
+* The bottom lines: pick both and click *Collinear*, then *Equal*.
+* *Tangent*: the arc and the slot's sides, where it is missing. Profile made the first one; the line after the arc needs it.
 * The book makes the slot's two short sides *Equal*. Here FreeCAD reports that as redundant, because the tangency and the centre on the X axis already make them equal, so leave it out.
-* The two short top lines: collinear and *Equal*, as at the bottom. The notch's two sides are then equal too.
+* The two short top lines: *Collinear* and *Equal*, as at the bottom. The notch's two sides are then equal too.
 
 === 4. Dimensions, biggest first
 
@@ -55,7 +56,7 @@ The solid is compared with the same solid built with FreeCAD's Part API (`nxstyl
 
 == What differs from NX
 
-* The Sketch tab has no *Point on Curve* or *Collinear* button. *Coincident* does both: a point picked with a curve stays on it, and an end point placed on the other line makes two lines collinear.
+* FreeCAD has no collinear constraint. NX-Style's *Collinear* puts the ends of one line on the other line; both bottom lines are horizontal already, so one end is enough and only one point-on-curve constraint is added.
 * NX places all the dimensions first and then edits their values. FreeCAD asks for each value as the dimension is made, so the replay types them biggest first, as the book recommends.
-* FreeCAD's *Profile* switches to an arc with kbd:[M]. NX has Line and Arc buttons in the Profile toolbar.
+* FreeCAD's *Profile* switches to an arc with kbd:[M], and back to a plain line with kbd:[M] twice more. NX has Line and Arc buttons in the Profile toolbar.
 * FreeCAD rejects a constraint that is already implied, and reports it as redundant.

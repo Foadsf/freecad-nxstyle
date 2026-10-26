@@ -44,20 +44,27 @@ class CommandFinder(QtWidgets.QLineEdit):
         labels = self.ribbon.labels
         for name in sorted(Gui.listCommands()):
             acts = command_actions(name)
-            if not acts:
+            if acts:
+                icon, fc_text = acts[0].icon(), clean_text(acts[0].text())
+                shortcut, tip = acts[0].shortcut().toString(), clean_text(acts[0].toolTip() or "")
+            elif name in labels:
+                # on the ribbon, but FreeCAD made no action for it (it sits in none of FreeCAD's toolbars,
+                # e.g. Sketcher_ConstrainPointOnObject in 1.1): the command's own text and icon
+                info = Gui.Command.get(name).getInfo()
+                icon = Gui.getIcon(info.get("pixmap") or "") or QtGui.QIcon()
+                fc_text, shortcut, tip = clean_text(info.get("menuText", "")), "", clean_text(info.get("toolTip", ""))
+            else:
                 continue
-            fc_text = clean_text(acts[0].text())
             if not fc_text:
                 continue
             nx = labels.get(name)
             where = locations.get(name, "Menu")
             title = nx or fc_text
             extra = f" ({fc_text})" if nx and nx != fc_text else ""
-            shortcut = acts[0].shortcut().toString()
             text = f"{title}{extra}  —  {where}" + (f"  [{shortcut}]" if shortcut else "")
-            item = QtGui.QStandardItem(acts[0].icon(), text)
+            item = QtGui.QStandardItem(icon, text)
             item.setData(name, ROLE_CMD)
-            item.setToolTip(clean_text(acts[0].toolTip() or ""))
+            item.setToolTip(tip)
             self.model.appendRow(item)
         self._dirty = False
 

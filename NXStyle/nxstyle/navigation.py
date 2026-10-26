@@ -294,9 +294,13 @@ class NxMouse(QtCore.QObject):
 
     def _mb2_click(self):
         if in_sketch_edit():
-            # NX: MB2 ends the current curve tool; Esc does that in FreeCAD
-            if self.sketch_tool_active():
-                gv = self.view.graphicsView()
+            # NX: MB2 ends the current curve tool; Esc does that in FreeCAD. In continuous creation mode
+            # FreeCAD's first Esc only ends an open profile and keeps the tool (it puts its cursor back);
+            # NX ends the tool, so Esc goes on until the tool is gone
+            gv = self.view.graphicsView()
+            for _ in range(3):
+                if not self.sketch_tool_active():
+                    break
                 for kind in (QtCore.QEvent.KeyPress, QtCore.QEvent.KeyRelease):
                     QtWidgets.QApplication.sendEvent(gv, QtGui.QKeyEvent(kind, Qt.Key_Escape, Qt.NoModifier))
                 status("Tool ended (MB2)")
@@ -563,7 +567,8 @@ class NxMouse(QtCore.QObject):
                 self.hold_timer.stop()
                 if not self.moved and not self.hold_used and time.monotonic() - self.t0 < 0.6:
                     self._mb2_click()
-                self.widget.unsetCursor()
+                if self.hold_used:
+                    self.widget.unsetCursor()     # only the rotation point's cross; a sketch tool keeps its own
                 self.pivot = None
                 return True
             if button == Qt.RightButton:

@@ -52,6 +52,25 @@ def qtest():
     return QtTest.QTest
 
 
+def camera_state(view):
+    cam = view.getCameraNode()
+    h = cam.height.getValue() if hasattr(cam, "height") else cam.heightAngle.getValue()
+    return tuple(round(v, 6) for v in (*cam.position.getValue(), *cam.orientation.getValue().getValue(), h))
+
+
+def settle_view(view, timeout=4.0):
+    """Wait for the camera to stop: FreeCAD turns the view to a sketch with an animation when the sketch
+    opens. A point computed while the camera still moves is not where the click lands (seconds waited)."""
+    t0 = time.monotonic()
+    last, still = camera_state(view), 0
+    while still < 3 and time.monotonic() - t0 < timeout:
+        qtest().qWait(60)
+        now = camera_state(view)
+        still = still + 1 if now == last else 0
+        last = now
+    return round(time.monotonic() - t0, 2)
+
+
 class ModalWatcher(QtCore.QObject):
     """Closes unexpected modal dialogs (and records them) so a replay never hangs."""
 
@@ -193,6 +212,12 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         self.send(QtCore.QEvent.MouseButtonRelease, p, Qt.LeftButton, Qt.NoButton)
         QtWidgets.QApplication.processEvents()
 
+    def sketch_tool_running(self, p):
+        """Is a sketcher tool still running? A running tool puts its cursor back when the pointer moves."""
+        self.send(QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+        QtWidgets.QApplication.processEvents()
+        return self.nav().sketch_tool_active()
+
     def screen_point(self, sketch, x, y):
         """Sketch-plane coordinates -> widget pixel position."""
         g = sketch.getGlobalPlacement().multVec(App.Vector(x, y, 0))
@@ -201,9 +226,13 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
         return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
 
+    def camera_state(self):
+        return camera_state(self.view())
+
     def frame_sketch(self, sketch, cx, cy, height):
-        """Zoom the sketch view so the points to click are on screen."""
+        """Zoom the sketch view so the points to click are on screen (once the view has stopped turning)."""
         from pivy import coin
+        self.info.setdefault("sketch view settled after s", []).append(settle_view(self.view()))
         cam = self.view().getCameraNode()
         g = sketch.getGlobalPlacement().multVec(App.Vector(cx, cy, 0))
         d = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
@@ -982,8 +1011,9 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         for (x, y) in pts:
             self.mb1_click(self.screen_point(sk, x, y))
         n = len(sk.Geometry)
-        self.mb2_click(self.screen_point(sk, min(xs) - span * 0.6, max(ys) + span * 0.6))
-        ended = not self.nav().sketch_tool_active()
+        away = self.screen_point(sk, min(xs) - span * 0.6, max(ys) + span * 0.6)
+        self.mb2_click(away)
+        ended = not self.sketch_tool_running(away)
         return sk, tool, n, ended
 
     @staticmethod
