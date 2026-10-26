@@ -3438,7 +3438,7 @@
    "nx": "File > New (Ctrl+N), Model template",
    "replay": "Ctrl+N",
    "outcome": "same",
-   "detail": "new document ['Unnamed3']"
+   "detail": "new document ['Unnamed']"
   },
   {
    "tutorial": "AE: One Extrude, every way (command controller acceptance)",
@@ -3630,7 +3630,7 @@
    "nx": "Reopened part: Edit Parameters on the pocket, 12 mm, Esc",
    "replay": "ribbon 'Home › Edit Feature', typed 12, Esc",
    "outcome": "same",
-   "detail": "Boolean read back 'Subtract'; after Esc depth 5 mm, same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); undo steps added 0; popup open at Esc: QListView  visible True"
+   "detail": "Boolean read back 'Subtract'; after Esc depth 5 mm, same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); undo steps added 0"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
