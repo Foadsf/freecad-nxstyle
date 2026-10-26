@@ -25,14 +25,73 @@ The Home tab's *Feature* group works the NX way:
 . kbd:[Ctrl+Q] (*Finish Sketch*) carries straight on into the feature's dialog.
 . Type the values and press *MB2* (or *OK*).
 
-=== Unite and subtract
+== Extrude [[extrude]]
 
-NX's Extrude has a Boolean option; FreeCAD's has not.
+Extrude works the same however it is started: kbd:[X], the ribbon, the Command Finder, the radial menu, or *Edit Parameters* on an existing extrude.
+Its dialog has two parts.
+At the top, the NX command box shows the section, the body and the *Boolean*.
+Below it is FreeCAD's own Pad or Pocket panel, where the limits, the direction and the draft are typed.
 
-* Features in one Body unite by themselves: an Extrude onto the part is NX's Extrude with *Unite*.
-* *Extrude (Subtract)* and *Revolve (Subtract)* are their own buttons (FreeCAD's Pocket and Groove).
-  They cut into the part by default, so NX's *Reverse Direction* is rarely needed.
-* *Unite / Subtract* in the Feature group combines separate bodies.
+image::tutorial-AE-02-unite.png[The Extrude dialog: the NX command box above FreeCAD's Pad panel]
+
+=== Boolean
+
+[cols="1,3",options="header"]
+|===
+| NX Boolean | What NX-Style builds
+
+| *None* (a new body)
+| A Pad that starts a solid. In a Body that has no solid yet, the Pad goes into that Body. Otherwise a new Body is made, with a sub-shape binder of the sketch, and the Pad goes in there. That Pad's custom direction is set to the sketch normal, because the binder's face can point the other way. The active Body does not change, so later extrudes still go to the body you were working on.
+
+| *Unite*
+| A Pad in the Body that holds the sketch.
+
+| *Subtract*
+| A Pocket in the Body that holds the sketch.
+
+| *Intersect*
+| Not supported. It is in the list, but greyed out, and choosing it gives the reason in the dialog. NX-Style does not approximate it.
+|===
+
+The Boolean starts as NX infers it: *Unite* when the sketch's Body already has a solid, otherwise *None* (a new body). The Boolean names follow NX 2212, as in Shih's NX 2212 exercises.
+*Extrude (Subtract)* starts with *Subtract* chosen.
+Changing the Boolean replaces the preview Pad with a Pocket, or the reverse; the length typed so far is kept.
+Unite and Subtract always work on the Body that holds the sketch. NX lets you pick another target body; NX-Style does not.
+
+NOTE: *Subtract* cuts into the part, against the sketch normal, unless *Reversed* is ticked.
+NX keeps the same direction for every Boolean, so there you reverse it.
+
+=== Errors, OK and Cancel
+
+The command box's last line shows the state of the extrude.
+
+* An error leaves *OK* unavailable, and MB2 does nothing.
+  For example: FreeCAD cannot build the feature from these values, or a Unite misses the part and would leave a separate solid (NX: “tool body does not intersect the target”), or Unite or Subtract is chosen when there is no solid to work on.
+* A warning does not stop OK.
+  For example: a Subtract that removes nothing, or a number the field read differently from what was typed. With a comma as the decimal separator, `3.175` is read as 3175 mm.
+* *OK* (or MB2) adds one undo step, named *Extrude*. Editing an extrude adds one named *Edit Extrude*.
+* *Cancel* or kbd:[Esc] removes the preview, and with it any new Body or binder. Visibility and the selection go back to how they were, and nothing is added to the undo list.
+  The sketch drawn inside the command stays, as its own undo steps.
+* While the dialog is open, the Type Filter is switched off so the command can pick what it needs. It comes back afterwards.
+
+=== Not supported yet
+
+These NX Extrude options are not offered, and the command box lists them:
+
+* Intersect;
+* choosing the target body;
+* a start limit away from the sketch plane on one side (FreeCAD's *Two sided* gives a length each way);
+* Until Extended;
+* draft from the section, asymmetric or with matched ends (FreeCAD has a single taper angle);
+* NX's section Offset (FreeCAD's Offset belongs to Up to face);
+* body type Sheet;
+* changing the Boolean while editing an extrude. Delete it and extrude again.
+
+Revolve, Hole and *Revolve (Subtract)* still open FreeCAD's own dialogs directly. They do not have the command box yet.
+
+=== Unite and subtract between bodies
+
+*Unite / Subtract* in the Feature group combines separate bodies.
 
 === Extrude limits
 
@@ -91,7 +150,9 @@ Inside a Body the mirror unites by itself.
 
 == Design changes
 
-* *Edit Parameters* (or double-click the feature in the Part Navigator) reopens the feature's dialog.
+* *Edit Parameters* reopens the feature's dialog. It is on the ribbon, the radial menu, and the MB3 menu of the feature in the Part Navigator.
+  An extrude opens in the Extrude dialog with its command box (<<extrude>>), so *Cancel* puts every value back.
+  Double-clicking the feature opens FreeCAD's own dialog without the command box.
   NX also lets you edit a dimension shown in the graphics window; here the change goes through the dialog or the sketch.
 * kbd:[F2] or MB3 › *Rename* in the Part Navigator gives a feature a name.
 * *Make Current Feature* rolls the part back to that feature; later features wait until you make the last one current again.

@@ -56,6 +56,7 @@
 * xref:tutorials/ab.adoc[AB: Measurement capability]
 * xref:tutorials/ac.adoc[AC: Title block and revision block from the release]
 * xref:tutorials/ad.adoc[AD: A laser-cut tray with tabs and slots]
+* xref:tutorials/ae.adoc[AE: One Extrude, every way]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]
