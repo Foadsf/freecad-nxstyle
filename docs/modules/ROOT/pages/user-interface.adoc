@@ -68,7 +68,7 @@ The vertical bar on the left opens the panels; the open ones share one tab strip
 |===
 
 The *Dialog* tab holds the open feature dialog (FreeCAD's task panel).
-When no dialog is open, NX-Style brings the Part Navigator back to the front.
+When no dialog is open, NX-Style brings the Part Navigator back to the front, also after you switch applications.
 
 == Graphics window
 

@@ -118,6 +118,10 @@ class Smoke:
         yield self.s_sketch_left, 100
         yield self.s_drafting, 2500
         yield self.s_drafting_check, 100
+        yield self.s_switch_dialog_open, 1500
+        yield self.s_switch_dialog_check, 1500
+        yield self.s_switch_nav, 1500
+        yield self.s_switch_nav_check, 100
         yield self.s_auto_app, 4000
         yield self.s_auto_check, 100
         yield self.s_katydid, 3000
@@ -525,6 +529,46 @@ class Smoke:
                    and "TechDraw_View" in r.locations, r.tab_names())
         self.info["missing_drafting_commands"] = r.missing
         self.shot("03_drafting.png")
+
+    def tasks_to_front(self):
+        """Put FreeCAD's Tasks panel (the Dialog tab) in front, as FreeCAD itself may do; returns the front tab."""
+        Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks").raise_()
+        QtWidgets.QApplication.processEvents()
+        return self.shell.current_left_tab()
+
+    def s_switch_dialog_open(self):
+        """Negative control: with a feature dialog open, switching applications leaves the Dialog tab in front."""
+        class Panel:
+            def __init__(self):
+                self.form = QtWidgets.QLabel("NXStyle smoke-test dialog")
+
+            def reject(self):
+                Gui.Control.closeDialog()
+                return True
+
+        Gui.Control.showDialog(Panel())
+        self.info["front tab before switching, dialog open"] = self.tasks_to_front()
+        self.shell.switch_application("modeling")
+
+    def s_switch_dialog_check(self):
+        tab = self.shell.current_left_tab()
+        self.check("Dialog stays in front over an application switch while a dialog is open",
+                   bool(Gui.Control.activeDialog()) and tab == "Dialog",
+                   {"before": self.info.get("front tab before switching, dialog open"), "after": tab})
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+
+    def s_switch_nav(self):
+        """No dialog, the Dialog tab in front (closing the dialog above already let the shell's tick settle):
+        switching applications must bring the Part Navigator back, though the tick sees no change."""
+        self.info["front tab before switching, no dialog"] = self.tasks_to_front()
+        self.shell.switch_application("drafting")
+
+    def s_switch_nav_check(self):
+        before, tab = self.info.get("front tab before switching, no dialog"), self.shell.current_left_tab()
+        self.check("Part Navigator in front after an application switch",
+                   before == "Dialog" and tab == "Part Navigator" and not Gui.Control.activeDialog(),
+                   {"before": before, "after": tab})
 
     def s_auto_app(self):
         if self.shell._app("simulation"):
