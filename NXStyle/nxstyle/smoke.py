@@ -146,6 +146,8 @@ class Smoke:
         yield self.s_model_views, 300
         yield self.s_assembly_links, 200
         yield self.s_selection, 300
+        yield self.s_extrude_key, 1500
+        yield self.s_extrude_key_check, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -1543,6 +1545,123 @@ class Smoke:
         both orders, curve chains and the Part Navigator's marks (smoke_selection.py)."""
         from . import smoke_selection
         smoke_selection.run(self)
+
+    def press(self, seq):
+        """A key press through Qt's shortcut map, on the graphics window, as a user types it."""
+        from .tutorial import qtest
+        mw = Gui.getMainWindow()
+        app = QtWidgets.QApplication.instance()
+        if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+            app.setActiveWindow(mw)                   # a hidden desktop has no foreground window
+        target = self.nav().widget
+        target.setFocus()
+        k, m = decode(seq)
+        qtest().keyClick(target, k, m)
+
+    def s_extrude_key(self):
+        """Extrude started by its key with a sketch selected and a Type Filter set (the shortcut checks above
+        test dispatch only; this one tests that the command then runs)."""
+        import Part
+        self._extrude_before = App.ActiveDocument
+        doc = App.newDocument("SmokeExtrude")
+        body = doc.addObject("PartDesign::Body", "Body")
+        sk = body.newObject("Sketcher::SketchObject", "Sketch")
+        sk.AttachmentSupport = [(body.Origin.OriginFeatures[3], "")]
+        sk.MapMode = "FlatFace"
+        p = [App.Vector(0, 0, 0), App.Vector(30, 0, 0), App.Vector(30, 20, 0), App.Vector(0, 20, 0)]
+        for i in range(4):
+            sk.addGeometry(Part.LineSegment(p[i], p[(i + 1) % 4]), False)
+        doc.recompute()
+        Gui.getDocument(doc.Name).ActiveView.setActiveObject("pdbody", body)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, body.Name, f"{sk.Name}.")
+        tf = self.shell.type_filter
+        tf.setCurrentIndex(tf.findData("edge"))      # after the pick: an Edge filter would refuse the sketch
+        self._extrude_doc = doc.Name
+        self.press("X")
+
+    def s_extrude_key_check(self):
+        from . import controller, selection_filter
+        from .smoke_selection import qwait
+        ctl = controller.CONTROLLER
+        m = selection_filter.manager()
+        tf = self.shell.type_filter
+        doc = App.getDocument(self._extrude_doc)
+
+        def opened(timeout_ms=4000):
+            t0 = time.monotonic()
+            while (time.monotonic() - t0) * 1000 < timeout_ms:
+                s = ctl.session
+                if s is not None and s.stage == "parameterize" and controller._alive(s.box):
+                    return True
+                qwait(100)
+            return False
+
+        def state():
+            s = ctl.session
+            return {"busy": ctl.busy(), "stage": s.stage if s is not None else None,
+                    "dialog": bool(Gui.Control.activeDialog()), "filter": m.global_kind,
+                    "filter enabled": tf.isEnabled(), "last": ctl.history[-1:], "trace": ctl.trace[-4:]}
+
+        def pick_sketch():
+            """The sketch selected, then the Type Filter on Edge (which would refuse the sketch itself)."""
+            tf.setCurrentIndex(0)
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, "Body", "Sketch.")
+            tf.setCurrentIndex(tf.findData("edge"))
+
+        try:
+            up = opened()
+            during = state()
+            self.check("Extrude by its key (X) with a sketch selected and the Type Filter on Edge: the panel "
+                       "opens, the filter is lifted and greyed out while it runs",
+                       up and during["filter"] is None and during["filter enabled"] is False
+                       and controller.CONTROLLER.session.sketch is not None
+                       and controller.CONTROLLER.session.sketch.Name == "Sketch", during)
+            ctl.cancel()
+            qwait(500)
+            after = state()
+            pads = [o.Name for o in doc.Objects if o.TypeId == "PartDesign::Pad"]
+            self.check("Extrude cancelled: the command ends, nothing is left, and the Type Filter (Edge) is back",
+                       not after["busy"] and after["last"] and after["last"][0]["outcome"] == "cancelled"
+                       and not pads and after["filter"] == "edge" and after["filter enabled"], after)
+
+            # negative control: a start that fails ends the command; Extrude is not dead afterwards
+            a = controller.ADAPTERS["Extrude"]
+
+            def broken():
+                raise RuntimeError("smoke: planted failure")
+
+            pick_sketch()
+            a.preselected_section = broken
+            try:
+                self.press("X")
+                qwait(300)
+            finally:
+                del a.preselected_section
+            failed = state()
+            last = failed["last"][0] if failed["last"] else {}
+            self.check("Extrude whose start fails: the command ends as failed with the reason, not left busy, "
+                       "and the Type Filter is back",
+                       not failed["busy"] and last.get("outcome") == "failed" and "planted failure" in
+                       (last.get("note") or "") and failed["filter"] == "edge" and failed["filter enabled"], failed)
+            pick_sketch()
+            self.press("X")
+            again = opened()
+            ctl.cancel()
+            qwait(500)
+            self.check("Extrude runs again after a failed start", again and not ctl.busy(), state())
+        finally:
+            if ctl.busy():
+                ctl.cancel()
+                qwait(300)
+            tf.setCurrentIndex(0)
+            Gui.Selection.clearSelection()
+            App.closeDocument(doc.Name)
+            before = self._extrude_before
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
 
     def s_model_views(self):
         """PMI model views: the eight look as FreeCAD's standard views do, and the work view filters PMI."""
