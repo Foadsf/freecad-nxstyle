@@ -3,6 +3,8 @@
 
 NX treats selection as part of every command: what you may pick, from where, and why a pick was not taken.
 NX-Style adds the parts of that FreeCAD lacks, on top of FreeCAD's own selection.
+The reference is NX 2212: its Type Filter, Selection Scope and QuickPick (rest the pointer until it shows three dots, then click).
+That gesture and the scope names are taken from NX user material and course notes, not checked in a running NX 2212.
 
 == Type Filter and Selection Scope
 
@@ -33,12 +35,15 @@ The reason stays for a few seconds after the cursor moves on.
 *Select-through.* If the nearest thing under the cursor is refused and something allowed lies behind it, an MB1 click selects that one.
 The status bar names what was selected and why the nearer one was refused.
 
-*QuickPick.* Hold MB1 still for half a second over overlapping geometry: a list shows everything under the cursor, nearest first, each row with the element and the occurrence it belongs to (`Face6 of Asm › UnitA › Box`).
+*QuickPick.* Rest the pointer over overlapping geometry for half a second: when two or more things there can be selected, the cursor shows three dots, and the next MB1 click opens the QuickPick list instead of selecting.
+Holding MB1 still for the same time opens it too.
+The list shows everything under the cursor, nearest first, each row with the element and the occurrence it belongs to (`Face6 of Asm › UnitA › Box`).
 Rows the filter or the command refuses are greyed; hover one for the reason.
 Hovering an allowed row highlights it in the graphics window; clicking it selects it.
+Move the pointer away and the dots go, and a click selects as usual.
 
 Select-through and QuickPick are off in a sketch, while FreeCAD edits an object in the view (a dragger), and with kbd:[Ctrl] or kbd:[Shift] held: MB1 then reaches FreeCAD at once.
-`"quickpick_hold_ms"` in the xref:settings.adoc[settings] sets the hold; `0` switches both off.
+`"quickpick_hold_ms"` in the xref:settings.adoc[settings] sets the rest and the hold; raise it if slow clicks open QuickPick too often, `0` switches QuickPick and select-through off.
 
 == Commands that collect: Edge Blend
 

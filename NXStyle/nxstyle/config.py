@@ -45,7 +45,7 @@ DEFAULTS = {
     "mb2_click_is_ok": True,           # middle click accepts the open feature dialog
     "mb2_hold_sets_rotation_point_ms": 450,  # press and hold MB2 this long on the model to rotate about that point
     "mb3_hold_radial_menu_ms": 350,    # hold MB3 this long for the radial menu; 0 switches the radial menu off
-    "quickpick_hold_ms": 500,          # hold MB1 still this long for QuickPick; 0 switches QuickPick and select-through off
+    "quickpick_hold_ms": 500,          # rest the pointer (then click) or hold MB1 this long for QuickPick; 0 = off, with select-through
     "default_application": "modeling",  # the application NXStyle starts in (an id from ribbons/apps.json)
     "new_part_datum": True,            # a new empty part starts with a Body (NX Model template)
     "nx_shortcuts": True,              # bind the NX keys (see Keyboard shortcuts); false keeps FreeCAD's

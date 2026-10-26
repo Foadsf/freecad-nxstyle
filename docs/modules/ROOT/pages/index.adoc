@@ -45,7 +45,7 @@ All 65 NX key bindings and what each one does here.
 | Left and right of the tab row. The finder searches NX and FreeCAD names and tells you where each command lives.
 
 | Top Border Bar
-| Menu button (every FreeCAD menu), a Type Filter that really restricts what you can pick, the Selection Scope, and selection tools. Hold MB1 for QuickPick; see xref:selection.adoc[].
+| Menu button (every FreeCAD menu), a Type Filter that really restricts what you can pick, the Selection Scope, and selection tools. QuickPick for overlapping objects; see xref:selection.adoc[].
 
 | Resource Bar
 | Part Navigator, History, Information, Journal (Python console), Selection, and Versions and history.

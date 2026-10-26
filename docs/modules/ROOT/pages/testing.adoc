@@ -44,7 +44,7 @@ It ends with the count of checks passed, failed and skipped (109 checks on FreeC
 ** QuickPick lists both look-alike occurrences, greys the nearer sibling with its reason, and picks exactly the work part's occurrence;
 ** a pick on the sibling is refused and the cue line says why;
 ** an MB1 click selects through the sibling to the work part's occurrence, and with *Entire Assembly* the same click takes the sibling (the control);
-** holding MB1 still opens QuickPick; *Within Work Part Only* refuses a component's geometry;
+** resting the pointer there shows the three-dot cursor and the next click opens QuickPick (no dots over empty space), holding MB1 still opens it too; *Within Work Part Only* refuses a component's geometry;
 ** the Part Navigator names the work part and the selected occurrence;
 * Edge Blend's collector, command first: `Select Edge (0)` and OK refused, a Type Filter change during the command does not replace its gate, *Tangent Curves* collects the line–arc–line chain of a rounded corner, refused picks carry their reasons, and Cancel brings back the previous gate with the filter chosen meanwhile;
 * Edge Blend, selection first: an unusable face is refused and deselected and the edge reaches FreeCAD's Fillet; with only usable edges the Fillet opens at once;

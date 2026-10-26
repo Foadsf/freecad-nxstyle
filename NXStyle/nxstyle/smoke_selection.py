@@ -200,6 +200,31 @@ def nested_occurrences(smoke):
                     shown and f.last_pick[0] == "quickpick" and not after_release,
                     f"{f.last_pick}, visible {shown}, selection after release {after_release}")
 
+        # NX 2212: rest the pointer, the cursor shows three dots, the next click opens QuickPick
+        rest = int(f.cfg.get("quickpick_hold_ms", 500)) + 300
+        empty = QtCore.QPoint(8, 8)                   # control: nothing under the pointer, no dots
+        smoke.send(f, QtCore.QEvent.MouseMove, empty, Qt.NoButton, Qt.NoButton)
+        qwait(rest)
+        armed_empty = f.armed is not None
+        Gui.Selection.clearSelection()
+        smoke.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+        qwait(rest)
+        armed = f.armed is not None and f.widget.cursor().shape() == Qt.BitmapCursor
+        smoke.send(f, QtCore.QEvent.MouseButtonPress, p, Qt.LeftButton, Qt.LeftButton)
+        smoke.send(f, QtCore.QEvent.MouseButtonRelease, p, Qt.LeftButton, Qt.NoButton)
+        qwait(50)
+        rested = quickpick.last()
+        opened = rested is not None and rested is not held and rested.isVisible()
+        after_click = selected()
+        if rested is not None:
+            rested.hide()
+        smoke.check("NX 2212 QuickPick: resting the pointer over overlapping objects shows the three-dot cursor, "
+                    "and the next MB1 click opens the list instead of selecting; over empty space no dots (control)",
+                    armed and opened and not after_click and not armed_empty and f.armed is None
+                    and f.widget.cursor().shape() != Qt.BitmapCursor,
+                    f"dots over the overlap {armed}, list opened {opened}, selection {after_click}, "
+                    f"dots over empty space {armed_empty}")
+
         # Within Work Part Only: the work part is the assembly, the units are components
         av.setActiveObject("part", asm)
         sh.scope_filter.select("work_part_only")
