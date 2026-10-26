@@ -1422,7 +1422,7 @@
    "nx": "Undo, then Coincident: the left corner on the sketch origin",
    "replay": "Ctrl+Z (DoF back to 2); Vertex1 + origin + ribbon 'Sketch › Constraints > Coincident'",
    "outcome": "same",
-   "detail": "corner at (0.000, 0.000); DoF 0; 'Fully constrained'"
+   "detail": "corner at (0.000, -0.000); DoF 0; 'Fully constrained'"
   },
   {
    "tutorial": "J: Parametric constraints and relations (book in inches, typed in mm)",
@@ -1502,7 +1502,7 @@
    "nx": "The part is shown in the graphics window",
    "replay": "render of the graphics window",
    "outcome": "same",
-   "detail": "6.4% of the view shows the part"
+   "detail": "6.4% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
    "tutorial": "K: Parameter-driven flat bar (Leake, book in inches, typed in mm)",
@@ -3638,7 +3638,7 @@
    "nx": "Create a new file (Arborpress_base)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']; the name is given when it is saved"
+   "detail": "new document ['Unnamed1']; the name is given when it is saved"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3652,53 +3652,45 @@
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 3,
    "nx": "Profile (Z): lines, and an arc for the semicircle (Continuous Auto Dimensioning off)",
-   "replay": "Z key, 15 MB1 clicks (the last on the first point), M (3x) before the arc's end, MB2",
-   "outcome": "FAILED",
-   "detail": "14 curves (13 lines, 1 arc), the arc tangent at both ends; closed by the last click False; first line Horizontal False (every other straight line got its Horizontal or Vertical); DoF 20. FreeCAD has no automatic dimensions to switch off"
+   "replay": "Z key, 15 MB1 clicks (the last on the first point), M 3x before the arc's end and 2x after it (the book clicks Line), MB2",
+   "outcome": "same",
+   "detail": "14 curves (13 lines, 1 arc); closed by the last click True; Horizontal/Vertical inferred on every straight line except the two slanted ones; arc tangent to ['Edge2']; tool ended by MB2 True; DoF 17. FreeCAD has no automatic dimensions to switch off"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 4,
-   "nx": "(not in the book) Close the profile, Horizontal on the first line, Vertical after the arc",
-   "replay": "picks + ribbon 'Coincident', 'Horizontal', 'Vertical'",
-   "outcome": "differs",
-   "detail": "Coincident last point on first (1); Horizontal first line (1); Vertical after the arc (1); closed True; DoF 16. NX's Profile closes on the first point and infers these"
+   "nx": "Point on Curve: the arc's centre on the Y axis, then on the X axis",
+   "replay": "axis + centre + ribbon 'Sketch › Constraints > Point on Curve', twice",
+   "outcome": "same",
+   "detail": "centre at (-0.000, 0.000); made ['PointOnObject 2/3 -2', 'PointOnObject 2/3 -1']; DoF 15 ('Under-constrained: / 15 Degrees of Freedom')"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 5,
-   "nx": "Point on Curve: the arc's centre on the Y axis, then on the X axis",
-   "replay": "centre + axis + ribbon 'Sketch › Constraints > Coincident', twice",
-   "outcome": "differs",
-   "detail": "centre at (0.000, 0.000); the Sketch tab has no Point on Curve button: FreeCAD's Coincident makes a point-on-curve constraint when a point and a curve are picked"
+   "nx": "Equal Length: the two slanted lines, then the two long vertical lines",
+   "replay": "two lines + ribbon 'Sketch › Constraints > Equal', twice",
+   "outcome": "same",
+   "detail": "slanted 66.87 / 66.87, verticals 124.72 / 124.72 mm; DoF 13"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 6,
-   "nx": "Equal Length: the two slanted lines, then the two long vertical lines",
-   "replay": "two lines + ribbon 'Sketch › Constraints > Equal', twice",
+   "nx": "Collinear, then Equal Length: the two bottom lines",
+   "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
    "outcome": "same",
-   "detail": "slanted 67.06 / 67.06, verticals 124.72 / 124.72 mm; DoF 12"
+   "detail": "the bottom lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 39.44 / 39.44 mm; DoF 11"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 7,
-   "nx": "Collinear, then Equal Length: the two bottom lines",
-   "replay": "end point + other line + ribbon 'Sketch › Constraints > Coincident'; two lines + 'Equal'",
-   "outcome": "differs",
-   "detail": "the bottom lines 0.0000 mm apart, lengths 41.44 / 41.44 mm; DoF 10. The Sketch tab has no Collinear: an end point placed on the other line makes them collinear"
+   "nx": "Tangent: the arc and each vertical line at its ends (only where it is missing)",
+   "replay": "arc + line + ribbon 'Tangent' where missing",
+   "outcome": "same",
+   "detail": "already tangent from Profile: ['Edge2']; added [('Edge4', 0)]; arc radius 21.161 mm about (0.000, 0.000); DoF 10"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 8,
-   "nx": "Tangent: the arc and each vertical line at its ends (only where it is missing)",
-   "replay": "none missing",
-   "outcome": "same",
-   "detail": "already tangent from Profile: ['Edge2', 'Edge4']; added none; arc radius 18.882 mm about (0.000, 0.000); DoF 10"
-  },
-  {
-   "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 9,
    "nx": "Equal Length: the slot's two vertical lines",
    "replay": "two lines + ribbon 'Sketch › Constraints > Equal', then Ctrl+Z",
    "outcome": "differs",
@@ -3706,23 +3698,23 @@
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 10,
+   "n": 9,
    "nx": "Collinear, then Equal: the two short lines at the top",
-   "replay": "end point + other line + ribbon 'Sketch › Constraints > Coincident'; two lines + 'Equal'",
+   "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
+   "outcome": "same",
+   "detail": "the top lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 16.12 / 16.12 mm; DoF 8; the notch's two sides are then equal too (the book's last Equal is implied)"
+  },
+  {
+   "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
+   "n": 10,
+   "nx": "Rapid Dimension: eight dimensions, then the values, biggest first; the sketch is fully defined",
+   "replay": "picks + ribbon 'Sketch › Constraints > Distance', the value typed in FreeCAD's dimension dialog, 8 times",
    "outcome": "differs",
-   "detail": "the top lines 0.0000 mm apart, lengths 18.81 / 18.81 mm; DoF 8; the notch's two sides are then equal too (the book's last Equal is implied)"
+   "detail": "height 190.94, width 130, side 125, top 95, notch width 65, notch depth 65, slot 40, centre 35; DoF 0, fully constrained True ('Fully constrained'); corners within 1.9e-11 mm of the book's figure. NX places all dimensions first and edits them; FreeCAD asks for each value as the dimension is made"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
    "n": 11,
-   "nx": "Rapid Dimension: eight dimensions, then the values, biggest first; the sketch is fully defined",
-   "replay": "picks + ribbon 'Sketch › Constraints > Distance', the value typed in FreeCAD's dimension dialog, 8 times",
-   "outcome": "differs",
-   "detail": "height 190.94, width 130, side 125, top 95, notch width 65, notch depth 65, slot 40, centre 35; DoF 0, fully constrained True ('Fully constrained'); corners within 1.4e-11 mm of the book's figure. NX places all dimensions first and edits them; FreeCAD asks for each value as the dimension is made"
-  },
-  {
-   "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 12,
    "nx": "Finish Sketch",
    "replay": "Ctrl+Q",
    "outcome": "same",
@@ -3730,15 +3722,15 @@
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 13,
+   "n": 12,
    "nx": "Select the sketch, Extrude (X): Z direction, 60 mm, Boolean None",
-   "replay": "sketch selected + X; 'None' = 60 mm, MB2 = OK",
-   "outcome": "FAILED",
-   "detail": "Boolean 'None' (no NX command box); no solid; controller: None None, undo step 'None', None step(s) added"
+   "replay": "sketch selected + X; 'lengthEdit' = 60 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "Boolean 'None' (None (a new body): ready (OK or MB2 commits one undo step)); section Sketch; same solid as the reference: 0 mm³ differ, box within 2.8e-14 mm, 16 faces (16 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
-   "n": 14,
+   "n": 13,
    "nx": "Save and close the file",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
