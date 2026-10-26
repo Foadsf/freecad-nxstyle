@@ -4,8 +4,8 @@
   "workbench": "PartDesignWorkbench",
   "preload": ["SketcherWorkbench", "PartWorkbench", "SurfaceWorkbench", "AssemblyWorkbench", "SpreadsheetWorkbench"],
   "essential": ["PartDesign_NewSketch", ["NXStyle_Extrude", "PartDesign_Pad"], ["NXStyle_Revolve", "PartDesign_Revolution"],
-                ["NXStyle_Hole", "PartDesign_Hole"], "PartDesign_Fillet", "PartDesign_Chamfer", "PartDesign_LinearPattern",
-                "Std_Edit", "Assembly_CreateAssembly", ["Assembly_Insert", "Assembly_InsertLink"]],
+                ["NXStyle_Hole", "PartDesign_Hole"], ["NXStyle_EdgeBlend", "PartDesign_Fillet"], "PartDesign_Chamfer",
+                "PartDesign_LinearPattern", ["NXStyle_EditParameters", "Std_Edit"], "Assembly_CreateAssembly", ["Assembly_Insert", "Assembly_InsertLink"]],
   "tabs": [
     {"name": "Home", "groups": [
       {"name": "Direct Sketch", "items": [
@@ -24,7 +24,7 @@
         {"cmd": ["NXStyle_ExtrudeSubtract", "PartDesign_Pocket"], "label": "Extrude (Subtract)"},
         {"cmd": ["NXStyle_RevolveSubtract", "PartDesign_Groove"], "label": "Revolve (Subtract)"},
         {"cmd": "PartDesign_Boolean", "label": "Unite / Subtract"},
-        {"cmd": "PartDesign_Fillet", "label": "Edge Blend", "size": "large"},
+        {"cmd": ["NXStyle_EdgeBlend", "PartDesign_Fillet"], "label": "Edge Blend", "size": "large"},
         {"cmd": "PartDesign_Chamfer", "label": "Chamfer"},
         {"cmd": "PartDesign_Draft", "label": "Draft"},
         {"cmd": "PartDesign_Thickness", "label": "Shell"},
@@ -55,7 +55,7 @@
         {"cmd": "Part_Defeaturing", "label": "Delete Face", "size": "large"}
       ]},
       {"name": "Edit Feature", "items": [
-        {"cmd": "Std_Edit", "label": "Edit Parameters"},
+        {"cmd": ["NXStyle_EditParameters", "Std_Edit"], "label": "Edit Parameters"},
         {"cmd": "PartDesign_MoveTip", "label": "Make Current Feature"},
         {"cmd": "PartDesign_MoveFeature", "label": "Move to Body"},
         {"cmd": "NXStyle_ToggleSuppress", "label": "Suppress"},

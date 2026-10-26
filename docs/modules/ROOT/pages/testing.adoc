@@ -16,6 +16,8 @@ ruff check --select F,E9 .
 ----
 
 The unit tests cover the engineering computations, checked against the books' worked examples: the tolerance stack-up (Fischer's pin and ground plate, Drake's MRSS factor, Cogorno's fastener and boundary formulas), ISO 286 limits and fits (against the ISO 286-1 formulas and published values) and ISO 2768, the PMI semantics (ISO 8015 and ASME Y14.5 checks, inspection plan, gauge sizes), the release package manifest and its verification, the clearance classification, the AP242 mapping of the PMI (and the correction of OpenCASCADE's IT grade), sheet metal bend allowance and flat length (Shih's actuator bracket), pin location (Drake ch. 24, Fischer's lever), composite position frames and the pattern evaluation (its fit checked against a brute-force search), measurement capability (Drake's gauge study example, 42.6 %; TUR and ISO 14253-1 acceptance limits), and the title block values and revision block.
+They cover the selection rules too: the scope verdict on occurrence paths (a look-alike sibling outside the work part is refused), collector counts and refusal reasons, the tangent and connected chains, and the select-through choice.
+They cover the command controller's decisions as well (`nxstyle/command_core.py`). Typed lengths are read with their units and the field's decimal separator; `3.175` in a field whose separator is a comma is refused, not guessed. Every Extrude Boolean is either built (None for a new body, Unite, Subtract) or refused with a reason (Intersect), and the Boolean NX would infer is checked.
 They also cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata, Katydid, SheetMetal and LCInterlocking it loads and where it reads `nxstyle.json`, that every application's ribbon has the Application tab, that the Laser Cut ribbon names only commands LCInterlocking registers, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
 FreeCAD is not needed.
 GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).
@@ -28,7 +30,7 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It ends with the count of checks passed, failed and skipped (101 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-26). Among them:
+It ends with the count of checks passed, failed and skipped (121 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-26). Among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
@@ -43,6 +45,16 @@ It ends with the count of checks passed, failed and skipped (101 checks on FreeC
 * the eight PMI model views look as FreeCAD's own standard views do, a new PMI goes into the work view, switching views hides the others' PMI, and Display in Views copies one;
 * a plate with PMI written as STEP AP242: datums, the H7 and g6 classes with their right IT grades, position with Ⓜ and flatness in the file, and OpenCASCADE reading back the dimensions and tolerances; the file imported again gives the same PMI;
 * a linked part inside a moved assembly is where the assembly puts it for volume claims and clearance, and its hidden source is not counted;
+* selection (xref:selection.adoc[]), on a nested assembly where two links to the same part sit one above the other and the work part is the lower one:
+** QuickPick lists both look-alike occurrences, greys the nearer sibling with its reason, and picks exactly the work part's occurrence;
+** a pick on the sibling is refused and the cue line says why;
+** an MB1 click selects through the sibling to the work part's occurrence, and with *Entire Assembly* the same click takes the sibling (the control);
+** resting the pointer there shows the three-dot cursor and the next click opens QuickPick (no dots over empty space), holding MB1 still opens it too; *Within Work Part Only* refuses a component's geometry;
+** the Part Navigator names the work part and the selected occurrence;
+* Edge Blend's collector, command first: `Select Edge (0)` and OK refused, a Type Filter change during the command does not replace its gate, *Tangent Curves* collects the line–arc–line chain of a rounded corner, refused picks carry their reasons, and Cancel brings back the previous gate with the filter chosen meanwhile;
+* Edge Blend, selection first: an unusable face is refused and deselected and the edge reaches FreeCAD's Fillet; with only usable edges the Fillet opens at once;
+* a Type Filter change while a FreeCAD-style dialog holds its own gate waits, and the Type Filter's gate comes back when the dialog closes;
+* the curve rules on a rectangle sketch (Connected takes 4 sides, Tangent stops at the corners); the Part Navigator marks the active body, a suppressed feature and a failed one;
 * a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block;
 * broken references are reported, not papered over:
 ** a diameter whose face became a plane is invalid, shows its error, and is kept out of the inspection plan, the stack-up and the STEP export, then valid again when repaired;
@@ -115,6 +127,16 @@ Save steps press the real kbd:[Ctrl+S] and check that the file was rewritten; on
 Tutorials S to X check engineering results: the stack-up against Fischer's figures, the fit against ISO 286, the STEP file's PMI and what OpenCASCADE reads back, the inherited dimensions on the sheet, the clearance kinds and penetration depth, the release states in Strata and the release packages against their manifests, the flat pattern against Shih's hand calculation, and the pin location against Drake's formulas.
 Dialogs that Strata opens are answered by the replay the way a user fills them in.
 Tutorials AA to AC check the composite frame's plan rows and gauges, the evaluation of measured holes, the TUR and acceptance limits, Drake's gauge study result, and the title block against the Strata release.
+Tutorial AE is the acceptance case for the command controller (xref:modeling.adoc#extrude[Extrude]). It does New, Sketch, then Extrude four times through the real UI: None (a new body), Unite, Subtract chosen in the Boolean list, and a separate new body.
+It also checks what must not happen:
+
+* choosing Intersect changes nothing and the dialog gives the reason;
+* a Unite that misses the part leaves OK unavailable, and MB2 does not close the dialog;
+* changing the Boolean adds no undo step.
+
+Then it edits the first extrude. From the Part Navigator's MB3 menu it previews a new length and presses Cancel. The value must come back, with no undo step added and nothing left to recompute. It edits again from the ribbon and presses OK, which must add one undo step. Ctrl+Z twice takes back the edit and then the whole New Body extrude, and Ctrl+Y twice restores both. *Extrude (Subtract)* is then started from the Command Finder and cancelled at the plane pick, which must leave no object and no undo step. Finally it saves, reopens and edits again, and kbd:[Esc] cancels.
+The radial menu's *Edit Parameters* runs the same command as the ribbon's, but the replay does not drive the radial menu itself.
+Every solid is compared with `nxstyle/geomcheck.py`, and every command must add exactly one undo step.
 `--tutorials G,H` picks some; N runs M first, V runs T first, AC runs T and V first.
 A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed out; the canvas tutorials O to R take about 20 minutes together.
 

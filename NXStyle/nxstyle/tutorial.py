@@ -30,13 +30,14 @@ import FreeCADGui as Gui
 
 from .qt import QtCore, QtWidgets, Qt, mouse_event
 from .ribbon import CommandButton
+from .tutorial_extrude import ExtrudeTutorials
 from .tutorial_inspection import InspectionTutorials
 from .tutorial_katydid import KatydidTutorials
 from .tutorial_lasercut import LaserCutTutorials
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
-ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD"
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
@@ -89,7 +90,7 @@ class ModalWatcher(QtCore.QObject):
             w.close()
 
 
-class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCutTutorials):
+class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCutTutorials, ExtrudeTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -415,7 +416,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         X = list(getattr(self, "X_STEPS", lambda: [])())
         Y = list(getattr(self, "Y_STEPS", lambda: [])())
         Z = list(getattr(self, "Z_STEPS", lambda: [])())
-        AA, AB, AC, AD = (list(getattr(self, f"{k}_STEPS", lambda: [])()) for k in ("AA", "AB", "AC", "AD"))
+        AA, AB, AC, AD, AE = (list(getattr(self, f"{k}_STEPS", lambda: [])()) for k in ("AA", "AB", "AC", "AD", "AE"))
         wanted = [w.strip() for w in (os.environ.get("NXSTYLE_TUTORIALS") or ALL_TUTORIALS).upper().split(",")]
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
@@ -432,7 +433,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
                            ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z),
-                           ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD)):
+                           ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD), ("AE", AE)):
             if key in wanted:
                 yield from steps
 
@@ -563,8 +564,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         self.step("Extrude, pick the top face as sketch plane, Boolean Subtract",
                   f"select face + ribbon '{where} > Extrude (Subtract)'",
                   DIFFERS if b is not None else MISSING,
-                  "FreeCAD has no Boolean option in Extrude: the subtracting extrude is its own button "
-                  "(Home > Feature > Extrude (Subtract))")
+                  "the Extrude dialog's Boolean list has Subtract (tutorial AE uses it); this replay uses the "
+                  "Extrude (Subtract) button, which starts the same command with Subtract chosen")
         self.wait = 1800
 
     def a_rectangle(self):
@@ -1926,7 +1927,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         b, where = self.click_ribbon("Extrude (Subtract)")
         self.step("Extrude on the right vertical face of the upright", f"select face + ribbon '{where} > "
                   "Extrude (Subtract)'", DIFFERS if b is not None and self.edited_sketch() is not None else FAIL,
-                  f"{face}; subtracting extrude is its own button")
+                  f"{face}; the button starts Extrude with Boolean Subtract chosen")
         self.wait = 1500
 
     def e_cut_sketch(self):
@@ -2514,7 +2515,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
     def f_shell_dialog(self):
         if self.shell_dialog("f_shell_dialog", "Thickness 0.125, OK") == "limit":
             # what a FreeCAD user does: undo back to before the blend, shell first, blend afterwards
-            self.steps[0:0] = [self.f_undo, self.f_shell2, self.f_shell2_dialog, self.f_blend2, self.f_blend2_dialog]
+            self.insert_steps([self.f_undo, self.f_shell2, self.f_shell2_dialog, self.f_blend2, self.f_blend2_dialog])
         self.wait = 800
 
     def f_undo(self):
@@ -2554,7 +2555,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
             # observed: FreeCAD 1.1.4 cannot round these edges of the 0.125 walls at 0.15 either; try smaller
             self.rows[-1]["outcome"] = LIMIT
             self.rows[-1]["detail"] += "; FreeCAD 1.1.4 refuses this round on the shelled walls"
-            self.steps[0:0] = [self.f_blend3, self.f_blend3_dialog]
+            self.insert_steps([self.f_blend3, self.f_blend3_dialog])
 
     def f_blend3(self):
         self.blend_handle("Workaround: Edge Blend again with a smaller radius")
@@ -5943,6 +5944,12 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         App.ActiveDocument.save()
 
     # ------------------------------------------------------------- runner
+    def insert_steps(self, fns):
+        """Run fns next (a workaround found during the run). They join the plan, so the launcher, which
+        requires every run step to have been planned and every planned one run, accepts the result."""
+        self.steps[0:0] = fns
+        self.planned += [fn.__name__ for fn in fns]
+
     def next(self):
         if not self.steps:
             self.finish()
@@ -6029,6 +6036,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
     def finish(self):
         self.progress("finish")
         self.info["unexpected modal dialogs"] = self.modals.seen
+        from . import controller
+        self.info["command controller trace"] = controller.CONTROLLER.trace
         self.info["actions repeated"] = self.retries
         self.info["typed numbers misread after the last step"] = self.misread
         self.info["decimal separator"] = QtCore.QLocale().decimalPoint()
