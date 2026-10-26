@@ -51,7 +51,7 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Quick Extend | <kbd>E</kbd> | `Sketcher_Extend` | sketch |  |
 | Fillet | <kbd>F</kbd> | `Sketcher_CreateFillet` | sketch |  |
 | Rapid Dimension | <kbd>D</kbd> | `Sketcher_Dimension` | sketch |  |
-| Geometric Constraints | <kbd>C</kbd> | `Sketcher_ConstrainCoincidentUnified` | sketch | FreeCAD applies one constraint per tool; C starts Coincident |
+| Geometric Constraints | <kbd>C</kbd> | `NXStyle_GeometricConstraints` | sketch | NX's gallery as a menu; each choice runs FreeCAD's tool on the selection |
 | Finish Sketch | <kbd>Ctrl</kbd>+<kbd>Q</kbd> | `Sketcher_LeaveSketch` | sketch |  |
 | Hide | <kbd>Ctrl</kbd>+<kbd>B</kbd> | `Std_HideSelection` | anywhere |  |
 | Show and Hide Panel | <kbd>Ctrl</kbd>+<kbd>W</kbd> | `NXStyle_ShowHide` | anywhere |  |

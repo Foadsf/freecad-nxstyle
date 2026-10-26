@@ -36,7 +36,10 @@
       ]},
       {"name": "Constraints", "items": [
         {"cmd": ["Sketcher_Dimension", "Sketcher_CompDimensionTools"], "label": "Rapid Dimension", "size": "large"},
+        {"cmd": "NXStyle_GeometricConstraints", "label": "Geometric Constraints", "size": "large"},
         {"cmd": ["Sketcher_ConstrainCoincidentUnified", "Sketcher_ConstrainCoincident"], "label": "Coincident"},
+        {"cmd": "Sketcher_ConstrainPointOnObject", "label": "Point on Curve"},
+        {"cmd": "NXStyle_SketchCollinear", "label": "Collinear"},
         {"cmd": ["Sketcher_ConstrainHorizontal", "Sketcher_CompHorizontalVertical"], "label": "Horizontal"},
         {"cmd": "Sketcher_ConstrainVertical", "label": "Vertical"},
         {"cmd": "Sketcher_ConstrainParallel", "label": "Parallel"},

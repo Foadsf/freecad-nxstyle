@@ -119,6 +119,8 @@ class Smoke:
         yield self.s_repeat, 800
         yield self.s_sketch_enter, 1500
         yield self.s_sketch_check, 100
+        yield self.s_profile, 300
+        yield self.s_sketch_constraints, 300
         yield self.s_sketch_leave, 1200
         yield self.s_sketch_left, 100
         yield self.s_drafting, 2500
@@ -696,6 +698,171 @@ class Smoke:
         tested, bad = self.press_keys("sketch")
         self.check(f"sketch key presses reach their commands through Qt's shortcut dispatch ({tested} keys; "
                    "dispatch only)", tested and not bad, bad)
+
+    def s_profile(self):
+        """Profile (Z) with real key and mouse events: a click on the first point closes the outline, and one
+        MB2 ends the tool, also when the profile was left open (FreeCAD's Esc needs two presses then)."""
+        from pivy import coin
+        from . import sketch_ui
+        from .tutorial import qtest, settle_view
+        sk = sketch_ui.edited_sketch()
+        if sk is None:
+            self.check("Profile: the last click on the first point closes it", False, "no sketch in edit")
+            return
+        view, f = self.view(), self.nav()
+        w = f.widget
+        settled = settle_view(view)            # FreeCAD turns the view to the sketch with an animation
+        cam = view.getCameraNode()
+        d = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
+        g = sk.getGlobalPlacement().multVec(App.Vector(40, 10, 0))
+        cam.position.setValue(coin.SbVec3f(g.x, g.y, g.z) - d * cam.focalDistance.getValue())
+        if hasattr(cam, "height"):
+            cam.height.setValue(160)
+        QtWidgets.QApplication.processEvents()
+        dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
+
+        def at(x, y):
+            sx, sy = view.getPointOnViewport(sk.getGlobalPlacement().multVec(App.Vector(x, y, 0)))
+            return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
+
+        def click(p, button=Qt.LeftButton):
+            self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            self.send(f, QtCore.QEvent.MouseButtonPress, p, button, button)
+            self.send(f, QtCore.QEvent.MouseButtonRelease, p, button, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+
+        def running(p):
+            self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            return f.sketch_tool_active()
+
+        def profile(pts):
+            mw = Gui.getMainWindow()
+            app = QtWidgets.QApplication.instance()
+            if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+                app.setActiveWindow(mw)
+            w.setFocus()
+            g0, c0 = len(sk.Geometry), len(sk.Constraints)
+            qtest().keyClick(w, Qt.Key_Z)
+            QtWidgets.QApplication.processEvents()
+            started = f.sketch_tool_active()
+            for x, y in pts:
+                click(at(x, y))
+            away = at(-25, 60)
+            click(away, Qt.MiddleButton)
+            return started, not running(away), g0, sk.Constraints[c0:]
+
+        # clear of the axes: a line from the origin along the X axis gets no Horizontal, FreeCAD finds it redundant
+        started, ended, g0, new = profile([(5, 5), (45, 5), (45, 35), (5, 35), (5, 5)])
+        closing = [c for c in new if c.Type == "Coincident" and {(c.First, c.FirstPos), (c.Second, c.SecondPos)}
+                   == {(g0 + 3, 2), (g0, 1)}]
+        first_h = any(c.Type == "Horizontal" and c.First == g0 for c in new)
+        self.check("Profile: the last click on the first point closes it; the first line gets Horizontal; MB2 "
+                   "ends the tool", started and ended and len(sk.Geometry) == g0 + 4 and closing and first_h,
+                   f"started {started}, ended {ended}, {len(sk.Geometry) - g0} lines, closed {bool(closing)}, first "
+                   f"Horizontal {first_h}; view settled after {settled} s")
+        started, ended, g0, new = profile([(60, 0), (90, 0), (90, 25)])
+        self.check("Profile left open: one MB2 still ends the tool", started and ended and len(sk.Geometry) == g0 + 2,
+                   f"started {started}, ended {ended}, {len(sk.Geometry) - g0} lines")
+        sk.deleteAllGeometry()
+        App.ActiveDocument.recompute()
+
+    def s_sketch_constraints(self):
+        """Point on Curve, Collinear and NX's Geometric Constraints gallery (C), run from the Sketch tab."""
+        import Part
+        import Sketcher
+        from . import sketch_ui
+        from .ribbon import CommandButton, command_actions, is_enabled, trigger
+        from .tutorial import qtest
+        sk = sketch_ui.edited_sketch()
+        if sk is None:
+            self.check("Sketch tab: Point on Curve, Collinear, Geometric Constraints", False, "no sketch in edit")
+            return
+        doc, V = sk.Document, App.Vector
+        buttons = {b.nx_label: b.command for b in self.shell.ribbon.findChildren(CommandButton)}
+        want = {"Point on Curve": "Sketcher_ConstrainPointOnObject", "Collinear": "NXStyle_SketchCollinear",
+                "Geometric Constraints": "NXStyle_GeometricConstraints"}
+        self.check("Sketch tab: Point on Curve, Collinear, Geometric Constraints buttons",
+                   all(buttons.get(k) == v for k, v in want.items()), {k: buttons.get(k) for k in want})
+        base = len(sk.Geometry)
+        sk.addGeometry([Part.LineSegment(V(0, 0, 0), V(20, 0, 0)), Part.LineSegment(V(30, 3, 0), V(50, 3, 0)),
+                        Part.LineSegment(V(0, 10, 0), V(20, 14, 0)), Part.LineSegment(V(30, 20, 0), V(50, 30, 0)),
+                        Part.LineSegment(V(0, 40, 0), V(10, 45, 0))], False)
+        for i in (0, 1):
+            sk.addConstraint(Sketcher.Constraint("Horizontal", base + i))
+        doc.recompute()
+
+        def vertex(geo, pos):
+            for i in range(4 * len(sk.Geometry)):
+                try:
+                    if sk.getGeoVertexIndex(i) == (geo, pos):
+                        return f"Vertex{i + 1}"
+                except Exception:
+                    break
+            return None
+
+        def run(cmd, subs):
+            n = len(sk.Constraints)
+            Gui.Selection.clearSelection()
+            for s in subs:
+                Gui.Selection.addSelection(doc.Name, sk.Name, s)
+            QtWidgets.QApplication.processEvents()
+            for _ in range(20):           # FreeCAD refreshes the actions' state on a timer, as a user waits
+                if not command_actions(cmd) or is_enabled(cmd):
+                    break
+                qtest().qWait(100)
+            trigger(cmd)
+            QtWidgets.QApplication.processEvents()
+            doc.recompute()
+            return sk.Constraints[n:]
+
+        new = run("Sketcher_ConstrainPointOnObject", [vertex(base + 4, 1), f"Edge{base + 3}"])
+        g4 = sk.Geometry[base + 4].StartPoint
+        on = sk.Geometry[base + 2].toShape().distToShape(Part.Vertex(g4))[0]
+        self.check("Point on Curve puts a point on a curve", [c.Type for c in new] == ["PointOnObject"] and on < 1e-6,
+                   f"{[c.Type for c in new]}; {on:.2e} mm off")
+        new = run("NXStyle_SketchCollinear", [f"Edge{base + 2}", f"Edge{base + 1}"])
+        off, ang = sketch_ui.collinear_report(sk, base, base + 1)
+        self.check("Collinear on two horizontal lines: one point on the other line, nothing redundant",
+                   len(new) == 1 and sk.solve() == 0 and off < 1e-6, f"{[c.Type for c in new]}; {off:.2e} mm apart")
+        new = run("NXStyle_SketchCollinear", [f"Edge{base + 4}", f"Edge{base + 3}"])
+        off, ang = sketch_ui.collinear_report(sk, base + 2, base + 3)
+        added = len(new)
+        doc.undo()
+        undone = sum(1 for c in sk.Constraints if c.First == base + 3 and c.Type == "PointOnObject")
+        doc.redo()
+        again = run("NXStyle_SketchCollinear", [f"Edge{base + 4}", f"Edge{base + 3}"])
+        self.check("Collinear on two free lines: both ends on the other line, one undo step, nothing added twice",
+                   added == 2 and sk.solve() == 0 and off < 1e-6 and ang < 1e-6 and undone == 0 and not again,
+                   f"added {added}, {off:.2e} mm apart, {ang:.2e} deg; after undo {undone} left; again {len(again)}")
+        Gui.Selection.clearSelection()
+        mw = Gui.getMainWindow()
+        app = QtWidgets.QApplication.instance()
+        if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+            app.setActiveWindow(mw)
+        self.nav().widget.setFocus()
+        sketch_ui.last_gallery = None
+        for _ in range(20):
+            if is_enabled("NXStyle_GeometricConstraints"):
+                break
+            qtest().qWait(100)
+        qtest().keyClick(self.nav().widget, Qt.Key_C)
+        QtWidgets.QApplication.processEvents()
+        menu = sketch_ui.last_gallery
+        labels = [a.text() for a in menu.actions()] if menu is not None else []
+        shown = menu is not None and menu.isVisible()
+        if menu is not None:
+            menu.close()
+        self.check("C opens NX's Geometric Constraints gallery", shown and labels[:3] == ["Coincident", "Point on Curve",
+                   "Tangent"] and "Collinear" in labels, labels)
+        cf = self.shell.finder
+        cf.rebuild()
+        hits = cf.find("Collinear") + cf.find("Point on Curve")
+        self.check("Command Finder finds Collinear and Point on Curve",
+                   {"NXStyle_SketchCollinear", "Sketcher_ConstrainPointOnObject"} <= set(hits), hits[:6])
+        sk.deleteAllGeometry()
+        doc.recompute()
 
     def s_sketch_leave(self):
         Gui.ActiveDocument.resetEdit()

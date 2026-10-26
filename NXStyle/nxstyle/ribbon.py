@@ -86,7 +86,12 @@ def command_actions(name):
 
 def command_icon(name):
     acts = command_actions(name)
-    return acts[0].icon() if acts else QtGui.QIcon()
+    if acts:
+        return acts[0].icon()
+    try:       # a command FreeCAD made no action for: its own pixmap
+        return Gui.getIcon(Gui.Command.get(name).getInfo().get("pixmap") or "") or QtGui.QIcon()
+    except Exception:
+        return QtGui.QIcon()
 
 
 def clean_text(text):

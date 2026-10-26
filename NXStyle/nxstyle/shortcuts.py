@@ -97,8 +97,8 @@ TABLE = [
     Entry("Quick Extend", "E", "Sketcher_Extend", "sketch"),
     Entry("Fillet", "F", "Sketcher_CreateFillet", "sketch"),
     Entry("Rapid Dimension", "D", ["Sketcher_Dimension", "Sketcher_ConstrainDistance"], "sketch"),
-    Entry("Geometric Constraints", "C", ["Sketcher_ConstrainCoincidentUnified", "Sketcher_ConstrainCoincident"],
-          "sketch", note="FreeCAD applies one constraint per tool; C starts Coincident"),
+    Entry("Geometric Constraints", "C", ["NXStyle_GeometricConstraints", "Sketcher_ConstrainCoincidentUnified"],
+          "sketch", note="NX's gallery as a menu; each choice runs FreeCAD's tool on the selection"),
     Entry("Finish Sketch", "Ctrl+Q", "Sketcher_LeaveSketch", "sketch", nx_id="UG_DIRECT_SKETCH_FINISH"),
     # ---- Selection, show and hide
     Entry("Hide", "Ctrl+B", "Std_HideSelection"),

@@ -23,6 +23,8 @@ SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 AF_ROUGH = [(-60, -40), (-18, -40), (-18, -5), (22, -5), (22, -40), (62, -40), (62, 85), (45, 150), (30, 150),
             (30, 95), (-33, 95), (-33, 150), (-48, 150), (-60, 85), (-60, -40)]
 AF_ARC = 2                       # the third curve is the arc; the others are lines
+AF_HORIZONTAL = (0, 4, 7, 9, 11)  # the lines Profile should infer Horizontal on
+AF_VERTICAL = (1, 3, 5, 8, 10, 13)  # ... and Vertical; 6 and 12 are the slanted ones
 AF_DEPTH = 60.0
 
 
@@ -37,8 +39,7 @@ class MstTutorials:
     """Mixin for tutorial.Replay."""
 
     def AF_STEPS(self):
-        return [self.p_modeling, self.af_new, self.af_sketch, self.af_plane, self.af_profile, self.af_repair,
-                self.af_point_on_curve, self.af_equal_sides, self.af_bottom, self.af_tangent,
+        return [self.p_modeling, self.af_new, self.af_sketch, self.af_plane, self.af_profile, self.af_point_on_curve, self.af_equal_sides, self.af_bottom, self.af_tangent,
                 self.af_redundant, self.af_top, self.af_dimensions, self.af_finish, self.af_extrude,
                 self.af_extrude_dialog, self.af_save, self.af_fit, self.af_show]
 
@@ -111,25 +112,36 @@ class MstTutorials:
         xs, ys = [p[0] for p in AF_ROUGH], [p[1] for p in AF_ROUGH]
         self.frame_sketch(sk, (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2, (max(ys) - min(ys)) * 1.4)
         QtWidgets.QApplication.processEvents()
+        framed = self.camera_state()
         self.key("Z")
         QtWidgets.QApplication.processEvents()
         tool = self.nav().sketch_tool_active()
         presses = 0
         trace = []
         for i, (x, y) in enumerate(AF_ROUGH):
-            if i == AF_ARC + 1:                                     # the arc's end point: switch to arc first
-                for _ in range(self.AF_ARC_PRESSES):
-                    self.key("M")
-                    presses += 1
-                    qtest().qWait(50)
+            # before the arc's end point: switch to arc; after it, back to a plain line (the book clicks
+            # Line); FreeCAD would go on with a line held tangent to the arc
+            for _ in range({AF_ARC + 1: self.AF_ARC_PRESSES, AF_ARC + 2: self.AF_LINE_PRESSES}.get(i, 0)):
+                self.key("M")
+                presses += 1
+                qtest().qWait(50)
             n0 = len(sk.Constraints)
-            self.mb1_click(self.screen_point(sk, x, y))
-            trace.append({"click": i, "at": (x, y), "geo": len(sk.Geometry),
+            p = self.screen_point(sk, x, y)
+            self.mb1_click(p)
+            pre = Gui.Selection.getPreselection()
+            g = sk.Geometry[-1] if sk.Geometry else None
+            trace.append({"click": i, "at": (x, y), "px": (p.x(), p.y()), "geo": len(sk.Geometry),
+                          "preselected": list(pre.SubElementNames) if pre and pre.ObjectName else [],
+                          "last curve": [round(v, 2) for v in (g.StartPoint.x, g.StartPoint.y, g.EndPoint.x,
+                                                               g.EndPoint.y)] if g is not None else [],
                           "new": [f"{c.Type} {c.First}/{c.FirstPos} {c.Second}/{c.SecondPos}"
                                   for c in sk.Constraints[n0:]], "tool": self.nav().sketch_tool_active()})
-        self.mb2_click(self.screen_point(sk, min(xs) - 60, max(ys) + 40))
-        ended = not self.nav().sketch_tool_active()
+        away = self.screen_point(sk, min(xs) - 60, max(ys) + 40)
+        self.mb2_click(away)
+        ended = not self.sketch_tool_running(away)
         self.info["AF profile clicks"] = trace
+        # the clicks are computed from the camera: it must not move while they are made
+        self.info["AF camera moved during the clicks"] = self.camera_state() != framed
         App.ActiveDocument.recompute()
         geo = [i for i, g in enumerate(sk.Geometry) if not sk.getConstruction(i)]
         kinds = [sk.Geometry[i].TypeId.split("::Geom")[-1] for i in geo]
@@ -141,57 +153,44 @@ class MstTutorials:
         self.info["AF profile"] = {"curves": kinds, "M presses": presses, "constraints": self.af_types(sk),
                                    "closed": closed}
         dof, full, msg = self.sk_state(sk)
-        first_h = self.af_has(sk, "Horizontal", 0)
+        missing = [] if kinds != want else \
+            [f"{k} {self.af_edge(i)}" for k, lines in (("Horizontal", AF_HORIZONTAL), ("Vertical", AF_VERTICAL))
+             for i in lines if not self.af_has(sk, k, i)]
+        tangent = [self.af_edge(s) for s in (1, 3) if kinds == want and self.af_tangent_to_arc(sk, s)]
         self.step("Profile (Z): lines, and an arc for the semicircle (Continuous Auto Dimensioning off)",
-                  f"Z key, {len(AF_ROUGH)} MB1 clicks (the last on the first point), M ({presses}x) before the "
-                  "arc's end, MB2", SAME if tool and ended and kinds == want and closed and first_h else FAIL,
-                  f"{len(kinds)} curves {kinds if kinds != want else '(13 lines, 1 arc), the arc tangent at both ends'}"
-                  f"; closed by the last click {closed}; first line Horizontal {first_h} (every other straight line "
-                  f"got its Horizontal or Vertical); DoF {dof}. FreeCAD has no automatic dimensions to switch off")
+                  f"Z key, {len(AF_ROUGH)} MB1 clicks (the last on the first point), M {self.AF_ARC_PRESSES}x before "
+                  f"the arc's end and {self.AF_LINE_PRESSES}x after it (the book clicks Line), MB2",
+                  SAME if tool and ended and kinds == want and closed and not missing else FAIL,
+                  f"{len(kinds)} curves {kinds if kinds != want else '(13 lines, 1 arc)'}; closed by the last click "
+                  f"{closed}; Horizontal/Vertical inferred on every straight line except the two slanted ones"
+                  f"{' but ' + ', '.join(missing) if missing else ''}; arc tangent to {tangent or 'none'}; tool ended "
+                  f"by MB2 {ended}; DoF {dof}. FreeCAD has no automatic dimensions to switch off")
         self.wait = 300
+
+    def af_tangent_to_arc(self, sk, side):
+        arc, line = self._af_geo[AF_ARC], self._af_geo[side]
+        return any(c.Type == "Tangent" and {c.First, c.Second} == {arc, line} for c in sk.Constraints)
 
     def af_has(self, sk, kind, i):
         return any(c.Type == kind and c.First == self._af_geo[i] and c.Second < -1999 for c in sk.Constraints)
 
-    def af_repair(self):
-        """What the Profile did not do, added the way a user would: the last point on the first, Horizontal on
-        the first line, and Vertical on the line after the arc (NX infers it; FreeCAD continues tangent)."""
-        sk = self._af_sk
-        done = []
-        wires = sk.Shape.Wires
-        if not (len(wires) == 1 and wires[0].isClosed()):
-            d, where = self.sk_constrain(sk, "Coincident", [self.af_v(13, 2), self.af_v(0, 1)])
-            done.append(f"Coincident last point on first ({d})")
-        if not self.af_has(sk, "Horizontal", 0):
-            d, where = self.sk_constrain(sk, "Horizontal", [self.af_edge(0)])
-            done.append(f"Horizontal first line ({d})")
-        if not self.af_has(sk, "Vertical", 3):
-            d, where = self.sk_constrain(sk, "Vertical", [self.af_edge(3)])
-            done.append(f"Vertical after the arc ({d})")
-        wires = sk.Shape.Wires
-        closed = len(wires) == 1 and wires[0].isClosed()
-        ok = closed and self.af_has(sk, "Horizontal", 0) and self.af_has(sk, "Vertical", 3)
-        dof, _, msg = self.sk_state(sk)
-        self.step("(not in the book) Close the profile, Horizontal on the first line, Vertical after the arc",
-                  "picks + ribbon 'Coincident', 'Horizontal', 'Vertical'", DIFFERS if ok else FAIL,
-                  f"{'; '.join(done) or 'nothing missing'}; closed {closed}; DoF {dof}. NX's Profile closes on the "
-                  "first point and infers these")
-
-    AF_ARC_PRESSES = 3
+    AF_ARC_PRESSES = 3       # M: line -> perpendicular line -> tangent line -> tangent arc
+    AF_LINE_PRESSES = 2      # M after an arc: tangent line -> perpendicular line -> line
 
     # ------------------------------------------------------------- geometric constraints
     def af_point_on_curve(self):
         sk = self._af_sk
         centre = self.af_v(AF_ARC, 3)
-        d1, where = self.sk_constrain(sk, "Coincident", [centre, "V_Axis"])
-        d2, _ = self.sk_constrain(sk, "Coincident", [centre, "H_Axis"])
+        n0 = len(sk.Constraints)
+        d1, where = self.sk_constrain(sk, "Point on Curve", ["V_Axis", centre])
+        d2, _ = self.sk_constrain(sk, "Point on Curve", ["H_Axis", centre])
+        made = [f"{k.Type} {k.First}/{k.FirstPos} {k.Second}" for k in sk.Constraints[n0:]]
+        dof, _, msg = self.sk_state(sk)
         c = sk.Geometry[self._af_geo[AF_ARC]].Center
-        ok = d1 == 1 and d2 == 1 and c.Length < 1e-6 and \
-            sum(1 for k in sk.Constraints if k.Type == "PointOnObject") >= 2
+        ok = d1 == 1 and d2 == 1 and c.Length < 1e-6 and all(k.Type == "PointOnObject" for k in sk.Constraints[n0:])
         self.step("Point on Curve: the arc's centre on the Y axis, then on the X axis",
-                  f"centre + axis + ribbon '{where} > Coincident', twice", DIFFERS if ok else FAIL,
-                  f"centre at ({c.x:.3f}, {c.y:.3f}); the Sketch tab has no Point on Curve button: FreeCAD's "
-                  "Coincident makes a point-on-curve constraint when a point and a curve are picked")
+                  f"axis + centre + ribbon '{where} > Point on Curve', twice", SAME if ok else FAIL,
+                  f"centre at ({c.x:.3f}, {c.y:.3f}); made {made}; DoF {dof} ('{msg}')")
 
     def af_equal_sides(self):
         sk = self._af_sk
@@ -205,23 +204,25 @@ class MstTutorials:
                   f"slanted {L[0]:.2f} / {L[1]:.2f}, verticals {L[2]:.2f} / {L[3]:.2f} mm; DoF {dof}")
 
     def af_collinear(self, a, b, what):
-        """NX's Collinear on two lines: FreeCAD has none; an end of one on the other line does the same."""
+        """NX's Collinear, then Equal Length, on two lines. Both are horizontal already, so Collinear adds one
+        point-on-curve constraint (a second would be redundant)."""
+        from .sketch_ui import collinear_report
         sk = self._af_sk
-        d, where = self.sk_constrain(sk, "Coincident", [self.af_v(b, 1), self.af_edge(a)])
+        d, where = self.sk_constrain(sk, "Collinear", [self.af_edge(b), self.af_edge(a)])
+        rc = sk.solve()
         e, _ = self.sk_constrain(sk, "Equal", [self.af_edge(a), self.af_edge(b)])
         ga, gb = sk.Geometry[self._af_geo[a]], sk.Geometry[self._af_geo[b]]
-        off = max(abs(gb.StartPoint.y - ga.StartPoint.y), abs(gb.EndPoint.y - ga.StartPoint.y))
+        off, ang = collinear_report(sk, self._af_geo[a], self._af_geo[b])
         la, lb = ga.length(), gb.length()
         dof, _, _ = self.sk_state(sk)
-        ok = d == 1 and e == 1 and off < 1e-6 and abs(la - lb) < 1e-6
-        return ok, where, f"{what} {off:.4f} mm apart, lengths {la:.2f} / {lb:.2f} mm; DoF {dof}"
+        ok = d == 1 and rc == 0 and e == 1 and off < 1e-6 and ang < 1e-6 and abs(la - lb) < 1e-6
+        return ok, where, (f"{what} {off:.4f} mm apart (Collinear added {d} point-on-curve constraint, solver "
+                           f"{rc}), lengths {la:.2f} / {lb:.2f} mm; DoF {dof}")
 
     def af_bottom(self):
         ok, where, detail = self.af_collinear(0, 4, "the bottom lines")
         self.step("Collinear, then Equal Length: the two bottom lines",
-                  f"end point + other line + ribbon '{where} > Coincident'; two lines + 'Equal'",
-                  DIFFERS if ok else FAIL,
-                  f"{detail}. The Sketch tab has no Collinear: an end point placed on the other line makes them collinear")
+                  f"two lines + ribbon '{where} > Collinear'; two lines + 'Equal'", SAME if ok else FAIL, detail)
 
     def af_tangent(self):
         """The book: add Tangent where the arc meets a vertical line, unless it is there already."""
@@ -265,8 +266,7 @@ class MstTutorials:
     def af_top(self):
         ok, where, detail = self.af_collinear(7, 11, "the top lines")
         self.step("Collinear, then Equal: the two short lines at the top",
-                  f"end point + other line + ribbon '{where} > Coincident'; two lines + 'Equal'",
-                  DIFFERS if ok else FAIL,
+                  f"two lines + ribbon '{where} > Collinear'; two lines + 'Equal'", SAME if ok else FAIL,
                   f"{detail}; the notch's two sides are then equal too (the book's last Equal is implied)")
 
     # ------------------------------------------------------------- dimensions
