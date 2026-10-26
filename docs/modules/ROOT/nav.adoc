@@ -59,6 +59,9 @@
 * xref:tutorials/ad.adoc[AD: A laser-cut tray with tabs and slots]
 * xref:tutorials/ae.adoc[AE: One Extrude, every way]
 * xref:tutorials/af.adoc[AF: Arbor Press Base]
+* xref:tutorials/ag.adoc[AG: Impeller Lower Casing]
+* xref:tutorials/ah.adoc[AH: Impeller]
+* xref:tutorials/aj.adoc[AJ: Circular Base]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

@@ -6,7 +6,7 @@ Tutorials A to N are exercises from NX, GD&T and engineering-graphics textbooks,
 Tutorials O to R are Grasshopper video tutorials done on the xref:algorithmic-modeling.adoc[Algorithmic Modeling] canvas (Katydid).
 Tutorials S to AC are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, an opto-mechanical pin location, PMI organised in model views, the model with its PMI exchanged through STEP AP242, a composite position frame evaluated from CMM data, the measurement capability of the inspection methods, and a drawing whose title block comes from the release.
 Tutorial AD joins a laser-cut tray with tabs and slots and lays its parts flat for the cutter.
-Tutorial AF starts the examples of _NX 12 for Engineering Design_: a sketch constrained to size and extruded.
+Tutorials AF to AJ are the sketching examples and exercises of _NX 12 for Engineering Design_: a sketch constrained to size and extruded, a casing sketch built with Move Curve copies, an impeller blade of tangent arcs, and a slotted circular base.
 Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
 
 The step tables are not written by hand.
@@ -29,6 +29,9 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | Datum planes and holes | xref:tutorials/c.adoc[C], xref:tutorials/e.adoc[E]
 | Patterns, mirror, shell, edge blend | xref:tutorials/d.adoc[D], xref:tutorials/f.adoc[F]
 | Sketch constraints, trim, offset | xref:tutorials/i.adoc[I], xref:tutorials/j.adoc[J], xref:tutorials/af.adoc[AF]
+| Copying sketch curves (Move Curve) | xref:tutorials/ag.adoc[AG]
+| Tangent arcs: by centre, by 3 points | xref:tutorials/ah.adoc[AH]
+| Cutting with Extrude (Subtract) from a face sketch | xref:tutorials/aj.adoc[AJ], xref:tutorials/ae.adoc[AE]
 | Formulas and expressions | xref:tutorials/j.adoc[J], xref:tutorials/k.adoc[K]
 | Design changes, parent/child, suppress | xref:tutorials/e.adoc[E], xref:tutorials/m.adoc[M]
 | Materials and mass | xref:tutorials/e.adoc[E]
@@ -75,7 +78,7 @@ include::partial$outcome-legend.adoc[]
 * The PLM books of John Stark, Michael Grieves, and Antti Saaksvuori and Anselmi Immonen: release and engineering change, tutorial V.
 * Tutorial U's layout is ours; Assembly Clearance follows NX's.
 * Tutorial AE is ours: the acceptance case of the Extrude command (None for a new body, Unite, Subtract, edit, cancel, undo, reopen).
-* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5: tutorial AF.
+* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH and AJ.
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.
 
 == The videos

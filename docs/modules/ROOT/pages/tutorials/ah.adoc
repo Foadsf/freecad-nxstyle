@@ -1,0 +1,52 @@
+= Tutorial AH: Impeller
+:description: The sketch of an impeller blade: two points, an arc about each, two arcs by 3 points joining them, all tangent, and the four radii (NX 12 for Engineering Design, 3.5.3).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.3. The book's chapter 4.7.5 models the impeller from this sketch.
+You learn:: points at given coordinates, Arc by Center and Endpoints, Arc by 3 Points, tangent arcs, radius dimensions
+Sizes:: the book's, in inches, typed in millimetres. The points are at the origin and at (11.75, 6). The end arcs have radii of 1.5 and 0.5; the arcs between them 18 (top) and 15 (bottom).
+
+== Step by step
+
+=== 1. A new part, a sketch and two points
+
+kbd:[Ctrl+N], then *Sketch* on the XC-YC plane and MB2.
+Click *Point* and click the origin. Then place a second point at (11.75, 6) in, which is 298.45 × 152.4 mm.
+NX takes the coordinates in its Point dialog.
+In NX-Style, click near that spot, then give the point its horizontal and vertical distance from the origin.
+
+=== 2. The two end arcs
+
+Press kbd:[A] for *Arc* (by centre and end points).
+Click the point at the origin as the centre, then click the arc's start above it and go round the left side to its end below.
+Do the same about the second point, round its right side.
+
+=== 3. The two arcs between them
+
+*Arc by 3 Points*: click the top ends of the two end arcs, then a point between them.
+Do the same for the bottom ends.
+In NX-Style, press kbd:[A], then kbd:[M] to switch FreeCAD's Arc to end points and rim point.
+
+=== 4. Tangent, Fixed and the radii
+
+Make each arc *Tangent* to the next at its end points: four joints.
+The point at the origin is already fixed, because it snapped to the origin.
+Give the radii, biggest first: 18 and 15 between the ends, 1.5 and 0.5 at the ends.
+
+image::tutorial-AH-01-impeller.png[The impeller blade sketch with its four tangent arcs]
+
+kbd:[Ctrl+Q], and save with kbd:[Ctrl+S].
+
+== The replay
+
+include::partial$generated/tutorial-AH.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The four arcs are checked against the figure solved from the book's data. The R18 arc runs outside both end arcs, so its centre is 18 + 1.5 from the origin and 18 + 0.5 from the second point. The R15 arc holds them inside, at 15 - 1.5 and 15 - 0.5.
+
+== What differs from NX
+
+* NX places a point at typed coordinates. FreeCAD's Point tool shows no coordinate fields by default, and the Sketch tab has no Horizontal or Vertical Distance, so the replay uses FreeCAD's own commands for them.
+* FreeCAD's *Fixed* keeps a point where it is. A point clicked on the origin snaps to it, which already fixes it.
+* The ribbon's *Arc* button does not offer Arc by 3 Points. FreeCAD's Arc tool switches to it with kbd:[M].

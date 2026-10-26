@@ -1,0 +1,58 @@
+= Tutorial AJ: Circular Base
+:description: The arbor press's circular base: a disc of radius 60 with four slots ending in semicircles, from the book's top view (NX 12 for Engineering Design, exercise 3.6.1).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 3.6.1. The book gives only the dimensioned top view; the steps here are ours.
+You learn:: Extrude a disc, then sketch on its face and cut with Extrude (Boolean Subtract); Profile with tangent semicircles; locating a slot from its axis and the centre
+Sizes:: the book's top view, in mm. The disc is R60. The top slot is 30 wide, and its semicircle's centre is 31.905 in from the rim. The other three are 17 wide, 30.605 in from the rim. Only the right one is dimensioned; the figure draws the left and bottom ones the same. The book gives no thickness. 20 is used here, about a third of the press base's 60 as the assembly picture in 6.6.1 shows it.
+
+The slot depths are measured from the rim, along the slot's axis, to the semicircle's centre. That centre is 60 - 31.905 = 28.095 from the middle for the top slot and 29.395 for the others.
+
+== Step by step
+
+=== 1. The disc
+
+kbd:[Ctrl+N], then kbd:[X] with nothing selected and the XC-YC plane.
+kbd:[O] for a circle: click the origin, then the rim. Make its radius 60.
+kbd:[Ctrl+Q], type 20 and press MB2. The Boolean is *None*: a new body.
+
+=== 2. The four slots
+
+Select the disc's top face and press kbd:[X]. The sketch opens on the face.
+Draw each slot's U with *Profile* (kbd:[Z]):
+
+. start outside the disc and go down one side;
+. press kbd:[M] three times for a tangent arc and click the other side, which makes the semicircle;
+. go back up that side, which FreeCAD draws as a tangent line;
+. go across outside the disc to the first point.
+
+image::tutorial-AJ-01-slots.png[The four slot outlines on the disc's top face]
+
+Then fix each slot:
+
+* the semicircle's centre on the slot's axis: pick the centre and the axis, then *Coincident*;
+* the radius: 15 for the top slot, 8.5 for the others;
+* the centre's *Distance* from the middle: 28.095 for the top slot, 29.395 for the others;
+* the two sides parallel to the axis.
+
+The outer ends can stay where they are, as long as they are outside the disc.
+
+=== 3. Cut them
+
+kbd:[Ctrl+Q] opens the Extrude dialog with *Unite* inferred.
+Choose *Subtract*, type 20 and press MB2: the four slots go through the disc.
+Save with kbd:[Ctrl+S].
+
+== The replay
+
+include::partial$generated/tutorial-AJ.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The solid is compared with the same disc and slots built with FreeCAD's Part API (`nxstyle/geomcheck.py`).
+
+== What differs from NX
+
+* The book's top view has no thickness. 20 mm is our assumption.
+* The ribbon's *Radius / Diameter* button is greyed out in sketch edit. Until that is fixed, the replay runs FreeCAD's Radius command.
+* Today the sketch's dimension dialog keeps only two decimals: 28.095 becomes 28.09 and 29.395 becomes 29.39. The slots then miss by 5 µm, and the replay reports that as a failure until it is fixed.
