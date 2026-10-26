@@ -16,6 +16,8 @@ ruff check --select F,E9 .
 ----
 
 The unit tests cover the engineering computations, checked against the books' worked examples: the tolerance stack-up (Fischer's pin and ground plate, Drake's MRSS factor, Cogorno's fastener and boundary formulas), ISO 286 limits and fits (against the ISO 286-1 formulas and published values) and ISO 2768, the PMI semantics (ISO 8015 and ASME Y14.5 checks, inspection plan, gauge sizes), the release package manifest and its verification, the clearance classification, the AP242 mapping of the PMI (and the correction of OpenCASCADE's IT grade), sheet metal bend allowance and flat length (Shih's actuator bracket), pin location (Drake ch. 24, Fischer's lever), composite position frames and the pattern evaluation (its fit checked against a brute-force search), measurement capability (Drake's gauge study example, 42.6 %; TUR and ISO 14253-1 acceptance limits), and the title block values and revision block.
+They cover the selection rules too: the scope verdict on occurrence paths (a look-alike sibling outside the work part is refused), collector counts and refusal reasons, the tangent and connected chains, and the select-through choice.
+They cover the command controller's decisions as well (`nxstyle/command_core.py`). Typed lengths are read with their units and the field's decimal separator; `3.175` in a field whose separator is a comma is refused, not guessed. Every Extrude Boolean is either built (None for a new body, Unite, Subtract) or refused with a reason (Intersect), and the Boolean NX would infer is checked.
 They also cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata, Katydid, SheetMetal and LCInterlocking it loads and where it reads `nxstyle.json`, that every application's ribbon has the Application tab, that the Laser Cut ribbon names only commands LCInterlocking registers, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
 FreeCAD is not needed.
 GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).
@@ -28,17 +30,31 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It ends with the count of checks passed, failed and skipped (90 checks on FreeCAD 1.1.4, 2026-10-26). Among them:
+It ends with the count of checks passed, failed and skipped (121 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-26). Among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
 * the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;
+* the window-size matrix (xref:#window-matrix[below]) for Modeling, Drafting and Pre/Post: nothing clipped and every command reachable at 1366x768 and 1920x1080, each at 100, 125, 150 and 200 % scaling;
+* a window too short for the ribbon minimises it, a tab then drops its page down, and the ribbon comes back when the window is taller;
+* a group set to *Always Collapsed* stays so after the ribbon is rebuilt and is saved in `nxstyle.ribbon.json`, and its menu entry runs the command;
+* the guided Pre/Post ribbon: the Home tab is the analysis workflow in order, and an analysis with a material and a fixed support ticks steps 1 to 3 and makes the mesh the next step;
 * metric units even when the profile was set to US customary;
 * Strata starts and sits with the navigators;
 * the Algorithmic Modeling application opens Katydid's canvas, floating, with Canvas, Bake and the Application tab on the ribbon; Canvas is on the Tools tab before Katydid's workbench has started; the selected category tab has a readable label; the canvas stays open after switching back to Modeling;
 * the eight PMI model views look as FreeCAD's own standard views do, a new PMI goes into the work view, switching views hides the others' PMI, and Display in Views copies one;
 * a plate with PMI written as STEP AP242: datums, the H7 and g6 classes with their right IT grades, position with Ⓜ and flatness in the file, and OpenCASCADE reading back the dimensions and tolerances; the file imported again gives the same PMI;
 * a linked part inside a moved assembly is where the assembly puts it for volume claims and clearance, and its hidden source is not counted;
+* selection (xref:selection.adoc[]), on a nested assembly where two links to the same part sit one above the other and the work part is the lower one:
+** QuickPick lists both look-alike occurrences, greys the nearer sibling with its reason, and picks exactly the work part's occurrence;
+** a pick on the sibling is refused and the cue line says why;
+** an MB1 click selects through the sibling to the work part's occurrence, and with *Entire Assembly* the same click takes the sibling (the control);
+** resting the pointer there shows the three-dot cursor and the next click opens QuickPick (no dots over empty space), holding MB1 still opens it too; *Within Work Part Only* refuses a component's geometry;
+** the Part Navigator names the work part and the selected occurrence;
+* Edge Blend's collector, command first: `Select Edge (0)` and OK refused, a Type Filter change during the command does not replace its gate, *Tangent Curves* collects the line–arc–line chain of a rounded corner, refused picks carry their reasons, and Cancel brings back the previous gate with the filter chosen meanwhile;
+* Edge Blend, selection first: an unusable face is refused and deselected and the edge reaches FreeCAD's Fillet; with only usable edges the Fillet opens at once;
+* a Type Filter change while a FreeCAD-style dialog holds its own gate waits, and the Type Filter's gate comes back when the dialog closes;
+* the curve rules on a rectangle sketch (Connected takes 4 sides, Tangent stops at the corners); the Part Navigator marks the active body, a suppressed feature and a failed one;
 * a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block;
 * broken references are reported, not papered over:
 ** a diameter whose face became a plane is invalid, shows its error, and is kept out of the inspection plan, the stack-up and the STEP export, then valid again when repaired;
@@ -50,6 +66,38 @@ It ends with the count of checks passed, failed and skipped (90 checks on FreeCA
 
 A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.
 It writes `out/smoke.json` and screenshots.
+
+=== Window sizes and display scaling [[window-matrix]]
+
+The self-test resizes the main window to each cell of a matrix and measures widget rectangles, not screenshots:
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Screen | 100 % | 125 % | 150 % | 200 %
+
+| 1366x768 | 1366x689 | 1092x535 | 910x433 | 683x305
+| 1920x1080 | 1920x1001 | 1536x785 | 1280x641 | 960x461
+|===
+
+The window sizes are in Qt's logical pixels: the screen divided by the scale, less 48 px for the Windows taskbar and 31 px for the title bar.
+Qt lays a window out in logical pixels and scales fonts and icons with the display, so a logical size stands for that resolution and scale.
+The window is resized twice, because a short window minimises the ribbon, which lowers the window's minimum height; a maximised window is then given the screen's work area again.
+A screen smaller than the cell limits the height. On a 1920x1080 screen at 125 %, for instance, the 1920x1001 cell is measured 844 px high, and the result notes it. This makes the vertical checks harder and leaves the ribbon's width the same; a width that differs fails the cell.
+When the ribbon is minimised (the 683x305 cell), each tab is measured in the drop-down a click on it shows, and the drop-down must lie inside the window.
+For each cell and each ribbon tab it checks that:
+
+* every shown ribbon control and group label lies wholly inside the ribbon page, and no page needs sideways scrolling;
+* the File button, Quick Access Toolbar, tabs, Command Finder and collapse button lie inside the tab row, and tabs or Quick Access buttons that do not fit have their scroll or extension buttons;
+* every command of the tab is reachable: on a button that is fully shown, or in the menu of a collapsed group or of the More button, which must itself be fully shown;
+* the application's essential commands (`"essential"` in its ribbon file) are reachable, and in Modeling at 1920x1080 and 100 % they are one click away;
+* the ribbon and bars lie inside the window, and the graphics area keeps at least 80 px of height.
+
+Two negative controls show that the checks can fail: with the reduction switched off, the narrowest Modeling cell is reported as clipped or scrolling; and a collapsed group whose menu has lost a command is reported as unreachable.
+The narrowest cell must also have collapsed some groups, so that the matrix exercises the reduction and does not merely find wide windows.
+The results of every cell are in `smoke.json` under `info`.
+
+The matrix does not change Qt's real scale factor during a run.
+Rounding of fractional scales and the platform's font hinting can differ by a pixel or so from a real display at that scale.
 
 == What the launcher accepts
 
@@ -79,6 +127,16 @@ Save steps press the real kbd:[Ctrl+S] and check that the file was rewritten; on
 Tutorials S to X check engineering results: the stack-up against Fischer's figures, the fit against ISO 286, the STEP file's PMI and what OpenCASCADE reads back, the inherited dimensions on the sheet, the clearance kinds and penetration depth, the release states in Strata and the release packages against their manifests, the flat pattern against Shih's hand calculation, and the pin location against Drake's formulas.
 Dialogs that Strata opens are answered by the replay the way a user fills them in.
 Tutorials AA to AC check the composite frame's plan rows and gauges, the evaluation of measured holes, the TUR and acceptance limits, Drake's gauge study result, and the title block against the Strata release.
+Tutorial AE is the acceptance case for the command controller (xref:modeling.adoc#extrude[Extrude]). It does New, Sketch, then Extrude four times through the real UI: None (a new body), Unite, Subtract chosen in the Boolean list, and a separate new body.
+It also checks what must not happen:
+
+* choosing Intersect changes nothing and the dialog gives the reason;
+* a Unite that misses the part leaves OK unavailable, and MB2 does not close the dialog;
+* changing the Boolean adds no undo step.
+
+Then it edits the first extrude. From the Part Navigator's MB3 menu it previews a new length and presses Cancel. The value must come back, with no undo step added and nothing left to recompute. It edits again from the ribbon and presses OK, which must add one undo step. Ctrl+Z twice takes back the edit and then the whole New Body extrude, and Ctrl+Y twice restores both. *Extrude (Subtract)* is then started from the Command Finder and cancelled at the plane pick, which must leave no object and no undo step. Finally it saves, reopens and edits again, and kbd:[Esc] cancels.
+The radial menu's *Edit Parameters* runs the same command as the ribbon's, but the replay does not drive the radial menu itself.
+Every solid is compared with `nxstyle/geomcheck.py`, and every command must add exactly one undo step.
 `--tutorials G,H` picks some; N runs M first, V runs T first, AC runs T and V first.
 A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed out; the canvas tutorials O to R take about 20 minutes together.
 

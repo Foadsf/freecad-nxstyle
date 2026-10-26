@@ -3,6 +3,8 @@
   "title": "Sheet Metal",
   "workbench": "SMWorkbench",
   "preload": ["SketcherWorkbench", "PartDesignWorkbench"],
+  "essential": [["SheetMetal_NewSketch", "Sketcher_NewSketch"], "SheetMetal_AddBase", "SheetMetal_AddWall",
+                "SheetMetal_AddFoldWall", "NXStyle_FlatPattern"],
   "tabs": [
     {"name": "Home", "groups": [
       {"name": "Direct Sketch", "items": [

@@ -1,5 +1,5 @@
 {
-  "_comment": "Applications offered on the Application tab (NX: Application tab / File > All Applications). ribbon = JSON file; null = build the ribbon from the workbench's own toolbars. Missing workbenches are hidden.",
+  "_comment": "Applications offered on the Application tab (NX: Application tab / File > All Applications). ribbon = JSON file; null = build the ribbon from the workbench's own toolbars. guide = a guided workflow shown on the ribbon (fem: fem_guide.py). Missing workbenches are hidden.",
   "groups": [
     {"name": "Design", "apps": [
       {"id": "modeling", "title": "Modeling", "workbench": "PartDesignWorkbench", "ribbon": "modeling.json", "shortcut": "Ctrl+M", "size": "large"},
@@ -12,7 +12,7 @@
       {"id": "part", "title": "Basic Modeling (Part)", "workbench": "PartWorkbench", "ribbon": null}
     ]},
     {"name": "Simulation", "apps": [
-      {"id": "simulation", "title": "Pre/Post", "workbench": "FemWorkbench", "ribbon": null, "size": "large"}
+      {"id": "simulation", "title": "Pre/Post", "workbench": "FemWorkbench", "ribbon": "simulation.json", "guide": "fem", "size": "large"}
     ]},
     {"name": "Manufacturing", "apps": [
       {"id": "manufacturing", "title": "Manufacturing", "workbench": "CAMWorkbench", "ribbon": null, "size": "large"}

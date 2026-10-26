@@ -3,6 +3,7 @@
   "title": "Drafting",
   "workbench": "TechDrawWorkbench",
   "preload": [],
+  "essential": ["TechDraw_PageDefault", "TechDraw_View", "TechDraw_ProjectionGroup", "TechDraw_SectionView"],
   "tabs": [
     {"name": "Home", "groups": [
       {"name": "Drawing", "items": [

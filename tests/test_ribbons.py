@@ -25,6 +25,25 @@ class RibbonTests(unittest.TestCase):
                 includes = [t.get("include") for t in load(f)["tabs"]]
                 self.assertIn("common:Application", includes)
 
+    def test_essential_commands_are_on_their_ribbon(self):
+        """'essential' names commands the layout keeps reachable first; each must be a button of that file."""
+        for f in sorted(RIBBONS.glob("*.json")):
+            spec = load(f.name)
+            cmds = [i.get("cmd") for t in spec.get("tabs", []) for g in t.get("groups", []) for i in g["items"]]
+            cmds += [s["cmd"] for t in spec.get("tabs", []) for g in t.get("groups", []) for i in g["items"]
+                     for s in i.get("items", [])]
+            for e in spec.get("essential", []):
+                with self.subTest(ribbon=f.name, essential=e):
+                    self.assertIn(e, cmds)
+
+    def test_group_ranks_are_numbers(self):
+        for f in sorted(RIBBONS.glob("*.json")):
+            for t in load(f.name).get("tabs", []):
+                for g in t.get("groups", []):
+                    if "rank" in g:
+                        with self.subTest(ribbon=f.name, group=g["name"]):
+                            self.assertIsInstance(g["rank"], int)
+
     def test_every_application_ribbon_file_exists(self):
         for g in load("apps.json")["groups"]:
             for a in g["apps"]:

@@ -58,6 +58,13 @@ include::partial$generated/settings.adoc[]
 NOTE: Before 2026-10-13, NX-Style read `nxstyle.json` from the profile's root folder instead of `config`.
 A file left there is still read when `config` has none.
 
+== Ribbon layout
+
+What you choose on the ribbon itself is kept in `nxstyle.ribbon.json`, next to `nxstyle.json`: for each application, tab and group whether it is *Keep Expanded* or *Always Collapsed* (right-click a group), and whether the ribbon is minimised.
+NX-Style writes it as soon as you change something; you do not edit it by hand.
+*Reset Ribbon Layout* on a group's right-click menu, or deleting the file, returns to the defaults.
+See xref:user-interface.adoc#narrow-window[A narrow window].
+
 == Starting over
 
 `python launch_nx.py --reset-profile` deletes the NX profile, settings and FreeCAD preferences included; the next start makes a fresh one.

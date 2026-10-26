@@ -20,7 +20,7 @@ package.
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import config, gdt, iso, pmi, refs
+from . import config, gdt, iso, pmi, refs, theme
 from .qt import QtCore, QtGui, QtWidgets
 
 TYPES = ["Dimension", "Feature Control Frame", "Datum Feature"]
@@ -632,15 +632,15 @@ def render_label(obj, number=0):
         r = QtSvg.QSvgRenderer(QtCore.QByteArray(svg.encode("utf-8")))
         r.render(p, QtCore.QRectF(extra, 0, W - 2, H - 2))
     if number:
-        p.setPen(QtGui.QPen(QtGui.QColor("#0b6e79"), 2))
-        p.setBrush(QtGui.QColor("#ffffff"))
+        p.setPen(QtGui.QPen(QtGui.QColor(theme.color("accent")), 2))
+        p.setBrush(QtGui.QColor(theme.color("panel")))
         d = min(H, int(gdt.H * PX_PER_MM) + 2) - 4        # one row's size, on a two-row frame too
         p.drawEllipse(1, 1, d, d)
         f = p.font()
         f.setPixelSize(int(d * 0.55))
         f.setBold(True)
         p.setFont(f)
-        p.setPen(QtGui.QColor("#0b6e79"))
+        p.setPen(QtGui.QColor(theme.color("accent")))
         p.drawText(QtCore.QRectF(1, 1, d, d), QtCore.Qt.AlignCenter, str(number))
     p.end()
     return img

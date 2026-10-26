@@ -3,8 +3,8 @@
 
 import FreeCADGui as Gui
 
-from . import config
-from .qt import QtCore, QtGui, QtWidgets, Qt
+from . import config, ribbon_layout, theme
+from .qt import QtCore, QtGui, QtWidgets, Qt, exec_menu
 
 LARGE = 32
 SMALL = 16
@@ -206,13 +206,17 @@ class DropdownButton(QtWidgets.QToolButton):
         self.setIconSize(QtCore.QSize(LARGE, LARGE) if big else QtCore.QSize(SMALL, SMALL))
         self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon if big else Qt.ToolButtonTextBesideIcon)
         self.setText(label)
+        self.setAccessibleName(label)
         self.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.entries = []
         menu = QtWidgets.QMenu(self)
         for name, text in entries:
             act = command_actions(name)
             if not act:
                 continue
+            self.entries.append((name, text))
             item = menu.addAction(act[0].icon(), text)
+            item.setData(name)
             item.setShortcut(act[0].shortcut())
             item.triggered.connect(lambda _=False, n=name: (on_run and on_run(n), trigger(n)))
         self.setMenu(menu)
@@ -223,20 +227,48 @@ class DropdownButton(QtWidgets.QToolButton):
 
 
 class RibbonGroup(QtWidgets.QFrame):
-    def __init__(self, title, parent=None):
+    """A titled group of buttons that can give up space in stages (``ribbon_layout``): full, compact
+    (small buttons icon-only), collapsed (one button whose menu lists the commands) or overflow
+    (hidden here, listed in the page's More menu)."""
+
+    def __init__(self, title, parent=None, rank=0, step=None):
         super().__init__(parent)
         self.setObjectName("NXRibbonGroup")
+        self.title = title
+        self.rank = rank
+        self.step = step                 # guided workflow step this group stands for (FEM), or None
+        self.preference = ribbon_layout.AUTO
+        self.stage = ribbon_layout.FULL
+        self.separator = None
+        self.items = []                  # (widget, size) in the order added
+        self._widths = None
         outer = QtWidgets.QVBoxLayout(self)
         outer.setContentsMargins(4, 2, 4, 1)
         outer.setSpacing(0)
-        self.grid = QtWidgets.QGridLayout()
+        self.body = QtWidgets.QWidget(self)
+        self.body.setObjectName("NXRibbonGroupBody")
+        self.grid = QtWidgets.QGridLayout(self.body)
         self.grid.setSpacing(1)
         self.grid.setContentsMargins(0, 0, 0, 0)
-        outer.addLayout(self.grid, 1)
-        label = QtWidgets.QLabel(title)
-        label.setObjectName("NXRibbonGroupLabel")
-        label.setAlignment(Qt.AlignHCenter | Qt.AlignBottom)
-        outer.addWidget(label)
+        outer.addWidget(self.body, 1)
+        self.collapsed_button = QtWidgets.QToolButton(self)
+        self.collapsed_button.setObjectName("NXRibbonGroupButton")
+        self.collapsed_button.setAutoRaise(True)
+        self.collapsed_button.setIconSize(QtCore.QSize(LARGE, LARGE))
+        self.collapsed_button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.collapsed_button.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.collapsed_button.setText(CommandButton._wrap(title))
+        self.collapsed_button.setAccessibleName(f"{title} group")
+        self.collapsed_button.setToolTip(f"<b>{title}</b><br>The group's commands; it is collapsed to make room")
+        menu = QtWidgets.QMenu(self.collapsed_button)
+        menu.aboutToShow.connect(lambda m=menu: (m.clear(), self.populate(m)))
+        self.collapsed_button.setMenu(menu)
+        self.collapsed_button.hide()
+        outer.addWidget(self.collapsed_button, 1, Qt.AlignTop | Qt.AlignHCenter)
+        self.label = QtWidgets.QLabel(title)
+        self.label.setObjectName("NXRibbonGroupLabel")
+        self.label.setAlignment(Qt.AlignHCenter | Qt.AlignBottom)
+        outer.addWidget(self.label)
         self._col = 0
         self._row = 0
         self.count = 0
@@ -254,12 +286,145 @@ class RibbonGroup(QtWidgets.QFrame):
             if self._row == ROWS:
                 self._row = 0
                 self._col += 1
+        self.items.append((widget, size))
+        if isinstance(widget, CommandButton):
+            widget.setAccessibleName(widget.nx_label)
+        if self.collapsed_button.icon().isNull() and isinstance(widget, QtWidgets.QToolButton):
+            self.collapsed_button.setIcon(widget.icon())
         self.count += 1
+
+    # ------------------------------------------------------------ commands
+    def entries(self):
+        """(command, label) of every command the group offers, in order (a drop-down's entries too)."""
+        out = []
+        for w, _size in self.items:
+            if isinstance(w, CommandButton):
+                out.append((w.command, w.nx_label))
+            elif isinstance(w, DropdownButton):
+                out += list(w.entries)
+            elif isinstance(w, QtWidgets.QToolButton) and w.defaultAction() is not None:
+                a = w.defaultAction()
+                out.append((a.objectName() or clean_text(a.text()), clean_text(a.text())))
+        return out
+
+    def populate(self, menu):
+        """Fill a menu with the group's commands; each entry clicks the real button (or runs the same
+        action), so it behaves exactly like the button: same command, Repeat Command, state."""
+        for w, _size in self.items:
+            if isinstance(w, CommandButton):
+                sub_menu = w.menu()
+                if sub_menu is not None:
+                    sub = menu.addMenu(w.icon(), w.nx_label)
+                    sub.menuAction().setData(w.command)
+                    target = sub.addAction(w.icon(), w.nx_label)
+                    sub.addSeparator()
+                    sub.addActions(sub_menu.actions())
+                else:
+                    target = menu.addAction(w.icon(), w.nx_label)
+                target.setData(w.command)
+                target.setEnabled(w.isEnabled())
+                if w.isCheckable():
+                    target.setCheckable(True)
+                    target.setChecked(w.isChecked())
+                target.triggered.connect(lambda _=False, b=w: b.click())
+            elif isinstance(w, DropdownButton):
+                sub = menu.addMenu(w.icon(), w.text())
+                sub.addActions(w.menu().actions())
+            elif isinstance(w, QtWidgets.QToolButton) and w.defaultAction() is not None:
+                menu.addAction(w.defaultAction())
+
+    def menu_commands(self, menu):
+        """Commands a populated menu reaches, through its submenus too (for the layout checks)."""
+        found = []
+        for a in menu.actions():
+            cmd = a.data() if isinstance(a.data(), str) else ""
+            if a.menu() is not None:
+                found += self.menu_commands(a.menu())
+            if cmd:
+                found.append(cmd)
+            elif a.objectName():
+                found.append(a.objectName())
+        return found
+
+    # ---------------------------------------------------------------- stages
+    def set_stage(self, stage):
+        self.stage = stage
+        collapsed = stage == ribbon_layout.COLLAPSED
+        compact = stage in (ribbon_layout.COMPACT, ribbon_layout.COLLAPSED)
+        for w, size in self.items:
+            if size != "large" and isinstance(w, QtWidgets.QToolButton):
+                w.setToolButtonStyle(Qt.ToolButtonIconOnly if compact else Qt.ToolButtonTextBesideIcon)
+        self.body.setVisible(not collapsed)
+        self.body.updateGeometry()
+        self.collapsed_button.setVisible(collapsed)
+        self.label.setVisible(not collapsed)
+        shown = stage != ribbon_layout.OVERFLOW
+        self.setVisible(shown)
+        if self.separator is not None:
+            self.separator.setVisible(shown)
+
+    def can_collapse(self):
+        """Only groups made of buttons can be listed in a menu."""
+        return all(isinstance(w, QtWidgets.QToolButton) for w, _ in self.items)
+
+    def widths(self):
+        """Width (with the separator) in each stage, measured from the widgets' size hints."""
+        if self._widths is None:
+            current = self.stage
+            self.ensurePolished()
+            m = self.layout().contentsMargins()
+            pad = m.left() + m.right() + (self.separator.sizeHint().width() if self.separator is not None else 0)
+            out = {}
+            # the grid itself, not the group's layout: that layout caches the body's size hint until a posted
+            # layout request, so it would still report the full width just after the buttons went icon-only
+            for stage in (ribbon_layout.FULL, ribbon_layout.COMPACT):
+                self.set_stage(stage)
+                self.grid.invalidate()
+                out[stage] = max(self.grid.sizeHint().width(), self.label.sizeHint().width()) + pad
+            out[ribbon_layout.COLLAPSED] = self.collapsed_button.sizeHint().width() + pad
+            if not self.can_collapse():           # never collapse what a menu cannot hold
+                out[ribbon_layout.COLLAPSED] = out[ribbon_layout.COMPACT]
+            out[ribbon_layout.OVERFLOW] = 0
+            self.set_stage(current)
+            self._widths = out
+        return self._widths
+
+    def invalidate_widths(self):
+        self._widths = None
+
+    def changeEvent(self, ev):
+        # FreeCAD re-applies its stylesheet after start-up, and Touch Mode or a font change resizes the
+        # buttons: widths measured before are stale
+        super().changeEvent(ev)
+        if ev.type() in (QtCore.QEvent.StyleChange, QtCore.QEvent.FontChange) and self._widths is not None:
+            self._widths = None
+            page = self.parentWidget()
+            while page is not None and not isinstance(page, RibbonPage):
+                page = page.parentWidget()
+            if page is not None:
+                page.schedule_refit()
+
+    def set_status(self, done, is_next):
+        """Guided workflow (FEM): mark the step done or next; True if the label changed."""
+        text = self.title + (" ✓" if done else "")
+        state = "done" if done else "next" if is_next else ""
+        changed = self.label.text() != text or self.property("nxstep") != state
+        if changed:
+            self.label.setText(text)
+            self.collapsed_button.setText(CommandButton._wrap(text))
+            self.setProperty("nxstep", state)
+            self.label.setProperty("nxstep", state)
+            for w in (self, self.label):
+                w.style().unpolish(w)
+                w.style().polish(w)
+            self.invalidate_widths()
+        return changed
 
 
 class RibbonPage(QtWidgets.QScrollArea):
-    """A ribbon page that scrolls sideways with the wheel and shows edge
-    arrows when the groups do not fit, instead of a scrollbar over the labels."""
+    """A ribbon page that fits its width by compacting, collapsing and finally moving groups into its
+    More menu (``ribbon_layout.plan``). Scrolling sideways with the wheel and the edge arrows remain as
+    the last resort, for a window narrower than the More button itself."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -268,6 +433,24 @@ class RibbonPage(QtWidgets.QScrollArea):
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.groups = []
+        self.layout_enabled = True       # False: the old behaviour (everything full, scroll) for checks
+        self.last_plan = []
+        self._fitting = False
+        self._fit_width = -1
+        self.overflow = QtWidgets.QToolButton()
+        self.overflow.setObjectName("NXRibbonOverflow")
+        self.overflow.setAutoRaise(True)
+        self.overflow.setText("More")
+        self.overflow.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.overflow.setArrowType(Qt.DownArrow)
+        self.overflow.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.overflow.setAccessibleName("More commands")
+        self.overflow.setToolTip("<b>More</b><br>Groups that do not fit at this window width")
+        menu = QtWidgets.QMenu(self.overflow)
+        menu.aboutToShow.connect(lambda m=menu: (m.clear(), self.populate_overflow(m)))
+        self.overflow.setMenu(menu)
+        self.overflow.hide()
         self.arrows = []
         for arrow, step in ((Qt.LeftArrow, -1), (Qt.RightArrow, 1)):
             b = QtWidgets.QToolButton(self)
@@ -291,7 +474,79 @@ class RibbonPage(QtWidgets.QScrollArea):
 
     def resizeEvent(self, ev):
         super().resizeEvent(ev)
+        self.fit()
         self._update_arrows()
+
+    def showEvent(self, ev):
+        super().showEvent(ev)
+        self.fit()
+
+    # ----------------------------------------------------------- responsive
+    def add_group(self, group):
+        lay = self.widget().layout()
+        lay.addWidget(group)
+        sep = QtWidgets.QFrame()
+        sep.setObjectName("NXRibbonSeparator")
+        sep.setFrameShape(QtWidgets.QFrame.VLine)
+        lay.addWidget(sep)
+        group.separator = sep
+        self.groups.append(group)
+
+    def finish(self):
+        lay = self.widget().layout()
+        lay.addStretch(1)
+        lay.addWidget(self.overflow, 0, Qt.AlignTop)
+
+    def available_width(self):
+        return self.viewport().width()
+
+    def fit(self, force=False):
+        """Choose each group's stage for the current width (ribbon_layout.plan) and apply it."""
+        if self._fitting or not self.groups:
+            return
+        if not self.isVisible():         # a hidden page's width is stale: fit when it is shown
+            self._fit_width = -1
+            return
+        width = self.available_width()
+        if width == self._fit_width and not force:
+            return
+        self._fitting = True
+        try:
+            if not self.layout_enabled:
+                stages = [ribbon_layout.FULL] * len(self.groups)
+            else:
+                fits = [ribbon_layout.GroupFit(g.widths(), g.rank, i, g.preference) for i, g in enumerate(self.groups)]
+                m = self.widget().layout().contentsMargins()
+                stages = ribbon_layout.plan(fits, width, base=m.left() + m.right(),
+                                            overflow_width=self.overflow.sizeHint().width())
+            for g, s in zip(self.groups, stages):
+                g.set_stage(s)
+            self.overflow.setVisible(ribbon_layout.OVERFLOW in stages)
+            self.last_plan = stages
+            self._fit_width = width
+        finally:
+            self._fitting = False
+
+    def refit(self):
+        self._refit_pending = False
+        for g in self.groups:
+            g.invalidate_widths()
+        self.fit(force=True)
+
+    def schedule_refit(self):
+        """One refit after the current burst of events (a stylesheet change reaches every group)."""
+        if not getattr(self, "_refit_pending", False):
+            self._refit_pending = True
+            QtCore.QTimer.singleShot(0, self.refit)
+
+    def overflowed(self):
+        return [g for g in self.groups if g.stage == ribbon_layout.OVERFLOW]
+
+    def populate_overflow(self, menu):
+        for g in self.overflowed():
+            sub = menu.addMenu(g.collapsed_button.icon(), g.title)
+            sub.menuAction().setData("")
+            g.populate(sub)
 
     def _update_arrows(self):
         bar = self.horizontalScrollBar()
@@ -305,6 +560,22 @@ class RibbonPage(QtWidgets.QScrollArea):
         right.raise_()
 
 
+class RibbonPopup(QtWidgets.QFrame):
+    """The drop-down that shows a minimised ribbon's page; it hands the pages back when it closes."""
+
+    def __init__(self, ribbon):
+        super().__init__(ribbon, Qt.Popup)
+        self.setObjectName("NXRibbonPopup")
+        self.ribbon = ribbon
+        lay = QtWidgets.QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+
+    def hideEvent(self, ev):
+        super().hideEvent(ev)
+        self.ribbon._popup_closed()
+
+
 class Ribbon(QtWidgets.QWidget):
     """Tab row (File button, quick access toolbar, tabs, command finder) + pages."""
 
@@ -315,8 +586,14 @@ class Ribbon(QtWidgets.QWidget):
         self.locations = {}        # command -> "Tab > Group" (for the Command Finder)
         self.labels = {}           # command -> NX label
         self.on_run = None         # callback(command) for Repeat Command tracking
+        self.app_id = ""           # the application whose ribbon this is (keys the user's layout)
+        self.store = None          # ribbon_layout.LayoutStore: the user's layout choices
+        self.essential = set()     # commands whose groups give up space last
         self._collapsed = False
+        self._auto_minimized = False
+        self._popup = None
         self._contextual = []
+        self._probe_menu = None
 
         root = QtWidgets.QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -343,6 +620,8 @@ class Ribbon(QtWidgets.QWidget):
         self.tabs.setObjectName("NXRibbonTabs")
         self.tabs.setDrawBase(False)
         self.tabs.setExpanding(False)
+        self.tabs.setUsesScrollButtons(True)     # a narrow window scrolls the tabs, never clips them
+        self.tabs.setElideMode(Qt.ElideNone)
         self.tabs.currentChanged.connect(self._tab_changed)
         self.tabs.tabBarDoubleClicked.connect(lambda _i: self.set_collapsed(not self._collapsed))
         self.tabs.tabBarClicked.connect(self._tab_clicked)
@@ -365,12 +644,11 @@ class Ribbon(QtWidgets.QWidget):
         self.stack = QtWidgets.QStackedWidget(self)
         self.stack.setObjectName("NXRibbonStack")
         root.addWidget(self.stack)
-        qss = config.resource("ribbon.qss")
-        with open(qss, encoding="utf-8") as f:
-            self.setStyleSheet(f.read())
+        self.setStyleSheet(theme.stylesheet("ribbon.qss"))
 
     # ---------------------------------------------------------------- tabs
     def clear(self):
+        self.hide_popup()
         while self.tabs.count():
             self.tabs.removeTab(0)
         while self.stack.count():
@@ -390,13 +668,187 @@ class Ribbon(QtWidgets.QWidget):
             self.stack.setCurrentIndex(index)
 
     def _tab_clicked(self, index):
-        if self._collapsed and index == self.tabs.currentIndex():
-            self.set_collapsed(False)
+        if self._collapsed and index >= 0:
+            # a minimised ribbon shows the tab's page as a drop-down over the graphics window (as NX does)
+            QtCore.QTimer.singleShot(0, lambda i=index: self.show_popup(i))
 
-    def set_collapsed(self, collapsed):
+    def set_collapsed(self, collapsed, save=True):
+        """Minimise the ribbon to its tab row (the user's choice, saved) or restore it."""
+        self._auto_minimized = False
+        self._apply_collapsed(collapsed)
+        if save and self.store is not None and self.store.minimized != collapsed:
+            self.store.set_minimized(collapsed)
+
+    def _apply_collapsed(self, collapsed):
+        self.hide_popup()
         self._collapsed = collapsed
         self.stack.setVisible(not collapsed)
         self.collapse_button.setArrowType(Qt.DownArrow if collapsed else Qt.UpArrow)
+        self.collapse_button.setToolTip("Expand Ribbon" if collapsed else "Collapse Ribbon (double-click a tab)")
+
+    def set_auto_minimized(self, on):
+        """A window too short for the ribbon minimises it, without changing the user's saved choice; it
+        comes back when the window is tall enough again (unless the user minimised it meanwhile)."""
+        if on and not self._collapsed:
+            self._apply_collapsed(True)
+            self._auto_minimized = True
+        elif not on and self._auto_minimized:
+            self._auto_minimized = False
+            self._apply_collapsed(False)
+
+    def is_collapsed(self):
+        return self._collapsed
+
+    def is_auto_minimized(self):
+        return self._auto_minimized
+
+    # ------------------------------------------------- minimised: drop-down
+    def show_popup(self, index=None):
+        """Show the current (or given) tab's page below the tab row, over the graphics window, until a command
+        runs or the user clicks elsewhere."""
+        if not self._collapsed or self.stack.count() == 0:
+            return None
+        if index is not None and 0 <= index < self.tabs.count():
+            self.tabs.setCurrentIndex(index)
+        if self._popup is None:
+            self._popup = RibbonPopup(self)
+        p = self._popup
+        if self.stack.parentWidget() is not p:
+            self.layout().removeWidget(self.stack)
+            p.layout().addWidget(self.stack)
+        self.stack.show()
+        height = max(self.stack.currentWidget().minimumHeight(), self.stack.sizeHint().height()) + 2
+        p.setGeometry(QtCore.QRect(self.header.mapToGlobal(QtCore.QPoint(0, self.header.height())),
+                                   QtCore.QSize(self.width(), height)))
+        p.show()
+        return p
+
+    def hide_popup(self):
+        if self._popup is not None and self._popup.isVisible():
+            self._popup.hide()
+
+    def _popup_closed(self):
+        """The drop-down closed: the pages go back under the tab row (hidden while minimised)."""
+        if self.stack.parentWidget() is self._popup:
+            self._popup.layout().removeWidget(self.stack)
+            self.stack.setParent(self)
+            self.layout().addWidget(self.stack)
+        self.stack.setVisible(not self._collapsed)
+
+    FINDER_WIDTH = (110, 230)        # the Command Finder narrows before tabs have to scroll
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self._fit_header()
+
+    def _fit_header(self):
+        finder = next((w for w in self.header.findChildren(QtWidgets.QLineEdit)
+                       if w.objectName() == "NXCommandFinder"), None)
+        if finder is None:
+            return
+        lo, hi = self.FINDER_WIDTH
+        fixed = (self.file_button.sizeHint().width() + self.qat.sizeHint().width()
+                 + self.tabs.sizeHint().width() + self.collapse_button.sizeHint().width() + 24)
+        finder.setFixedWidth(max(lo, min(hi, self.width() - fixed)))
+
+    # ------------------------------------------------------- user layout
+    def pages(self):
+        return [self.stack.widget(i) for i in range(self.stack.count())]
+
+    def groups(self, tab=None):
+        """(tab name, group) for every group, or for one tab's groups."""
+        out = []
+        for i, page in enumerate(self.pages()):
+            name = self.tabs.tabText(i)
+            if tab is None or name == tab:
+                out += [(name, g) for g in getattr(page, "groups", [])]
+        return out
+
+    def set_group_preference(self, tab, group, value):
+        """Automatic / Keep Expanded / Always Collapsed for one group, saved with the profile."""
+        group.preference = value
+        if self.store is not None:
+            self.store.set_preference(self.app_id, tab, group.title, value)
+        page = group.parentWidget()
+        while page is not None and not isinstance(page, RibbonPage):
+            page = page.parentWidget()
+        if page is not None:
+            page.refit()
+
+    def reset_layout(self):
+        if self.store is not None:
+            self.store.reset()
+        for tab, g in self.groups():
+            g.preference = ribbon_layout.AUTO
+        for page in self.pages():
+            page.refit()
+        self.set_collapsed(False)
+
+    def _group_menu(self, tab, group, pos):
+        menu = QtWidgets.QMenu(group)
+        menu.setAccessibleName(f"{group.title} group layout")
+        group_class = getattr(QtGui, "QActionGroup", None) or QtWidgets.QActionGroup
+        choices = group_class(menu)
+        for value, text in ((ribbon_layout.AUTO, "Automatic"), (ribbon_layout.EXPANDED, "Keep Expanded"),
+                            (ribbon_layout.COLLAPSED, "Always Collapsed")):
+            a = menu.addAction(text)
+            a.setCheckable(True)
+            a.setChecked(group.preference == value)
+            a.setActionGroup(choices)
+            a.triggered.connect(lambda _=False, v=value: self.set_group_preference(tab, group, v))
+        menu.addSeparator()
+        menu.addAction("Reset Ribbon Layout").triggered.connect(lambda _=False: self.reset_layout())
+        exec_menu(menu, group.mapToGlobal(pos))
+
+    def set_steps(self, states):
+        """Guided workflow: states = {step: "done" | "next" | ""}; relabels the groups standing for them."""
+        changed = set()
+        for _tab, g in self.groups():
+            if g.step in states:
+                st = states[g.step]
+                if g.set_status(st == "done", st == "next"):
+                    changed.add(g)
+        for page in self.pages():
+            if any(g in changed for g in getattr(page, "groups", [])):
+                page.refit()
+        return bool(changed)
+
+    def reach(self, button):
+        """How a user reaches a ribbon button now: ("direct", button), ("group", collapsed group button) or
+        ("overflow", More button); (None, None) if it is not on a page."""
+        group = button.parentWidget()
+        while group is not None and not isinstance(group, RibbonGroup):
+            group = group.parentWidget()
+        if group is None:
+            return None, None
+        if group.stage == ribbon_layout.COLLAPSED:
+            return "group", group.collapsed_button
+        if group.stage == ribbon_layout.OVERFLOW:
+            page = group.parentWidget()
+            while page is not None and not isinstance(page, RibbonPage):
+                page = page.parentWidget()
+            return "overflow", page.overflow if page is not None else None
+        return "direct", button
+
+    def menu_action(self, button):
+        """The menu entry that runs this button's command when its group is collapsed or overflowed."""
+        group = button.parentWidget()
+        while group is not None and not isinstance(group, RibbonGroup):
+            group = group.parentWidget()
+        if group is None or not isinstance(button, CommandButton):
+            return None
+        if self._probe_menu is not None:
+            self._probe_menu.deleteLater()
+        menu = self._probe_menu = QtWidgets.QMenu(self)
+        group.populate(menu)
+        stack = list(menu.actions())
+        while stack:
+            a = stack.pop(0)
+            if a.menu() is not None:
+                stack += a.menu().actions()
+            elif a.data() == button.command:
+                return a
+        return None
 
     def select(self, name):
         for i in range(self.tabs.count()):
@@ -416,32 +868,38 @@ class Ribbon(QtWidgets.QWidget):
         return area, lay
 
     def add_tab(self, name, groups, index=None, contextual=False, known=None):
-        """groups: list of (title, items) from a JSON spec, or (title, [QWidget...])."""
+        """groups: list of (title, items) or (title, items, meta) from a JSON spec (meta: rank, step),
+        or (title, [QWidget...])."""
         known = known if known is not None else known_commands()
-        area, lay = self._page()
-        for gname, items in groups:
-            group = RibbonGroup(gname)
+        area, _lay = self._page()
+        for entry in groups:
+            gname, items = entry[0], entry[1]
+            meta = entry[2] if len(entry) > 2 else {}
+            group = RibbonGroup(gname, rank=meta.get("rank", 0), step=meta.get("step"))
             for item in items:
                 widget, size = self._make(item, name, gname, known)
                 if widget is not None:
                     group.add(widget, size)
             if group.count:
-                lay.addWidget(group)
-                sep = QtWidgets.QFrame()
-                sep.setObjectName("NXRibbonSeparator")
-                sep.setFrameShape(QtWidgets.QFrame.VLine)
-                lay.addWidget(sep)
+                if "rank" not in meta and any(c in self.essential for c, _ in group.entries()):
+                    group.rank = ribbon_layout.ESSENTIAL_RANK
+                if self.store is not None:
+                    group.preference = self.store.preference(self.app_id, name, gname)
+                group.setContextMenuPolicy(Qt.CustomContextMenu)
+                group.customContextMenuRequested.connect(lambda p, t=name, g=group: self._group_menu(t, g, p))
+                area.add_group(group)
             else:
                 group.deleteLater()
-        lay.addStretch(1)
+        area.finish()
         area.setMinimumHeight(area.widget().sizeHint().height() + 2)
         if index is None:
             index = self.tabs.count()
         self.stack.insertWidget(index, area)
         self.tabs.insertTab(index, name)
         if contextual:
-            self.tabs.setTabTextColor(index, QtGui.QColor("#007A87"))
+            self.tabs.setTabTextColor(index, QtGui.QColor(theme.color("contextual")))
             self._contextual.append(name)
+        self._fit_header()
         return index
 
     def remove_tab(self, name):
@@ -453,6 +911,7 @@ class Ribbon(QtWidgets.QWidget):
                 w.deleteLater()
                 if name in self._contextual:
                     self._contextual.remove(name)
+                self._fit_header()
                 return True
         return False
 
@@ -499,6 +958,7 @@ class Ribbon(QtWidgets.QWidget):
         return CommandButton(cmd, label, size, on_run=self._ran), size
 
     def _ran(self, cmd):
+        self.hide_popup()                # a command run from the drop-down closes it, as in NX
         if self.on_run:
             self.on_run(cmd)
 
@@ -509,7 +969,9 @@ def QAction_types():
 
 
 def spec_groups(tab_spec):
-    return [(g["name"], g.get("items", [])) for g in tab_spec.get("groups", [])]
+    """(name, items, meta) per group of a JSON tab; meta holds the optional rank and workflow step."""
+    return [(g["name"], g.get("items", []), {k: g[k] for k in ("rank", "step") if k in g})
+            for g in tab_spec.get("groups", [])]
 
 
 def expand_tabs(spec):
