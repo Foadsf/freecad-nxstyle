@@ -7,6 +7,7 @@
 .Using FreeCAD NX-Style
 * xref:user-interface.adoc[The user interface]
 * xref:mouse.adoc[Mouse and view control]
+* xref:selection.adoc[Selecting]
 * xref:keyboard-shortcuts.adoc[Keyboard shortcuts]
 * xref:sketching.adoc[Sketching]
 * xref:modeling.adoc[Modeling]

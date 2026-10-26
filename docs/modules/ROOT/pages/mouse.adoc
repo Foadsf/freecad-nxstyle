@@ -8,11 +8,12 @@ NX-Style gives them NX's meaning in every 3D view.
 |===
 | Mouse | Does
 
-| MB1 click | Select. kbd:[Ctrl]+MB1 adds to or removes from the selection.
+| MB1 click | Select. kbd:[Ctrl]+MB1 adds to or removes from the selection. When the nearest thing is refused by the filter, the click selects through to the nearest allowed one behind it.
+| *Rest the pointer, then MB1 click* | *QuickPick*: over overlapping objects the cursor shows three dots; the click opens a list of everything under it, to pick one (xref:selection.adoc[]). Holding MB1 still opens it too.
 | MB2 drag | Rotate the view about its centre.
 | Press and hold MB2 on the model, then drag | Rotate about the point under the cursor. The cursor becomes a cross when the point is set.
 | kbd:[Shift]+MB2 drag, or MB2+MB3 drag | Pan.
-| kbd:[Ctrl]+MB2 drag, or MB1+MB2 drag | Zoom (dragging up zooms in).
+| kbd:[Ctrl]+MB2 drag, or MB1+MB2 drag | Zoom (dragging up zooms in). MB1 and MB2 may be pressed in either order.
 | Wheel | Zoom towards the cursor.
 | *MB2 click* | *OK* in the open feature dialog. On a drawing sheet it presses OK in the open drawing dialog too.
 | MB2 click while a sketch tool is active | Ends the tool (the line, rectangle, circle …), as in NX.
@@ -49,5 +50,6 @@ The xref:settings.adoc[settings] adjust the mouse:
 * `rotate_degrees_per_pixel` -- how fast MB2 drag turns the view;
 * `zoom_at_cursor`, `invert_wheel_zoom`, `zoom_drag_up_zooms_in` -- zoom direction and centre;
 * `mb2_hold_sets_rotation_point_ms`, `mb3_hold_radial_menu_ms` -- how long a hold takes (`0` switches the radial menu off);
+* `quickpick_hold_ms` -- how long the pointer rests (or MB1 is held) before QuickPick (`0` switches QuickPick and select-through off);
 * `mb2_click_is_ok` -- whether an MB2 click accepts the dialog;
 * `navigation` -- `"native"` uses FreeCAD 1.1's own Siemens NX navigation style instead of NX-Style's.

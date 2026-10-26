@@ -49,6 +49,7 @@ Type part of a name and press kbd:[Enter] to run the first match.
 
 * *Menu* opens every FreeCAD menu (File, Edit, View, Tools, Macro, Windows, Help and the workbench's own).
 * The *Type Filter* (No Selection Filter, Curve, Datums, Edge, Face, Feature, Point, Sketch, Solid Body) restricts what you can pick in the graphics window, as in NX.
+* The *Selection Scope* (Entire Assembly, Within Work Part and Components, Within Work Part Only) limits picks to the work part. See xref:selection.adoc[].
 * *Previous Selection*, *Next Selection*, *Rectangle* selection, *Select All*, *Find in Navigator* and *Deselect All*.
 
 == Resource Bar and navigators
@@ -59,7 +60,7 @@ The vertical bar on the left opens the panels; the open ones share one tab strip
 |===
 | Button | Panel
 
-| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu.
+| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu. Above the tree: the work part, the active body, suppressed and failed features, and what is selected (xref:selection.adoc#_part_navigator_status[]).
 | History | Recently opened parts; double-click one to open it.
 | Information | FreeCAD's report view: messages, warnings, the output of Object Information (kbd:[Ctrl+I]) and Measure Bodies.
 | Journal (Python) | FreeCAD's Python console.
@@ -83,6 +84,7 @@ image::ui-radial-menu.png[Radial menu with Fit, Snap View, Trimetric, Isometric 
 == Cue line
 
 The bottom-left of the window tells you what the current tool expects, like NX's cue line: for example "Sketch: choose a curve or constraint tool, or select curves. Ctrl+Q = Finish Sketch".
+When a pick is refused it says why, in red (xref:selection.adoc#_why_a_pick_is_refused[]).
 
 == Show and Hide
 

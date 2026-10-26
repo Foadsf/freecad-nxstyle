@@ -129,6 +129,9 @@ NX places a hole by its point and adds the location dimensions by itself.
 These are FreeCAD's Fillet, Chamfer, Draft and Thickness.
 Select the edges or faces first, then the command.
 
+*Edge Blend* also works the other way round: start it with nothing selected and it opens a selection collector; pick the edges (*Tangent Curves* takes a whole smooth chain from one pick), then OK hands them to the Fillet for the radius.
+It refuses what it cannot round (a face, an edge of another body) and says why (xref:selection.adoc#_commands_that_collect_edge_blend[]).
+
 TIP: In FreeCAD 1.1.4, *Shell* can fail after *Edge Blend* on the same edges.
 Shell first, then blend (xref:tutorials/f.adoc[Tutorial F]).
 
