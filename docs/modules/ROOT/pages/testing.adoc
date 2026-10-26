@@ -30,7 +30,7 @@ python launch_nx.py --smoke-test out
 ----
 
 This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
-It ends with the count of checks passed, failed and skipped (125 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-26). Among them:
+It ends with the count of checks passed, failed and skipped (129 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-26). Among them:
 
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
@@ -54,6 +54,7 @@ It ends with the count of checks passed, failed and skipped (125 checks on FreeC
 * Edge Blend's collector, command first: `Select Edge (0)` and OK refused, a Type Filter change during the command does not replace its gate, *Tangent Curves* collects the line–arc–line chain of a rounded corner, refused picks carry their reasons, and Cancel brings back the previous gate with the filter chosen meanwhile;
 * Edge Blend, selection first: an unusable face is refused and deselected and the edge reaches FreeCAD's Fillet; with only usable edges the Fillet opens at once;
 * a Type Filter change while a FreeCAD-style dialog holds its own gate waits, and the Type Filter's gate comes back when the dialog closes;
+* Extrude started by its key (kbd:[X]) with a sketch selected and the Type Filter on Edge: the panel opens, the filter is lifted and greyed out while it runs and back after Cancel; a start that fails ends the command as failed with the reason, and Extrude then runs again;
 * the curve rules on a rectangle sketch (Connected takes 4 sides, Tangent stops at the corners); the Part Navigator marks the active body, a suppressed feature and a failed one;
 * a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block;
 * broken references are reported, not papered over:

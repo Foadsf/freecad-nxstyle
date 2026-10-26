@@ -106,5 +106,28 @@ class ExtrudeBoolean(unittest.TestCase):
             self.assertIn(word, cc.SHORT_NOTE)
 
 
+class UndoSteps(unittest.TestCase):
+    def test_list_with_room(self):
+        self.assertEqual(cc.undo_steps_added([], ["Extrude"]), 1)
+        self.assertEqual(cc.undo_steps_added(["Sketch", "Body"], ["Extrude", "Sketch", "Body"]), 1)
+        self.assertEqual(cc.undo_steps_added(["Body"], ["Extrude", "Sketch", "Body"]), 2)
+        self.assertEqual(cc.undo_steps_added(["Sketch", "Body"], ["Sketch", "Body"]), 0)
+
+    def test_full_list_drops_its_oldest_step(self):
+        # measured in tutorial AF: the count stayed the same, so a count difference said 0 steps
+        before = [f"Edit {i}" for i in range(20)]
+        self.assertEqual(cc.undo_steps_added(before, ["Extrude"] + before[:-1]), 1)
+        self.assertEqual(cc.undo_steps_added(before, ["Extrude", "Sketch"] + before[:-2]), 2)
+        self.assertEqual(cc.undo_steps_added(before, before), 0)
+
+    def test_list_fills_up_during_the_command(self):
+        before = [f"Edit {i}" for i in range(19)]
+        self.assertEqual(cc.undo_steps_added(before, ["Extrude", "Sketch"] + before[:-1]), 2)
+
+    def test_lists_that_do_not_line_up(self):
+        self.assertIsNone(cc.undo_steps_added(["Extrude", "Body"], ["Body"]))          # an undo
+        self.assertIsNone(cc.undo_steps_added(["A", "B", "C"], ["X", "Y", "Z"]))      # replaced, not added
+
+
 if __name__ == "__main__":
     unittest.main()

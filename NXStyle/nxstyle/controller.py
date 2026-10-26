@@ -23,6 +23,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from . import command_core as core
+from . import selection_filter
 from .qt import QtCore, QtWidgets, Qt
 
 
@@ -194,7 +195,7 @@ class Session:
         self.box = self.anchor = None
         self.filtered = []               # the application (Esc), then the panel's Cancel buttons
         self.key = None
-        self.undo_before = self.doc.UndoCount if self.doc is not None else 0
+        self.undo_names = list(self.doc.UndoNames) if self.doc is not None else []
         self.selection = [(x.DocumentName, x.ObjectName, sub) for x in Gui.Selection.getSelectionEx("", 0)
                           for sub in (x.SubElementNames or ("",))]
         self.active_body = None
@@ -386,10 +387,39 @@ class Controller:
         if s.doc is None:
             return False
         self.session = s
+        return self._guarded(s, self._begin)
+
+    def _guarded(self, s, start):
+        """Run a command's start; a failure before its panel opens ends the command (failed, with the reason)
+        instead of leaving the controller busy with a command that never opened."""
+        try:
+            return start(s)
+        except Exception as e:
+            import traceback
+            reason = f"{s.adapter.name} could not start: {type(e).__name__}: {e}"
+            App.Console.PrintError(f"NXStyle: {reason}\n{traceback.format_exc()}")
+            self.log(reason)
+            if self.session is s:
+                try:
+                    if App.getActiveTransaction():
+                        App.closeActiveTransaction(True)       # nothing of a command that never opened stays
+                except Exception:
+                    pass
+                s.error = reason
+                if s.stage == "parameterize":                # the panel it opened goes too
+                    self._close_panel()
+                from . import commands
+                if commands.pending_feature["command"] == self._section_done:
+                    commands.pending_feature["command"] = None
+                self._end("failed", reason)
+            return False
+
+    def _begin(self, s):
+        adapter = s.adapter
         self._suspend_gate()
         self._start_timer()
         sketch = adapter.preselected_section()
-        self.log(f"begin {adapter.name} ({requested or 'inferred'}): {len(s.selection)} selected, "
+        self.log(f"begin {adapter.name} ({s.requested or 'inferred'}): {len(s.selection)} selected, "
                  f"section {sketch.Name if sketch is not None else None}")
         if sketch is not None:
             return self._parameterize(sketch)
@@ -434,7 +464,7 @@ class Controller:
         if sketch is None:
             self._end("cancelled", "no section: the sketch was cancelled or left empty")
             return False
-        return self._parameterize(sketch)
+        return self._guarded(self.session, lambda s: self._parameterize(sketch))
 
     def _parameterize(self, sketch):
         s = self.session
@@ -457,7 +487,7 @@ class Controller:
 
     def _build(self, plan):
         s = self.session
-        s.undo_before = s.doc.UndoCount      # the sketch made inside the command has its own undo steps
+        s.undo_names = list(s.doc.UndoNames)     # the sketch made inside the command has its own undo steps
         App.setActiveTransaction(s.adapter.name, True)
         try:
             feature = s.adapter.build(s, plan)
@@ -483,6 +513,10 @@ class Controller:
             return False
         s = Session(adapter, feature=feature)
         self.session = s
+        return self._guarded(s, lambda s: self._edit(s, feature))
+
+    def _edit(self, s, feature):
+        adapter = s.adapter
         s.body = s.sketch_body = body_of(feature)
         prof = feature.Profile[0] if getattr(feature, "Profile", None) else None
         s.sketch = prof
@@ -591,7 +625,7 @@ class Controller:
             QtCore.QTimer.singleShot(50, lambda: self._rebuild(mode, plan, tries + 1))
             return
         s.mode, s.swapping, s.notice, s.error, s.warnings = mode, False, None, None, []
-        self._build(plan)
+        self._guarded(s, lambda s: self._build(plan))
 
     # ---------------------------------------------------------- panel
     def _dialog_content(self):
@@ -803,7 +837,7 @@ class Controller:
         f = s.feature()
         # not from the undo count: FreeCAD's undo list has a size limit, and a full one stops growing
         outcome = "cancelled" if s.cancelled or f is None else "committed"
-        grew = s.doc.UndoCount > s.undo_before
+        grew = bool(core.undo_steps_added(s.undo_names, s.doc.UndoNames))
         if outcome == "committed" and grew and s.doc.UndoNames and s.doc.UndoNames[0] != name:
             note = (note + "; " if note else "") + f"undo step is '{s.doc.UndoNames[0]}', not '{name}'"
         self._end(outcome, note)
@@ -845,7 +879,8 @@ class Controller:
                   "document": s.doc.Name if doc_open else None, "body": s.result_body,
                   "feature": s.feature_name if f is not None else None,
                   "undo": (s.doc.UndoNames[0] if doc_open and s.doc.UndoNames else None),
-                  "undo_steps": (s.doc.UndoCount - s.undo_before) if doc_open else None,
+                  # from the names: a full undo list keeps its count when a step is added
+                  "undo_steps": core.undo_steps_added(s.undo_names, s.doc.UndoNames) if doc_open else None,
                   "error": s.error, "warnings": list(s.warnings), "note": note}
         self.history.append(result)
         self.log(f"end {result['command']}{' edit' if s.edit else ''}: {outcome} {s.mode} {note}".rstrip())
@@ -857,27 +892,43 @@ class Controller:
                 + (f"; {note}" if note else ""))
 
     # ---------------------------------------------------------- selection scope
-    def _suspend_gate(self):
-        s = self.session
+    @staticmethod
+    def _type_filter_widget():
         try:
             from . import shell
-            tf = getattr(shell.instance(), "type_filter", None)
+            return getattr(shell.instance(), "type_filter", None)
         except Exception:
-            tf = None
-        if tf is not None and tf.gate is not None:
-            s.gate_kind = tf.gate.kind
-            tf.apply(None)
+            return None
+
+    def _suspend_gate(self):
+        """Lift the user's Type Filter (the selection manager's global layer) while the command picks its own
+        inputs; the Selection Scope stays in force. The Top Border Bar's filter is greyed out meanwhile."""
+        s = self.session
+        m = selection_filter.manager()
+        if m.global_kind is None:
+            return
+        s.gate_kind = m.global_kind
+        m.set_global(kind=None)
+        tf = self._type_filter_widget()
+        if tf is not None:
             tf.setEnabled(False)
             tf.setToolTip("Type Filter: off while the command picks its own inputs")
+        self.log(f"Type Filter {selection_filter.TYPE_LABELS.get(s.gate_kind, s.gate_kind)} lifted")
 
     def _restore_gate(self, s):
+        if s.gate_kind is None:
+            return
+        tf = self._type_filter_widget()
         try:
-            from . import shell
-            tf = getattr(shell.instance(), "type_filter", None)
-        except Exception:
-            tf = None
-        if tf is not None and s.gate_kind is not None:
-            tf.apply(s.gate_kind)
+            # the filter the Top Border Bar shows: the user's choice, which lifting it did not change
+            kind = tf.itemData(tf.currentIndex()) if tf is not None else s.gate_kind
+            m = selection_filter.manager()
+            if m.global_kind != kind:
+                # while FreeCAD's panel is still closing the manager waits for it, then installs the gate
+                m.set_global(kind=kind)
+        except Exception as e:
+            self.log(f"Type Filter not restored: {e}")
+        if tf is not None:
             tf.setEnabled(True)
             tf.setToolTip("Type Filter: limit what can be selected")
 

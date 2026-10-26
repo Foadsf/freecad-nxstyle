@@ -306,11 +306,13 @@ class ExtrudeTutorials:
 
     # ------------------------------------------------------------- New Body away from the part
     def ae_type_filter(self):
-        """(filter shown, its gate kind, enabled) of the Type Filter on the Top Border Bar."""
+        """(filter shown, the kind in force, enabled) of the Type Filter on the Top Border Bar; the kind in
+        force is the selection manager's global layer, which the gate applies."""
+        from . import selection_filter
         tf = getattr(self.shell, "type_filter", None)
         if tf is None:
             return None, None, None
-        return tf.currentText(), getattr(tf.gate, "kind", None), tf.isEnabled()
+        return tf.currentText(), selection_filter.manager().global_kind, tf.isEnabled()
 
     def ae_cyl(self):
         Gui.Selection.clearSelection()

@@ -155,5 +155,19 @@ def result_warning(mode, base_volume, volume, rel=1e-9):
     return None
 
 
+def undo_steps_added(before, after):
+    """How many undo steps were added, from the undo names (newest first) before and after. FreeCAD's undo list
+    has a size limit: a full one drops its oldest step for each new one, so its count stays the same. The
+    smallest number of new steps that explains the two lists; None when none does (an undo, a cleared list)."""
+    before, after = list(before), list(after)
+    if len(after) < len(before):
+        return None
+    # at least one old step must still be there to line the lists up, unless there was none
+    for k in range(len(after) - len(before), len(after) + (0 if before else 1)):
+        if after[k:] == before[:len(after) - k]:
+            return k
+    return None
+
+
 class CommandError(ValueError):
     pass
