@@ -939,15 +939,7 @@ class MstImpellerTutorials:
         self.wait = 600
 
     def ah_frame(self):
-        """Frame the impeller once FreeCAD's camera has stopped moving."""
-        from .tutorial import qtest
-        last = None
-        for _ in range(40):
-            pos = tuple(self.view().getCameraNode().position.getValue())
-            if pos == last:
-                break
-            last = pos
-            qtest().qWait(100)
+        """Frame the impeller (frame_sketch waits for FreeCAD's camera to stop moving)."""
         self.frame_sketch(self._ag_sk, 5.5 * IN, 3 * IN, 13 * IN)
         QtWidgets.QApplication.processEvents()
 
@@ -1216,14 +1208,7 @@ class MstCircularBaseTutorials:
                 self.aj_slots_dialog, self.aj_save, self.aj_fit, self.aj_show]
 
     def aj_settle(self, cx=0.0, cy=0.0, height=180.0):
-        from .tutorial import qtest
-        last = None
-        for _ in range(40):
-            pos = tuple(self.view().getCameraNode().position.getValue())
-            if pos == last:
-                break
-            last = pos
-            qtest().qWait(100)
+        """Frame the sketch (frame_sketch waits for FreeCAD's camera to stop moving)."""
         self.frame_sketch(self._ag_sk, cx, cy, height)
         QtWidgets.QApplication.processEvents()
 
