@@ -1,0 +1,83 @@
+= Selecting
+:description: Type Filter, Selection Scope and the work part, QuickPick, select-through, refused picks with their reasons, selection collectors and curve rules, and the Part Navigator's status.
+
+NX treats selection as part of every command: what you may pick, from where, and why a pick was not taken.
+NX-Style adds the parts of that FreeCAD lacks, on top of FreeCAD's own selection.
+
+== Type Filter and Selection Scope
+
+The Top Border Bar holds two filters.
+
+* The *Type Filter* (No Selection Filter, Curve, Datums, Edge, Face, Feature, Point, Sketch, Solid Body) restricts what you can pick, in the graphics window and in the Part Navigator.
+* The *Selection Scope* says where a pick may come from:
+** *Entire Assembly*: anywhere (the default);
+** *Within Work Part and Components*: the work part and the components inside it;
+** *Within Work Part Only*: the work part's own objects, not those of its components.
+
+The *work part* is FreeCAD's active part.
+Double-click a part, or a component in an assembly, in the Part Navigator to make it the work part; the Part Navigator names it at the top.
+A component is one occurrence of a part: two links to the same part look alike in the graphics window, but only the one you made the work part counts as inside it.
+With no work part set, the whole document is the work part.
+
+== Why a pick is refused
+
+When the filter, the scope or the running command refuses what is under the cursor, the cue line says so in red, for example:
+
+[example]
+Cannot select Face6 of Asm › UnitB: Asm › UnitB is outside the work part Asm › UnitA (Selection Scope: Within Work Part and Components)
+
+The reason stays for a few seconds after the cursor moves on.
+
+== Select-through and QuickPick
+
+*Select-through.* If the nearest thing under the cursor is refused and something allowed lies behind it, an MB1 click selects that one.
+The status bar names what was selected and why the nearer one was refused.
+
+*QuickPick.* Hold MB1 still for half a second over overlapping geometry: a list shows everything under the cursor, nearest first, each row with the element and the occurrence it belongs to (`Face6 of Asm › UnitA › Box`).
+Rows the filter or the command refuses are greyed; hover one for the reason.
+Hovering an allowed row highlights it in the graphics window; clicking it selects it.
+
+Select-through and QuickPick are off in a sketch, while FreeCAD edits an object in the view (a dragger), and with kbd:[Ctrl] or kbd:[Shift] held: MB1 then reaches FreeCAD at once.
+`"quickpick_hold_ms"` in the xref:settings.adoc[settings] sets the hold; `0` switches both off.
+
+== Commands that collect: Edge Blend
+
+*Home › Feature › Edge Blend* collects the edges to round with a *selection collector*:
+
+* `✱ Select Edge (0)` until it has enough, then `✔ Select Edge (3)`: the count and whether it is enough;
+* the *curve rule*: *Single Curve*, *Tangent Curves* (the default: one pick takes the whole smooth chain, such as the two lines and the arc of a rounded corner) or *Connected Curves* (follows a wire end to end; on a solid three edges meet at every corner, so it stops there);
+* the collected edges, and the latest refused pick with its reason.
+
+The collector takes only what Edge Blend can use: edges, of one body, picked in the part itself rather than through a component.
+OK hands the edges to FreeCAD's Fillet, where you set the radius.
+
+Both orders work:
+
+* *Select, then Edge Blend.* If every selected item is a usable edge, FreeCAD's Fillet opens at once with them, as before.
+  If something unusable is among them (a face, an edge of another body), the collector opens with the usable edges, lists the rest as refused with the reason, and deselects them.
+* *Edge Blend, then select.* The collector opens empty; pick the edges, then OK.
+
+While the collector is open, its own rules are in force.
+Changing the Type Filter meanwhile does not override them; the new filter applies when the command ends.
+Cancel brings back the selection and the filter you had before.
+
+FreeCAD's own dialogs put up selection rules of their own while you pick references in them, and remove whatever rules are up when they close.
+NX-Style leaves a dialog's rules alone: a Type Filter you choose while it is open takes effect when it closes, and the Type Filter and Selection Scope are put back in force after every dialog.
+
+== Part Navigator status
+
+Above the tree the Part Navigator shows:
+
+* *Work part* -- the occurrence path of the work part;
+* *Active body* -- the body new features go into;
+* *Suppressed* and *Errors* -- how many features are suppressed or failed to update, and which; click the count to select them;
+* *Selected* -- the element and the occurrence the selection is on.
+
+In the tree a suppressed feature is struck through and a failed one is red, with the error as its tooltip.
+FreeCAD 1.1.4 itself marks a failed feature only with a small overlay and a suppressed one not at all.
+
+== Not there yet
+
+* One Type Filter kind at a time; NX lets you combine several.
+* No layer or display-attribute filters, and no similar-face or similar-edge selection.
+* Edge Blend's radius is set in FreeCAD's Fillet dialog after the collector, not in one dialog as in NX.

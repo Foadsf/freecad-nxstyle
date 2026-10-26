@@ -11,6 +11,11 @@ navigation style (MB1 select, wheel zoom, MB3 click context menu).
     Ctrl+MB2 or MB1+MB2 drag    zoom
     MB2 click                   OK in the open feature dialog
     hold MB3                    radial menu (view, or object under cursor)
+    hold MB1 still              QuickPick: choose among everything under the cursor
+    MB1 click                   selects through what the selection filter refuses
+
+An MB1 press is held back until the button is released, the mouse moves or the hold time passes, and
+then handed to FreeCAD unchanged; only the hold and the select-through click are NXStyle's own.
 """
 
 import math
@@ -156,6 +161,11 @@ class NxMouse(QtCore.QObject):
         self.radial_timer = QtCore.QTimer(self)
         self.radial_timer.setSingleShot(True)
         self.radial_timer.timeout.connect(self._open_radial)
+        self.lmb_pending = False
+        self.last_pick = None        # what the last MB1 click or hold did, for tests
+        self.lmb_timer = QtCore.QTimer(self)
+        self.lmb_timer.setSingleShot(True)
+        self.lmb_timer.timeout.connect(self._lmb_hold)
 
     # ------------------------------------------------------------ helpers
     def coin_xy(self, p):
@@ -277,6 +287,61 @@ class NxMouse(QtCore.QObject):
         self.last_radial = menu
         menu.popup_at(self.rmb_global)
 
+    # ------------------------------------------------------------ MB1: QuickPick
+    def _defer_lmb(self, ev):
+        """Hold an MB1 press back (for QuickPick and select-through)? Not in sketches, dialogs that edit
+        an object in the view (draggers), with a modifier or with QuickPick switched off."""
+        if self.cfg.get("quickpick_hold_ms", 500) <= 0 or ev.modifiers() != Qt.NoModifier or self.mode:
+            return False
+        try:
+            gdoc = Gui.ActiveDocument
+            if gdoc is None or gdoc.getInEdit() is not None:
+                return False
+        except Exception:
+            return False
+        return True
+
+    def _flush_lmb(self):
+        """Hand the held-back MB1 press to FreeCAD."""
+        if self.lmb_pending:
+            self.lmb_timer.stop()
+            self.lmb_pending = False
+            self.replay(QtCore.QEvent.MouseButtonPress, Qt.LeftButton, self.lmb_pos)
+
+    def _lmb_hold(self):
+        if not self.lmb_pending:
+            return
+        from . import quickpick
+        self.lmb_pending = False
+        menu = quickpick.open_at(self.view, self.coin_xy(self.lmb_pos), self.lmb_global)
+        if menu is not None:
+            self.swallow_release = Qt.LeftButton
+            self.last_pick = ("quickpick", len(menu.rows))
+            status("QuickPick: choose one; greyed rows are refused (hover for the reason)")
+        else:
+            self.last_pick = ("hold", None)
+            self.replay(QtCore.QEvent.MouseButtonPress, Qt.LeftButton, self.lmb_pos)
+
+    def _lmb_click(self):
+        """A short MB1 click: select through a refused nearest hit, else let FreeCAD select."""
+        from . import selection_core, selection_filter as sf
+        self.lmb_timer.stop()
+        self.lmb_pending = False
+        m = sf.manager()
+        through = None
+        if m.installed and not sf.foreign_dialog():
+            rows = sf.rows_at(self.view, self.coin_xy(self.lmb_pos))
+            through = selection_core.select_through(rows)
+        if through is not None:
+            sf.select_row(through)
+            self.last_pick = ("through", through["label"])
+            status(f"Selected through to {through['label']}; {rows[0]['label']} is refused: {rows[0]['reason']}",
+                   5000)
+            return True
+        self.last_pick = ("click", None)
+        self.replay(QtCore.QEvent.MouseButtonPress, Qt.LeftButton, self.lmb_pos)
+        return False
+
     def set_mode(self, mode):
         """None, or 'rotate' (NX F7: MB1 drag rotates until Esc / MB2 / MB3)."""
         self.mode = mode
@@ -344,6 +409,14 @@ class NxMouse(QtCore.QObject):
         if t == QtCore.QEvent.MouseButtonDblClick:
             return own and button == Qt.MiddleButton
         if t == QtCore.QEvent.MouseButtonPress:
+            if self.lmb_pending and button != Qt.LeftButton:
+                if button == Qt.MiddleButton and own:
+                    # MB1 then MB2: the zoom chord, as with MB2 first; FreeCAD never sees this MB1
+                    self.lmb_timer.stop()
+                    self.lmb_pending = False
+                    self.extra_lmb = True
+                else:
+                    self._flush_lmb()
             if button == Qt.MiddleButton and own:
                 self.mb2 = True
                 self.start = self.last = p
@@ -370,8 +443,19 @@ class NxMouse(QtCore.QObject):
                     return True
                 if self.rmb_pending:
                     self._release_pending_rmb(press_only=True)
+                if own and self._defer_lmb(ev):
+                    self.lmb_pending = True
+                    self.lmb_pos = p
+                    self.lmb_global = global_pos(ev)
+                    self.lmb_timer.start(int(self.cfg.get("quickpick_hold_ms", 500)))
+                    return True
                 return False
             return False
+        if t == QtCore.QEvent.MouseMove and self.lmb_pending:
+            if (p - self.lmb_pos).manhattanLength() > MOVE_THRESHOLD:
+                self._flush_lmb()          # a drag: FreeCAD gets the press where it happened, then the moves
+                return False
+            return True
         if t == QtCore.QEvent.MouseMove:
             if self.mb2:
                 if not self.moved and (p - self.start).manhattanLength() > MOVE_THRESHOLD:
@@ -414,6 +498,8 @@ class NxMouse(QtCore.QObject):
             if button == Qt.LeftButton and self.extra_lmb:
                 self.extra_lmb = False
                 return True
+            if button == Qt.LeftButton and self.lmb_pending:
+                return self._lmb_click()
         return False
 
     def _release_pending_rmb(self, press_only):

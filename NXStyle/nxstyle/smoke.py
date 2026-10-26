@@ -134,6 +134,7 @@ class Smoke:
         yield self.s_ap242, 300
         yield self.s_model_views, 300
         yield self.s_assembly_links, 200
+        yield self.s_selection, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -477,7 +478,7 @@ class Smoke:
 
     def s_finder(self):
         hits = self.shell.finder.find("Edge Blend")
-        self.check("Command Finder finds NX names", "PartDesign_Fillet" in hits, hits[:5])
+        self.check("Command Finder finds NX names", "NXStyle_EdgeBlend" in hits, hits[:5])
 
     def s_repeat(self):
         doc = App.ActiveDocument
@@ -1267,6 +1268,12 @@ class Smoke:
             if before is not None and before.Name in App.listDocuments():
                 App.setActiveDocument(before.Name)
                 Gui.getDocument(before.Name)
+
+    def s_selection(self):
+        """Selection scope and look-alike occurrences, QuickPick, select-through, gate layers, collectors in
+        both orders, curve chains and the Part Navigator's marks (smoke_selection.py)."""
+        from . import smoke_selection
+        smoke_selection.run(self)
 
     def s_model_views(self):
         """PMI model views: the eight look as FreeCAD's standard views do, and the work view filters PMI."""

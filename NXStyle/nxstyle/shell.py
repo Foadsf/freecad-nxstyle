@@ -4,7 +4,7 @@
 Layout (top to bottom, left to right), following the NX textbooks:
     ribbon row     File button, Quick Access Toolbar, tabs, Command Finder
     ribbon page    groups of large / small buttons
-    top border bar Menu button, Type Filter, selection tools
+    top border bar Menu button, Type Filter, Selection Scope, selection tools
     resource bar   vertical strip on the left: Part Navigator, History, ...
     graphics area  FreeCAD 3D view with NX colours and mouse behaviour
     status bar     cue line on the left
@@ -15,12 +15,14 @@ import os
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import commands, config, navigation, prefs, shortcuts
+import html
+
+from . import commands, config, navigation, navigator_status, prefs, selection_filter, shortcuts
 from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
 from .ribbon import (CommandButton, Ribbon, command_actions, expand_tabs, known_commands,
                      spec_groups, sub_actions)
-from .selection_filter import TypeFilter
+from .selection_filter import ScopeFilter, TypeFilter
 
 OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
 GLOBAL_TOOLBARS = {"File", "Edit", "Clipboard", "Workbench", "Macro", "View", "Individual views",
@@ -137,7 +139,8 @@ class Shell(QtCore.QObject):
     # ================================================================ setup
     def setup(self):
         steps = [self._prefs, self._apply_theme, self._register_commands, self._build_ribbon_bar, self._build_border_bar,
-                 self._build_resource_bar, self._arrange_docks, self._build_cue_line, self._navigation]
+                 self._build_resource_bar, self._arrange_docks, self._navigator_status, self._build_cue_line,
+                 self._navigation]
         for step in steps:
             try:
                 step()
@@ -419,6 +422,8 @@ class Shell(QtCore.QObject):
         tb.addSeparator()
         self.type_filter = TypeFilter(tb)
         tb.addWidget(self.type_filter)
+        self.scope_filter = ScopeFilter(tb)
+        tb.addWidget(self.scope_filter)
         tb.addSeparator()
         known = known_commands()
         for name, label in BORDER_TOOLS:
@@ -619,6 +624,12 @@ class Shell(QtCore.QObject):
     def _navigation(self):
         self.navigation = navigation.NavigationManager(self)
 
+    def _navigator_status(self):
+        """Work part, active body, suppressed and failed features above the Part Navigator's tree."""
+        self.navigator_status = navigator_status.attach(self.mw)
+        if self.navigator_status is None:
+            raise RuntimeError("Part Navigator: FreeCAD's tree panel was not found, so no status strip")
+
     # ======================================================== periodic work
     def _edited_sketch(self):
         try:
@@ -721,13 +732,26 @@ class Shell(QtCore.QObject):
             dialog = bool(Gui.Control.activeDialog())
         except Exception:
             dialog = False
+        gates = selection_filter.manager()
+        try:
+            gates.sync()
+        except Exception as e:
+            App.Console.PrintWarning(f"NXStyle selection: {e}\n")
         text = CUE_SKETCH if sketch else CUE_DIALOG if dialog else CUE_IDLE
+        refused = gates.recent_rejection()
         if commands.immediate_hide.active:
             text = CUE_IMMEDIATE_HIDE
         elif getattr(self, "navigation", None) is not None and self.navigation.mode == "rotate":
             text = CUE_ROTATE
+        elif refused:      # why the pick under the cursor (or the last one) was not taken
+            text = f"<span style='color:#C62828'>{html.escape(refused)}</span>"
         if self.cue.text() != text:
             self.cue.setText(text)
+        if getattr(self, "navigator_status", None) is not None:
+            try:
+                self.navigator_status.refresh()
+            except Exception as e:
+                App.Console.PrintWarning(f"NXStyle Part Navigator status: {e}\n")
         # NX keeps the Part Navigator in front; FreeCAD leaves its (often empty)
         # Tasks panel in front after start-up, new documents and closed dialogs.
         self._ticks += 1
