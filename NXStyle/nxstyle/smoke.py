@@ -110,7 +110,10 @@ class Smoke:
         yield self.s_visibility, 300
         yield self.s_keys_doc, 300
         yield self.s_new_commands, 500
-        yield self.s_finder, 100
+        yield self.s_finder, 300
+        yield self.s_finder_check, 100
+        yield self.s_finder_click, 300
+        yield self.s_finder_check, 100
         yield self.s_repeat, 800
         yield self.s_sketch_enter, 1500
         yield self.s_sketch_check, 100
@@ -478,6 +481,47 @@ class Smoke:
     def s_finder(self):
         hits = self.shell.finder.find("Edge Blend")
         self.check("Command Finder finds NX names", "PartDesign_Fillet" in hits, hits[:5])
+        self.finder_type("Enter")
+        from .tutorial import qtest
+        qtest().keyClick(self.shell.finder, Qt.Key_Return)
+        self._finder_popup_after = self.shell.finder.completer.popup().isVisible()
+
+    def finder_type(self, how):
+        """Type a harmless command's name into the Command Finder so its completer popup opens, and count
+        the commands it runs."""
+        from .tutorial import qtest
+        from .finder import ROLE_CMD
+        cf = self.shell.finder
+        title = next((cf.model.item(r).text().split("  —  ")[0] for r in range(cf.model.rowCount())
+                      if cf.model.item(r).data(ROLE_CMD) == "Std_ViewFitAll"), "Fit all")
+        self._finder_runs = []
+        self._finder_on_run = cf.on_run
+        cf.on_run = self._finder_runs.append
+        cf.setFocus()
+        cf.clear()
+        qtest().keyClicks(cf, title)
+        QtWidgets.QApplication.processEvents()
+        self._finder_how = how
+        self._finder_popup_before = cf.completer.popup().isVisible()
+
+    def s_finder_check(self):
+        cf = self.shell.finder
+        cf.on_run = self._finder_on_run
+        p = QtWidgets.QApplication.activePopupWidget()
+        # Enter: also right after the key, before the command's timers ran
+        after = cf.completer.popup().isVisible() or (self._finder_how == "Enter" and self._finder_popup_after)
+        self.nav().widget.setFocus()
+        self.check(f"Command Finder: {self._finder_how} runs the command once and closes the popup",
+                   self._finder_popup_before and not after and len(self._finder_runs) == 1,
+                   f"popup before {self._finder_popup_before}, after {after}; ran {self._finder_runs}; "
+                   f"active popup {type(p).__name__ if p is not None else None}")
+
+    def s_finder_click(self):
+        from .tutorial import qtest
+        self.finder_type("click")
+        popup = self.shell.finder.completer.popup()
+        rect = popup.visualRect(popup.model().index(0, 0))
+        qtest().mouseClick(popup.viewport(), Qt.LeftButton, Qt.NoModifier, rect.center())
 
     def s_repeat(self):
         doc = App.ActiveDocument
