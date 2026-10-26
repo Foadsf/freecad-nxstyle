@@ -67,7 +67,7 @@ def read_back_issue(text, read_mm, decimal=".", tol=1e-6):
 
 
 # ------------------------------------------------------------------ Extrude
-BOOLEANS = [("new_body", "New Body"), ("unite", "Unite"), ("subtract", "Subtract"), ("intersect", "Intersect")]
+BOOLEANS = [("new_body", "None"), ("unite", "Unite"), ("subtract", "Subtract"), ("intersect", "Intersect")]
 LABELS = dict(BOOLEANS)
 
 UNSUPPORTED = {
@@ -77,7 +77,7 @@ UNSUPPORTED = {
 
 # NX Extrude options and what this Extrude does with each (shown in the command panel and in the docs)
 EXTRUDE_OPTIONS = [
-    ("Boolean None / New Body", "supported", "a Pad that starts a Body: in the sketch's Body while it has no "
+    ("Boolean None (a new body)", "supported", "a Pad that starts a Body: in the sketch's Body while it has no "
                                              "solid, otherwise in a new Body through a sub-shape binder"),
     ("Boolean Unite", "supported", "a Pad in the sketch's Body"),
     ("Boolean Subtract", "supported", "a Pocket in the sketch's Body"),
@@ -98,7 +98,7 @@ EXTRUDE_OPTIONS = [
                                                          "to it; delete and extrude again"),
 ]
 
-DIRECTION_NOTE = ("Subtract cuts into the part (against the sketch normal) and Unite or New Body build along "
+DIRECTION_NOTE = ("Subtract cuts into the part (against the sketch normal) and Unite or None build along "
                   "it, unless Reversed is ticked; NX keeps one direction for every Boolean.")
 SHORT_NOTE = ("Subtract cuts into the part unless Reversed. Not offered: Intersect, target body, start limit, "
               "Until Extended, section draft, Offset, Sheet.")
@@ -114,7 +114,7 @@ def options_tooltip():
 
 
 def infer_boolean(requested, has_body, has_solid):
-    """NX's inferred Boolean: Unite onto the part, a New Body when there is nothing to unite with."""
+    """NX's inferred Boolean: Unite onto the part, None (a new body) when there is nothing to unite with."""
     if requested:
         return requested
     return "unite" if has_body and has_solid else "new_body"
@@ -134,7 +134,7 @@ def plan_extrude(mode, has_body, has_solid, body_label="the Body"):
     if not has_body:
         raise CommandError(f"{LABELS[mode]} needs a target body: the sketch is not in a Body")
     if not has_solid:
-        raise CommandError(f"{LABELS[mode]} needs a solid in {body_label}, which has none yet: choose New Body")
+        raise CommandError(f"{LABELS[mode]} needs a solid in {body_label}, which has none yet: choose None for a new body")
     return {"feature": "PartDesign::Pad" if mode == "unite" else "PartDesign::Pocket", "body": "sketch"}
 
 

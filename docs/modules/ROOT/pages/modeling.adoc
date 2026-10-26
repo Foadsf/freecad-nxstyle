@@ -40,7 +40,7 @@ image::tutorial-AE-02-unite.png[The Extrude dialog: the NX command box above Fre
 |===
 | NX Boolean | What NX-Style builds
 
-| None (*New Body*)
+| *None* (a new body)
 | A Pad that starts a solid. In a Body that has no solid yet, the Pad goes into that Body. Otherwise a new Body is made, with a sub-shape binder of the sketch, and the Pad goes in there. That Pad's custom direction is set to the sketch normal, because the binder's face can point the other way. The active Body does not change, so later extrudes still go to the body you were working on.
 
 | *Unite*
@@ -53,7 +53,7 @@ image::tutorial-AE-02-unite.png[The Extrude dialog: the NX command box above Fre
 | Not supported. It is in the list, but greyed out, and choosing it gives the reason in the dialog. NX-Style does not approximate it.
 |===
 
-The Boolean starts as NX infers it: *Unite* when the sketch's Body already has a solid, otherwise *New Body*.
+The Boolean starts as NX infers it: *Unite* when the sketch's Body already has a solid, otherwise *None* (a new body). The Boolean names follow NX 2212, as in Shih's NX 2212 exercises.
 *Extrude (Subtract)* starts with *Subtract* chosen.
 Changing the Boolean replaces the preview Pad with a Pocket, or the reverse; the length typed so far is kept.
 Unite and Subtract always work on the Body that holds the sketch. NX lets you pick another target body; NX-Style does not.

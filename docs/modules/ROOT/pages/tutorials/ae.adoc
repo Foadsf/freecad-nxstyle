@@ -1,5 +1,5 @@
 = Tutorial AE: One Extrude, every way
-:description: New, Sketch and Extrude with New Body, Unite and Subtract, then edit, cancel, undo and reopen: the acceptance case of the Extrude command.
+:description: New, Sketch and Extrude with Boolean None (a new body), Unite and Subtract, then edit, cancel, undo and reopen: the acceptance case of the Extrude command.
 
 [horizontal]
 Source:: Our design. It is the acceptance case of NX-Style's Extrude command (xref:modeling.adoc#extrude[Extrude]), not a book exercise
@@ -8,15 +8,15 @@ Sizes:: a 40 × 30 × 20 block; an 8 mm radius boss 10 high on top; an 8 × 6 po
 
 == Step by step
 
-=== 1. The block: Boolean None (New Body)
+=== 1. The block: Boolean None (a new body)
 
 kbd:[Ctrl+N], then kbd:[X] with nothing selected.
 Pick the XC-YC plane and draw a 40 × 30 rectangle from the origin (kbd:[R]).
 kbd:[Ctrl+Q] opens the Extrude dialog.
-The part has no solid yet, so the Boolean is *None (New Body)*.
+The part has no solid yet, so the Boolean is *None*: a new body.
 Type 20 for the distance and press MB2.
 
-image::tutorial-AE-01-new-body.png[The Extrude dialog with Boolean New Body]
+image::tutorial-AE-01-new-body.png[The Extrude dialog with Boolean None]
 
 === 2. The boss: Unite
 
@@ -35,15 +35,15 @@ Draw an 8 × 6 rectangle near a corner, then kbd:[Ctrl+Q].
 Choose *Subtract* in the Boolean list. The preview changes from adding material to cutting it, and no undo step is added.
 Type 5 and press MB2. The pocket cuts into the part.
 
-=== 4. A separate body: New Body
+=== 4. A separate body: Boolean None
 
 kbd:[X] with nothing selected. Pick the XC-ZC plane and draw a 6 mm radius circle 100 mm from the part.
 The Boolean *Unite* is inferred, but the circle misses the part.
 The dialog shows the error and OK is unavailable, so MB2 does nothing.
-Choose *New Body*, type 15 and press MB2.
+Choose *None*, type 15 and press MB2.
 The cylinder is a second Body. The first one is unchanged.
 
-image::tutorial-AE-03-new-body.png[A Unite that misses the part, changed to New Body]
+image::tutorial-AE-03-new-body.png[A Unite that misses the part, changed to None (a new body)]
 
 === 5. Edit, Cancel, edit, OK
 
@@ -57,7 +57,7 @@ This edit is one undo step, *Edit Extrude*.
 === 6. Undo, Redo, reopen
 
 kbd:[Ctrl+Z] takes back the edit.
-A second kbd:[Ctrl+Z] takes back the whole New Body extrude: the Body, its binder and the Pad go together.
+A second kbd:[Ctrl+Z] takes back the whole new-body extrude: the Body, its binder and the Pad go together.
 kbd:[Ctrl+Y] twice brings both back.
 
 Type `Extrude (Subtract)` into the Command Finder and press Enter. The plane pick appears; *Cancel* it. Nothing is added to the part or to the undo list.

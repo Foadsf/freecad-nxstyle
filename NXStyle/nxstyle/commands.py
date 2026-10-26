@@ -697,7 +697,7 @@ def register(apps):
         "NXStyle_MeasureBodies": MeasureBodies(),
         "NXStyle_TouchMode": TouchMode(),
         "NXStyle_Extrude": ControlledFeature("Extrude", None, "Extrude",
-                                             "Extrude a sketch: New Body, Unite or Subtract; with nothing selected, "
+                                             "Extrude a sketch: Boolean None (a new body), Unite or Subtract; with nothing selected, "
                                              "sketch first (NX: X)", "PartDesign_Pad"),
         "NXStyle_ExtrudeSubtract": ControlledFeature("Extrude", "subtract", "Extrude (Subtract)",
                                                      "Extrude a sketch with Boolean Subtract", "PartDesign_Pocket"),

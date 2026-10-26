@@ -173,7 +173,7 @@ class ExtrudeTutorials:
         note = self.ae_box().findChild(QtWidgets.QLabel, "nxUnsupported").text() if self.ae_box() else ""
         self.step("Finish Sketch: the Extrude dialog, Boolean inferred None (New Body)",
                   "Ctrl+Q; the NX command box above FreeCAD's Pad panel",
-                  SAME if shown == "New Body" and ok and inter_off and "Intersect" in note else FAIL,
+                  SAME if shown == "None" and ok and inter_off and "Intersect" in note else FAIL,
                   f"Boolean '{shown}' (list enabled {enabled}); Intersect offered but disabled {inter_off}; status "
                   f"'{status}'; OK enabled {ok}; not supported shown: {'Intersect' in note and 'Offset' in note}")
         self.shot("AE1_new_body_panel.png")
@@ -360,10 +360,10 @@ class ExtrudeTutorials:
                   SAME if shown == "Unite" and ok is False and still else FAIL,
                   f"error shown: '{status}'; OK enabled {ok}; dialog still open after MB2 {still} (NX: 'tool body "
                   "does not intersect the target')")
-        picked = self.set_combo("nxBoolean", "New Body")
+        picked = self.set_combo("nxBoolean", "None")
         ready = self.ae_wait_box("ae_cyl_dialog: New Body", lambda: len(self.ae_bodies()) == 2)
         shown2, _, status2, ok2 = self.ae_panel()
-        self.step("Boolean New Body", f"'{picked}' in the Boolean list", SAME if ready and shown2 == "New Body" and ok2
+        self.step("Boolean None (a new body)", f"'{picked}' in the Boolean list", SAME if ready and shown2 == "None" and ok2
                   else FAIL, f"bodies {[b.Label for b in self.ae_bodies()]}; status '{status2}'; OK {ok2}")
         from .tutorial import qtest
         qtest().qWait(800)              # the rebuilt panel lays itself out after a Boolean change
@@ -384,7 +384,7 @@ class ExtrudeTutorials:
             tf.setCurrentIndex(0)
         active = self.view().getActiveObject("pdbody")
         work = active is not None and bodies and active.Name == bodies[0].Name
-        self.step("End = Value 15, Boolean New Body, OK", f"'{field}' = 15 mm, MB2 = OK",
+        self.step("End = Value 15, Boolean None (a new body), OK", f"'{field}' = 15 mm, MB2 = OK",
                   SAME if same and part and one and work and after[1:] == ("edge", True) else FAIL,
                   f"new body {new.Label if new else None}: {how}; the first body unchanged: {how_part}; {steps}; "
                   f"made of {[t.split('::')[-1] for t in binder if 'Origin' not in t]}; active Body still "

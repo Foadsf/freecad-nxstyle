@@ -279,7 +279,8 @@ class CommandBox(QtWidgets.QGroupBox):
         elif s.warnings:
             kind, text = "warning", "; ".join(s.warnings)
         else:
-            kind, text = "ok", f"{core.LABELS.get(s.mode, s.mode)}: ready (OK or MB2 commits one undo step)"
+            label = "None (a new body)" if s.mode == "new_body" else core.LABELS.get(s.mode, s.mode)
+            kind, text = "ok", f"{label}: ready (OK or MB2 commits one undo step)"
         self.status.setText(text)
         self.status.setStyleSheet(STYLE[kind])
 
@@ -682,7 +683,7 @@ class Controller:
         elif s.mode in ("unite", "subtract"):
             solids = _solids(f)
             if s.mode == "unite" and len(solids) > s.base_solids:
-                error = "Unite would leave a separate solid: the extrusion does not touch the part (choose New Body)"
+                error = "Unite would leave a separate solid: the extrusion does not touch the part (choose None for a new body)"
             else:
                 w = core.result_warning(s.mode, s.base_volume, _volume(f))
                 if w:

@@ -246,7 +246,7 @@
    "nx": "F8 snaps to the nearest standard view",
    "replay": "F8 key",
    "outcome": "same",
-   "detail": "view Vector (-0.000180843286216259, 0.9999647736549377, -0.008388462476432323)"
+   "detail": "view Vector (0.0, 1.0, 0.0)"
   },
   {
    "tutorial": "B: First part, cylinder and cone (mm)",
@@ -3462,7 +3462,7 @@
    "nx": "Finish Sketch: the Extrude dialog, Boolean inferred None (New Body)",
    "replay": "Ctrl+Q; the NX command box above FreeCAD's Pad panel",
    "outcome": "same",
-   "detail": "Boolean 'New Body' (list enabled True); Intersect offered but disabled True; status 'New Body: ready (OK or MB2 commits one undo step)'; OK enabled True; not supported shown: True"
+   "detail": "Boolean 'None' (list enabled True); Intersect offered but disabled True; status 'None (a new body): ready (OK or MB2 commits one undo step)'; OK enabled True; not supported shown: True"
   },
   {
    "tutorial": "AE: One Extrude, every way (command controller acceptance)",
@@ -3550,20 +3550,20 @@
    "nx": "Inferred Unite with a section that misses the part; MB2",
    "replay": "MB2 = OK",
    "outcome": "same",
-   "detail": "error shown: 'Unite would leave a separate solid: the extrusion does not touch the part (choose New Body)'; OK enabled False; dialog still open after MB2 True (NX: 'tool body does not intersect the target')"
+   "detail": "error shown: 'Unite would leave a separate solid: the extrusion does not touch the part (choose None for a new body)'; OK enabled False; dialog still open after MB2 True (NX: 'tool body does not intersect the target')"
   },
   {
    "tutorial": "AE: One Extrude, every way (command controller acceptance)",
    "n": 16,
-   "nx": "Boolean New Body",
-   "replay": "'New Body' in the Boolean list",
+   "nx": "Boolean None (a new body)",
+   "replay": "'None' in the Boolean list",
    "outcome": "same",
-   "detail": "bodies ['Body', 'Body001']; status 'New Body: ready (OK or MB2 commits one undo step)'; OK True"
+   "detail": "bodies ['Body', 'Body001']; status 'None (a new body): ready (OK or MB2 commits one undo step)'; OK True"
   },
   {
    "tutorial": "AE: One Extrude, every way (command controller acceptance)",
    "n": 17,
-   "nx": "End = Value 15, Boolean New Body, OK",
+   "nx": "End = Value 15, Boolean None (a new body), OK",
    "replay": "'lengthEdit' = 15 mm, MB2 = OK",
    "outcome": "same",
    "detail": "new body Body001: same solid as the reference: 0 mm³ differ, box within 0 mm, 3 faces (3 in the reference); the first body unchanged: same solid as the reference: 0 mm³ differ, box within 0 mm, 13 faces (13 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added; made of ['SubShapeBinder', 'Pad']; active Body still Body; Type Filter afterwards 'Edge', gate edge, enabled True"
@@ -3574,7 +3574,7 @@
    "nx": "MB3 on the first Extrude in the Part Navigator > Edit Parameters",
    "replay": "MB3 menu entry",
    "outcome": "same",
-   "detail": "menu entries ['Edit Pad', 'Set Face Colors', 'Suppressed', 'Set Tip', 'Move Object To…', 'Move Feature After…', 'Toggle Freeze', 'Placement', 'Edit Parameters', 'Toggle Visibility', 'Show Selection', 'Hide Selection']; panel open True; Boolean 'New Body' locked True (changing it would replace the feature)"
+   "detail": "menu entries ['Edit Pad', 'Set Face Colors', 'Suppressed', 'Set Tip', 'Move Object To…', 'Move Feature After…', 'Toggle Freeze', 'Placement', 'Edit Parameters', 'Toggle Visibility', 'Show Selection', 'Hide Selection']; panel open True; Boolean 'None' locked True (changing it would replace the feature)"
   },
   {
    "tutorial": "AE: One Extrude, every way (command controller acceptance)",

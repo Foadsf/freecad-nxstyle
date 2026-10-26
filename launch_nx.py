@@ -690,7 +690,7 @@ def main(argv: list[str] | None = None) -> int:
                          "AB measurement capability (TUR, guard bands, gauge studies), "
                          "AC title block and revision block from the release (runs T and V first), "
                          "AD a laser-cut tray with tabs and slots, AE one Extrude through the command controller: "
-                         "New Body, Unite, Subtract, edit, cancel, undo, reopen)")
+                         "None (new body), Unite, Subtract, edit, cancel, undo, reopen)")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "

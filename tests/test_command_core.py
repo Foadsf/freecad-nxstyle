@@ -65,7 +65,7 @@ class ExtrudeBoolean(unittest.TestCase):
     def test_refusals_say_why(self):
         with self.assertRaisesRegex(cc.CommandError, "Intersect"):
             cc.plan_extrude("intersect", True, True)
-        with self.assertRaisesRegex(cc.CommandError, "Body001.*New Body"):
+        with self.assertRaisesRegex(cc.CommandError, "Body001.*choose None"):
             cc.plan_extrude("unite", True, False, "Body001")
         with self.assertRaisesRegex(cc.CommandError, "not in a Body"):
             cc.plan_extrude("subtract", False, False)
