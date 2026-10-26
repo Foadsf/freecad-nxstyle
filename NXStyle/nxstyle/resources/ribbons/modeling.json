@@ -52,7 +52,7 @@
         {"cmd": "Part_Defeaturing", "label": "Delete Face", "size": "large"}
       ]},
       {"name": "Edit Feature", "items": [
-        {"cmd": "Std_Edit", "label": "Edit Parameters"},
+        {"cmd": ["NXStyle_EditParameters", "Std_Edit"], "label": "Edit Parameters"},
         {"cmd": "PartDesign_MoveTip", "label": "Make Current Feature"},
         {"cmd": "PartDesign_MoveFeature", "label": "Move to Body"},
         {"cmd": "NXStyle_ToggleSuppress", "label": "Suppress"},
