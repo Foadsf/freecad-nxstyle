@@ -27,6 +27,9 @@ TIP: To see FreeCAD's own names on the buttons (Pad, Pocket, Fillet …), set `"
 
 === A narrow window [[narrow-window]]
 
+The reference is NX 2212's ribbon: tabs whose groups collapse into a single group button when the window narrows. Designcenter's application clusters are not imitated.
+The order in which groups give up room, the *More* menu and the sizes are NX-Style's own and have not yet been compared with NX 2212 itself.
+
 The ribbon fits the window instead of running off its edge.
 When a tab's groups do not fit, they give up room in three stages:
 
