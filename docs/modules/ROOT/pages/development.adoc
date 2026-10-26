@@ -29,7 +29,11 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 
 | `boot.py` | Waits until FreeCAD's main window is shown, then builds the shell.
 | `shell.py` | The NX window around FreeCAD's: ribbon row, Top Border Bar, Resource Bar, navigators, cue line, application switching.
-| `ribbon.py` | Builds the ribbon from the JSON files, with FreeCAD's own command actions.
+| `ribbon.py` | Builds the ribbon from the JSON files, with FreeCAD's own command actions; fits each page to the window (compact, collapsed groups, More menu) and the group right-click menu.
+| `ribbon_layout.py` | The fitting plan, the user's saved ribbon layout (`nxstyle.ribbon.json`) and the window-size matrix (no FreeCAD).
+| `layout_check.py` | The self-test's window-size checks: clipping and reachability measured from widget geometry.
+| `theme.py` | The theme's colour tokens, filled into the stylesheets (no FreeCAD).
+| `fem_guide.py` | The Pre/Post application's guided workflow: which analysis steps are done and which comes next.
 | `commands.py` | Commands NX has and FreeCAD has not: Snap View, Show and Hide, Expressions, Repeat Command, the extrude-first workflow, Suppress, Measure Bodies, background presets.
 | `shortcuts.py` | The NX key table (`TABLE`), mapped onto FreeCAD commands.
 | `navigation.py` | NX mouse handling: an event filter on each 3D view takes over MB2 and the MB3 hold.
@@ -92,7 +96,19 @@ Each application has a JSON file; `apps.json` lists the applications and `common
   Without it, a missing command is reported by the self-test.
 * `{"include": "common:View"}` inserts a shared tab.
 * A tab with `"contextual": true` (the Sketch tab in `sketch.json`) appears while it applies.
-* In `apps.json`, an application with `"ribbon": null` gets a ribbon generated from its workbench's toolbars.
+* `"essential"` (top level) lists the application's main commands, as names or lists of candidates. Their groups give up room last when the window is narrow, and the self-test checks that they stay reachable at every window size.
+* A group's `"rank"` (a whole number, 0 by default, 10 for a group holding an essential command) sets the order in which groups give up room: lowest first.
+* A group's `"step"` ties it to a guided workflow (`simulation.json`, checked by `fem_guide.py`).
+* In `apps.json`, an application with `"ribbon": null` gets a ribbon generated from its workbench's toolbars. `"guide": "fem"` turns on the guided workflow.
+
+How a page fits its width is decided by `ribbon_layout.py`, which uses neither Qt nor FreeCAD so that the unit tests can check it. `ribbon.py` measures the groups and applies the plan, and `layout_check.py` measures the result for the self-test.
+
+== Theme colours
+
+`theme.py` holds every colour of the NX theme as a token (`accent`, `chrome`, `tint` and so on).
+The stylesheets write `@nx-<token>` in place of a colour, and `theme.stylesheet()` fills the tokens in when it loads them. An unknown token is an error.
+Python code uses `theme.color("accent")`.
+`tests/test_theme.py` fails if a stylesheet, or the shell, ribbon, finder or PLM module, contains a literal colour.
 
 The xref:nx-to-freecad.adoc[] tables are generated from these files.
 

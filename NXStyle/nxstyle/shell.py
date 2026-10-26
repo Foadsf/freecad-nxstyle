@@ -15,10 +15,10 @@ import os
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import commands, config, navigation, prefs, shortcuts
+from . import commands, config, navigation, prefs, ribbon_layout, shortcuts, theme
 from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
-from .ribbon import (CommandButton, Ribbon, command_actions, expand_tabs, known_commands,
+from .ribbon import (CommandButton, Ribbon, command_actions, expand_tabs, known_commands, resolve,
                      spec_groups, sub_actions)
 from .selection_filter import TypeFilter
 
@@ -26,7 +26,6 @@ OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
 GLOBAL_TOOLBARS = {"File", "Edit", "Clipboard", "Workbench", "Macro", "View", "Individual views",
                    "Structure", "Help", "Navigation", "Selection"}
 THEME_MARK = "/* NXStyle theme */"
-THEME_TOKENS = {"@ThemeAccentColor1": "#0B6E79", "@ThemeAccentColor2": "#8CC5CC", "@ThemeAccentColor3": "#C7E3E7"}
 LEFT_PANELS = ["Model", "Tasks", "NXHistory", "Selection view"]
 BOTTOM_PANELS = ["Report view", "Python console"]
 
@@ -133,6 +132,7 @@ class Shell(QtCore.QObject):
         self._pending_idle = 0
         self._known_docs = set(App.listDocuments())
         self._waiting_docs = {}        # new empty documents not yet active: ticks waited
+        self._guide_states = None      # last workflow step states shown on a guided ribbon
 
     # ================================================================ setup
     def setup(self):
@@ -221,6 +221,11 @@ class Shell(QtCore.QObject):
     def _build_ribbon_bar(self):
         self.ribbon = Ribbon()
         self.ribbon.on_run = commands.remember
+        self.ribbon.store = ribbon_layout.LayoutStore(config.profile_dir())
+        if self.ribbon.store.error:
+            App.Console.PrintWarning(f"NXStyle: {self.ribbon.store.error}\n")
+        self.ribbon.set_collapsed(self.ribbon.store.minimized, save=False)
+        self.mw.installEventFilter(self)
         tb = self._toolbar("NXRibbonBar", "Ribbon")
         tb.setStyleSheet("QToolBar { border: none; padding: 0px; margin: 0px; spacing: 0px; }")
         tb.addWidget(self.ribbon)
@@ -237,6 +242,41 @@ class Shell(QtCore.QObject):
         for name in QUICK_ACCESS:
             if name in known:
                 self.ribbon.qat.addWidget(self._icon_button(name))
+
+    # A main window less high than this (logical pixels, e.g. 1366x768 at 200 %) minimises the ribbon to
+    # its tab row; a tab then drops its page down over the graphics window.
+    AUTO_MINIMIZE_BELOW = 420
+
+    def eventFilter(self, obj, ev):
+        if obj is self.mw and ev.type() == QtCore.QEvent.Resize:
+            self.ribbon.set_auto_minimized(self.mw.height() < self.AUTO_MINIMIZE_BELOW)
+        return False
+
+    # An add-on panel docked with the navigators (Strata's needs 383 px) sets the whole window's minimum
+    # height, since tabbed panels share the tallest minimum: at 1366x768 and 125 % the window then no longer
+    # fits the screen. Such a panel scrolls instead. Only panels NXStyle itself places among the navigators
+    # and that never look their content up through the dock (Strata sets it once): FreeCAD's own panels and
+    # Katydid's canvas are reached through dock.widget(), so they are left as they are.
+    TALL_PANEL = 200
+    SCROLL_PANELS = {"StrataPanel"}
+
+    def scroll_tall_docks(self):
+        """Put the content of a tall hosted panel in a scroll area; returns the panels wrapped now."""
+        wrapped = []
+        for d in self.mw.findChildren(QtWidgets.QDockWidget):
+            w = d.widget()
+            if (w is None or d.objectName() not in self.SCROLL_PANELS or isinstance(w, QtWidgets.QScrollArea)
+                    or w.minimumSizeHint().height() <= self.TALL_PANEL):
+                continue
+            area = QtWidgets.QScrollArea(d)
+            area.setObjectName("NXDockScroll")
+            area.setWidgetResizable(True)
+            area.setFrameShape(QtWidgets.QFrame.NoFrame)
+            area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            area.setWidget(w)
+            d.setWidget(area)
+            wrapped.append(d.objectName())
+        return wrapped
 
     def _icon_button(self, name, label=None):
         b = CommandButton(name, label or name, "small", on_run=commands.remember)
@@ -263,6 +303,8 @@ class Shell(QtCore.QObject):
     def build_ribbon(self, app):
         r = self.ribbon
         r.clear()
+        r.app_id = app.get("id", "")
+        r.essential = set()
         known = known_commands()
         tabs = []
         if app.get("ribbon"):
@@ -270,6 +312,7 @@ class Shell(QtCore.QObject):
             self.preload(spec.get("preload", []))
             known = known_commands()
             tabs = expand_tabs(spec)
+            r.essential = {c for c in (resolve(e, known) for e in spec.get("essential", [])) if c}
         else:
             tabs = [{"name": app["title"], "groups": None}] + expand_tabs(
                 {"tabs": [{"include": "common:View"}, {"include": "common:Tools"},
@@ -288,6 +331,19 @@ class Shell(QtCore.QObject):
             r.tabs.setCurrentIndex(0)
         self._sketch_tab(navigation.in_sketch_edit(), force=True)
         self.finder.invalidate()
+        self._guide_states = None
+        self.update_guide()
+
+    def update_guide(self):
+        """Guided applications (Simulation): mark the workflow steps on the ribbon done or next."""
+        if not (self.current_app or {}).get("guide") == "fem":
+            return None
+        from . import fem_guide
+        states = fem_guide.states(fem_guide.active_members())
+        if states != getattr(self, "_guide_states", None):
+            self.ribbon.set_steps(states)
+            self._guide_states = states
+        return states
 
     def _application_groups(self):
         groups = []
@@ -598,13 +654,9 @@ class Shell(QtCore.QObject):
                     with open(path, encoding="utf-8") as f:
                         base = f.read()
                     break
-        # FreeCAD fills these placeholders when it loads a stylesheet itself; an
+        # FreeCAD fills its placeholders when it loads a stylesheet itself; an
         # unfilled one makes Qt drop the rules around it. Use the NX accent tints.
-        for token, value in THEME_TOKENS.items():
-            base = base.replace(token, value)
-        with open(config.resource("nx_theme.qss"), encoding="utf-8") as f:
-            theme = f.read()
-        app.setStyleSheet(base + "\n" + theme)
+        app.setStyleSheet(theme.fill_freecad(base) + "\n" + theme.stylesheet("nx_theme.qss"))
 
     def theme_active(self):
         return THEME_MARK in QtWidgets.QApplication.instance().styleSheet()
@@ -613,7 +665,7 @@ class Shell(QtCore.QObject):
     def _build_cue_line(self):
         self.cue = QtWidgets.QLabel(CUE_IDLE)
         self.cue.setObjectName("NXCueLine")
-        self.cue.setStyleSheet("QLabel#NXCueLine { color: #0B6E79; padding-left: 6px; }")
+        self.cue.setStyleSheet(f"QLabel#NXCueLine {{ color: {theme.color('accent')}; padding-left: 6px; }}")
         self.mw.statusBar().insertWidget(0, self.cue, 1)
 
     def _navigation(self):
@@ -732,6 +784,11 @@ class Shell(QtCore.QObject):
         # Tasks panel in front after start-up, new documents and closed dialogs.
         self._ticks += 1
         if self._ticks % 5 == 0:   # FreeCAD may re-apply its own stylesheet or dock headers
+            try:
+                self.update_guide()
+                self.scroll_tall_docks()
+            except Exception as e:
+                App.Console.PrintLog(f"NXStyle: workflow guide / panels: {e}\n")
             if self.cfg.get("theme", "nx") == "nx" and not self.theme_active():
                 self._apply_theme()
             self._blank_titles()

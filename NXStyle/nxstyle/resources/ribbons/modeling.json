@@ -3,6 +3,9 @@
   "title": "Modeling",
   "workbench": "PartDesignWorkbench",
   "preload": ["SketcherWorkbench", "PartWorkbench", "SurfaceWorkbench", "AssemblyWorkbench", "SpreadsheetWorkbench"],
+  "essential": ["PartDesign_NewSketch", ["NXStyle_Extrude", "PartDesign_Pad"], ["NXStyle_Revolve", "PartDesign_Revolution"],
+                ["NXStyle_Hole", "PartDesign_Hole"], "PartDesign_Fillet", "PartDesign_Chamfer", "PartDesign_LinearPattern",
+                "Std_Edit", "Assembly_CreateAssembly", ["Assembly_Insert", "Assembly_InsertLink"]],
   "tabs": [
     {"name": "Home", "groups": [
       {"name": "Direct Sketch", "items": [
