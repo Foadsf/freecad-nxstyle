@@ -438,6 +438,19 @@ class Shell(QtCore.QObject):
         self.enforce_ui()
         self._track_commands()
         self._reclaim_keys()
+        self._navigator_after_switch()
+
+    def _navigator_after_switch(self):
+        """NX shows the Part Navigator after an application switch unless a dialog is open. _tick only
+        raises it when (dialog, documents) changes, which a switch does not; forgetting the state makes
+        the next tick check again, after FreeCAD has finished activating the workbench."""
+        try:
+            dialog = bool(Gui.Control.activeDialog())
+        except Exception:
+            dialog = False
+        if not dialog:
+            self.show_part_navigator()
+        self._nav_state = None
 
     def _on_workbench(self, name):
         if self._loading:
@@ -459,6 +472,7 @@ class Shell(QtCore.QObject):
         self.enforce_ui()
         self._track_commands()
         self._reclaim_keys()
+        self._navigator_after_switch()
 
     # ---------------------------------------------------------- border bar
     def _build_border_bar(self):

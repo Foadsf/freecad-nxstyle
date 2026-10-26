@@ -119,7 +119,7 @@ The vertical bar on the left opens the panels; the open ones share one tab strip
 Panels in one strip share a height, so Strata's *Versions and history* panel scrolls when the window is short. Otherwise it would keep the whole window at least 628 pixels high, more than fits on a 1366x768 screen at 125 %.
 
 The *Dialog* tab holds the open feature dialog (FreeCAD's task panel).
-When no dialog is open, NX-Style brings the Part Navigator back to the front.
+When no dialog is open, NX-Style brings the Part Navigator back to the front, also after you switch applications.
 
 == Graphics window
 
