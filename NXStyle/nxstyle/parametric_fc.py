@@ -11,19 +11,29 @@ What is read from FreeCAD:
   expressions                 on feature properties and sketch constraints, when they use only those
                               aliases, numbers with units, + - * / ^ and FreeCAD's functions
   Sketcher sketches           lines, circles, arcs, points (construction too) and their constraints
-  PartDesign history          Pad, Pocket (Length, Two sides, Symmetric, Through all, taper), Revolution,
-                              Groove, Fillet, Chamfer, Thickness, LinearPattern, PolarPattern, the additive
-                              and subtractive primitives
+  PartDesign history          Pad, Pocket (Length, Two sides, Symmetric, Through all, taper, Up to face,
+                              Up to first, Up to last, with an Offset), Revolution, Groove (also Up to
+                              face), Hole (simple flat or drill point, counterbore, countersink, through
+                              all), Fillet, Chamfer, Thickness, LinearPattern, PolarPattern, Mirrored and
+                              MultiTransform of one or more features, Pipe (Standard mode along a tangent
+                              continuous sketch path, profile normal to it), the additive and subtractive
+                              primitives
+  hybrid steps                Draft, Loft, other Pipes, other Holes (threaded, tapered, counterdrill), a
+                              pattern of holes or fillets, and any other feature with a solid: written with
+                              their explicit solid (Part 55 5.2.2), so the history goes on past them
+  attachments                 a sketch attached FlatFace to an origin plane, a datum plane or a planar face
   Part workbench              Box, Cylinder, Cone, Sphere, Torus, Cut, Fuse, Common
 
-The history stops at the first feature none of those parts can represent (Hole, Mirrored, Draft, Loft,
-Pipe, Helix, up-to-face extents...); the report says which. The B-rep still carries the whole shape.
+The report lists each hybrid step and anything else that was not written. The B-rep carries the whole shape.
 
 Import (import_file()) rebuilds a PartDesign Body (or Part CSG objects), a 'Parameters' spreadsheet with
-the expressions on it, and the sketches with their constraints. Sketches come in placed, not attached;
-picked edges and faces of fillets, chamfers and shells are found again by their geometry (Part 55's
-user-selected elements). When the file carries the explicit B-rep too, the rebuilt solid is compared
-with it (the symmetric difference volume), which checks that the history means what was sent.
+the expressions on it, and the sketches with their constraints. A sketch attached to an origin plane, or to
+a face found again on the rebuilt features by its geometry, is re-attached (FlatFace, with the attachment
+offset that keeps it in place); other sketches come in placed. Picked edges and faces of fillets, chamfers,
+shells, drafts and up-to extents are found again by their geometry (Part 55's user-selected elements). A
+hole's sketch is the one whose circles sit at its positions. Draft, Loft and Pipe hybrid steps are rebuilt
+from what they record; other hybrid steps end the rebuilt history. When the file carries the explicit B-rep
+too, the rebuilt solid is compared with it, which checks that the history means what was sent.
 """
 
 import math
@@ -333,8 +343,42 @@ def sketch_model(sk, aliases, notes):
             except ExprError as err:
                 notes.append(f"{sk.Label}: constraint {c.Name or i} expression {text!r} not written ({err})")
         cons.append(d)
-    return {"name": sk.Label, "placement": placement_dict(sk.getGlobalPlacement()), "geometry": geo,
-            "constraints": cons, "faces": profile_faces(sk)}
+    out = {"name": sk.Label, "placement": placement_dict(sk.getGlobalPlacement()), "geometry": geo,
+           "constraints": cons, "faces": profile_faces(sk)}
+    att = _attachment(sk, notes)
+    if att:
+        out["attachment"] = att
+    return out
+
+
+def _attachment(sk, notes):
+    """A sketch attached FlatFace to a planar face or a plane -> {mode, face or plane, name, offset}."""
+    mode, sup = getattr(sk, "MapMode", "Deactivated"), _support(sk)
+    if mode == "Deactivated" or not sup:
+        return None
+    if mode != "FlatFace" or len(sup) != 1:
+        notes.append(f"{sk.Label}: attachment {mode} to {len(sup)} reference(s) not written; the sketch is placed")
+        return None
+    obj, subs = sup[0]
+    sub = subs[0] if subs else ""
+    att = {"mode": mode}
+    if obj.TypeId in ("App::Plane", "PartDesign::Plane"):
+        pl = obj.getGlobalPlacement() if hasattr(obj, "getGlobalPlacement") else obj.Placement
+        att.update(plane=placement_dict(pl), name=getattr(obj, "Role", "") or obj.Label)
+    elif sub.startswith("Face") and type(obj.Shape.getElement(sub).Surface).__name__ == "Plane":
+        fc = obj.Shape.getElement(sub)
+        sd = surface_dict(fc)
+        att.update(face=face_dict(fc), plane={"origin": sd["origin"], "axis": sd["axis"], "x": sd["x"]}, name="")
+    else:
+        notes.append(f"{sk.Label}: attachment to {obj.Label} {sub} not written; the sketch is placed")
+        return None
+    pl = sk.getGlobalPlacement()
+    normal, pn = pl.Rotation.multVec(Z), vec(att["plane"]["axis"]).normalize()
+    if abs(abs(normal.dot(pn)) - 1) > 1e-9:
+        notes.append(f"{sk.Label}: its attachment offset tilts it off its support; written placed, not attached")
+        return None
+    att["offset"] = (pl.Base - vec(att["plane"]["origin"])).dot(pn)
+    return att
 
 
 def parameters(doc):
@@ -415,6 +459,245 @@ def _rotation(axis_point, axis, angle):
     return {"matrix": rows, "translation": v3(t)}
 
 
+TOOL_TYPES = ("extrude", "revolve", "pipe", "box", "cylinder", "cone", "sphere", "torus")
+PATTERN_TYPES = ("PartDesign::LinearPattern", "PartDesign::PolarPattern", "PartDesign::Mirrored",
+                 "PartDesign::MultiTransform")
+UP_TO = ("UpToFace", "UpToFirst", "UpToLast")
+
+
+def _brep_text(shape, notes, label):
+    """Part 21 text of a shape's (first) solid, written by OpenCASCADE, for a hybrid step."""
+    solids = shape.Solids if shape is not None and not shape.isNull() else []
+    if not solids:
+        return None
+    if len(solids) > 1:
+        notes.append(f"{label}: {len(solids)} solids; the first is written")
+    tmp = tempfile.NamedTemporaryFile(suffix=".step", delete=False)
+    tmp.close()
+    try:
+        solids[0].exportStep(tmp.name)
+        with open(tmp.name, encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    finally:
+        os.unlink(tmp.name)
+
+
+def _explicit(f, kind, op, shape, notes, why, **extra):
+    """A feature no ISO 10303-42/111 entity represents: its explicit solid in the history (Part 55 hybrid)."""
+    text = _brep_text(shape, notes, f.Label)
+    if text is None:
+        return None
+    ft = {"type": "explicit", "name": f.Label, "kind": kind, "op": op, "brep": text, "why": why}
+    ft.update({k: v for k, v in extra.items() if v is not None})
+    return ft
+
+
+def _support(sk):
+    return getattr(sk, "AttachmentSupport", None) if hasattr(sk, "AttachmentSupport") else getattr(sk, "Support", None)
+
+
+def _plane_of(link, notes, label):
+    """A mirror plane link -> (point, unit normal) in global coordinates."""
+    if not link:
+        return None
+    obj, subs = link[0], (link[1] or [""])
+    sub = subs[0] if subs else ""
+    if obj.TypeId == "Sketcher::SketchObject":
+        pl = obj.getGlobalPlacement()
+        local = {"H_Axis": Y, "V_Axis": X, "": Z}.get(sub)
+        if local is not None:
+            return pl.Base, pl.Rotation.multVec(local)
+    if obj.TypeId in ("App::Plane", "PartDesign::Plane"):
+        pl = obj.getGlobalPlacement() if hasattr(obj, "getGlobalPlacement") else obj.Placement
+        return pl.Base, pl.Rotation.multVec(Z)
+    if sub.startswith("Face"):
+        fc = obj.Shape.getElement(sub)
+        if type(fc.Surface).__name__ == "Plane":
+            return fc.Surface.Position, fc.Surface.Axis
+    notes.append(f"{label}: mirror plane {obj.Label} {sub} not understood")
+    return None
+
+
+def _transforms_of(f, notes):
+    """(kind, rigid motions other than the identity) of a LinearPattern, PolarPattern or Mirrored."""
+    t, n = f.TypeId, None
+    if t.endswith("LinearPattern"):
+        got = _direction_of(f.Direction, notes, f.Label)
+        if got is None:
+            return None
+        n = int(f.Occurrences)
+        d = got[1].normalize() * (-1 if f.Reversed else 1)
+        mode = getattr(f, "Mode", "Overall length")
+        step = float(f.Offset.Value) if mode == "Offset" and hasattr(f.Offset, "Value") else \
+            float(f.Length.Value) / max(n - 1, 1)
+        return "linear", [{"matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]], "translation": v3(d * (step * k))}
+                          for k in range(1, n)]
+    if t.endswith("PolarPattern"):
+        got = _direction_of(f.Axis, notes, f.Label)
+        if got is None:
+            return None
+        n = int(f.Occurrences)
+        p, ax = got[0], got[1].normalize() * (-1 if f.Reversed else 1)
+        ang = float(f.Angle.Value)
+        mode = getattr(f, "Mode", "Overall angle")
+        if mode == "Offset angle" and hasattr(f, "Offset"):
+            step = float(f.Offset.Value)
+        else:
+            step = ang / n if abs(ang - 360) < 1e-9 else ang / max(n - 1, 1)
+        return "polar", [_rotation(p, ax, math.radians(step * k)) for k in range(1, n)]
+    if t.endswith("Mirrored"):
+        got = _plane_of(f.MirrorPlane, notes, f.Label)
+        if got is None:
+            return None
+        p, nv = got[0], App.Vector(got[1]).normalize()
+        nn = [nv.x, nv.y, nv.z]
+        m = [[(1.0 if i == j else 0.0) - 2 * nn[i] * nn[j] for j in range(3)] for i in range(3)]
+        return "mirror", [{"matrix": m, "translation": v3(nv * (2 * p.dot(nv)))}]
+    return None
+
+
+def _wire_edges(obj, subs):
+    """The edges of a sketch (or the named ones), chained into one wire: [(edge, reversed)]."""
+    edges = [obj.Shape.getElement(s) for s in subs if s.startswith("Edge")] if subs else list(obj.Shape.Edges)
+    wire = Part.Wire(Part.__sortEdges__(edges))
+    return [(e, e.Orientation == "Reversed") for e in wire.OrderedEdges]
+
+
+def _tangent(e, rev, at_end):
+    u = e.LastParameter if (at_end != rev) else e.FirstParameter
+    t = e.tangentAt(u)
+    return t * (-1 if rev else 1)
+
+
+def _pipe_model(f):
+    """A Pipe of a sketch along a planar sketch path in Standard mode, profile normal to the path at its start
+    -> a "pipe" feature (Part 42's surface-curve sweep), or (None, why)."""
+    prof = f.Profile[0] if f.Profile else None
+    spine = f.Spine
+    if prof is None or prof.TypeId != "Sketcher::SketchObject" or not spine or \
+            spine[0].TypeId != "Sketcher::SketchObject":
+        return None, "profile and path must be sketches"
+    if f.Mode != "Standard" or f.Transformation != "Constant" or list(f.Sections or []) or \
+            getattr(f, "AuxiliarySpine", None):
+        return None, f"mode {f.Mode}, {f.Transformation} sections (only Standard, Constant matches Part 42's sweep)"
+    path = spine[0]
+    edges = _wire_edges(path, list(spine[1] or []))
+    ppl, kpl = path.getGlobalPlacement(), prof.getGlobalPlacement()
+    N, pn, po = ppl.Rotation.multVec(Z), kpl.Rotation.multVec(Z), kpl.Base
+    first, last = edges[0], edges[-1]
+    start = first[0].Vertexes[-1 if first[1] else 0].Point
+    end = last[0].Vertexes[0 if last[1] else -1].Point
+    if abs((end - po).dot(pn)) < abs((start - po).dot(pn)):
+        edges = [(e, not r) for e, r in reversed(edges)]
+        start = end
+    t0 = _tangent(*edges[0], False)
+    if abs(abs(t0.normalize().dot(pn)) - 1) > 1e-7 or abs((start - po).dot(pn)) > 1e-6:
+        return None, "the profile is not normal to the path at its start"
+    for (e1, r1), (e2, r2) in zip(edges, edges[1:]):
+        if (_tangent(e1, r1, True).normalize() - _tangent(e2, r2, False).normalize()).Length > 1e-6:
+            return None, "the path is not tangent continuous (FreeCAD's corner transitions have no Part 42 match)"
+    return {"type": "pipe", "name": f.Label, "sketch": prof.Label, "path": path.Label,
+            "path_edges": [edge_dict(e, reverse=r) for e, r in edges], "normal": v3(N),
+            "plane": placement_dict(ppl)}, None
+
+
+def _hole_positions(f):
+    sk = f.Profile[0]
+    pl = sk.getGlobalPlacement()
+    bits = int(getattr(f, "BaseProfileType", 6) or 6)
+    out = []
+    for i, g in enumerate(sk.Geometry):
+        if sk.getConstruction(i):
+            continue
+        t = g.TypeId
+        if (t == "Part::GeomCircle" and bits & 2) or (t == "Part::GeomArcOfCircle" and bits & 4):
+            out.append(pl.multVec(g.Center))
+        elif t == "Part::GeomPoint" and bits & 1:
+            out.append(pl.multVec(App.Vector(g.X, g.Y, g.Z)))
+    return out
+
+
+def _hole_model(f, notes):
+    """A PartDesign Hole -> a "hole" feature (ISO 10303-111 round holes), or (None, why)."""
+    sk = f.Profile[0] if f.Profile else None
+    if sk is None or sk.TypeId != "Sketcher::SketchObject":
+        return None, "its profile is not a sketch"
+    if f.Threaded or f.Tapered or getattr(f, "Midplane", False):
+        return None, "threaded, tapered or midplane holes have no ISO 10303-111 counterpart here"
+    if f.HoleCutType not in ("None", "Counterbore", "Countersink") or f.DepthType not in ("Dimension", "ThroughAll"):
+        return None, f"cut type {f.HoleCutType}, depth type {f.DepthType}"
+    pl = sk.getGlobalPlacement()
+    normal = pl.Rotation.multVec(Z)
+    axis = normal * (-1 if f.Reversed else 1)            # out of the hole entrance (111, 4.4.22)
+    positions = _hole_positions(f)
+    if not positions:
+        return None, "no circle or point in its sketch"
+    r, depth = float(f.Diameter.Value) / 2, float(f.Depth.Value)
+    ft = {"type": "hole", "name": f.Label, "sketch": sk.Label, "positions": [v3(p) for p in positions],
+          "axis": v3(axis), "x": v3(pl.Rotation.multVec(X))}
+    if f.HoleCutType == "Counterbore":
+        cb_r, cb_d = float(f.HoleCutDiameter.Value) / 2, float(f.HoleCutDepth.Value)
+        ft["radii"], ft["depths"] = [cb_r, r], [cb_d, depth - cb_d]
+    else:
+        ft["radii"], ft["depths"] = [r], [depth]
+    if f.HoleCutType == "Countersink":
+        ft["transitions"] = [{"number": 1, "apex": math.radians(float(f.HoleCutCountersinkAngle.Value)),
+                              "radius": float(f.HoleCutDiameter.Value) / 2}]
+    if f.DepthType == "ThroughAll":
+        ft["through"] = True
+        base = f.BaseFeature.Shape
+        exits, depths = [], []
+        for p in positions:
+            line = Part.LineSegment(p + axis * BIG, p - axis * BIG).toShape()
+            hit = base.common(line)
+            ts = [(v.Point - p).dot(axis * -1) for v in hit.Vertexes]
+            if not ts or max(ts) <= 1e-9:
+                return None, "a through hole that misses the solid"
+            far = p - axis * max(ts)
+            faces = [fc for fc in base.Faces if fc.distToShape(Part.Vertex(far))[0] < 1e-6]
+            exits.append([face_dict(fc) for fc in faces[:1]])
+            depths.append(max(ts) - sum(ft["depths"][:-1]))
+        ft["exit_faces"], ft["exit_depths"] = exits, depths
+        ft["depths"][-1] = depths[0]
+    elif f.DrillPoint == "Angled":
+        semi = math.radians(float(f.DrillPointAngle.Value)) / 2
+        ft.update(bottom="conical", semi_apex=semi, tip_radius=0.0)
+        if f.DrillForDepth:                                # FreeCAD's depth then ends at the tip
+            ft["depths"][-1] -= r / math.tan(semi)
+    else:
+        ft.update(bottom="flat", fillet_radius=0.0)
+    if any(d <= 0 for d in ft["depths"]):
+        return None, "a segment of zero depth"
+    if any(dict(f.ExpressionEngine).get(k) for k in ("Diameter", "Depth", "HoleCutDiameter", "HoleCutDepth")):
+        notes.append(f"{f.Label}: hole radii and depths are lists in ISO 10303-111; their expressions are not written")
+    return ft, None
+
+
+def _up_to_face(f, d, prof):
+    """The face an up-to extrusion ends at, its extent from the sketch plane and its offset."""
+    tool = f.AddSubShape
+    origin = prof.getGlobalPlacement().Base
+    pts = [v.Point for v in tool.Vertexes] + [fc.CenterOfMass for fc in tool.Faces]
+    extent = max((q - origin).dot(d) for q in pts)
+    if f.Type == "UpToFace":
+        obj, subs = f.UpToFace
+        face = obj.Shape.getElement(subs[0]) if subs and subs[0] else (obj.Shape.Faces[0] if obj.Shape.Faces else None)
+    else:
+        base, face = f.BaseFeature.Shape, None
+        for tf in tool.Faces:
+            c = tf.CenterOfMass
+            u, v = tf.Surface.parameter(c)
+            if tf.normalAt(u, v).dot(d) < 0.5:
+                continue
+            hits = [bf for bf in base.Faces if bf.distToShape(Part.Vertex(c))[0] < 1e-6]
+            if hits:
+                face = hits[0]
+                break
+    if face is None:
+        return None
+    return {"face": face_dict(face), "offset": float(f.Offset.Value)}, extent
+
+
 def body_model(body, aliases, notes):
     """A PartDesign Body -> (features, sketches used)."""
     chain, f = [], body.Tip
@@ -427,6 +710,8 @@ def body_model(body, aliases, notes):
         t = f.TypeId
         ft = None
         exprs = {}
+        word = t.split("::")[-1]
+        addsub = ("difference" if "Subtractive" in t else "union") if prev else None
         if t in EXTRUDE_TYPES + REVOLVE_TYPES:
             prof = f.Profile[0] if f.Profile else None
             if prof is None or prof.TypeId != "Sketcher::SketchObject":
@@ -445,8 +730,16 @@ def body_model(body, aliases, notes):
             L, L2 = float(f.Length.Value), float(f.Length2.Value)
             kind = f.Type
             intent = ["blind", "blind"]
+            up = None
             if kind == "ThroughAll":
                 L, intent = BIG, ["through_all", "blind"]
+            elif kind in UP_TO and side == "One side":
+                got = _up_to_face(f, d, prof)
+                if got is None:
+                    notes.append(f"{f.Label}: the face of its {kind} extent was not found; written as its length")
+                else:
+                    up, L = got
+                    intent = ["up_to_next" if kind == "UpToFirst" else "unspecified", "blind"]
             elif kind not in ("Length", "TwoLengths"):
                 notes.append(f"{f.Label}: Type {kind} written as its Length ({L:g} mm); the extent intent is lost")
             if side == "Symmetric":
@@ -466,13 +759,15 @@ def body_model(body, aliases, notes):
             else:
                 first, second = L, 0.0
                 e = _expr(f, "Length", aliases, notes)
-                if e and kind != "ThroughAll":
+                if e and kind not in ("ThroughAll",) + UP_TO:
                     exprs["first"] = e
-            if abs(float(getattr(f, "Offset", 0) and f.Offset.Value or 0)) > 1e-12:
+            if up is None and abs(float(getattr(f, "Offset", 0) and f.Offset.Value or 0)) > 1e-12:
                 notes.append(f"{f.Label}: Offset not written")
             ft = {"type": "extrude", "name": f.Label, "sketch": prof.Label, "direction": v3(d),
                   "first": first, "second": second, "intent": intent,
                   "op": ("difference" if sub else "union") if prev else None}
+            if up:
+                ft["up_to"] = up
             taper = float(f.TaperAngle.Value) if hasattr(f, "TaperAngle") else 0.0
             if taper:
                 ft["taper"] = math.radians(taper)
@@ -484,7 +779,17 @@ def body_model(body, aliases, notes):
             if f.Type == "ThroughAll":
                 a = 2 * math.pi
             first, second = a, 0.0
-            if side == "Symmetric":
+            e = None
+            up = None
+            if f.Type == "UpToFace" and side == "One side" and f.UpToFace:
+                obj, subs = f.UpToFace
+                if subs and subs[0].startswith("Face"):
+                    up = {"face": face_dict(obj.Shape.getElement(subs[0]))}
+            elif f.Type in UP_TO:
+                notes.append(f"{f.Label}: Type {f.Type} written as its Angle; the extent intent is lost")
+            if up:
+                pass
+            elif side == "Symmetric":
                 first, second = a / 2, -a / 2
                 e = _expr(f, "Angle", aliases, notes, 2.0)
             elif f.Type == "TwoAngles" or side == "Two sides":
@@ -497,6 +802,8 @@ def body_model(body, aliases, notes):
             ft = {"type": "revolve", "name": f.Label, "sketch": prof.Label,
                   "axis": {"origin": v3(f.Base), "dir": v3(axis)}, "angle": first, "second": second,
                   "op": ("difference" if sub else "union") if prev else None}
+            if up:
+                ft["up_to"] = up
         elif t in ("PartDesign::Fillet", "PartDesign::Chamfer"):
             base, subs = f.Base[0], f.Base[1]
             if getattr(f, "UseAllEdges", False):
@@ -528,50 +835,112 @@ def body_model(body, aliases, notes):
                 exprs["thickness"] = ["neg", e] if f.Reversed else e
             if getattr(f, "Join", "Arc") != "Arc" or getattr(f, "Mode", "Skin") != "Skin":
                 notes.append(f"{f.Label}: Join/Mode other than Arc/Skin not written")
-        elif t in ("PartDesign::LinearPattern", "PartDesign::PolarPattern"):
-            originals = list(getattr(f, "Originals", []) or getattr(f, "Features", []))
-            known = {x["name"] for x in feats}
-            if len(originals) != 1 or originals[0].Label not in known:
-                notes.append(f"history stops at {f.Label}: a pattern of {len(originals)} feature(s) is written only "
-                             "for a single Pad, Pocket, Revolution or Groove")
-                break
-            n = int(f.Occurrences)
-            if t.endswith("LinearPattern"):
-                got = _direction_of(f.Direction, notes, f.Label)
-                if got is None:
-                    break
-                d = got[1].normalize() * (-1 if f.Reversed else 1)
-                mode = getattr(f, "Mode", "Overall length")
-                step = float(f.Offset.Value) if mode == "Offset" and hasattr(f.Offset, "Value") else \
-                    float(f.Length.Value) / max(n - 1, 1)
-                transforms = [{"matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]], "translation": v3(d * (step * k))}
-                              for k in range(1, n)]
-                kind = "linear"
-            else:
-                got = _direction_of(f.Axis, notes, f.Label)
-                if got is None:
-                    break
-                p, ax = got[0], got[1].normalize() * (-1 if f.Reversed else 1)
-                ang = float(f.Angle.Value)
-                mode = getattr(f, "Mode", "Overall angle")
-                if mode == "Offset angle" and hasattr(f, "Offset"):
-                    step = float(f.Offset.Value)
-                else:
-                    step = ang / n if abs(ang - 360) < 1e-9 else ang / max(n - 1, 1)
-                transforms = [_rotation(p, ax, math.radians(step * k)) for k in range(1, n)]
-                kind = "polar"
-            ft = {"type": "pattern", "name": f.Label, "source": originals[0].Label, "kind": kind,
-                  "transforms": transforms}
-        elif t.startswith("PartDesign::Additive") or t.startswith("PartDesign::Subtractive"):
-            word = t.split("Additive")[-1].split("Subtractive")[-1]
-            ft = _primitive(f, word, aliases, notes)
+        elif t == "PartDesign::Hole":
+            ft, why = _hole_model(f, notes)
             if ft is None:
-                notes.append(f"history stops at {f.Label}: {t} not written")
-                break
-            ft["op"] = ("difference" if "Subtractive" in t else "union") if prev else None
-        else:
-            notes.append(f"history stops at {f.Label} ({t}): ISO 10303-111 and -42 have no entity this exporter "
-                         "maps it to; the explicit B-rep still carries the whole shape")
+                ft = _explicit(f, "Hole", "difference" if prev else None, f.AddSubShape, notes, why)
+            else:
+                sketches[ft["sketch"]] = f.Profile[0]
+        elif t in PATTERN_TYPES:
+            originals = list(getattr(f, "Originals", []) or [])
+            known = {x["name"]: x for x in feats}
+            why = None
+            if not originals:
+                why = "it transforms the whole body rather than features"
+            elif "body" in str(getattr(f, "TransformMode", "")).lower():
+                why = "it transforms the whole body rather than features"
+            elif not all(o.Label in known and (known[o.Label]["type"] in TOOL_TYPES or
+                                               (known[o.Label]["type"] == "explicit" and known[o.Label].get("op")))
+                         for o in originals):
+                why = "a pattern is written for features that add or remove a solid (Pad, Pocket, Revolution, " \
+                      "Groove, Pipe, primitives), not for " + ", ".join(o.Label for o in originals)
+            got = None
+            if why is None:
+                if t.endswith("MultiTransform"):
+                    steps = []
+                    for sub_f in f.Transformations:
+                        g = _transforms_of(sub_f, notes)
+                        if g is None:
+                            why = f"its step {sub_f.Label} ({sub_f.TypeId}) is not written"
+                            break
+                        steps.append({"name": sub_f.Label, "kind": g[0], "transforms": g[1]})
+                    if why is None:
+                        allt = [x for st in parametric.multi_transforms(steps) for x in st]
+                        got = ("multi", allt, steps)
+                else:
+                    g = _transforms_of(f, notes)
+                    got = (g[0], g[1], None) if g else None
+                    if got is None:
+                        why = "its direction, axis or plane is not understood"
+            if why is not None:
+                ft = _explicit(f, word, None, f.Shape, notes, why)
+            else:
+                ft = {"type": "pattern", "name": f.Label, "source": originals[0].Label,
+                      "sources": [o.Label for o in originals], "kind": got[0], "transforms": got[1]}
+                if got[2]:
+                    ft["steps"] = got[2]
+        elif t in ("PartDesign::AdditivePipe", "PartDesign::SubtractivePipe"):
+            ft, why = _pipe_model(f)
+            if ft is not None:
+                ft["op"] = addsub
+                sketches[ft["sketch"]] = f.Profile[0]
+                sketches[ft["path"]] = f.Spine[0]
+            else:
+                spine = f.Spine
+                path = spine[0] if spine else None
+                for o in [f.Profile[0] if f.Profile else None, path]:
+                    if o is not None and o.TypeId == "Sketcher::SketchObject":
+                        sketches[o.Label] = o
+                ft = _explicit(f, word, addsub, f.AddSubShape, notes, why,
+                               profile=f.Profile[0].Label if f.Profile else None,
+                               path=path.Label if path is not None else None,
+                               path_edges=[edge_dict(e, reverse=r) for e, r in _wire_edges(path, list(spine[1] or []))]
+                               if path is not None else None,
+                               params={"mode": f.Mode, "transition": f.Transition})
+        elif t in ("PartDesign::AdditiveLoft", "PartDesign::SubtractiveLoft"):
+            prof = f.Profile[0] if f.Profile else None
+            secs = [s[0] if isinstance(s, tuple) else s for s in (f.Sections or [])]
+            for o in [prof] + secs:
+                if o is not None and o.TypeId == "Sketcher::SketchObject":
+                    sketches[o.Label] = o
+            ft = _explicit(f, word, addsub, f.AddSubShape, notes,
+                           "ISO 10303-42 has no lofted solid (sectioned_spine leaves the shape between sections "
+                           "undefined and is no solid)", profile=prof.Label if prof is not None else None,
+                           sections=[o.Label for o in secs], params={"ruled": bool(f.Ruled), "closed": bool(f.Closed)})
+        elif t == "PartDesign::Draft":
+            base, subs = f.Base[0], f.Base[1]
+            faces = [face_dict(base.Shape.getElement(s)) for s in subs if s.startswith("Face")]
+            neutral, pull = None, None
+            if f.NeutralPlane:
+                obj, nsubs = f.NeutralPlane
+                nsub = nsubs[0] if nsubs else ""
+                if nsub.startswith("Face"):
+                    neutral = {"face": face_dict(obj.Shape.getElement(nsub))}
+                else:
+                    neutral = {"plane": placement_dict(obj.getGlobalPlacement()),
+                               "name": getattr(obj, "Role", "") or obj.Label}
+            if f.PullDirection:
+                obj, psubs = f.PullDirection
+                if psubs and psubs[0].startswith("Edge"):
+                    pull = edge_dict(obj.Shape.getElement(psubs[0]))
+            if dict(f.ExpressionEngine).get("Angle"):
+                notes.append(f"{f.Label}: no ISO 10303 attribute carries a draft's angle; its expression is not written")
+            ft = _explicit(f, "Draft", None, f.Shape, notes,
+                           "no ISO 10303-111 entity drafts selected faces of a solid (extruded_face_solid_with_draft_"
+                           "angle drafts an extrusion as it is made)", faces=faces, neutral=neutral, pull=pull,
+                           params={"angle": math.radians(float(f.Angle.Value)), "reversed": bool(f.Reversed)})
+        elif t.startswith("PartDesign::Additive") or t.startswith("PartDesign::Subtractive"):
+            w2 = t.split("Additive")[-1].split("Subtractive")[-1]
+            ft = _primitive(f, w2, aliases, notes) if w2 in PRIMITIVES else None
+            if ft is not None:
+                ft["op"] = addsub
+            else:
+                ft = _explicit(f, word, addsub, f.AddSubShape, notes, "no ISO 10303-42/111 entity is mapped to it")
+        elif hasattr(f, "Shape") and f.Shape.Solids:
+            ft = _explicit(f, word, None, f.Shape, notes, "no ISO 10303-42/111 entity is mapped to it")
+        if ft is None:
+            notes.append(f"history stops at {f.Label} ({t}): it could not be written; the explicit B-rep still "
+                         "carries the whole shape")
             break
         if exprs:
             ft.setdefault("expressions", {}).update(exprs)
@@ -874,6 +1243,151 @@ def _rotation_axis(m):
     return r.Axis, r.Angle
 
 
+ORIGIN_PLANES = {"XY_Plane": Z, "XZ_Plane": Y, "YZ_Plane": X}
+
+
+def _origin_plane(body, point, normal):
+    p, nv = vec(point), vec(normal).normalize()
+    for feat in body.Origin.OriginFeatures:
+        role = getattr(feat, "Role", feat.Name)
+        if role in ORIGIN_PLANES:
+            ax = ORIGIN_PLANES[role]
+            if abs(abs(ax.dot(nv)) - 1) < 1e-9 and abs(p.dot(ax)) < 1e-6:
+                return feat
+    return None
+
+
+def _plane_reference(body, point, normal, notes, label):
+    """A link for a mirror plane: an origin plane, or a new datum plane."""
+    feat = _origin_plane(body, point, normal)
+    if feat is not None:
+        return (feat, [""])
+    pl = body.newObject("PartDesign::Plane", f"{label}_Plane")
+    pl.MapMode = "Deactivated"
+    pl.Placement = App.Placement(vec(point), App.Rotation(Z, vec(normal)))
+    notes.append(f"{label}: mirror plane is a new datum plane {pl.Label}")
+    return (pl, [""])
+
+
+def _transform_class(trs):
+    m = trs[0]["matrix"]
+    if parametric._det(m) < 0:
+        return "PartDesign::Mirrored"
+    _ax, ang = _rotation_axis(m)
+    return "PartDesign::LinearPattern" if abs(ang) < 1e-9 else "PartDesign::PolarPattern"
+
+
+def _setup_transform(o, body, trs, n, notes):
+    """Set a LinearPattern, PolarPattern or Mirrored up from its rigid motions (identity excluded)."""
+    if o.TypeId.endswith("Mirrored"):
+        m = trs[0]["matrix"]
+        cols = [[(1.0 if i == j else 0.0) - m[i][j] for i in range(3)] for j in range(3)]   # (I - M) = 2 n n^T
+        c = max(cols, key=lambda v: sum(x * x for x in v))
+        nv = vec(c).normalize()
+        point = vec(trs[0]["translation"]) * 0.5
+        o.MirrorPlane = _plane_reference(body, point, nv, notes, n)
+    elif o.TypeId.endswith("LinearPattern"):
+        t1, tl = vec(trs[0]["translation"]), vec(trs[-1]["translation"])
+        ref, rev = _axis_reference(body, None, [0, 0, 0], v3(t1.normalize()), notes, n)
+        o.Direction = ref
+        o.Reversed = rev
+        o.Occurrences = len(trs) + 1
+        o.Length = tl.Length
+    else:
+        ax, ang = _rotation_axis(trs[0]["matrix"])
+        t = vec(trs[0]["translation"])
+        rot = App.Rotation(ax, math.degrees(ang))
+        p = _axis_point(rot, t, ax)
+        ref, rev = _axis_reference(body, None, v3(p), v3(ax), notes, n)
+        o.Axis = ref
+        o.Reversed = rev
+        count = len(trs) + 1
+        step = math.degrees(ang)
+        o.Occurrences = count
+        o.Angle = 360 if abs(step * count - 360) < 1e-6 else step * (count - 1)
+
+
+def _attach(doc, sk, support, notes):
+    """Attach a placed sketch FlatFace to support, with the AttachmentOffset that keeps it where it is."""
+    want = App.Placement(sk.Placement)
+    prop = "AttachmentSupport" if hasattr(sk, "AttachmentSupport") else "Support"
+    setattr(sk, prop, [support])
+    sk.MapMode = "FlatFace"
+    sk.AttachmentOffset = App.Placement()
+    doc.recompute()
+    sk.AttachmentOffset = sk.Placement.inverse().multiply(want)
+    doc.recompute()
+    if (sk.Placement.Base - want.Base).Length > 1e-6 or not sk.Placement.Rotation.isSame(want.Rotation, 1e-9):
+        setattr(sk, prop, [])
+        sk.MapMode = "Deactivated"
+        sk.Placement = want
+        notes.append(f"{sk.Label}: re-attachment did not keep its placement; left placed")
+        return False
+    return True
+
+
+def _find_hole_sketch(ft, sketches):
+    """Name of the sketch whose circle centres are the hole positions (the hole's own sketch), if any."""
+    want = [vec(p) for p in ft["positions"]]
+    axis = vec(ft["axis"]).normalize()
+    for name, sk in sketches.items():
+        pl = sk.Placement
+        if abs(abs(pl.Rotation.multVec(Z).dot(axis)) - 1) > 1e-9:
+            continue
+        have = [pl.multVec(g.Center) for i, g in enumerate(sk.Geometry) if not sk.getConstruction(i) and
+                g.TypeId in ("Part::GeomCircle", "Part::GeomArcOfCircle")]
+        if len(have) == len(want) and all(any((h - w).Length < 1e-6 for h in have) for w in want):
+            return name
+    return None
+
+
+def _hole_sketch(body, ft, sketches):
+    """The hole's own sketch, or a new one with circles at its positions."""
+    name = _find_hole_sketch(ft, sketches)
+    if name is not None:
+        return sketches[name], False
+    want = [vec(p) for p in ft["positions"]]
+    sk = body.newObject("Sketcher::SketchObject", f"{ft['name']}Sketch")
+    sk.MapMode = "Deactivated"
+    sk.Placement = _placement({"origin": ft["positions"][0], "axis": ft["axis"], "x": ft["x"]})
+    inv = sk.Placement.inverse()
+    for p in want:
+        sk.addGeometry(Part.Circle(inv.multVec(p), Z, ft["radii"][-1]), False)
+    return sk, True
+
+
+def _make_hole(doc, body, ft, sketches, notes):
+    radii, depths, tr = ft["radii"], list(ft["depths"]), ft.get("transitions") or []
+    n = ft["name"]
+    if len(radii) > 2 or (len(radii) == 2 and tr) or any(c["number"] != 1 for c in tr) or \
+            ft.get("bottom") == "spherical" or ft.get("fillet_radius", 0) > 1e-9 or ft.get("tip_radius", 0) > 1e-9:
+        notes.append(f"{n}: this hole shape has no PartDesign Hole equivalent; stopped")
+        return None
+    sk, new = _hole_sketch(body, ft, sketches)
+    if new:
+        notes.append(f"{n}: no sketch has its centres; a new sketch {sk.Label} holds them")
+    doc.recompute()
+    o = body.newObject("PartDesign::Hole", "Hole")
+    o.Profile = sk
+    o.Reversed = sk.Placement.Rotation.multVec(Z).dot(vec(ft["axis"])) < 0
+    o.Diameter = 2 * radii[-1]
+    if len(radii) == 2:
+        o.HoleCutType = "Counterbore"
+        o.HoleCutDiameter, o.HoleCutDepth = 2 * radii[0], depths[0]
+    elif tr:
+        o.HoleCutType = "Countersink"
+        o.HoleCutDiameter, o.HoleCutCountersinkAngle = 2 * tr[0]["radius"], math.degrees(tr[0]["apex"])
+    if ft.get("through"):
+        o.DepthType = "ThroughAll"
+    else:
+        o.Depth = sum(depths)
+        if ft.get("bottom") == "conical":
+            o.DrillPoint, o.DrillPointAngle, o.DrillForDepth = "Angled", math.degrees(2 * ft["semi_apex"]), False
+        else:
+            o.DrillPoint = "Flat"
+    return o
+
+
 def model_to_document(model, doc):
     """Build FreeCAD objects for a model. Returns (main object, notes)."""
     notes = []
@@ -887,8 +1401,8 @@ def model_to_document(model, doc):
             sheet.setAlias(f"B{k}", p["name"])
         doc.recompute()
     kinds = {ft["type"] for ft in model["features"]}
-    body_mode = bool(kinds & {"extrude", "revolve", "fillet", "chamfer", "shell", "pattern"}) or \
-        (model["sketches"] and not kinds)
+    body_mode = bool(kinds & {"extrude", "revolve", "fillet", "chamfer", "shell", "pattern", "hole", "pipe",
+                              "explicit"}) or (model["sketches"] and not kinds)
     if body_mode:
         # a new part (Ctrl+N) starts with an empty Body: build into it rather than beside it
         empty = [b for b in doc.findObjects("PartDesign::Body") if not b.Group or
@@ -900,11 +1414,44 @@ def model_to_document(model, doc):
     for sk in model["sketches"]:
         sketches[sk["name"]] = make_sketch(body if body_mode else None, doc, sk, notes, sheet)
     doc.recompute()
+    pending = {}                                     # sketches to attach to a face once it exists
+    for sk in model["sketches"]:
+        att = sk.get("attachment")
+        if not att or not body_mode:
+            continue
+        if att.get("face"):
+            pending[sk["name"]] = att
+            continue
+        feat = _origin_plane(body, att["plane"]["origin"], att["plane"]["axis"])
+        if feat is None:
+            notes.append(f"{sk['name']}: its support plane {att.get('name') or ''} is not an origin plane; left placed")
+        else:
+            _attach(doc, sketches[sk["name"]], (feat, [""]), notes)
+
+    def attach_pending(names, built):
+        """Attach to the newest built feature that has the support face (FreeCAD attaches to one feature's
+        face; the face may be gone from later ones)."""
+        for nm in names:
+            att = pending.get(nm)
+            if att is None:
+                continue
+            doc.recompute()
+            for base in reversed(built):
+                subs = _match_faces(base.Shape, [att["face"]])
+                if subs:
+                    if _attach(doc, sketches[nm], (base, subs[:1]), notes):
+                        del pending[nm]
+                    break
     objs, last = {}, None
     for ft in model["features"]:
         t, n = ft["type"], ft["name"]
         ex = ft.get("expressions") or {}
         o = None
+        if body_mode:
+            used = [ft.get("sketch"), ft.get("path"), ft.get("profile")] + list(ft.get("sections") or [])
+            if t == "hole":
+                used.append(_find_hole_sketch(ft, sketches))
+            attach_pending([u for u in used if u], [x for x in objs.values() if hasattr(x, "Shape")])
         if not body_mode:
             if t == "boolean":
                 cls = {"difference": "Part::Cut", "union": "Part::Fuse", "intersection": "Part::Common"}[ft["op"]]
@@ -933,7 +1480,21 @@ def model_to_document(model, doc):
                 o.Reversed = True
             first, second = ft["first"], ft.get("second", 0.0)
             intent = (ft.get("intent") or ["blind"])[0]
-            if intent == "through_all" and pocket:
+            up = ft.get("up_to")
+            if up:
+                doc.recompute()
+                subs = _match_faces(last.Shape, [up["face"]]) if last is not None else []
+                off = float(up.get("offset", 0.0))
+                if intent == "up_to_next" and abs(off) < 1e-12:
+                    o.Type = "UpToFirst"
+                elif subs:
+                    o.Type = "UpToFace"
+                    o.UpToFace = (last, subs[:1])
+                    o.Offset = off
+                else:
+                    o.Length = first - second
+                    notes.append(f"{n}: the face of its up-to extent was not found; built to its length")
+            elif intent == "through_all" and pocket:
                 o.Type = "ThroughAll"
                 if abs(first + second) < 1e-9:
                     o.SideType = "Symmetric"
@@ -964,7 +1525,15 @@ def model_to_document(model, doc):
             o.ReferenceAxis = ref
             o.Reversed = rev
             first, second = ft["angle"], ft.get("second", 0.0)
-            if abs(first + second) < 1e-9 and second:
+            subs = []
+            if ft.get("up_to") and last is not None:
+                doc.recompute()
+                subs = _match_faces(last.Shape, [ft["up_to"]["face"]])
+            if subs:
+                o.Type = "UpToFace"
+                o.UpToFace = (last, subs[:1])
+                o.Angle = math.degrees(first - second)
+            elif abs(first + second) < 1e-9 and second:
                 o.SideType = "Symmetric"
                 o.Angle = math.degrees(2 * first)
                 _set_expr(o, "Angle", ex.get("angle"), notes, angle=True, wrap="({}) * 2")
@@ -1014,36 +1583,44 @@ def model_to_document(model, doc):
                 o.Reversed = ft["thickness"] < 0
                 e = ex.get("thickness")
                 _set_expr(o, "Value", e[1] if e and e[0] == "neg" else e, notes)
-        elif t == "pattern":
-            src = objs.get(ft["source"])
-            trs = ft["transforms"]
-            if src is None or not trs:
-                notes.append(f"{n}: pattern source {ft['source']} missing; stopped")
+        elif t == "hole":
+            if last is None:
+                notes.append(f"{n}: nothing to drill; stopped")
                 break
-            ax, ang = _rotation_axis(trs[0]["matrix"])
-            if abs(ang) < 1e-9:
-                o = body.newObject("PartDesign::LinearPattern", "LinearPattern")
-                o.Originals = [src]
-                t1, tl = vec(trs[0]["translation"]), vec(trs[-1]["translation"])
-                ref, rev = _axis_reference(body, None, [0, 0, 0], v3(t1.normalize()), notes, n)
-                o.Direction = ref
-                o.Reversed = rev
-                o.Occurrences = len(trs) + 1
-                o.Length = tl.Length
+            o = _make_hole(doc, body, ft, sketches, notes)
+        elif t == "pattern":
+            srcs = [objs.get(x) for x in (ft.get("sources") or [ft["source"]])]
+            trs = ft["transforms"]
+            if None in srcs or not trs:
+                notes.append(f"{n}: pattern source {ft.get('sources') or ft['source']} missing; stopped")
+                break
+            if ft.get("kind") == "multi":
+                o = body.newObject("PartDesign::MultiTransform", "MultiTransform")
+                o.Originals = srcs
+                steps = []
+                for st in ft["steps"]:
+                    sub = doc.addObject(_transform_class(st["transforms"]), "Transformation")
+                    _setup_transform(sub, body, st["transforms"], st["name"], notes)
+                    sub.Label = st["name"]
+                    steps.append(sub)
+                o.Transformations = steps
             else:
-                o = body.newObject("PartDesign::PolarPattern", "PolarPattern")
-                o.Originals = [src]
-                t = vec(trs[0]["translation"])
-                # a point on the axis: solve (I - R) p = t in the plane normal to the axis
-                rot = App.Rotation(ax, math.degrees(ang))
-                p = _axis_point(rot, t, ax)
-                ref, rev = _axis_reference(body, None, v3(p), v3(ax), notes, n)
-                o.Axis = ref
-                o.Reversed = rev
-                count = len(trs) + 1
-                step = math.degrees(ang)
-                o.Occurrences = count
-                o.Angle = 360 if abs(step * count - 360) < 1e-6 else step * (count - 1)
+                cls = _transform_class(trs)
+                o = body.newObject(cls, cls.split("::")[1])
+                o.Originals = srcs
+                _setup_transform(o, body, trs, n, notes)
+        elif t == "pipe":
+            sk, path = sketches.get(ft["sketch"]), sketches.get(ft.get("path"))
+            if sk is None or path is None:
+                notes.append(f"{n}: its profile or path sketch is missing; stopped")
+                break
+            sub = ft.get("op") == "difference"
+            o = body.newObject("PartDesign::SubtractivePipe" if sub else "PartDesign::AdditivePipe", "Pipe")
+            o.Spine = (path, [f"Edge{i + 1}" for i in range(len(path.Shape.Edges))])
+            o.Profile = sk
+            o.Mode = "Standard"
+        elif t == "explicit":
+            o = _make_explicit(doc, body, ft, sketches, last, notes)
         elif t in ("box", "cylinder", "cone", "sphere", "torus"):
             o = _make_primitive(doc, body, ft, notes)
         else:
@@ -1059,9 +1636,69 @@ def model_to_document(model, doc):
         doc.recompute()
         if hasattr(o, "isValid") and not o.isValid():
             notes.append(f"{n}: does not recompute ({o.getStatusString() if hasattr(o, 'getStatusString') else ''})")
+    if body_mode:
+        attach_pending(list(pending), [x for x in objs.values() if hasattr(x, "Shape")])
+        for nm in pending:
+            notes.append(f"{nm}: its support face was not found on the rebuilt solid; left placed")
     doc.recompute()
     main = body if body_mode else last
     return main, notes
+
+
+def _make_explicit(doc, body, ft, sketches, last, notes):
+    """Rebuild a hybrid step from what it records (Draft, Loft, Pipe), or stop."""
+    kind, n, prm = ft.get("kind", ""), ft["name"], ft.get("params") or {}
+    if kind == "Draft":
+        if last is None:
+            return None
+        doc.recompute()
+        subs = _match_faces(last.Shape, ft.get("faces") or [])
+        if not subs:
+            notes.append(f"{n}: its drafted faces were not found; stopped")
+            return None
+        o = body.newObject("PartDesign::Draft", "Draft")
+        o.Base = (last, subs)
+        nt = ft.get("neutral") or {}
+        if nt.get("face"):
+            ns = _match_faces(last.Shape, [nt["face"]])
+            if ns:
+                o.NeutralPlane = (last, ns[:1])
+        elif nt.get("plane"):
+            feat = _origin_plane(body, nt["plane"]["origin"], nt["plane"]["axis"])
+            if feat is not None:
+                o.NeutralPlane = (feat, [""])
+        if ft.get("pull"):
+            es = _match_edges(last.Shape, [ft["pull"]])
+            if es:
+                o.PullDirection = (last, es[:1])
+        o.Angle = math.degrees(float(prm.get("angle", 0.0)))
+        o.Reversed = bool(prm.get("reversed", False))
+        return o
+    if kind in ("AdditiveLoft", "SubtractiveLoft"):
+        prof = sketches.get(ft.get("profile"))
+        secs = [sketches.get(x) for x in ft.get("sections") or []]
+        if prof is None or None in secs:
+            notes.append(f"{n}: a loft section sketch is missing; stopped")
+            return None
+        o = body.newObject(f"PartDesign::{kind}", "Loft")
+        o.Profile = prof
+        o.Sections = secs
+        o.Ruled, o.Closed = bool(prm.get("ruled", False)), bool(prm.get("closed", False))
+        return o
+    if kind in ("AdditivePipe", "SubtractivePipe"):
+        prof, path = sketches.get(ft.get("profile")), sketches.get(ft.get("path"))
+        if prof is None or path is None:
+            notes.append(f"{n}: its profile or path sketch is missing; stopped")
+            return None
+        o = body.newObject(f"PartDesign::{kind}", "Pipe")
+        o.Spine = (path, [f"Edge{i + 1}" for i in range(len(path.Shape.Edges))])
+        o.Profile = prof
+        for prop in ("mode", "transition"):
+            if prm.get(prop):
+                setattr(o, prop.capitalize(), str(prm[prop]).replace("_", " "))
+        return o
+    notes.append(f"{n} ({kind}): written as an explicit solid only; the history is rebuilt up to it")
+    return None
 
 
 def _axis_point(rot, t, ax):
@@ -1101,6 +1738,24 @@ def _make_primitive(doc, body, ft, notes):
     return o
 
 
+def compare_solids(a, b):
+    """(volume of the symmetric difference, how it was found). When OpenCASCADE's Booleans fail on two
+    coincident shapes (no common volume between solids of equal volume, as with lofted B-spline faces read
+    back from STEP), the volumes, areas, bounding boxes and face areas are compared instead: equal, the
+    difference is 0."""
+    diff = a.cut(b).Volume + b.cut(a).Volume
+    big = max(a.Volume, b.Volume, 1.0)
+    if diff <= 1e-3 * big or a.common(b).Volume > 1e-9 * big:
+        return diff, "symmetric difference"
+    ba, bb = a.BoundBox, b.BoundBox
+    box = max(abs(x - y) for x, y in zip((ba.XMin, ba.YMin, ba.ZMin, ba.XMax, ba.YMax, ba.ZMax),
+                                         (bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax)))
+    fa, fb = sorted(f.Area for f in a.Faces), sorted(f.Area for f in b.Faces)
+    alike = abs(a.Volume - b.Volume) <= 1e-7 * big and abs(a.Area - b.Area) <= 1e-7 * max(a.Area, 1.0) and \
+        box <= 1e-5 and len(fa) == len(fb) and all(abs(x - y) <= 1e-6 * max(x, 1.0) for x, y in zip(fa, fb))
+    return (0.0 if alike else diff), "volume, area, bounding box and face areas (the Boolean comparison failed)"
+
+
 def import_file(path, doc=None):
     """Rebuild the parametric models in a STEP file. Returns (objects, report text)."""
     doc = doc or App.ActiveDocument or App.newDocument()
@@ -1125,10 +1780,10 @@ def import_file(path, doc=None):
         try:
             explicit = Part.read(path)
             rebuilt = made[0].Shape
-            diff = rebuilt.cut(explicit).Volume + explicit.cut(rebuilt).Volume
+            diff, how = compare_solids(rebuilt, explicit)
             vol = max(explicit.Volume, 1e-12)
             lines.append(f"Rebuilt history against the explicit B-rep in the file: volumes {rebuilt.Volume:.4f} and "
-                         f"{explicit.Volume:.4f} mm³, symmetric difference {diff:.6f} mm³ ({100 * diff / vol:.4f} %)")
+                         f"{explicit.Volume:.4f} mm³, difference {diff:.6f} mm³ ({100 * diff / vol:.4f} %) by {how}")
         except Exception as err:
             lines.append(f"Comparison with the explicit B-rep failed: {err}")
     if notes:

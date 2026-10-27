@@ -6,11 +6,14 @@ a FreeCAD document from:
 
   parameters   named values (Spreadsheet aliases): name, value, unit ("mm", "deg" or ""), description
   sketches     name, placement, 2D geometry (line, circle, arc, point; construction flag), Sketcher
-               constraints (FreeCAD's type names and geometry/position indices), and the 3D faces of
-               its closed profiles
-  features     the history: extrude (Pad, Pocket), revolve (Revolution, Groove), fillet, chamfer, shell
-               (Thickness), pattern (LinearPattern, PolarPattern), the CSG primitives box, cylinder,
-               cone, sphere, torus, and boolean (Cut, Fuse, Common)
+               constraints (FreeCAD's type names and geometry/position indices), the 3D faces of
+               its closed profiles, and its attachment (a planar face or a plane, and the offset)
+  features     the history: extrude (Pad, Pocket; up to a face, with an offset), revolve (Revolution,
+               Groove; up to a face), pipe (a profile swept along a planar path), hole (round holes at
+               the positions of a sketch), fillet, chamfer, shell (Thickness), pattern (linear, polar,
+               mirror and multitransform, of one or more features), the CSG primitives box, cylinder,
+               cone, sphere, torus, boolean (Cut, Fuse, Common), and explicit (a step no entity
+               represents, carried by its explicit solid)
   expressions  per feature attribute or sketch constraint, an expression tree over the parameters
 
 to_step(model) writes it as ISO 10303 entities; from_step(file) reads it back:
@@ -35,15 +38,33 @@ to_step(model) writes it as ISO 10303 entities; from_step(file) reads it back:
                       BOUND_VARIATIONAL_PARAMETER bound by INSTANCE_ATTRIBUTE_REFERENCE to the attribute
                       it drives, and an EQUAL_PARAMETER_CONSTRAINT (plain reference) or a
                       FREE_FORM_ASSIGNMENT whose expression is ISO 13584-20 (annex F of Cor.1)
+    attachment        the sketch's plane (a PLANE on the axis placement of its REPOSITIONED_NEUTRAL_SKETCH)
+                      on the support's plane: INCIDENCE_GEOMETRIC_CONSTRAINT, or PARALLEL_GEOMETRIC_-
+                      CONSTRAINT + SDGC_WITH_DIMENSION at an offset (7.4), in the history's parameters; a
+                      supporting face is a FACE_SURFACE snapshot, found again by its geometry. Not the
+                      POSITIONED_SKETCH: its sketch_basis is the sketch's own geometry (8.4.10), not the
+                      face it lies on
   ISO 10303-55        the history as a PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE in a
                       PROCEDURAL_SHAPE_REPRESENTATION; picked edges and faces as
-                      USER_SELECTED_SHAPE_ELEMENTS before the operation that uses them; a pattern as a
-                      nested sequence; tied to the explicit B-rep by
-                      EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP when there is one (5.4.1)
-  ISO 10303-42/111    EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS (and _WITH_DRAFT_ANGLE), REVOLVED_FACE_SOLID
-                      (_WITH_TRIM_CONDITIONS), BOOLEAN_RESULT, SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND,
+                      USER_SELECTED_SHAPE_ELEMENTS before the operation that uses them; a pattern, the
+                      positions of a hole and a step of a multitransform as nested sequences; tied to the
+                      explicit B-rep by EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP when there is
+                      one (5.4.1). A feature no entity represents (Draft, Loft, a Pipe that Part 42's sweep
+                      does not describe, a pattern of holes or fillets) is a hybrid step (5.2.2): a nested
+                      sequence whose rationale names it ("Draft: ... | angle=0.07 reversed=false"), holding
+                      what was picked and its explicit solid (a MANIFOLD_SOLID_BREP copied from OpenCASCADE's
+                      STEP), as a BOOLEAN_RESULT with the solid before it for an additive or subtractive one
+  ISO 10303-42/111    EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS (and _WITH_DRAFT_ANGLE; up to a face: the face
+                      as trim condition, intent UP_TO_NEXT, OFFSET or UNSPECIFIED, the unsigned offset, the
+                      reached extent as depth), REVOLVED_FACE_SOLID (_WITH_TRIM_CONDITIONS, also up to a
+                      face), SURFACE_CURVE_SWEPT_FACE_SOLID (a pipe: the profile in z = 0 of the sweep frame,
+                      the path a COMPOSITE_CURVE, the path's plane as reference surface), BOOLEAN_RESULT,
+                      SOLID_WITH_FLAT_BOTTOM_ / CONICAL_BOTTOM_ROUND_HOLE, SOLID_WITH_STEPPED_ROUND_HOLE
+                      (+ SOLID_WITH_THROUGH_DEPRESSION, + _AND_CONICAL_TRANSITIONS), one per position, the
+                      placing's z axis out of the entrance (4.4.22), SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND,
                       SOLID_WITH_SINGLE/DOUBLE_OFFSET_CHAMFER, SOLID_WITH_ANGLE_BASED_CHAMFER, SHELLED_SOLID,
-                      SOLID_REPLICA, BLOCK, RIGHT_CIRCULAR_CYLINDER/CONE, SPHERE, TORUS
+                      SOLID_REPLICA (a mirror: a CARTESIAN_TRANSFORMATION_OPERATOR_3D with left-handed axes,
+                      42 4.4.21), BLOCK, RIGHT_CIRCULAR_CYLINDER/CONE, SPHERE, TORUS
 
 Where Parts 55 and 108 contradict each other the choice is recorded here:
   * procedural_solid_representation_sequence WR1 wants SOLID_MODEL in its type list, and
@@ -63,6 +84,10 @@ Where Parts 55 and 108 contradict each other the choice is recorded here:
     therefore written as complex instances that are also MATHS_REAL_VARIABLE (Part 50), with typed values.
   * angles in AGC_WITH_DIMENSION are 0-90 degrees and distances unsigned (108, 7.4.19); the sign and
     the branch are taken from the current geometry when reading (108, 5.2.3).
+  * Part 111's offset of an up-to extrusion is unsigned (4.4.48) and does not say on which side of the face
+    the extrusion ends; the side is taken from the depth (the extent reached) when reading.
+  * the WR1 of solid_with_stepped_round_hole lists SOLID_WITH_FLAT_BOTTOM_ROUND_HOLE twice and not the
+    conical bottom; a through hole is written without any bottom, as its text intends.
 """
 
 import math
@@ -110,6 +135,76 @@ def _norm(a):
 
 def _dist(a, b):
     return math.sqrt(_dot(_sub(a, b), _sub(a, b)))
+
+
+def _angle_on(c, p, r1=None, r2=None):
+    """Parameter (radians) of point p on a circle or ellipse {center, axis, x}."""
+    ax, x = _norm(c["axis"]), _norm(c["x"])
+    x = _norm(_sub(x, _mul(ax, _dot(x, ax))))
+    y = _cross(ax, x)
+    v = _sub(p, c["center"])
+    a, b = _dot(v, x), _dot(v, y)
+    if r1 and r2:
+        a, b = a / r1, b / r2
+    return math.atan2(b, a) % (2 * math.pi)
+
+
+def _edge_params(e):
+    """(start, end) parameters of an edge {curve, p1, p2} on its basis curve as _Writer.curve3 writes it."""
+    c = e["curve"]
+    if c["type"] == "line":
+        d = _norm(c["dir"])
+        return _dot(_sub(e["p1"], c["origin"]), d), _dot(_sub(e["p2"], c["origin"]), d)
+    if c["type"] in ("circle", "ellipse"):
+        r = (c.get("r1"), c.get("r2")) if c["type"] == "ellipse" else (None, None)
+        t0, t1 = _angle_on(c, e["p1"], *r), _angle_on(c, e["p2"], *r)
+        if t1 <= t0 + 1e-12:
+            t1 += 2 * math.pi
+        return t0, t1
+    if c["type"] == "bspline":
+        return float(c["knots"][0]), float(c["knots"][-1])
+    raise StepError(f"edge of type {c['type']!r} has no parameter range here")
+
+
+def _apply(m, v):
+    return [sum(m[i][k] * v[k] for k in range(3)) for i in range(3)]
+
+
+def _xform_point(m, t, p):
+    return _add(_apply(m, p), t)
+
+
+def _xform_face(fc, m, t):
+    """A face snapshot moved by the rigid motion p -> m p + t (m: 3x3 rows)."""
+    def curve(c):
+        c = dict(c)
+        for k in ("origin", "center"):
+            if k in c:
+                c[k] = _xform_point(m, t, c[k])
+        for k in ("dir", "axis", "x"):
+            if k in c:
+                c[k] = _apply(m, c[k])
+        if "poles" in c:
+            c["poles"] = [_xform_point(m, t, q) for q in c["poles"]]
+        return c
+    out = dict(fc)
+    out["surface"] = curve(fc["surface"])
+    out["loops"] = [[dict(e, curve=curve(e["curve"]), p1=_xform_point(m, t, e["p1"]), p2=_xform_point(m, t, e["p2"]))
+                     for e in loop] for loop in fc["loops"]]
+    return out
+
+
+def _transpose(m):
+    return [[m[k][i] for k in range(3)] for i in range(3)]
+
+
+def sweep_frame(normal, tangent):
+    """Part 42's frame of a surface-curve sweep at a point (6.4.35, 6.4.39): x along the reference surface
+    normal N, z along the directrix tangent t (base_axis(3, N, ?, t)). Returns the matrix with these columns."""
+    z = _norm(tangent)
+    x = _norm(_sub(normal, _mul(z, _dot(normal, z))))
+    y = _cross(z, x)
+    return [[x[i], y[i], z[i]] for i in range(3)]
 
 
 # ------------------------------------------------------------------ expressions (ISO 13584-20)
@@ -185,6 +280,7 @@ class _Writer:
         self.cache = {}
         self.notes = []
         self.reals = self._generics = None
+        self.face_geometry = {}                     # FACE_SURFACE ref -> its surface ref
 
     def add(self, name, *params):
         return self.f.add(name, *params)
@@ -314,7 +410,26 @@ class _Writer:
             oes = [self.add("ORIENTED_EDGE", "", D, D, self.edge(e, verts), True) for e in loop]
             el = self.add("EDGE_LOOP", "", oes)
             bounds.append(self.add("FACE_OUTER_BOUND" if k == 0 else "FACE_BOUND", "", el, True))
-        return self.add("FACE_SURFACE", name, bounds, self.surface(fc["surface"]), bool(fc.get("same_sense", True)))
+        surf = self.surface(fc["surface"])
+        ref = self.add("FACE_SURFACE", name, bounds, surf, bool(fc.get("same_sense", True)))
+        self.face_geometry[int(ref)] = surf
+        return ref
+
+    def composite(self, name, edges, continuity="CONT_SAME_GRADIENT"):
+        """Edges joined end to end (each {curve, p1, p2}, running from p1 to p2) -> (COMPOSITE_CURVE, its
+        parameter length): TRIMMED_CURVEs trimmed by point and parameter (42, 4.4.41)."""
+        segs, total = [], 0.0
+        closed = _dist(edges[0]["p1"], edges[-1]["p2"]) < 1e-7
+        for k, e in enumerate(edges):
+            t0, t1 = _edge_params(e)
+            tc = self.add("TRIMMED_CURVE", "", self.curve3(e["curve"]),
+                          [self.point(e["p1"]), T("PARAMETER_VALUE", t0)],
+                          [self.point(e["p2"]), T("PARAMETER_VALUE", t1)], True, E("CARTESIAN"))
+            last = k == len(edges) - 1
+            segs.append(self.add("COMPOSITE_CURVE_SEGMENT", E("DISCONTINUOUS" if last and not closed else continuity),
+                                 True, tc))
+            total += t1 - t0
+        return self.add("COMPOSITE_CURVE", name, segs, False), total
 
     def selected(self, name, items):
         """USER_SELECTED_SHAPE_ELEMENTS as a complex instance that is a geometric item (55, 5.4.4 WR1)."""
@@ -518,14 +633,15 @@ def _write_sketch(w, sk, params):
     origin2 = w.add("AXIS2_PLACEMENT_2D", "", w.fresh_point([0.0, 0.0]), w.add("DIRECTION", "", [1.0, 0.0]))
     w.add("REPRESENTATION", f"{sk['name']} origin", [origin2], ctx)
     rmap = w.add("REPRESENTATION_MAP", origin2, cur)
-    rep = w.add("REPOSITIONED_NEUTRAL_SKETCH", sk["name"], rmap, w.placement(sk["placement"]))
+    target = w.placement(sk["placement"])
+    rep = w.add("REPOSITIONED_NEUTRAL_SKETCH", sk["name"], rmap, target)
     positioned = []
     for k, fc in enumerate(sk.get("faces") or []):
         face = w.face(fc, f"{sk['name']}.face{k}")
         ps = w.add("POSITIONED_SKETCH", f"{sk['name']}.face{k}", face, [])
         w.add("IMPLICIT_EXPLICIT_POSITIONED_SKETCH_RELATIONSHIP", sk["name"], U, rep, ps)
         positioned.append((face, ps))
-    return {"var": var, "current": cur, "repositioned": rep, "faces": positioned}
+    return {"var": var, "current": cur, "repositioned": rep, "faces": positioned, "target": target}
 
 
 DIM_ATTR = {"PDGC_WITH_DIMENSION": "DISTANCE_VALUE", "CLGC_WITH_DIMENSION": "LENGTH_VALUE",
@@ -675,8 +791,9 @@ BOOL_OP = {"union": "UNION", "difference": "DIFFERENCE", "intersection": "INTERS
 INTENTS = ("blind", "through_all", "up_to_next", "offset", "unspecified")
 
 
-def _write_tool(w, ft, sketches):
-    """The solid an extrude or revolve feature adds or removes (several profile faces are united)."""
+def _write_tool(w, ft, sketches, up_face=None):
+    """The solid an extrude or revolve feature adds or removes (several profile faces are united). up_face:
+    the FACE_SURFACE an up-to-face extent ends at (111, 4.4.48 generalized_surface_select)."""
     sk = sketches[ft["sketch"]]
     if not sk["faces"]:
         raise StepError(f"{ft['name']}: sketch {ft['sketch']} has no closed profile")
@@ -685,9 +802,20 @@ def _write_tool(w, ft, sketches):
         if ft["type"] == "extrude":
             first, second = float(ft["first"]), float(ft.get("second", 0.0))
             depth = max(abs(first - second), 1e-9)
-            intents = [E(i.upper()) for i in ft.get("intent", ("blind", "blind"))]
-            common = [ft["name"], face, w.direction(ft["direction"]), depth, T("LENGTH_MEASURE", first),
-                      T("LENGTH_MEASURE", second), intents[0], intents[1], 0.0, 0.0]
+            intent = list(ft.get("intent", ("blind", "blind")))
+            off1 = 0.0
+            if up_face is not None:
+                off1 = abs(float(ft["up_to"].get("offset", 0.0)))
+                intent[0] = "offset" if off1 > 1e-12 else intent[0] if intent[0] in ("up_to_next", "unspecified") \
+                    else "unspecified"
+                if intent[0] != "offset":
+                    off1 = 0.0
+                trim1 = up_face
+            else:
+                trim1 = T("LENGTH_MEASURE", first)
+            intents = [E(i.upper()) for i in intent]
+            common = [ft["name"], face, w.direction(ft["direction"]), depth, trim1,
+                      T("LENGTH_MEASURE", second), intents[0], intents[1], off1, 0.0]
             if ft.get("taper"):
                 tools.append(w.add("EXTRUDED_FACE_SOLID_WITH_DRAFT_ANGLE", *common, float(ft["taper"])))
             else:
@@ -695,16 +823,171 @@ def _write_tool(w, ft, sketches):
         else:
             axis = w.a1p(ft["axis"]["origin"], ft["axis"]["dir"])
             first, second = float(ft["angle"]), float(ft.get("second", 0.0))
-            if second:
+            if up_face is not None:
+                tools.append(w.add("REVOLVED_FACE_SOLID_WITH_TRIM_CONDITIONS", ft["name"], face, axis,
+                                   max(abs(first - second), 1e-9), up_face, T("PLANE_ANGLE_MEASURE", second)))
+            elif second:
                 tools.append(w.add("REVOLVED_FACE_SOLID_WITH_TRIM_CONDITIONS", ft["name"], face, axis,
                                    abs(first - second), T("PLANE_ANGLE_MEASURE", first),
                                    T("PLANE_ANGLE_MEASURE", second)))
             else:
                 tools.append(w.add("REVOLVED_FACE_SOLID", ft["name"], face, axis, first))
+    return _union(w, ft["name"], tools), tools
+
+
+def _union(w, name, tools):
     tool = tools[0]
     for k, t in enumerate(tools[1:], 2):
-        tool = w.add("BOOLEAN_RESULT", f"{ft['name']}.profiles{k}", E("UNION"), tool, t)
-    return tool, tools
+        tool = w.add("BOOLEAN_RESULT", f"{name}.profiles{k}", E("UNION"), tool, t)
+    return tool
+
+
+def _edge_tangent(e):
+    """Unit tangent of an edge {curve, p1, p2} at p1, in its running sense."""
+    c = e["curve"]
+    if c["type"] == "line":
+        return _norm(_sub(e["p2"], e["p1"]))
+    if c["type"] in ("circle", "ellipse"):
+        return _norm(_cross(_norm(c["axis"]), _sub(e["p1"], c["center"])))
+    if c["type"] == "bspline":
+        return _norm(_sub(c["poles"][1], c["poles"][0]))
+    raise StepError(f"no tangent for a {c['type']} edge")
+
+
+def _write_pipe(w, ft, sketches, model_sketches):
+    """A profile swept along a planar path: SURFACE_CURVE_SWEPT_FACE_SOLID (42, 6.4.35) per profile face, the
+    face moved into the sweep's local frame at the start of the path (z = 0, x along the path plane's normal
+    N, z along the tangent), the path a COMPOSITE_CURVE on the plane of the path sketch."""
+    msk = model_sketches[ft["sketch"]]
+    if not msk.get("faces"):
+        raise StepError(f"{ft['name']}: sketch {ft['sketch']} has no closed profile")
+    edges = ft["path_edges"]
+    c0, t0 = edges[0]["p1"], _edge_tangent(edges[0])
+    frame = sweep_frame(ft["normal"], t0)
+    inv = _transpose(frame)
+    shift = _mul(_apply(inv, c0), -1.0)
+    directrix, total = w.composite(f"{ft['path']}.path", edges)
+    pl = ft.get("plane") or {"origin": c0, "axis": ft["normal"], "x": t0}
+    ref = w.add("PLANE", f"{ft['path']}.plane", w.a2p3(pl["origin"], ft["normal"], pl["x"]))
+    tools = []
+    for k, fc in enumerate(msk["faces"]):
+        local = w.face(_xform_face(fc, inv, shift), f"{ft['sketch']}.face{k}")
+        tools.append(w.add("SURFACE_CURVE_SWEPT_FACE_SOLID", ft["name"], local, directrix, 0.0, float(total), ref))
+    return _union(w, ft["name"], tools), tools
+
+
+def _write_hole(w, ft, k, pos, base, transitions, exit_faces):
+    """One position of a hole: SOLID_WITH_FLAT_BOTTOM_ / CONICAL_BOTTOM_ROUND_HOLE, or a SOLID_WITH_STEPPED_-
+    ROUND_HOLE + SOLID_WITH_THROUGH_DEPRESSION; + _AND_CONICAL_TRANSITIONS for countersinks (111, 4.4.19-27).
+    The placing's z axis points out of the hole entrance (4.4.22)."""
+    through = bool(ft.get("through"))
+    leaves = ["solid_with_stepped_round_hole"] if through else \
+        ["solid_with_conical_bottom_round_hole" if ft.get("bottom") == "conical" else "solid_with_flat_bottom_round_hole"]
+    if transitions:
+        leaves = ["solid_with_stepped_round_hole_and_conical_transitions"] + \
+            [x for x in leaves if x != "solid_with_stepped_round_hole"]
+    if through:
+        leaves.append("solid_with_through_depression")
+    radii, depths = [float(r) for r in ft["radii"]], [float(d) for d in ft["depths"]]
+    if through and ft.get("exit_depths"):           # each position's last segment ends at its exit face
+        depths[-1] = float(ft["exit_depths"][k])
+    vals = {"representation_item.name": ft["name"] if len(ft["positions"]) == 1 else f"{ft['name']}.{k + 1}",
+            "modified_solid.rationale": "Hole", "modified_solid.base_solid": base,
+            "modified_solid_with_placed_configuration.placing": w.a2p3(pos, ft["axis"], ft["x"]),
+            "solid_with_stepped_round_hole.segments": len(radii),
+            "solid_with_stepped_round_hole.segment_radii": radii,
+            "solid_with_stepped_round_hole.segment_depths": depths,
+            "solid_with_flat_bottom_round_hole.fillet_radius": float(ft.get("fillet_radius", 0.0)),
+            "solid_with_conical_bottom_round_hole.semi_apex_angle": float(ft.get("semi_apex", 0.0)),
+            "solid_with_conical_bottom_round_hole.tip_radius": float(ft.get("tip_radius", 0.0)),
+            "solid_with_stepped_round_hole_and_conical_transitions.conical_transitions": transitions,
+            "solid_with_through_depression.exit_faces": exit_faces}
+    return w.entity(leaves, vals)
+
+
+def _compose(a, b):
+    """The rigid motion 'b, then a'."""
+    m = [[sum(a["matrix"][i][k] * b["matrix"][k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+    return {"matrix": m, "translation": _add(_apply(a["matrix"], b["translation"]), a["translation"])}
+
+
+IDENTITY = {"matrix": [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]], "translation": [0.0, 0.0, 0.0]}
+
+
+def multi_transforms(steps):
+    """Every placement of a MultiTransform: the product of its steps' transformations, in the order the steps
+    apply (each one to everything before it). Returns the per-step lists of new placements."""
+    have, out = [IDENTITY], []
+    for st in steps:
+        new = [_compose(g, c) for g in st["transforms"] for c in have]
+        out.append(new)
+        have = have + new
+    return out
+
+
+def _det(m):
+    return _dot(m[0], _cross(m[1], m[2]))
+
+
+def _copy_explicit(w, text, name):
+    """Copy the solid (MANIFOLD_SOLID_BREP or BREP_WITH_VOIDS) of a Part 21 text into the file being written;
+    returns its new ref. Geometry and topology items reference no context, so they move as they are."""
+    src = p21.loads(text)
+    solid = next((i for i in src if any(n in i.names for n in ("MANIFOLD_SOLID_BREP", "BREP_WITH_VOIDS"))), None)
+    if solid is None:
+        raise StepError(f"{name}: the explicit shape holds no solid")
+    order, seen, stack = [], set(), [solid.id]
+    while stack:
+        i = stack.pop()
+        if i in seen:
+            continue
+        seen.add(i)
+        order.append(i)
+        stack += [int(r) for r in src.references(src.get(i))]
+    start = w.f.next_id()
+    new = {old: start + k for k, old in enumerate(order)}
+
+    def remap(v):
+        if isinstance(v, p21.Ref):
+            return p21.Ref(new[int(v)])
+        if isinstance(v, list):
+            return [remap(x) for x in v]
+        if isinstance(v, p21.Typed):
+            return p21.Typed(v.keyword, remap(v.value))
+        return v
+    for old in order:
+        inst = src.get(old)
+        recs = [p21.Record(r.name, [remap(x) for x in r.params]) for r in inst.records]
+        if old == solid.id:
+            rec = recs[0] if len(recs) == 1 else next(r for r in recs if r.name == "REPRESENTATION_ITEM")
+            rec.params[0] = name
+        w.f.add_records(recs, id=new[old])
+    return p21.Ref(new[solid.id])
+
+
+def _fmt_param(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, float):
+        return repr(round(v, 12))
+    return str(v).replace(" ", "_")
+
+
+def _parse_params(text):
+    out = {}
+    for tok in text.split():
+        k, _, v = tok.partition("=")
+        if v in ("true", "false"):
+            out[k] = v == "true"
+        else:
+            try:
+                out[k] = float(v)
+            except ValueError:
+                out[k] = v
+    return out
+
+
+EXPLICIT_WHY = "no ISO 10303-42/111 entity represents it; the explicit solid carries its result"
 
 
 def _write_primitive(w, ft):
@@ -731,6 +1014,39 @@ def _transform(w, tr, name):
     cols = [[m[0][k], m[1][k], m[2][k]] for k in range(3)]
     return w.add("CARTESIAN_TRANSFORMATION_OPERATOR_3D", name, name, U, w.direction(cols[0]),
                  w.direction(cols[1]), w.point(tr["translation"]), 1.0, w.direction(cols[2]))
+
+
+def _write_attachments(w, model, sketches, sk_refs):
+    """A sketch attached to a planar face or a plane: the sketch's plane (a PLANE on the axis placement that
+    positions the sketch) constrained to the support's plane by INCIDENCE_GEOMETRIC_CONSTRAINT, or, at a
+    distance, by PARALLEL_GEOMETRIC_CONSTRAINT and SDGC_WITH_DIMENSION (108, 7.4). A supporting face is
+    written as a FACE_SURFACE (a picked element, found again by its geometry); the constraint refers to a
+    PLANE of the same name on the face's placement, not the face's own surface: invalidate_vrep_item (108,
+    6.3.3 WR2) wants a constraint's elements used by the constraint's representations only, and the face
+    is founded by the representation of picked elements. Returns the constraint instances (variational
+    items of the history's parameters)."""
+    out = []
+    for sk in model.get("sketches", []):
+        att = sk.get("attachment")
+        if not att or sk["name"] not in sketches:
+            continue
+        n = sk["name"]
+        mine = w.add("PLANE", f"{n}.plane", sketches[n]["target"])
+        if att.get("face"):
+            face = w.face(att["face"], f"{n}.support")
+            sk_refs.append(face)
+            surface = w.f.get(w.face_geometry[int(face)])
+            ref = w.add("PLANE", f"{n}.support", surface.records[0].params[1])
+        else:
+            ref = w.add("PLANE", att.get("name") or f"{n}.support", w.placement(att["plane"]))
+        mode = att.get("mode", "FlatFace")
+        off = float(att.get("offset", 0.0))
+        if abs(off) < 1e-9:
+            out.append(w.add("INCIDENCE_GEOMETRIC_CONSTRAINT", f"{n}.attachment", mode, [mine], [ref], []))
+        else:
+            out.append(w.add("PARALLEL_GEOMETRIC_CONSTRAINT", f"{n}.attachment", mode, [mine], [ref]))
+            out.append(w.add("SDGC_WITH_DIMENSION", f"{n}.attachment.offset", mode, [mine], [ref], [], abs(off)))
+    return out
 
 
 def to_step(model, f=None, brep=None, sketch_commands=False):
@@ -760,26 +1076,60 @@ def to_step(model, f=None, brep=None, sketch_commands=False):
                 w.notes.append(f"{sk['name']}: also written as ISO 10303-112 commands, which AP242's schema "
                                "does not include")
 
+    model_sketches = {sk["name"]: sk for sk in model.get("sketches", [])}
     solids, tools, elements = {}, {}, []
     bindings = []                                   # (feature, attribute name, owner ref, expr)
     prev = None
+
+    def boolean_with_base(ft, tool):
+        op = ft.get("op")
+        base = solids.get(ft.get("base")) if ft.get("base") else prev
+        if op and base is not None:
+            return w.add("BOOLEAN_RESULT", ft["name"] + ".result", E(BOOL_OP[op]), base, tool)
+        return tool
+
     for ft in model.get("features", []):
         t, n = ft["type"], ft["name"]
         exprs = ft.get("expressions") or {}
         if t in ("extrude", "revolve"):
-            tool, parts = _write_tool(w, ft, sketches)
+            up_face = None
+            if ft.get("up_to"):
+                up_face = w.face(ft["up_to"]["face"], f"{n}.up_to_face")
+                elements.append(w.selected(n + ".up_to_face", [up_face]))
+            tool, parts = _write_tool(w, ft, sketches, up_face)
             tools[n] = tool
-            op = ft.get("op")
-            base = solids.get(ft.get("base")) if ft.get("base") else prev
-            if op and base is not None:
-                res = w.add("BOOLEAN_RESULT", n + ".result", E(BOOL_OP[op]), base, tool)
-                elements.append(res)
-            else:
-                res = tool
-                elements.append(tool)
+            res = boolean_with_base(ft, tool)
+            elements.append(res)
             for attr, e in exprs.items():
+                if up_face is not None and attr == "first":
+                    w.notes.append(f"{n}.first: an up-to-face extent has no length to bind; expression not written")
+                    continue
                 for k, part in enumerate(parts):
                     bindings.append((ft, attr, part, e, k))
+        elif t == "pipe":
+            tool, parts = _write_pipe(w, ft, sketches, model_sketches)
+            tools[n] = tool
+            res = boolean_with_base(ft, tool)
+            elements.append(res)
+        elif t == "hole":
+            cur = solids.get(ft.get("base")) if ft.get("base") else prev
+            if cur is None:
+                raise StepError(f"{n}: a hole needs a solid to cut")
+            trans = [w.add("CONICAL_STEPPED_HOLE_TRANSITION", f"{n}.transition{c['number']}", int(c["number"]),
+                           float(c["apex"]), float(c["radius"])) for c in ft.get("transitions") or []]
+            inner = []
+            for k, pos in enumerate(ft["positions"]):
+                exits = []
+                if ft.get("through"):
+                    exits = [w.face(fc, f"{n}.exit{k + 1}.{j}") for j, fc in enumerate(ft["exit_faces"][k])]
+                    inner.append(w.selected(f"{n}.exit_faces{k + 1}", exits))
+                cur = _write_hole(w, ft, k, pos, cur, trans, exits)
+                inner.append(cur)
+            res = w.sequence(n, inner, rationale=f"hole at {len(ft['positions'])} position(s)")
+            elements.append(res)
+            if exprs:
+                w.notes.append(f"{n}: hole radii and depths are lists in ISO 10303-111; their expressions are not "
+                               "written")
         elif t in ("fillet", "chamfer"):
             base = solids.get(ft.get("base")) if ft.get("base") else prev
             edges = [w.edge(e, name=f"{n}.edge{k}") for k, e in enumerate(ft["edges"])]
@@ -807,17 +1157,68 @@ def to_step(model, f=None, brep=None, sketch_commands=False):
                 bindings.append((ft, attr, res, e, 0))
         elif t == "pattern":
             base = solids.get(ft.get("base")) if ft.get("base") else prev
-            src = model_feature(model, ft["source"])
-            tool = tools.get(ft["source"])
-            if tool is None or src is None:
-                raise StepError(f"{n}: pattern of {ft['source']}, which has no tool solid")
-            inner, cur = [], base
-            for k, tr in enumerate(ft["transforms"], 1):
-                rep = w.add("SOLID_REPLICA", f"{n}.instance{k}", tool, _transform(w, tr, f"{n}.transform{k}"))
-                cur = w.add("BOOLEAN_RESULT", f"{n}.step{k}", E(BOOL_OP[src.get("op") or "union"]), cur, rep)
-                inner.append(cur)
-            res = w.sequence(n, inner, rationale=f"{ft.get('kind', '')} pattern of {ft['source']}".strip())
+            names = ft.get("sources") or [ft["source"]]
+            srcs = []
+            for s_name in names:
+                src, tool = model_feature(model, s_name), tools.get(s_name)
+                if tool is None or src is None:
+                    raise StepError(f"{n}: pattern of {s_name}, which has no tool solid")
+                srcs.append((s_name, tool, src.get("op") or "union"))
+            count = [0]
+
+            def replicas(label, transforms, cur, srcs=srcs):
+                inner = []
+                for s_name, tool, op in srcs:        # FreeCAD's order: each original through every placement
+                    for tr in transforms:
+                        count[0] += 1
+                        k = count[0]
+                        rep = w.add("SOLID_REPLICA", f"{label}.instance{k}", tool, _transform(w, tr, f"{label}.transform{k}"))
+                        cur = w.add("BOOLEAN_RESULT", f"{label}.step{k}", E(BOOL_OP[op]), cur, rep)
+                        inner.append(cur)
+                return inner, cur
+            what = ", ".join(names)
+            if ft.get("kind") == "multi":
+                subs, cur = [], base
+                for st, new in zip(ft["steps"], multi_transforms(ft["steps"])):
+                    inner, cur = replicas(st["name"], new, cur)
+                    subs.append(w.sequence(st["name"], inner, rationale=f"{st['kind']} step of the multitransform "
+                                                                         f"of {what}"))
+                res = w.sequence(n, subs, rationale=f"multitransform of {what}")
+            else:
+                inner, _cur = replicas(n, ft["transforms"], base)
+                kind = ft.get("kind", "")
+                res = w.sequence(n, inner, rationale=(f"{kind} pattern of {what}" if kind != "mirror"
+                                                      else f"mirror of {what}").strip())
             elements.append(res)
+        elif t == "explicit":
+            picks = []
+            if ft.get("faces"):
+                picks.append(w.selected(f"{n}.faces", [w.face(fc, f"{n}.face{k}") for k, fc in enumerate(ft["faces"])]))
+            nt = ft.get("neutral")
+            if nt:
+                item = w.face(nt["face"], f"{n}.neutral_plane") if nt.get("face") else \
+                    w.add("PLANE", nt.get("name") or f"{n}.neutral_plane", w.placement(nt["plane"]))
+                picks.append(w.selected(f"{n}.neutral_plane", [item]))
+            if ft.get("pull"):
+                picks.append(w.selected(f"{n}.pull_direction", [w.edge(ft["pull"], name=f"{n}.pull_direction")]))
+            for key in ("profile", "sections"):
+                names = ft.get(key) or []
+                names = [names] if isinstance(names, str) else names
+                items = [ps for nm in names if nm in sketches for _f, ps in sketches[nm]["faces"]]
+                if items:
+                    picks.append(w.selected(f"{n}.{key}", items))
+            if ft.get("path_edges"):
+                picks.append(w.selected(f"{n}.path", [w.composite(f"{ft.get('path', n)}.path", ft["path_edges"])[0]]))
+            solid = _copy_explicit(w, ft["brep"], f"{n}.explicit")
+            if ft.get("op"):
+                tools[n] = solid
+            why = (ft.get("why") or EXPLICIT_WHY).replace("|", "/")
+            res = w.sequence(n, picks + [boolean_with_base(ft, solid)],
+                             rationale=f"{ft['kind']}: {why} | " +
+                             " ".join(f"{k}={_fmt_param(v)}" for k, v in sorted((ft.get("params") or {}).items())))
+            elements.append(res)
+            w.notes.append(f"{n} ({ft['kind']}): {why}; written as a hybrid step with its explicit solid (ISO 10303-55 "
+                           "5.2.2), so the history goes on")
         elif t in ("box", "cylinder", "cone", "sphere", "torus"):
             res = _write_primitive(w, ft)
             tools[n] = res
@@ -833,6 +1234,9 @@ def to_step(model, f=None, brep=None, sketch_commands=False):
             raise StepError(f"{n}: feature type {t!r} is not supported")
         solids[n] = res
         prev = res
+    attach_items = _write_attachments(w, model, sketches, sk_refs) if elements else []
+    if not elements and any(sk.get("attachment") for sk in model.get("sketches", [])):
+        w.notes.append("sketch attachments are written with a construction history only")
     if sk_refs:
         w.add("SHAPE_REPRESENTATION", f"{model.get('name', 'model')} sketches", sk_refs, w.ctx3)
     if not elements:
@@ -855,7 +1259,7 @@ def to_step(model, f=None, brep=None, sketch_commands=False):
             w.notes.append(f"{ft['name']}.{attr}: no ISO 10303-111/42 attribute carries it; expression not written")
             continue
         var_items += P.bind(f"{ft['name']}.{attr}" + (f".{k}" if k else ""), owner, FEATURE_ATTR[key], e)
-    var_items += P.items()
+    var_items += P.items() + attach_items
     idle = []
     for name, p in params.items():                  # parameters nothing uses still belong to the model
         if name not in P.unbound and not any(name in s_params(sk) for sk in model.get("sketches", [])):
@@ -1042,6 +1446,18 @@ class _Reader:
             (loops.insert(0, edges) if self.isa(b, "face_outer_bound") else loops.append(edges))
         return {"surface": self.surface(self.get(r, "face_geometry")), "loops": loops,
                 "same_sense": self.get(r, "same_sense") != "F"}
+
+
+def _composite_edges(rd, r):
+    """COMPOSITE_CURVE (or one TRIMMED_CURVE) -> edges {curve, p1, p2} in its running sense."""
+    segs = [rd.get(s, "parent_curve") for s in rd.get(r, "segments")] if rd.isa(r, "composite_curve") else [r]
+    out = []
+    for tc in segs:
+        pts = [[x for x in rd.get(tc, a) if isinstance(x, p21.Ref)][0] for a in ("trim_1", "trim_2")]
+        if rd.get(tc, "sense_agreement") == "F":
+            pts.reverse()
+        out.append({"curve": rd.curve3(rd.get(tc, "basis_curve")), "p1": rd.coords(pts[0]), "p2": rd.coords(pts[1])})
+    return out
 
 
 def _read_sketch(rd, var, cur, rep):
@@ -1292,7 +1708,7 @@ def from_step(f):
         if expr is not None:
             bindings.setdefault(int(owner), []).append((attr, expr))
 
-    sketches, by_rep, by_current = [], {}, {}
+    sketches, by_rep, by_current, by_target = [], {}, {}, {}
     for rel in rd.m.all_of("variational_current_representation_relationship"):
         var, cur = rd.get(rel, "rep_1"), rd.get(rel, "rep_2")
         if not rd.isa(cur, "neutral_sketch_representation"):
@@ -1313,6 +1729,7 @@ def from_step(f):
         by_current[int(cur)] = sk
         if rep is not None:
             by_rep[rep] = sk["name"]
+            by_target[int(rd.get(rep, "mapping_target"))] = sk
     for inst in rd.m.all_of("neutral_sketch_representation"):  # sketches without constraints: no wrapper
         cur = p21.Ref(inst.id)
         if inst.id in by_current:
@@ -1330,10 +1747,13 @@ def from_step(f):
         by_current[inst.id] = sk
         if rep is not None:
             by_rep[rep] = sk["name"]
+            by_target[int(rd.get(rep, "mapping_target"))] = sk
     face_sketch = {}
     for rel in rd.m.all_of("implicit_explicit_positioned_sketch_relationship"):
         rep, ps = rd.get(rel, "relating_representation_item"), rd.get(rel, "related_representation_item")
         face_sketch[int(rd.get(ps, "sketch_basis"))] = by_rep.get(int(rep))
+    rd.sketch_names = {sk["name"] for sk in sketches}
+    _read_attachments(rd, by_target)
 
     # ISO 10303-112 sketches: evaluated; checked against the explicit sketch they are paired with, if any
     command_reps = set()
@@ -1380,6 +1800,29 @@ def from_step(f):
     return models, rd.notes
 
 
+def _read_attachments(rd, by_target):
+    """Sketch attachments (see _write_attachments) -> sketch["attachment"]."""
+    for c in rd.m.all_of("explicit_geometric_constraint"):
+        if not rd.name(c).endswith(".attachment"):
+            continue
+        mine, ref = rd.get(c, "constrained_elements")[0], (rd.get(c, "reference_elements") or [None])[0]
+        sk = by_target.get(int(rd.get(mine, "position"))) if rd.isa(mine, "plane") else None
+        if sk is None or ref is None or not rd.isa(ref, "plane"):
+            rd.notes.append(f"{rd.name(c)}: attachment not understood")
+            continue
+        pl = rd.a2p3(rd.get(ref, "position"))
+        att = {"mode": rd.get(c, "description") or "FlatFace", "plane": pl, "name": rd.name(ref)}
+        faces = [u.id for u in rd.m.users(ref) if rd.isa(u, "face_surface")] or \
+            [u.id for u in rd.m.all_of("face_surface") if rd.name(u) == rd.name(ref)]     # see _write_attachments
+        if faces:
+            att["face"] = rd.face(p21.Ref(faces[0]))
+        # the signed distance of the sketch from its support, from the current geometry (108, 5.2.3)
+        att["offset"] = _dot(_sub(sk["placement"]["origin"], pl["origin"]), pl["axis"])
+        if abs(att["offset"]) < 1e-9:
+            att["offset"] = 0.0
+        sk["attachment"] = att
+
+
 def _same_geo(a, b, tol=1e-6):
     """Two model sketch elements with the same geometry (a line either way round)."""
     if a["type"] != b["type"]:
@@ -1416,7 +1859,8 @@ def _read_tool(rd, r, face_sketch, bindings):
 
     walk(r)
     x = parts[0]
-    if not (rd.isa(x, "extruded_face_solid") or rd.isa(x, "revolved_face_solid")):
+    if not (rd.isa(x, "extruded_face_solid") or rd.isa(x, "revolved_face_solid")
+            or rd.isa(x, "surface_curve_swept_face_solid")):
         return None
     face = rd.get(x, "swept_face")
     ft = {"name": rd.name(x), "sketch": face_sketch.get(int(face))}
@@ -1424,9 +1868,21 @@ def _read_tool(rd, r, face_sketch, bindings):
         ft["type"] = "extrude"
         ft["direction"] = rd.dir(rd.get(x, "extruded_direction"))
         if rd.isa(x, "extruded_face_solid_with_trim_conditions"):
-            ft["first"] = rd.value(rd.get(x, "first_trim_condition")) * rd.L
+            trim1 = rd.get(x, "first_trim_condition")
             ft["second"] = rd.value(rd.get(x, "second_trim_condition")) * rd.L
             ft["intent"] = [str(rd.get(x, "first_trim_intent")).lower(), str(rd.get(x, "second_trim_intent")).lower()]
+            if isinstance(trim1, p21.Ref):            # up to a face (111, 4.4.48)
+                up = {"face": rd.face(trim1), "offset": rd.ln(x, "first_offset")}
+                ft["first"] = ft["second"] + rd.ln(x, "depth")
+                if up["offset"] > 0:                  # Part 111's offset is unsigned: its side from the depth
+                    start = rd.face(face)["loops"][0][0]["p1"]
+                    s0 = up["face"]["surface"]
+                    to_face = _dot(_sub(s0["origin"], start), ft["direction"]) if s0["type"] == "plane" else None
+                    if to_face is not None and ft["first"] < to_face:
+                        up["offset"] = -up["offset"]
+                ft["up_to"] = up
+            else:
+                ft["first"] = rd.value(trim1) * rd.L
             if rd.isa(x, "extruded_face_solid_with_draft_angle"):
                 ft["taper"] = rd.an(x, "draft_angle")
         else:
@@ -1436,13 +1892,29 @@ def _read_tool(rd, r, face_sketch, bindings):
         ft["type"] = "revolve"
         ft["axis"] = rd.a1p(rd.get(x, "axis"))
         if rd.isa(x, "revolved_face_solid_with_trim_conditions"):
-            ft["angle"] = rd.value(rd.get(x, "first_trim_condition")) * rd.A
+            trim1 = rd.get(x, "first_trim_condition")
             ft["second"] = rd.value(rd.get(x, "second_trim_condition")) * rd.A
+            if isinstance(trim1, p21.Ref):
+                ft["up_to"] = {"face": rd.face(trim1)}
+                ft["angle"] = ft["second"] + rd.an(x, "angle")
+            else:
+                ft["angle"] = rd.value(trim1) * rd.A
         else:
             ft["angle"] = rd.an(x, "angle")
         kind = "revolve"
-    else:
-        return None
+    else:                                             # a sweep along a path (42, 6.4.35)
+        ft["type"] = "pipe"
+        directrix, ref = rd.get(x, "directrix"), rd.get(x, "reference_surface")
+        ft["path"] = rd.name(directrix)[:-5] if rd.name(directrix).endswith(".path") else rd.name(directrix)
+        ft["path_edges"] = _composite_edges(rd, directrix)
+        pl = rd.a2p3(rd.get(ref, "position"))
+        ft["normal"], ft["plane"] = pl["axis"], pl
+        if ft["sketch"] is None:
+            base = rd.name(face).rsplit(".face", 1)[0]
+            ft["sketch"] = base if base in getattr(rd, "sketch_names", ()) else None
+        if ft["sketch"] is None:
+            ft["face"] = rd.face(face)
+        return ft
     if ft["sketch"] is None:
         ft["face"] = rd.face(face)
     _feature_bindings(rd, x, kind, bindings, ft)
@@ -1488,6 +1960,127 @@ def _read_transform(rd, r):
     return {"matrix": m, "translation": rd.coords(rd.get(r, "local_origin"))}
 
 
+def _replicas(rd, elements):
+    """[(parent solid, transform)] when every element is BOOLEAN_RESULT(..., SOLID_REPLICA), else None."""
+    out = []
+    for x in elements:
+        if not (rd.isa(x, "boolean_result") and rd.isa(rd.get(x, "second_operand"), "solid_replica")):
+            return None
+        rep = rd.get(x, "second_operand")
+        out.append((int(rd.get(rep, "parent_solid")), _read_transform(rd, rd.get(rep, "transformation"))))
+    return out or None
+
+
+def _group_replicas(reps):
+    """Parents in first-seen order, and the transforms of the first one."""
+    parents = []
+    for p, _t in reps:
+        if p not in parents:
+            parents.append(p)
+    return parents, [t for p, t in reps if p == parents[0]]
+
+
+def _read_hole(rd, h):
+    pl = rd.a2p3(rd.get(h, "placing"))
+    out = {"position": pl["origin"], "axis": pl["axis"], "x": pl["x"],
+           "radii": [float(v) * rd.L for v in rd.get(h, "segment_radii")],
+           "depths": [float(v) * rd.L for v in rd.get(h, "segment_depths")],
+           "through": rd.isa(h, "solid_with_through_depression")}
+    if rd.isa(h, "solid_with_flat_bottom_round_hole"):
+        out.update(bottom="flat", fillet_radius=rd.ln(h, "fillet_radius"))
+    elif rd.isa(h, "solid_with_conical_bottom_round_hole"):
+        out.update(bottom="conical", semi_apex=rd.an(h, "semi_apex_angle"), tip_radius=rd.ln(h, "tip_radius"))
+    elif rd.isa(h, "solid_with_spherical_bottom_round_hole"):
+        out.update(bottom="spherical", sphere_radius=rd.ln(h, "sphere_radius"))
+    if rd.isa(h, "solid_with_stepped_round_hole_and_conical_transitions"):
+        out["transitions"] = sorted(({"number": rd.get(c, "transition_number"), "apex": rd.an(c, "cone_apex_angle"),
+                                      "radius": rd.ln(c, "cone_base_radius")}
+                                     for c in rd.get(h, "conical_transitions")), key=lambda c: c["number"])
+    if out["through"]:
+        out["exit_faces"] = [rd.face(fc) for fc in rd.get(h, "exit_faces")]
+    return out
+
+
+def _read_nested(rd, el, names, face_sketch):
+    """A nested sequence that stands for one feature (holes, a pattern, a multitransform, a hybrid step), or
+    None for an ordinary group of operations."""
+    elements = list(rd.get(el, "elements"))
+    picked = [x for x in elements if rd.isa(x, "user_selected_elements")]
+    solids = [x for x in elements if not rd.isa(x, "user_selected_elements")]
+    rat = rd.get(el, "rationale") or ""
+    n = rd.name(el)
+    if not solids:
+        return None
+    if all(rd.isa(x, "solid_with_stepped_round_hole") for x in solids):
+        holes = [_read_hole(rd, x) for x in solids]
+        ft = {"type": "hole", "name": n, "positions": [h["position"] for h in holes]}
+        for k, v in holes[0].items():
+            if k not in ("position", "exit_faces"):
+                ft[k] = v
+        if ft["through"]:
+            ft["exit_faces"] = [h["exit_faces"] for h in holes]
+            ft["exit_depths"] = [h["depths"][-1] for h in holes]
+        names[int(solids[-1])] = n
+        return ft
+    reps = _replicas(rd, solids)
+    if reps:
+        parents, transforms = _group_replicas(reps)
+        mirror = rat.startswith("mirror") or _det(transforms[0]["matrix"]) < 0
+        kind = "mirror" if mirror else "polar" if rat.startswith("polar") else "linear" if rat.startswith("linear") \
+            else ""
+        srcs = [names.get(p) for p in parents]
+        return {"type": "pattern", "name": n, "source": srcs[0], "sources": srcs, "kind": kind,
+                "transforms": transforms}
+    if all(rd.isa(x, "procedural_representation_sequence") for x in solids) and rat.startswith("multitransform"):
+        steps, have, srcs, alltr = [], 1, None, []
+        for sub in solids:
+            reps = _replicas(rd, rd.get(sub, "elements"))
+            if not reps:
+                return None
+            parents, transforms = _group_replicas(reps)
+            srcs = srcs or [names.get(p) for p in parents]
+            r2 = rd.get(sub, "rationale") or ""
+            gens = transforms[::have]
+            steps.append({"name": rd.name(sub), "kind": r2.split(" ")[0], "transforms": gens})
+            alltr += transforms
+            have += len(transforms)
+        return {"type": "pattern", "name": n, "source": srcs[0], "sources": srcs, "kind": "multi", "steps": steps,
+                "transforms": alltr}
+    last = solids[-1]
+    explicit = lambda x: rd.isa(x, "manifold_solid_brep")   # noqa: E731  (BREP_WITH_VOIDS is one too)
+    op, solid = None, None
+    if explicit(last):
+        solid = last
+    elif rd.isa(last, "boolean_result") and explicit(rd.get(last, "second_operand")):
+        op, solid = str(rd.get(last, "operator")).lower(), rd.get(last, "second_operand")
+    if solid is None or len(solids) != 1:
+        return None
+    kind, _, rest = rat.partition(":")
+    ft = {"type": "explicit", "name": n, "kind": kind.strip(), "op": op, "explicit": int(solid),
+          "params": _parse_params(rest.partition("|")[2])}
+    for u in picked:
+        role = rd.name(u).rsplit(".", 1)[-1]
+        items = rd.get(u, "picked_items") or []
+        if role == "faces":
+            ft["faces"] = [rd.face(x) for x in items]
+        elif role == "neutral_plane" and items:
+            x = items[0]
+            ft["neutral"] = {"face": rd.face(x)} if rd.isa(x, "face_surface") else \
+                {"plane": rd.a2p3(rd.get(x, "position")), "name": rd.name(x)}
+        elif role == "pull_direction" and items:
+            ft["pull"] = rd.edge(items[0])
+        elif role in ("profile", "sections"):
+            got = [face_sketch.get(int(rd.get(x, "sketch_basis"))) for x in items if rd.isa(x, "positioned_sketch")]
+            got = [g for k, g in enumerate(got) if g and g not in got[:k]]
+            ft[role] = got[0] if role == "profile" and got else got
+        elif role == "path" and items:
+            ft["path_edges"] = _composite_edges(rd, items[0])
+            nm = rd.name(items[0])
+            ft["path"] = nm[:-5] if nm.endswith(".path") else nm
+    names[int(solid)] = n
+    return ft
+
+
 def _read_sequence(rd, seq, model, names, face_sketch, bindings):
     """Walk a procedural sequence and append the features it represents."""
     feats = model["features"]
@@ -1506,18 +2099,8 @@ def _read_sequence(rd, seq, model, names, face_sketch, bindings):
         if rd.isa(el, "user_selected_elements"):
             continue
         if rd.isa(el, "procedural_representation_sequence"):
-            inner = rd.get(el, "elements")
-            reps = []
-            for x in inner:
-                if rd.isa(x, "boolean_result") and rd.isa(rd.get(x, "second_operand"), "solid_replica"):
-                    reps.append(rd.get(x, "second_operand"))
-            if reps and len(reps) == len(inner):
-                src_tool = rd.get(reps[0], "parent_solid")
-                src = names.get(int(src_tool))
-                ft = {"type": "pattern", "name": rd.name(el), "source": src,
-                      "transforms": [_read_transform(rd, rd.get(x, "transformation")) for x in reps]}
-                rat = rd.get(el, "rationale") or ""
-                ft["kind"] = "polar" if rat.startswith("polar") else "linear" if rat.startswith("linear") else ""
+            ft = _read_nested(rd, el, names, face_sketch)
+            if ft is not None:
                 add(ft, el)
             else:
                 _read_sequence(rd, el, model, names, face_sketch, bindings)

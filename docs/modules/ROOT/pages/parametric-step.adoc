@@ -48,23 +48,39 @@ It is off by default, because no edition of AP242 includes Part 112 (see the tab
 | Distance, Horizontal/Vertical Distance | `CLGC_WITH_DIMENSION` (a line's length), `PDGC_WITH_DIMENSION` (to a point, a line, or an auxiliary line through the anchor point)
 | Radius, Diameter, Angle | `RGC_WITH_DIMENSION`, `AGC_WITH_DIMENSION`
 | Symmetric (about a line), Block | `SYMMETRY_`, `FIXED_ELEMENT_GEOMETRIC_CONSTRAINT`
+| A sketch attached to an origin plane, a datum plane or a planar face (Flat face) | The sketch's plane on the support's plane: `INCIDENCE_GEOMETRIC_CONSTRAINT`, or `PARALLEL_GEOMETRIC_CONSTRAINT` and `SDGC_WITH_DIMENSION` at an offset (108 7.4); a supporting face as a `FACE_SURFACE`
 | Pad, Pocket (length, two sides, symmetric, through all, taper) | `EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS` (`_WITH_DRAFT_ANGLE`) (111), united or subtracted by `BOOLEAN_RESULT` (42)
-| Revolution, Groove | `REVOLVED_FACE_SOLID` (`_WITH_TRIM_CONDITIONS`)
+| Pad, Pocket up to face, up to first, up to last, with an offset | The same, its first trim condition the face reached (a `FACE_SURFACE`, also picked as `USER_SELECTED_SHAPE_ELEMENTS`), intent `.UP_TO_NEXT.` (up to first), `.UNSPECIFIED.` (up to a face, up to last) or `.OFFSET.` with the offset (111 4.4.48)
+| Revolution, Groove (also up to face) | `REVOLVED_FACE_SOLID` (`_WITH_TRIM_CONDITIONS`, the face as trim condition)
+| Hole: simple (flat or drill point), counterbore, countersink, through all | Per position of its sketch, in a nested sequence: `SOLID_WITH_FLAT_BOTTOM_ROUND_HOLE`, `SOLID_WITH_CONICAL_BOTTOM_ROUND_HOLE` (half the drill point angle), `SOLID_WITH_STEPPED_ROUND_HOLE` with `SOLID_WITH_THROUGH_DEPRESSION` and its exit face; two segments for a counterbore, a `CONICAL_STEPPED_HOLE_TRANSITION` at the entrance for a countersink (`_AND_CONICAL_TRANSITIONS`) (111 4.4.19-27)
 | Fillet, Chamfer | `USER_SELECTED_SHAPE_ELEMENTS` (55) with the picked edges, then `SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND`, `SOLID_WITH_SINGLE_OFFSET_` / `DOUBLE_OFFSET_` / `ANGLE_BASED_CHAMFER`
 | Thickness | `SHELLED_SOLID` with the removed faces
-| Linear and polar pattern of one feature | A nested sequence of `SOLID_REPLICA` operations
+| Linear pattern, polar pattern, Mirrored, of one or more features | A nested sequence of `SOLID_REPLICA` operations, each feature through every placement; a mirror is a `CARTESIAN_TRANSFORMATION_OPERATOR_3D` with left-handed axes (42 4.4.21)
+| MultiTransform | A nested sequence per step, holding the new placements of that step (it applied to all before it)
+| Pipe (Standard mode, along a tangent-continuous sketch path, the profile normal to the path at its start) | `SURFACE_CURVE_SWEPT_FACE_SOLID` (42 6.4.35): the profile face in the sweep's frame (_z_ = 0, _x_ along the path plane's normal), the path a `COMPOSITE_CURVE`, the path's plane the reference surface
+| Draft, Loft, other Pipes and Holes, a pattern of holes or fillets, other features with a solid | A hybrid step (55 5.2.2): a nested sequence whose rationale names the feature, with what was picked (drafted faces, neutral plane, the loft's sketches) and the feature's explicit solid (`MANIFOLD_SOLID_BREP`), on its own or added or subtracted by `BOOLEAN_RESULT`
 | Additive and subtractive primitives; Part Box, Cylinder, Cone, Sphere, Torus; Cut, Fuse, Common | `BLOCK`, `RIGHT_CIRCULAR_CYLINDER`, `RIGHT_CIRCULAR_CONE`, `SPHERE`, `TORUS`, `BOOLEAN_RESULT`
 | The whole history | `PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE` in a `PROCEDURAL_SHAPE_REPRESENTATION`, tied to the B-rep by `EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP` (55)
 |===
 
-The history stops at the first feature none of these parts can represent: Hole, Mirrored, Draft, Loft, Pipe, Helix, up-to-face extents, a pattern of several features.
-The report names it; the B-rep still carries the whole part.
-Sketches come back placed where they were, not attached to faces or planes.
-Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for.
+Some features have no entity in ISO 10303-42 or -111, and are written as hybrid steps: their result as an explicit solid, so that the history goes on past them.
+Draft has none: `EXTRUDED_FACE_SOLID_WITH_DRAFT_ANGLE` drafts an extrusion as it is made, not chosen faces of a solid.
+Loft has none: `SECTIONED_SPINE` leaves the shape between its sections undefined and is no solid.
+A Pipe is Part 42's sweep only in Standard mode along a planar, tangent-continuous path with the profile normal to it; Fixed, Frenet, Auxiliary or Binormal modes, several sections and corner transitions are hybrid steps.
+Threaded, tapered and counterdrilled holes are hybrid steps too, and so is a pattern of holes or fillets (a replica needs a tool solid; Part 111's own patterns of placed features are not used).
+A system that does not know the step still gets its shape; NX-Style rebuilds Draft, Loft and Pipe steps as FreeCAD features from what they record (the rationale carries FreeCAD's angle, mode or ruled flag), and stops at other hybrid steps.
+No ISO 10303 attribute carries a draft angle, and hole radii and depths are lists, so expressions on those are not written.
+The report names every hybrid step and anything else that was not written.
+
+The placing of a hole points out of the hole entrance, as ISO 10303-111 4.4.22 defines it.
+Part 111's offset of an up-to extent is unsigned; the side is taken from the reached extent, which goes in the extrusion's depth.
+A sketch attached to an origin plane, or to a face that is found again on the rebuilt features by its geometry, comes back attached (Flat face, with the attachment offset that keeps it in place); other attachment modes, and supports that are not found, leave it placed where it was.
+Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for, and a hole's sketch is the one whose circles sit at its positions.
 
 xref:tutorials/al.adoc[Tutorial AL] goes through it on the ribbon.
-The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution, and a Part CSG tree.
+The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution; holes of each kind on sketches attached to a face; a Mirrored, a linear pattern of two features and a MultiTransform; extrusions up to a face, up to the first face and with an offset; a Draft followed by a Fillet, a Pipe, a Fixed-mode Pipe and a Loft; and a Part CSG tree.
 Exported, checked (no errors), imported into a new document: the rebuilt solids equal the originals exactly, and still do after the same parameter change in both.
+The holes, replicas and sweep are also built from the ISO definitions alone (Part 111's segments and cones, Part 42's sweep frame) and compared with FreeCAD's.
 
 == Check STEP
 
@@ -80,10 +96,21 @@ Run from the `NXStyle` folder; no FreeCAD needed.
 
 * the header rules: the three header entities in order, the implementation level, the time stamp, the schema names, the data sections;
 * for every instance of an entity in the loaded schemas: unknown or abstract entities, missing or extra attributes, `$` for an attribute that is not optional, `*` where nothing is derived (and its absence where a subtype re-derives the attribute), values of the wrong type down to enumeration values, SELECT alternatives, aggregate bounds and duplicates, references to missing instances or to instances of the wrong entity, complex instances that lack a supertype record, break a ONEOF or leave an abstract supertype without a subtype;
-* the WHERE rules that give parametric data its meaning: parameter names and their bindings (108 4.4), attribute references that name a real SCHEMA.ENTITY.ATTRIBUTE of the instance they point at, assignments and relations whose elements are (or are not) in their expression (5.4), variational representations and their current results (6.3), suppressed operations, sequence elements and the dual model (55).
+* every rule of the schemas, evaluated by an EXPRESS interpreter (`express_eval`): the WHERE rules of each entity of an instance, supertypes included; the WHERE rules of the defined types its values have; aggregate bounds given by an attribute (`LIST [1:segments]`); the UNIQUE rules over the file; and the global RULEs. The schemas' own FUNCTIONs are run, with the built-in functions of ISO 10303-11 (TYPEOF, USEDIN, QUERY and the rest), derived and inverse attributes and entity constructors;
+* the informal propositions of ISO 10303-108 that no rule states: an attribute reference names a real SCHEMA.ENTITY.ATTRIBUTE of the instance it points at and that holds a number, and every variational item is in a variational representation.
 
-Other WHERE rules are listed in the schemas but not evaluated, and entities of other parts (an application protocol's product structure, PMI) are counted, not checked.
-`--exp file.exp` adds more EXPRESS, for example the long form of AP242 from the ISO SC4 site, and then those are checked too.
+A value the file does not give is indeterminate, and only a rule that comes out FALSE is reported; UNKNOWN is not a violation (ISO 10303-11 9.2.2.2).
+The check ends with a count, for example `rules: 3177 evaluated, 0 violated, 0 not evaluated`.
+A rule is *not evaluated*, with the reason, when it calls a function the loaded schemas do not declare, when it would need the references of an entity they do not define (an AP's own B-rep entities, if the AP's schema is not in the cache), or when it runs past a step budget (2 million steps for a rule, 5 million for a global rule; on a large assembly, `compatible_dimension` can run past it).
+Entities of other parts (an application protocol's product structure, PMI) are counted, not checked, until the AP's schema is in the cache.
+`--exp file.exp` adds more EXPRESS, and then those are checked too.
+
+=== Proved with an independent tool
+
+STEPcode's validator (`p21read`, built for the AP242 long form) reads what *STEP with Parameters* writes and reports no errors, except for one kind of instance it cannot read: the parameters, complex instances of 16 partial records (`UNBOUND_VARIATIONAL_PARAMETER` with `MATHS_REAL_VARIABLE` and its supertypes), on which it crashes inside its own complex-entity matcher.
+With those written as simple parameters in a copy, it validates every other instance; the only two errors it then reports are the assignments whose expression is now no longer a numeric expression, which shows that it type-checks references.
+A broken copy is rejected by both: a `LINE` whose point is a `DIRECTION` by STEPcode and by NX-Style, a circle with a negative radius by NX-Style only, because `p21read` checks form and not WHERE rules.
+NIST's STEP File Analyzer needs Windows; it was not run.
 
 == Application protocols
 
@@ -125,25 +152,34 @@ Lengths and plane angles are read in the file's units (millimetres, metres, inch
 
 == Where ISO 10303 contradicts itself
 
-Writing data that every rule accepts turned up places where the parts cannot all be met at once.
-NX-Style's choice in each case, and what the checker says about it:
+Writing data that every rule accepts, and evaluating every rule, turned up places where the standards cannot all be met at once.
+NX-Style's choice in each case, and what the checker says about it.
+Where a rule cannot be met, its violation is a *warning that says so*, and only when the violation is that contradiction and nothing else; any other cause stays an error.
 
-* ISO 10303-108 6.3.4 (WR4) wants the variational wrapper of a sketch to have the sketch's types, but `NEUTRAL_SKETCH_REPRESENTATION` only admits points and curves as items (8.4.9), so it could hold no constraint. The wrapper is a plain shape representation; the checker warns that WR4 is not met.
-* ISO 10303-55 5.4.4 and 5.4.5 require a solid sequence to be a `SOLID_MODEL` and its elements to be geometric items, which `USER_SELECTED_SHAPE_ELEMENTS` is not; Part 55's own example (annex E) writes both as simple instances. NX-Style writes complex instances that meet the rules.
-* A procedural representation may only hold sequences (55 4.3.3), so parameters of the history wrap a shape representation that holds the sequence.
-* ISO 10303-108 Cor.1 annex F writes the current value of an unbound parameter untyped (`3.0`), where ISO 10303-21 10.1.8 asks for a typed SELECT value; NX-Style follows annex F and the checker warns.
-* ISO 10303-112's own example (4.2.2) uses `SKETCH_OPERATE_FILLET`, which the schema does not define (the command is `create_fillet`, with seven attributes), and writes `$` for a sequence's suppressed items, which is not optional. Its ellipse commands say the second semi-axis is "the projection onto the line defined by the first two points", which would lie along the first axis; NX-Style takes the distance from that line.
-* The examples of Cor.1 annex F have slips: `#550` names itself as its value space (for `#540`), `#410` uses `#360` (for `#400`), and `UNBOUND_PARAMETER_SEMANTICS` is the pre-corrigendum name of `UNBOUND_VARIATIONAL_PARAMETER_SEMANTICS`. Cor.2 rewrites WR1 of `neutral_sketch_representation` to demand three-dimensional items, against the two dimensions of 8.4.9.
+* *Sketch wrapper.* The prose of ISO 10303-108 6.3.4 WR4 wants the variational wrapper of a sketch to have the sketch's types, but `NEUTRAL_SKETCH_REPRESENTATION` only admits points and curves as items (8.4.9), so it could hold no constraint. The wrapper is a plain shape representation. Its EXPRESS is a one-way difference, which the wrapper meets; the checker warns that the prose is not met.
+* *Constraints on shared geometry.* `variational_representation` WR2 (through `invalidate_vrep_item`) wants a constraint's elements used by exactly the representations that use the constraint. But 6.3.4 WR1 makes the current result share the wrapper's geometry, and WR3 keeps constraints out of it, so no constraint on a sketch's own curves can pass. The same holds for a history's bound parameters, whose feature is also in the procedural representation (55 4.3.3), and for a construction line used as a symmetry's mirror, which `symmetry_geometric_constraint` WR1 forbids to be a reference element. Warning.
+* *Neutral sketch dimension.* Cor.2 rewrites `neutral_sketch_representation` WR1 to demand three-dimensional items, against the clause's own statement ("the dimensionality ... shall be 2") and the 2005 rule; as printed it is also ill-typed (AND binds tighter than IN). The dictionary takes it bracketed as the AP242 long form prints it; sketches stay two-dimensional, with a warning.
+* *Countersunk through holes.* ISO 10303-111 writes `solid_with_stepped_round_hole_and_conical_transitions` WR2 with XOR where its statement reads "either a through hole or no more transitions than segments", so a through hole with no exit transition breaks it as printed. Warning. WR1 of `solid_with_through_depression` lists the flat-bottom hole twice and omits the conical one; no bottom is written, as the text intends.
+* *Bound parameters.* Cor.1 derives a bound parameter's current value as `?`, and ISO 10303-50's `member_of` makes `?` a member of the generics space only, so `variational_parameter` WR1 holds only with that space; `maths_real_variable` WR1 wants a space of reals. Bound parameters are therefore simple instances on `ELEMENTARY_SPACE(.ES_GENERICS.)`. They are never operands, only assigned to.
+* *Plain references.* An unbound parameter in a variational representation must be used by a free-form constraint (`invalidate_vrep_item`), which `EQUAL_PARAMETER_CONSTRAINT` is not; a reference to a parameter is a `FREE_FORM_ASSIGNMENT` whose expression is the parameter. A parameter that drives nothing cannot be a variational parameter at all (6.3.1 WR1 allows it in no other representation), so it is written as a named value (`VALUE_REPRESENTATION_ITEM`, ISO 10303-43), without its description.
+* *Sketch origin.* `representation_map` WR1 (43) wants the map's origin in the sketch's context, but the sketch may hold only points and curves and its wrapper must hold exactly the sketch's geometry; a plain representation in the sketch's context holds the origin.
+* ISO 10303-55 5.4.4 and 5.4.5 require a solid sequence to be a `SOLID_MODEL` and its elements to be geometric items, which `USER_SELECTED_SHAPE_ELEMENTS` is not; Part 55's own example (annex E) writes both as simple instances. NX-Style writes complex instances that meet the rules. A procedural representation may only hold sequences (55 4.3.3), so parameters of the history wrap a shape representation that holds the sequence.
+* ISO 10303-108 Cor.1 annex F writes the current value of a parameter untyped (`3.0`), where ISO 10303-21 10.1.8 asks for a typed value, and uses parameters as operands of `MULT_EXPRESSION`, which ISO 13584-20 narrows to numeric expressions. NX-Style writes `MATHS_REAL(3.0)` and parameters that are also `MATHS_REAL_VARIABLE`s (ISO 10303-50). The examples of annex F also have slips: `#550` names itself as its value space (for `#540`), `#410` uses `#360` (for `#400`), and `UNBOUND_PARAMETER_SEMANTICS` is the pre-corrigendum name of `UNBOUND_VARIATIONAL_PARAMETER_SEMANTICS`.
+* ISO 10303-112's own example (4.2.2) uses `SKETCH_OPERATE_FILLET`, which the schema does not define (the command is `create_fillet`, with seven attributes), and writes `$` for a sequence's suppressed items, which is not optional. Its ellipse commands say the second semi-axis is "the projection onto the line defined by the first two points", which would lie along the first axis; NX-Style takes the distance from that line. A near point (`near_point_relationship`) is used by no representation item, so `representation_item` WR1 (43) wants it held by a representation of its own.
+* ISO 10303-50's `maths_simple_atom` lists `maths_number` twice and omits `maths_integer`. ISO 10303-108 Cor.1 says `non_negative_length_measure` "has been moved to ISO 10303-41", but ISO 10303-41:2005 does not declare it (`supplement.exp` does).
+* Writers: OpenCASCADE names the protocol `'ap242_managed_model_based_3d_engineering'` in `APPLICATION_PROTOCOL_DEFINITION`, but every AP242 long form from edition 2 on requires `'ap242_managed_model_based_3d_engineering_mim_lf'` (rule `ap242_application_protocol_definition_required`); NX-Style corrects it in the B-rep it merges. AP214 edition 3's long form makes `presentation_style_assignment` a subtype of `founded_item` and then forbids founded items other than three kinds (`subtype_mandatory_founded_item`), so every styled AP214 file breaks it.
 
 == The schemas
 
-`NXStyle/nxstyle/resources/iso10303/dictionary.json` holds the schemas' structure (entities, supertypes, attributes and their types, short names), built by `tools/iso10303_dictionary.py` from the parts themselves:
+`NXStyle/nxstyle/resources/iso10303/dictionary.json` holds the schemas as the interpreter needs them: entities, supertypes, attributes and their types, short names, and the WHERE and UNIQUE rules, DERIVE expressions, INVERSE declarations, FUNCTIONs, RULEs and CONSTANTs. `tools/iso10303_dictionary.py` builds it from the parts themselves:
 
 [source,bash]
 ----
-python tools/iso10303_dictionary.py --part 42=part42.pdf --part 43=part43.pdf --part 55=part55.pdf \
-    --part 108=part108.pdf --cor 108=cor1.pdf --cor 108=cor2.pdf --part 111=part111.pdf --part 112=part112.pdf
+python tools/iso10303_dictionary.py --part 41=part41.pdf --part 42=part42.pdf --part 43=part43.pdf \
+    --part 50=part50.pdf --part 55=part55.pdf --part 108=part108.pdf --cor 108=cor1.pdf --cor 108=cor2.pdf \
+    --part 111=part111.pdf --part 112=part112.pdf --part 13584-20=iso13584-20.pdf
 ----
 
-It takes the EXPRESS from between the `\*)` and `(*` lines the parts print around it, applies Cor.1 (the renaming of `model_parameter` to `variational_parameter`, the replaced entities) and Cor.2, and adds `supplement.exp`: the declarations of ISO 10303-41, ISO 10303-50 and ISO 13584-20 the parts use (units, measures, maths spaces, expressions), written from what they are cited for, since those parts were not among the sources.
-The parts' text is not in this repository.
+It takes the EXPRESS from between the `\*)` and `(*` lines the parts print around it, drops page headers and footers, joins string literals a page layout split, applies Cor.1 (the renaming of `model_parameter` to `variational_parameter`, the replaced entities) and Cor.2, applies the one erratum it lists (the Cor.2 WR1 above, bracketed as AP242 prints it), and adds `supplement.exp`, the one declaration the parts leave out.
+The result: 772 entities, 153 types, 286 functions, 29 constants, 577 entity and 28 type WHERE rules.
+The parts' prose is not in this repository; their EXPRESS is, as it is in the AP242 long form ISO publishes at `standards.iso.org` for implementations.

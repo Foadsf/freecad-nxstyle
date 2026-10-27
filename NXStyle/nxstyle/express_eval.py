@@ -1741,10 +1741,25 @@ def _sketch_wr1(ev, i, expr):
     return None
 
 
+def _hole_wr2(ev, i, expr):
+    """ISO 10303-111 solid_with_stepped_round_hole_and_conical_transitions WR2 is written with XOR where its
+    statement says "either the hole is a through hole or the number of conical transitions ... shall not
+    exceed the number of cylindrical segments": as printed, a through hole may not have that few
+    transitions, though WR1 allows up to one more than the segments."""
+    s = _Scope(self_=i, entity="solid_with_stepped_round_hole_and_conical_transitions")
+    through = "solid_with_through_depression" in i.names
+    few = ev.eval(parse_expr("SIZEOF ( CONICAL_TRANSITIONS ) <= SELF \\ SOLID_WITH_STEPPED_ROUND_HOLE . SEGMENTS"), s)
+    if through and few is True:
+        return "warning", (": WR2 is printed with XOR, but its statement reads 'either a through hole or no more "
+                           "transitions than segments'; this through hole meets the statement")
+    return None
+
+
 # Rules the standards cannot satisfy as printed: (entity, label) -> explain(evaluator, instance, rule text)
 # returning (level, note) when the violation is the contradiction and nothing else, or None.
 KNOWN = {("variational_representation", "wr2"): _vrep_wr2,
-         ("neutral_sketch_representation", "wr1"): _sketch_wr1}
+         ("neutral_sketch_representation", "wr1"): _sketch_wr1,
+         ("solid_with_stepped_round_hole_and_conical_transitions", "wr2"): _hole_wr2}
 
 
 def _decide(ev, res, rule, expr, scope):

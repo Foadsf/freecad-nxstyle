@@ -173,7 +173,7 @@ class ExchangeTutorials:
         ok = typed and line.startswith("0 error(s)")
         self.step("Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 "
                   "and 112", f"ribbon '{where} > Check STEP', file name typed, MB2 = OK", DIFFERS if ok else FAIL,
-                  f"{line}; the warnings name the places where ISO 10303-108 contradicts itself. NX has no such "
+                  f"{line}; the warnings name the places where the standards contradict themselves. NX has no such "
                   "check")
         self.p_shot_info("AL_check.png")
         self.p_close_info()
