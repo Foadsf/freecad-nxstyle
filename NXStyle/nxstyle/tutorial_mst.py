@@ -609,14 +609,10 @@ class MstCasingTutorials:
                 ("Curve 2 radius 8", "Radius / Diameter", [self.ag_edge(2)], 8 * IN),
                 ("Line 1 7.3 long", "Distance", [self.ag_edge(0)], 7.3 * IN),
                 ("Line 2 1.0 long", "Distance", [self.ag_edge(3)], 1.0 * IN)]
-        made, where, direct = [], {}, []
+        made, where = [], {}
         for name, label, subs, value in dims:
             d, w = self.sk_constrain(sk, label, subs, value)
             where[label] = w
-            if d == 0 and label == "Radius / Diameter":
-                # the ribbon button stays greyed out in sketch edit (reported separately): FreeCAD's own Radius
-                d = self.ag_run_with_value("Sketcher_ConstrainRadius", subs, value)
-                direct.append(name)
             made.append(name + ("" if d == 1 else " (not made)"))
         dof, full, msg = self.sk_state(sk)
         a = sk.getPoint(0, 1).x
@@ -625,11 +621,8 @@ class MstCasingTutorials:
         self.step("Dimensions: p1 15, p2 7.3, R 33, R 8, p6 8.1, p4 1.0", "picks + ribbon "
                   f"'{where.get('Distance', '')} > Distance' and 'Radius / Diameter', each value typed in FreeCAD's "
                   "dimension dialog (biggest first)",
-                  (DIFFERS if direct else SAME) if all("not made" not in m for m in made) and dof == 1 and not missing
-                  else FAIL,
+                  SAME if all("not made" not in m for m in made) and dof == 1 and not missing else FAIL,
                   f"{', '.join(made)}; DoF {dof} ('{msg}'): only the position along X is left free, as in the book; "
-                  + (f"the ribbon's Radius / Diameter was greyed out, so FreeCAD's Radius command was run for "
-                     f"{', '.join(direct)}; " if direct else "") +
                   f"the four curves {'match' if not missing else 'differ from'} the book's figure"
                   + (f" ({missing})" if missing else ""))
         self.ag_shot("AG1_dimensioned_curve.png")
@@ -1049,12 +1042,13 @@ class MstImpellerTutorials:
         top = (sk.getPoint(a, 1), sk.getPoint(b, 2))
         bottom = (sk.getPoint(a, 2), sk.getPoint(b, 1))
         made, where = [], None
-        drop = next((x for x in self.ah_arc_actions() if "3" in x or "three" in x.lower() or "rim" in x.lower()), None)
+        entries = self.dropdown_entries("Arc", "Sketch")
+        drop = next((x for x in entries if "3" in x or "three" in x.lower() or "rim" in x.lower()), None)
         modes = []
         for (p, q), rim in ((top, (6.103 * IN, 2.905 * IN)), (bottom, (7.031 * IN, 0.610 * IN))):
             n0 = len(sk.Geometry)
             if drop:
-                where = self.click_dropdown("Arc", drop)
+                where = self.click_dropdown("Arc", drop, tab="Sketch")
             else:                      # FreeCAD's Arc (A) switches to end points and rim point with M
                 self.key("A")
                 QtWidgets.QApplication.processEvents()
@@ -1072,7 +1066,7 @@ class MstImpellerTutorials:
         self._ah_rim = made
         coin = sum(1 for c in sk.Constraints if c.Type in ("Coincident", "Tangent") and
                    {c.First, c.Second} & {a, b} and {c.First, c.Second} & set(g for g in made if g is not None))
-        self.info["AH arc dropdown"] = {"entries": self.ah_arc_actions(), "tool modes after M": modes}
+        self.info["AH arc dropdown"] = {"entries": entries, "tool modes after M": modes}
         how = f"ribbon '{where} > Arc' dropdown > '{drop}'" if drop else "A key, M (end points and rim point)"
         ok = None not in made and coin == 4
         self.step("Arc by 3 Points: the top end points, then a point between; the same for the bottom",
@@ -1081,15 +1075,6 @@ class MstImpellerTutorials:
                   f"arcs made {[g is not None for g in made]}; {coin} of 4 ends snapped to the end arcs"
                   + ("" if drop else "; the ribbon's Arc button offers no Arc by 3 Points, so FreeCAD's Arc tool "
                                      "is switched to it with M"))
-
-    def ah_arc_actions(self):
-        from .ribbon import DropdownButton
-        r = self.shell.ribbon
-        for i in range(r.stack.count()):
-            for b in r.stack.widget(i).findChildren(DropdownButton):
-                if b.text() == "Arc":
-                    return [a.text() for a in b.menu().actions()]
-        return []
 
     def ah_tangent(self):
         sk = self._ag_sk
@@ -1125,12 +1110,9 @@ class MstImpellerTutorials:
             self.step("Rapid Dimension: the radii 1.5 and 0.5 at the ends, 18 and 15 between", "-", FAIL,
                       "an arc is missing, so there is nothing to dimension")
             return
-        made, direct = [], []
+        made = []
         for name, g, value in (("R18", u, AH_RU), ("R15", lo, AH_RL), ("R1.5", a, AH_R0), ("R0.5", b, AH_R1)):
             d, where = self.sk_constrain(sk, "Radius / Diameter", [self.ag_edge(g)], value)
-            if d == 0:
-                d = self.ag_run_with_value("Sketcher_ConstrainRadius", [self.ag_edge(g)], value)
-                direct.append(name)
             made.append(name + ("" if d == 1 else " (not made)"))
         dof, full, msg = self.sk_state(sk)
         geo = ah_geometry()
@@ -1143,10 +1125,9 @@ class MstImpellerTutorials:
         worst = max(errs.values())
         self.step("Rapid Dimension: the radii 1.5 and 0.5 at the ends, 18 and 15 between",
                   "arc + ribbon 'Radius / Diameter', the value typed in FreeCAD's dialog, 4 times",
-                  (DIFFERS if direct else SAME) if "not made" not in "".join(made) and worst < 1e-6 else FAIL,
+                  SAME if "not made" not in "".join(made) and worst < 1e-6 else FAIL,
                   f"{', '.join(made)}; DoF {dof} ('{msg}'); every arc within {worst:.1e} mm of the solved figure "
-                  "(centres, radii, ends)" + (f"; Radius / Diameter was greyed out, so FreeCAD's Radius command was "
-                                              f"run for {', '.join(direct)}" if direct else ""))
+                  "(centres, radii, ends)")
         self.ag_shot("AH1_impeller_sketch.png")
 
     def ah_finish(self):
@@ -1246,17 +1227,18 @@ class MstCircularBaseTutorials:
             return
         on = any(c.Type == "Coincident" and {(c.First, c.FirstPos), (c.Second, c.SecondPos)} == {(circ, 3), (-1, 1)}
                  for c in sk.Constraints)
-        d, where = self.sk_constrain(sk, "Radius / Diameter", [f"Edge{circ + 1}"], AJ_R)
-        direct = d == 0
-        if direct:
-            d = self.ag_run_with_value("Sketcher_ConstrainRadius", [f"Edge{circ + 1}"], AJ_R)
+        # on a full circle the button's default (auto radius/diameter) makes a diameter: R60 is the radial method,
+        # picked from the drop-down as in NX's Radial Dimension (FreeCAD remembers it for the next clicks)
+        entry = "Constrain radius"
+        d, where = self.sk_constrain(sk, "Radius / Diameter", [f"Edge{circ + 1}"], AJ_R, entry=entry)
+        kind = sk.Constraints[-1].Type if d else None
         g = sk.Geometry[circ]
         dof, _, _ = self.sk_state(sk)
-        ok = tool and on and d == 1 and abs(g.Radius - AJ_R) < 1e-9 and g.Center.Length < 1e-9 and dof == 0
+        ok = (tool and on and d == 1 and kind == "Radius" and abs(g.Radius - AJ_R) < 1e-9 and g.Center.Length < 1e-9
+              and dof == 0)
         self.step("The disc: a circle R60 about the origin", "O key, MB1 at the origin and on the rim, MB2; circle + "
-                  "'Radius / Diameter' = 60", (DIFFERS if direct else SAME) if ok else FAIL,
-                  f"centre snapped to the origin {on}; radius {g.Radius:g} mm; DoF {dof}"
-                  + ("; Radius / Diameter was greyed out, so FreeCAD's Radius command was run" if direct else ""))
+                  f"'Radius / Diameter' drop-down > '{entry}' = 60", SAME if ok else FAIL,
+                  f"centre snapped to the origin {on}; {kind} constraint; radius {g.Radius:g} mm; DoF {dof}")
 
     def aj_finish(self):
         self.key("Ctrl+Q")
@@ -1318,7 +1300,7 @@ class MstCircularBaseTutorials:
         """Each slot: closed, its sides parallel to the slot's axis, the semicircle's centre on that axis, its
         radius, and the centre's distance from the middle. Lines added by hand where Profile left them out."""
         sk = self._ag_sk
-        repairs, made, direct = [], 0, []
+        repairs, made = [], 0
         for name, d, w, c in AJ_SLOTS:
             geo = self._aj_geo.get(name, [])
             if len(geo) != 4:
@@ -1340,9 +1322,6 @@ class MstCircularBaseTutorials:
                     repairs.append(f"{name}: {side} on a side ({k})")
             k1, _ = self.sk_constrain(sk, "Coincident", [self.ag_vertex(arc, 3), axis])
             k2, _ = self.sk_constrain(sk, "Radius / Diameter", [self.ag_edge(arc)], w)
-            if k2 == 0:
-                k2 = self.ag_run_with_value("Sketcher_ConstrainRadius", [self.ag_edge(arc)], w)
-                direct.append(name)
             k3, _ = self.sk_constrain(sk, "Distance", [self.ag_vertex(arc, 3), "RootPoint"], c)
             made += k1 + k2 + k3
         dof, _, msg = self.sk_state(sk)
@@ -1356,12 +1335,10 @@ class MstCircularBaseTutorials:
         worst = max(errs) if errs else None
         self.step("Each semicircle's centre on its axis, its radius, and its distance from the middle",
                   "centre + axis + 'Coincident', arc + 'Radius / Diameter', centre + origin + 'Distance', per slot",
-                  (DIFFERS if direct or repairs else SAME) if made == 12 and worst is not None and worst < 1e-6
-                  else FAIL,
+                  (DIFFERS if repairs else SAME) if made == 12 and worst is not None and worst < 1e-6 else FAIL,
                   f"{made} of 12 constraints; semicircles within {worst if worst is None else f'{worst:.1e}'} mm; "
                   f"DoF {dof} (the outer ends stay free outside the disc)"
-                  + (f"; added by hand: {'; '.join(repairs)}" if repairs else "")
-                  + (f"; Radius / Diameter greyed out, FreeCAD's Radius run for {', '.join(direct)}" if direct else ""))
+                  + (f"; added by hand: {'; '.join(repairs)}" if repairs else ""))
         self.ag_shot("AJ1_slots_sketch.png")
 
     def aj_slots_finish(self):

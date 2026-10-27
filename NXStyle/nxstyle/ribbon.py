@@ -4,7 +4,7 @@
 import FreeCADGui as Gui
 
 from . import config, ribbon_layout, theme
-from .qt import QtCore, QtGui, QtWidgets, Qt, exec_menu
+from .qt import QAction, QtCore, QtGui, QtWidgets, Qt, exec_menu
 
 LARGE = 32
 SMALL = 16
@@ -28,9 +28,9 @@ def sub_actions():
                 acts = list(Gui.Command.get(n).getAction() or [])
             except Exception:
                 continue
-            for a in acts[1:]:
+            for a in acts:                 # a group lists only its entries; a plain command, its own action
                 key = a.objectName()
-                if key and key not in index:
+                if key and key != n and key not in index:
                     index[key] = a
         _sub_cache.update(count=len(names), index=index)
     return _sub_cache["index"]
@@ -42,16 +42,16 @@ def known_commands():
 
 def trigger(name):
     """Run a command or a group sub-action by name."""
-    acts = command_actions(name)
-    if acts:
-        acts[0].trigger()
+    act = command_action(name)
+    if act is not None:
+        act.trigger()
     else:
         Gui.runCommand(name)
 
 
 def is_enabled(name):
-    acts = command_actions(name)
-    return bool(acts) and acts[0].isEnabled()
+    act = command_action(name)
+    return act is not None and act.isEnabled()
 
 
 def resolve(spec, known=None):
@@ -69,6 +69,8 @@ HOST_ACTIONS = {}
 
 
 def command_actions(name):
+    """FreeCAD's Command.getAction(): a plain command's own QAction, or a group command's entries (not the
+    group's own action, see command_action); empty until FreeCAD has made the action (see provide_actions)."""
     if name in HOST_ACTIONS:
         return [HOST_ACTIONS[name]]
     try:
@@ -84,9 +86,57 @@ def command_actions(name):
     return [sub] if sub is not None else []
 
 
-def command_icon(name):
+def command_action(name):
+    """The QAction a FreeCAD toolbar button shows for the command, or None.
+
+    For a group command (Sketcher_CompLine, Sketcher_CompConstrainRadDia, ...) that is the group's own action:
+    FreeCAD enables it with the command and, triggered, runs the remembered or default entry. getAction() lists
+    only the entries, and the first entry is a different command with its own enabled state."""
     acts = command_actions(name)
-    return acts[0].icon() if acts else QtGui.QIcon()
+    if not acts:
+        return None
+    first = acts[0]
+    if name in HOST_ACTIONS or first.objectName() == name:
+        return first
+    group = first.actionGroup()                  # the group's QActionGroup, a child of its Gui::ActionGroup
+    owner = group.parent() if group is not None else None
+    # children(), not findChild(): on the Gui::ActionGroup (unknown to PySide, wrapped as a QObject) PySide6's
+    # findChild hands back a wrapper whose C++ object counts as deleted (measured in FreeCAD 1.1.4)
+    for child in owner.children() if owner is not None else []:
+        if isinstance(child, QAction) and child.objectName() == name:
+            return child
+    return first
+
+
+# FreeCAD makes a command's QAction (Command::initAction) only when a toolbar or menu takes the command, and the
+# workbenches do not place every command a ribbon names (Sketcher_CompLine and Sketcher_CompConstrainRadDia only
+# with non-default Sketcher preferences). A custom toolbar of the workbench, hidden by the shell like every native
+# toolbar, places them: FreeCAD's own mechanism (Tools > Customize), so FreeCAD makes the actions at activation.
+# The shell then activates the workbench again (Shell.reactivate_workbench), as it does for its own commands.
+RIBBON_TOOLBAR = "Custom_NXRibbon"
+
+
+def provide_actions(names, reactivate):
+    """Make FreeCAD create the QActions of these registered commands: list them in the active workbench's custom
+    toolbar, then reactivate() the workbench so FreeCAD builds it. Returns the commands still without an action."""
+    todo = [n for n in dict.fromkeys(names) if n not in HOST_ACTIONS and not command_actions(n)
+            and Gui.Command.get(n) is not None]
+    if not todo:
+        return []
+    import FreeCAD as App
+    wb = Gui.activeWorkbench().name()
+    p = App.ParamGet(f"User parameter:BaseApp/Workbench/{wb}/Toolbar/{RIBBON_TOOLBAR}")
+    p.SetString("Name", "NX Ribbon Commands")
+    p.SetBool("Active", True)
+    for n in todo:
+        p.SetString(n, n.split("_", 1)[0])     # the module FreeCAD loads if the command is not registered yet
+    reactivate()
+    return [n for n in todo if not command_actions(n)]
+
+
+def command_icon(name):
+    act = command_action(name)
+    return act.icon() if act is not None else QtGui.QIcon()
 
 
 def clean_text(text):
@@ -106,8 +156,8 @@ class CommandButton(QtWidgets.QToolButton):
         self.command = name
         self.nx_label = label
         self.on_run = on_run
+        self.action = command_action(name)
         acts = command_actions(name)
-        self.action = acts[0] if acts else None
         self.setObjectName("NXRibbonButton")
         self.setAutoRaise(True)
         big = size == "large"
@@ -119,10 +169,9 @@ class CommandButton(QtWidgets.QToolButton):
             self.setMaximumWidth(112)
         self.setText(self._wrap(label) if big else label)
         menu = self.action.menu() if self.action else None
-        if menu is None and len(acts) > 1:
-            menu = QtWidgets.QMenu(self)
-            for a in acts[1:]:
-                menu.addAction(a)
+        if menu is None and name not in HOST_ACTIONS and acts and acts[0].objectName() != name:
+            menu = QtWidgets.QMenu(self)       # a group: every entry, as FreeCAD's toolbar drop-down lists them
+            menu.addActions(acts)
         if menu is not None:
             self.setMenu(menu)
             self.setPopupMode(QtWidgets.QToolButton.MenuButtonPopup)
@@ -211,13 +260,13 @@ class DropdownButton(QtWidgets.QToolButton):
         self.entries = []
         menu = QtWidgets.QMenu(self)
         for name, text in entries:
-            act = command_actions(name)
-            if not act:
+            act = command_action(name)
+            if act is None:
                 continue
             self.entries.append((name, text))
-            item = menu.addAction(act[0].icon(), text)
+            item = menu.addAction(act.icon(), text)
             item.setData(name)
-            item.setShortcut(act[0].shortcut())
+            item.setShortcut(act.shortcut())
             item.triggered.connect(lambda _=False, n=name: (on_run and on_run(n), trigger(n)))
         self.setMenu(menu)
         if entries:
@@ -924,9 +973,9 @@ class Ribbon(QtWidgets.QWidget):
 
     def _label(self, item, cmd):
         if config.get().get("labels") == "freecad":
-            acts = command_actions(cmd)
-            if acts:
-                return clean_text(acts[0].text())
+            act = command_action(cmd)
+            if act is not None:
+                return clean_text(act.text())
         return item.get("label") or cmd
 
     def _make(self, item, tab, group, known):
@@ -966,6 +1015,19 @@ class Ribbon(QtWidgets.QWidget):
 def QAction_types():
     from .qt import QAction
     return (QAction,)
+
+
+def spec_commands(groups, known):
+    """The commands the buttons of these groups ((title, items[, meta]) as add_tab takes them) would run."""
+    out = []
+    for entry in groups:
+        for item in entry[1]:
+            if isinstance(item, dict):
+                for spec in [s["cmd"] for s in item.get("items", [])] if "dropdown" in item else [item["cmd"]]:
+                    cmd = resolve(spec, known)
+                    if cmd:
+                        out.append(cmd)
+    return out
 
 
 def spec_groups(tab_spec):

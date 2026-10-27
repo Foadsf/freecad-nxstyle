@@ -121,6 +121,9 @@ class Smoke:
         yield self.s_sketch_check, 100
         yield self.s_profile, 300
         yield self.s_sketch_constraints, 300
+        yield self.s_sketch_arc, 600              # FreeCAD refreshes the command states on a timer
+        yield self.s_sketch_radius, 400
+        yield self.s_sketch_radius_check, 100
         yield self.s_sketch_leave, 1200
         yield self.s_sketch_left, 100
         yield self.s_drafting, 2500
@@ -682,6 +685,7 @@ class Smoke:
                    f"objects {n0} -> {len(doc.Objects)}, last={commands.last_command['name']}")
 
     def s_sketch_enter(self):
+        self.ribbon_follows_commands("Modeling")
         doc = App.ActiveDocument
         sk = doc.addObject("Sketcher::SketchObject", "Sketch")
         doc.recompute()
@@ -697,6 +701,11 @@ class Smoke:
                  if t.objectName().startswith("Overlay") and t.isVisible()]
         self.check("no overlay box over the view in sketch mode", not boxes, boxes)
         self.shot("02_sketch.png")
+        rows = self.tab_buttons("Sketch")
+        self.info["Sketch tab buttons (label, command, enabled, active, actions)"] = rows
+        greyed = [(label, cmd, n) for label, cmd, on, active, n in rows if active and not on]
+        self.check("every Sketch-tab button whose FreeCAD command is active is enabled (group commands too)",
+                   rows and not greyed, greyed)
         tested, bad = self.press_keys("sketch")
         self.check(f"sketch key presses reach their commands through Qt's shortcut dispatch ({tested} keys; "
                    "dispatch only)", tested and not bad, bad)
@@ -866,6 +875,79 @@ class Smoke:
         sk.deleteAllGeometry()
         doc.recompute()
 
+    def tab_buttons(self, tab=None):
+        """(label, command, enabled, FreeCAD isActive, number of QActions) of a ribbon tab's (or every tab's) command
+        buttons; add-on actions (ribbon.HOST_ACTIONS) keep their own state and are left out."""
+        from .ribbon import HOST_ACTIONS, CommandButton, command_actions
+        r = self.shell.ribbon
+        rows = []
+        for i in range(r.stack.count()):
+            if tab is not None and r.tabs.tabText(i) != tab:
+                continue
+            for b in r.stack.widget(i).findChildren(CommandButton):
+                if b.command in HOST_ACTIONS:
+                    continue
+                try:
+                    active = bool(Gui.Command.get(b.command).isActive())
+                except Exception:          # a group's sub-action named directly: no command of its own
+                    active = None
+                rows.append((b.nx_label, b.command, b.isEnabled(), active, len(command_actions(b.command))))
+        return rows
+
+    def ribbon_follows_commands(self, app):
+        """Every button of the application's ribbon is enabled when its FreeCAD command is active (no task dialog
+        open: FreeCAD then disables document commands on its own)."""
+        rows = self.tab_buttons()
+        greyed = [(label, cmd, n) for label, cmd, on, active, n in rows if active and not on]
+        self.check(f"{app} ribbon: every button whose FreeCAD command is active is enabled ({len(rows)} buttons)",
+                   rows and not greyed and not Gui.Control.activeDialog(), greyed)
+
+    def s_sketch_arc(self):
+        """An arc in the sketch, selected, for the Radius / Diameter button (a FreeCAD group command)."""
+        import Part
+        from . import sketch_ui
+        sk = sketch_ui.edited_sketch()
+        self._radius_sketch = sk
+        geo = sk.addGeometry(Part.ArcOfCircle(Part.Circle(App.Vector(0, 0, 0), App.Vector(0, 0, 1), 20), 0.0, 2.0))
+        App.ActiveDocument.recompute()
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"Edge{geo + 1}")
+
+    def s_sketch_radius(self):
+        from .ribbon import CommandButton
+        from .tutorial import qtest
+        sk = self._radius_sketch
+        self._radius_before = len(sk.Constraints)
+        p = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher")
+        self._radius_dialog = p.GetBool("ShowDialogOnDistanceConstraint", True)
+        p.SetBool("ShowDialogOnDistanceConstraint", False)     # no modal datum dialog in the self-test
+        r = self.shell.ribbon
+        r.select("Sketch")
+        b = next((w for w in r.stack.currentWidget().findChildren(CommandButton) if w.nx_label == "Radius / Diameter"),
+                 None)
+        self._radius_button = (b.command, b.isEnabled(), b.menu() is not None) if b is not None else None
+        if b is None:
+            return
+        how, _via = r.reach(b)
+        if how in ("group", "overflow"):         # a narrow window collapses the group: its menu runs the button
+            act = r.menu_action(b)
+            if act is not None:
+                act.trigger()
+        else:
+            qtest().mouseClick(b, Qt.LeftButton)
+        self._radius_how = how
+
+    def s_sketch_radius_check(self):
+        sk = self._radius_sketch
+        App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher").SetBool(
+            "ShowDialogOnDistanceConstraint", self._radius_dialog)
+        App.ActiveDocument.recompute()
+        made = [c.Type for c in sk.Constraints[self._radius_before:]]
+        self.check("Radius / Diameter clicked on a selected arc makes a Radius constraint (group command button)",
+                   made == ["Radius"], f"button (command, enabled, drop-down) {self._radius_button}; "
+                   f"reached {getattr(self, '_radius_how', None)}; made {made}")
+        Gui.Selection.clearSelection()
+
     def s_sketch_leave(self):
         Gui.ActiveDocument.resetEdit()
 
@@ -881,6 +963,7 @@ class Smoke:
         self.check("Drafting application ribbon", Gui.activeWorkbench().name() == "TechDrawWorkbench"
                    and "TechDraw_View" in r.locations, r.tab_names())
         self.info["missing_drafting_commands"] = r.missing
+        self.ribbon_follows_commands("Drafting")
         self.shot("03_drafting.png")
         self.layout_matrix("Drafting")
 

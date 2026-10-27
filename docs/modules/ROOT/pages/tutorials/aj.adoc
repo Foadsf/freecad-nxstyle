@@ -13,7 +13,7 @@ The slot depths are measured from the rim, along the slot's axis, to the semicir
 === 1. The disc
 
 kbd:[Ctrl+N], then kbd:[X] with nothing selected and the XC-YC plane.
-kbd:[O] for a circle: click the origin, then the rim. Make its radius 60.
+kbd:[O] for a circle: click the origin, then the rim. Make its radius 60 (*Radius / Diameter* drop-down > *Constrain radius*).
 kbd:[Ctrl+Q], type 20 and press MB2. The Boolean is *None*: a new body.
 
 === 2. The four slots
@@ -54,5 +54,5 @@ The solid is compared with the same disc and slots built with FreeCAD's Part API
 == What differs from NX
 
 * The book's top view has no thickness. 20 mm is our assumption.
-* The ribbon's *Radius / Diameter* button is greyed out in sketch edit. Until that is fixed, the replay runs FreeCAD's Radius command.
+* On a full circle, *Radius / Diameter* makes a diameter by default, as NX's Radial Dimension does. For R60, pick *Constrain radius* from its drop-down; FreeCAD then keeps that choice for the next clicks.
 * Today the sketch's dimension dialog keeps only two decimals: 28.095 becomes 28.09 and 29.395 becomes 29.39. The slots then miss by 5 µm, and the replay reports that as a failure until it is fixed.

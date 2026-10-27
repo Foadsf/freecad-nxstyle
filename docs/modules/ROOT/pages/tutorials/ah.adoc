@@ -25,7 +25,7 @@ Do the same about the second point, round its right side.
 
 *Arc by 3 Points*: click the top ends of the two end arcs, then a point between them.
 Do the same for the bottom ends.
-In NX-Style, press kbd:[A], then kbd:[M] to switch FreeCAD's Arc to end points and rim point.
+In NX-Style, open the *Arc* drop-down on the Sketch tab and pick *Arc From 3 Points* (or press kbd:[A], then kbd:[M] to switch FreeCAD's Arc to end points and rim point).
 
 === 4. Tangent, Fixed and the radii
 
@@ -49,4 +49,3 @@ The four arcs are checked against the figure solved from the book's data. The R1
 
 * NX places a point at typed coordinates. FreeCAD's Point tool shows no coordinate fields by default, and the Sketch tab has no Horizontal or Vertical Distance, so the replay uses FreeCAD's own commands for them.
 * FreeCAD's *Fixed* keeps a point where it is. A point clicked on the origin snaps to it, which already fixes it.
-* The ribbon's *Arc* button does not offer Arc by 3 Points. FreeCAD's Arc tool switches to it with kbd:[M].

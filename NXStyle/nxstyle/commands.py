@@ -743,11 +743,6 @@ def register(apps):
     p.SetBool("Active", True)
     for name in table:
         p.SetString(name, "FreeCAD")
-    # FreeCAD commands the ribbon names that none of FreeCAD's own toolbars hold (FreeCAD 1.1 makes no action
-    # for them either); the value is the module FreeCAD loads when the command is not registered yet
-    for name, module in ACTIONLESS.items():
-        p.SetString(name, module)
+    # FreeCAD commands a ribbon names that none of FreeCAD's own toolbars hold (Sketcher_ConstrainPointOnObject in
+    # 1.1) get their actions from ribbon.provide_actions
     return list(table)
-
-
-ACTIONLESS = {"Sketcher_ConstrainPointOnObject": "SketcherGui"}       # Point on Curve

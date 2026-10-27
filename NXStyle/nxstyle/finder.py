@@ -4,7 +4,7 @@
 import FreeCADGui as Gui
 
 from .qt import QtCore, QtGui, QtWidgets, Qt
-from .ribbon import clean_text, command_actions
+from .ribbon import clean_text, command_action
 
 ROLE_CMD = Qt.UserRole + 1
 
@@ -43,10 +43,10 @@ class CommandFinder(QtWidgets.QLineEdit):
         locations = self.ribbon.locations
         labels = self.ribbon.labels
         for name in sorted(Gui.listCommands()):
-            acts = command_actions(name)
-            if acts:
-                icon, fc_text = acts[0].icon(), clean_text(acts[0].text())
-                shortcut, tip = acts[0].shortcut().toString(), clean_text(acts[0].toolTip() or "")
+            act = command_action(name)
+            if act is not None:
+                icon, fc_text = act.icon(), clean_text(act.text())
+                shortcut, tip = act.shortcut().toString(), clean_text(act.toolTip() or "")
             elif name in labels:
                 # on the ribbon, but FreeCAD made no action for it (it sits in none of FreeCAD's toolbars,
                 # e.g. Sketcher_ConstrainPointOnObject in 1.1): the command's own text and icon
