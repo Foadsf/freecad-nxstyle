@@ -25,7 +25,7 @@ The hidden-desktop test mode is Windows-only; on Linux the self-test runs on wha
 
 == Get the project
 
-Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata`, xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid`, FreeCAD's xref:sheet-metal.adoc[SheetMetal add-on] in `vendor/FreeCAD_SheetMetal` and xref:laser-cut.adoc[LCInterlocking] in `vendor/LCInterlocking`.
+Clone it with its submodules: xref:data-management.adoc[Strata] in `vendor/freecad-strata`, xref:algorithmic-modeling.adoc[Katydid] in `vendor/Katydid`, FreeCAD's xref:sheet-metal.adoc[SheetMetal add-on] in `vendor/FreeCAD_SheetMetal`, xref:laser-cut.adoc[LCInterlocking] in `vendor/LCInterlocking` and the xref:dfm.adoc[DFM Workbench] in `vendor/FreeCAD-DFM-Workbench`.
 
 [source,bash]
 ----
@@ -39,7 +39,14 @@ If you cloned without `--recursive`, or downloaded a ZIP of the repository, fetc
 git submodule update --init
 ----
 
-NX-Style still starts without them; the launcher then prints `Strata: not found`, `Katydid: not found`, `SheetMetal: not found` or `LCInterlocking: not found` and how to get them.
+NX-Style still starts without them; the launcher then prints `Strata: not found`, `Katydid: not found`, `SheetMetal: not found`, `LCInterlocking: not found` or `DFM: not found` and how to get them.
+
+The DFM Workbench also needs OCP (cadquery-ocp), which FreeCAD does not ship. Until it is installed, the launcher prints `DFM: off: it needs OCP` and starts without it. Install it once (about 165 MB from PyPI, with FreeCAD's own Python, into `FreeCAD-NXStyle/pydeps` beside the NX profiles):
+
+[source,bash]
+----
+python launch_nx.py --install-dfm-deps
+----
 
 == Start it
 
@@ -60,6 +67,7 @@ Strata: bundled (...\freecad-nxstyle\vendor\freecad-strata)
 Katydid: bundled (...\freecad-nxstyle\vendor\Katydid)
 SheetMetal: bundled (...\freecad-nxstyle\vendor\FreeCAD_SheetMetal)
 LCInterlocking: bundled (...\freecad-nxstyle\vendor\LCInterlocking)
+DFM: bundled (...\freecad-nxstyle\vendor\FreeCAD-DFM-Workbench), OCP from ...\FreeCAD-NXStyle\pydeps\py311
 ----
 
 Open files directly by naming them:
@@ -98,6 +106,12 @@ python launch_nx.py part.FCStd
 
 | `--no-lcinterlocking`
 | Starts without the LCInterlocking add-on (Laser Cut). To switch it off for good, set `"laser_cut": "none"`.
+
+| `--no-dfm`
+| Starts without the DFM Workbench (Analysis › Molded Part Validation). To switch it off for good, set `"dfm": "none"`.
+
+| `--install-dfm-deps`
+| Installs what the DFM Workbench needs (cadquery-ocp 7.8.1.1.post1 and VTK 9.3.1, pinned to FreeCAD 1.1's OpenCASCADE 7.8.1, and gmsh 4.15.2 for its colour maps) with FreeCAD's own Python, then exits. The only option that downloads anything.
 
 | `--dry-run`
 | Prints the FreeCAD executable, the profile and the command line, and starts nothing.

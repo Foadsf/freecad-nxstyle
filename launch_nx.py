@@ -416,6 +416,80 @@ def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | N
 
 
 # --------------------------------------------------------------------------
+# DFM: design-for-manufacturing checks (ryankembrey/FreeCAD-DFM-Workbench, LGPL-2.1-or-later) behind
+# Analysis > Molded Part Validation. It imports OCP (cadquery-ocp) on load, which FreeCAD does not ship, so
+# --install-dfm-deps puts a pinned copy in a folder of NXStyle's own; the launcher never downloads by itself.
+# --------------------------------------------------------------------------
+DFM_DIR = HERE / "vendor" / "FreeCAD-DFM-Workbench"   # git submodule of github.com/ryankembrey/FreeCAD-DFM-Workbench
+# OCCT 7.8.1, the one FreeCAD 1.1 is built on; OCP loads vtk's DLLs on import; gmsh meshes the part for
+# Draft Analysis and Check Wall Thickness. --no-deps: vtk's own requirements (numpy 2, matplotlib) would
+# shadow FreeCAD's.
+DFM_DEPS = ("cadquery-ocp==7.8.1.1.post1", "vtk==9.3.1", "gmsh==4.15.2")
+
+
+def freecad_python(install: Install) -> tuple[Path | None, str]:
+    """FreeCAD's own python.exe and its tag ('py311'), from the pythonXY.dll beside the binary; (None, '')
+    where FreeCAD has no separate interpreter (AppImage, macOS bundle)."""
+    bindir = install.exe.parent
+    # python3.dll, the stable-ABI forwarder, sits beside python311.dll
+    dll = next((d for d in sorted(bindir.glob("python3*.dll")) if re.fullmatch(r"python3\d+", d.stem)), None)
+    exe = bindir / "python.exe"
+    if dll is None or not exe.is_file():
+        return None, ""
+    return exe, "py" + dll.stem[len("python"):]
+
+
+def dfm_deps_dir(install: Install) -> Path | None:
+    """Where --install-dfm-deps puts OCP for this FreeCAD's Python, outside any profile so that throwaway
+    test profiles share it."""
+    _exe, tag = freecad_python(install)
+    return default_profile_root() / "pydeps" / tag if tag else None
+
+
+def has_ocp(folder: Path | None) -> bool:
+    return bool(folder) and (folder / "OCP" / "__init__.py").is_file()
+
+
+def find_dfm(profile: Path, install: Install, disabled: bool = False) -> tuple[tuple[Path, ...], str]:
+    """The folders to load with -M for the DFM add-on (its OCP folder first), or (), and why; one copy only,
+    as for Strata. Without OCP the add-on fails on load, so it stays out and the reason says how to get it."""
+    if disabled:
+        return (), "off (--no-dfm)"
+    cfg = read_settings(profile)
+    if cfg.get("dfm", "dfm") != "dfm":
+        return (), f"off (nxstyle.json: dfm = {cfg.get('dfm')!r})"
+    deps = dfm_deps_dir(install)
+    site = install.exe.parent / "Lib" / "site-packages"
+    ocp = (deps,) if has_ocp(deps) else ()
+    mods = profile / "data" / "Mod"
+    if mods.is_dir():
+        for mod in sorted(mods.iterdir()):
+            if (mod / "freecad" / "DFM" / "init_gui.py").is_file():   # its OCP is the Addon Manager's job
+                return ocp, f"installed in the NX profile ({mod})"
+    if not ocp and not has_ocp(site):
+        return (), ("off: it needs OCP (cadquery-ocp), which FreeCAD does not ship; "
+                    "run 'python launch_nx.py --install-dfm-deps' once")
+    if (DFM_DIR / "freecad" / "DFM" / "init_gui.py").is_file():
+        return (*ocp, DFM_DIR), f"bundled ({DFM_DIR})" + (f", OCP from {deps}" if ocp else "")
+    return (), "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
+
+
+def install_dfm_deps(install: Install) -> int:
+    """pip-install DFM_DEPS with FreeCAD's own Python into dfm_deps_dir; the one step that downloads."""
+    exe, _tag = freecad_python(install)
+    target = dfm_deps_dir(install)
+    if exe is None or target is None:
+        print("This FreeCAD has no separate python.exe; install cadquery-ocp into its Python yourself "
+              "(the Addon Manager does it when it installs DFM).", file=sys.stderr)
+        return 2
+    target.mkdir(parents=True, exist_ok=True)
+    cmd = [str(exe), "-m", "pip", "install", "--disable-pip-version-check", "--no-deps", "--upgrade",
+           "--target", str(target), *DFM_DEPS]
+    print(" ".join(cmd))
+    return subprocess.call(cmd)
+
+
+# --------------------------------------------------------------------------
 # Hidden desktop (Windows): run the self-test without windows on the user's screen
 # --------------------------------------------------------------------------
 # A test run gets a hard memory ceiling. On 2026-10-12 a tutorial replay grew
@@ -712,6 +786,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
     ap.add_argument("--no-lcinterlocking", action="store_true",
                     help="start without the LCInterlocking add-on (Laser Cut; on by default)")
+    ap.add_argument("--no-dfm", action="store_true",
+                    help="start without the DFM add-on (Analysis > Molded Part Validation; on by default once "
+                         "--install-dfm-deps has run)")
+    ap.add_argument("--install-dfm-deps", action="store_true",
+                    help=f"install what the DFM add-on needs ({', '.join(DFM_DEPS)}) with FreeCAD's own Python "
+                         f"into {default_profile_root()}/pydeps, then exit (downloads about 165 MB)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -725,6 +805,8 @@ def main(argv: list[str] | None = None) -> int:
     install = pick_install(args.freecad)
     if install.version and install.version < (1, 0, 0):
         print(f"warning: FreeCAD {install.version_str} is older than 1.0 and is not supported", file=sys.stderr)
+    if args.install_dfm_deps:
+        return install_dfm_deps(install)
 
     extra = {}
     harness = "smoke" if args.smoke_test else "tutorial" if args.tutorial else None
@@ -751,12 +833,15 @@ def main(argv: list[str] | None = None) -> int:
     extra["NXSTYLE_SHEETMETAL_EXPECTED"] = "1" if sheetmetal or "NX profile" in sheetmetal_why else "0"
     lcinterlocking, lcinterlocking_why = find_lcinterlocking(profile.resolve(), disabled=args.no_lcinterlocking)
     extra["NXSTYLE_LCINTERLOCKING_EXPECTED"] = "1" if lcinterlocking or "NX profile" in lcinterlocking_why else "0"
+    dfm, dfm_why = find_dfm(profile.resolve(), install, disabled=args.no_dfm)
+    extra["NXSTYLE_DFM_EXPECTED"] = "1" if dfm_why.startswith(("bundled", "installed")) else "0"
     cmd = build_command(install, args.files, passthrough,
-                        tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m))
+                        tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m) + dfm)
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
-                          "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "command": cmd},
+                          "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
+                          "command": cmd},
                          indent=2))
         return 0
 
@@ -769,6 +854,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Katydid: {katydid_why}")
     print(f"SheetMetal: {sheetmetal_why}")
     print(f"LCInterlocking: {lcinterlocking_why}")
+    print(f"DFM: {dfm_why}")
 
     if harness:
         if os.name == "nt":
