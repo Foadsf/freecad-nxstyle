@@ -37,11 +37,12 @@ from .tutorial_katydid import KatydidTutorials
 from .tutorial_lasercut import LaserCutTutorials
 from .tutorial_mst import (MstCasingTutorials, MstCircularBaseTutorials, MstHolderTutorials, MstImpellerTutorials,
                            MstTutorials)
-from .tutorial_mst4 import MstFastenerTutorials, MstLowerCasingTutorials, MstPlateTutorials, MstShaftTutorials
+from .tutorial_mst4 import (MstArborPressTutorials, MstFastenerTutorials, MstLowerCasingTutorials, MstPlateTutorials,
+                            MstShaftTutorials)
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
-ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR"
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AT"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
@@ -128,7 +129,8 @@ class SaveWatch:
 class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, ExchangeTutorials, LaserCutTutorials,
              ExtrudeTutorials,
              MstTutorials, MstCasingTutorials, MstImpellerTutorials, MstCircularBaseTutorials, MstHolderTutorials,
-             MstPlateTutorials, MstLowerCasingTutorials, MstShaftTutorials, MstFastenerTutorials):
+             MstPlateTutorials, MstLowerCasingTutorials, MstShaftTutorials, MstFastenerTutorials,
+             MstArborPressTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -298,7 +300,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         Qt's QDoubleSpinBox and FreeCAD's QuantitySpinBox both read numbers in the locale
         (LC_NUMERIC on Linux): under nl_NL '.' is the group separator, so '0.05' is 5 and
         '3.175' is 3175, while a Dutch user types '0,05'."""
-        return f"{float(value):.6g}".replace(".", w.locale().decimalPoint())
+        # all the digits a value has (127.8636 = 5.034 in), not six significant ones (which typed 127.864)
+        return f"{round(float(value), 9):.12g}".replace(".", w.locale().decimalPoint())
 
     def check_typed(self, w, value, text):
         """Read the field back: a typed number it took as another value fails the step."""
@@ -464,10 +467,10 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         X = list(getattr(self, "X_STEPS", lambda: [])())
         Y = list(getattr(self, "Y_STEPS", lambda: [])())
         Z = list(getattr(self, "Z_STEPS", lambda: [])())
-        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK, AL, AM, AN, AO, AP, AQ, AR = (
+        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK, AL, AM, AN, AO, AP, AQ, AR, AS, AT = (
             list(getattr(self, f"{k}_STEPS", lambda: [])())
             for k in ("AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ",
-                      "AR"))
+                      "AR", "AS", "AT"))
         wanted = [w.strip() for w in (os.environ.get("NXSTYLE_TUTORIALS") or ALL_TUTORIALS).upper().split(",")]
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
@@ -487,7 +490,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
                            ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z),
                            ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD), ("AE", AE), ("AF", AF), ("AG", AG), ("AH", AH), ("AJ", AJ),
-                           ("AK", AK), ("AL", AL), ("AM", AM), ("AN", AN), ("AO", AO), ("AP", AP), ("AQ", AQ), ("AR", AR)):
+                           ("AK", AK), ("AL", AL), ("AM", AM), ("AN", AN), ("AO", AO), ("AP", AP), ("AQ", AQ), ("AR", AR), ("AS", AS),
+                           ("AT", AT)):
             if key in wanted:
                 yield from steps
 

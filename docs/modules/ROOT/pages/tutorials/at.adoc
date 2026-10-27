@@ -1,0 +1,61 @@
+= Tutorial AT: Arbor Press Rack
+:description: A rack: a sketched rectangle extruded, a tapered tooth space cut with Extrude (Subtract), patterned 19 times, and a hole at the centre of the end face found with Between Two Points (NX 12 for Engineering Design, 4.7.4).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.7.4 (Rack).
+You learn:: Rectangle, Extrude, a tapered cut with Extrude (Subtract), Pattern Feature (Linear, Count and Pitch), the Point Dialog's Between Two Points
+Sizes:: the book's, in inches, typed in millimetres. A rectangle from (0, 0) to (240, 25), extruded 20. A tooth space 35 long across the bar, 6 wide and 5.034 deep, its walls tapered 14.5°, its centre lines 37.8 from the end and 10 from the side. 19 of them at a pitch of 9.4. A hole Ø10, 20 deep, into the far end.
+
+The book gives the pocket's sizes only in its figure (p. 89); they are listed above.
+
+== Step by step
+
+=== 1. The bar
+
+kbd:[Ctrl+N] and save the part as `Arborpress_rack`. kbd:[End] turns the view to Isometric.
+Click *Sketch*, pick the XC-YC plane and press MB2.
+Press kbd:[R] for *Rectangle*.
+Type the first corner (0, 0) in the fields beside the pointer, then the opposite corner (6096, 635) mm, which is (240, 25) in.
+Press MB2, then kbd:[Ctrl+Q].
+
+Click *Extrude*, click a side of the rectangle, and type 508 mm (20 in).
+Click *OK*.
+
+=== 2. One tooth space
+
+Select the bar's top face and click *Sketch*.
+Draw a *Rectangle* from (34.8, −7.5) to (40.8, 27.5) in, typed in mm.
+That is the book's pocket: 6 wide along XC and 35 long across the bar, centred 37.8 from the end and 10 from the side. It runs out over both sides of the bar.
+Press MB2, then kbd:[Ctrl+Q].
+
+Click *Extrude (Subtract)*, click a side of the rectangle (QuickPick lists it where it lies on the face), type the length 127.8636 mm (5.034 in) and the taper −14.5°, and click *OK*.
+
+=== 3. The teeth
+
+Select the Extrude (Subtract) and click *Pattern Feature*.
+Choose the X axis as Direction 1, *Spacing*, 19 occurrences and 238.76 mm (9.4 in).
+Press MB2.
+
+=== 4. The hole
+
+Click *Cylinder* and choose *−XC*.
+In Specify Point choose *Between Two Points* and click two opposite corners of the far end face: the point is the face's centre.
+Type Diameter 254 and Height 508 mm (10 and 20 in), choose *Subtract*, and click *OK*.
+
+image::tutorial-AT-01-rack.png[The finished rack: 19 tooth spaces along the bar and the hole in its end]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AT.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The finished rack is compared with the book's dimensions built by FreeCAD's Part API.
+
+== What differs from NX
+
+* NX 12 draws the rectangle with Insert > Curve > Rectangle, a curve outside sketches. Here, as in NX 2212, it is drawn in a sketch.
+* NX 12's Rectangular Pocket is a legacy feature, positioned with Perpendicular distances to two edges. NX 2212 cuts it with Extrude (Subtract) from a sketched rectangle; its corners come from the pocket's size and position.
+* FreeCAD's taper is negative for walls that close in with depth. NX's pocket's taper of 14.5° is −14.5° here.

@@ -836,8 +836,8 @@ class MstShaftTutorials:
         return kind, p.steps["origin"].point(), p.steps["origin"].status.text(), (at.x(), at.y())
 
     def ap_dialog(self, command, kind, dims, boolean, label, how_extra, want, center=None, typed=(0, 0, 0),
-                  target=None, check=None):
-        """Fill the Cylinder, Cone or Sphere dialog the way the book does, press OK, and check the result.
+                  target=None, check=None, axis="ZC", point_type="Inferred Point"):
+        """Fill the Block, Cylinder, Cone or Sphere dialog the way the book does, press OK, and check the result.
         center (z, r): Arc/Ellipse/Sphere Center and a click on that circle about ZC; else the point typed. target:
         the body the Boolean works on, chosen in Select Body. check: () -> (ok, detail) instead of the volume of
         the part's first body (want)."""
@@ -848,10 +848,13 @@ class MstShaftTutorials:
             self.step(label, f"ribbon '{command}'", FAIL, f"the {command} dialog did not open")
             raise RuntimeError(f"no {command} dialog; the tutorial cannot continue")
         typ = choose(p, "nxType", kind)
-        vector = choose(p, "nxVector", "ZC") if command != "Sphere" else None
-        if center is None:
+        vector = choose(p, "nxVector", axis) if command in ("Cylinder", "Cone") else None
+        if callable(center):                 # picks of the caller's own: (description, the point it should give)
+            pick, where = center(p)
+            got = p.steps["origin"].point()
+        elif center is None:
             pick = None
-            choose(p, "originPointType", "Inferred Point")
+            choose(p, "originPointType", point_type)
             for name, v in zip(("originXC", "originYC", "originZC"), typed):
                 self.type_into(field(p, name), v)
             got = p.steps["origin"].point()
@@ -871,7 +874,8 @@ class MstShaftTutorials:
             qtest().qWait(500)                   # the dialog rebuilds its preview for the new target
         chosen = p.steps["body"].chosen()
         pressed = ok()
-        where = tuple(typed) if center is None else (0, 0, center[0])
+        if not callable(center):
+            where = tuple(typed) if center is None else (0, 0, center[0])
         at_point = got is not None and all(abs(a - b) < 1e-6 for a, b in zip(got, where))
         undo = App.ActiveDocument.UndoNames[:1]
         how = (f"ribbon '{self._ap_where}', Type '{typ}'" + (f", Specify Vector '{vector}'" if vector else "")
@@ -1144,9 +1148,73 @@ class MstFastenerTutorials:
         sides_how = f"'{asked['title']}' {asked['sides']} sides, OK" if asked else "no sides asked"
         return f"P key ({sides_how}; tool {tool}), {', '.join(typed)}, MB2", len(lines), missing
 
-    def fs_extrude(self, sk, length, boolean):
-        """Extrude started from the ribbon, the hexagon picked in the graphics window (Curve Rule Inferred
-        Curves: one pick is the whole sketch), Boolean and length set, OK. Returns (how, OK available)."""
+    def fs_type(self, w, v):
+        from .smoke import decode
+        from .tutorial import qtest
+        w.setFocus()
+        w.lineEdit().selectAll()
+        qtest().keyClicks(w.lineEdit(), self.typed_number(w, v))
+        qtest().keyClick(w.lineEdit(), *decode("Return"))
+        qtest().qWait(150)
+
+    def fs_rectangle(self, sk, c1, c2):
+        """Rectangle (R) in the sketch from corner c1 to the opposite corner c2 (sketch mm): c1 typed in the fields
+        beside the pointer, then c2 as the fields offer it (its X and Y, or the length and the width); MB2 ends the
+        tool. Returns (how, the corners found missing)."""
+        from . import sketch_ui
+        from .tutorial import qtest
+        view = self.nav().widget
+        (x1, y1), (x2, y2) = c1, c2
+        span = max(abs(x2 - x1), abs(y2 - y1))
+        self.frame_sketch(sk, (x1 + x2) / 2, (y1 + y2) / 2, span * 1.6)
+        n0 = len(sk.Geometry)
+        self.key("R")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        near = self.screen_point(sk, x1 - span * 0.05, y1 - span * 0.05)
+        self.send(QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(200)
+        fields = sketch_ui.xy_fields(sk, view, near)
+        for w, v in zip(fields or (), c1):
+            self.fs_type(w, v)
+        how = ["first corner typed" if fields else "first corner clicked"]
+        if not fields:
+            self.mb1_click(self.screen_point(sk, x1, y1))
+        corner = self.screen_point(sk, x2, y2)
+        self.send(QtCore.QEvent.MouseMove, corner, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(200)
+        second = sketch_ui.on_view_fields(view)[:2]
+        shown = [sketch_ui.field_value(w) for w in second]
+        self.info.setdefault("rectangle corner fields", []).append(shown)
+        if len(second) == 2:
+            # the fields show the pointer's place as X, Y or as length, width, in an order of their own: each value
+            # goes to the field showing the nearest number
+            best = None
+            for name, pair in (("X, Y", (x2, y2)), ("length, width", (x2 - x1, y2 - y1))):
+                for order in ((0, 1), (1, 0)):
+                    err = sum(abs(abs(shown[order[k]]) - abs(pair[k])) for k in range(2))
+                    if best is None or err < best[0]:
+                        best = (err, name, order, pair)
+            _err, name, order, pair = best
+            for k in range(2):
+                self.fs_type(second[order[k]], pair[k])
+            how.append(f"opposite corner typed as {name}")
+        if len(sk.Geometry) == n0:
+            self.mb1_click(corner)
+            how.append("opposite corner clicked")
+        self.mb2_click(self.screen_point(sk, x1 - span * 0.3, y2 + span * 0.3))
+        App.ActiveDocument.recompute()
+        lines = [g for g in range(n0, len(sk.Geometry)) if "Line" in sk.Geometry[g].TypeId
+                 and not sk.getConstruction(g)]
+        corners = [sk.getPoint(g, 1) for g in lines]
+        want = [App.Vector(x, y, 0) for x, y in ((x1, y1), (x2, y1), (x2, y2), (x1, y2))]
+        missing = [k for k, w in enumerate(want) if not any((c - w).Length < 1e-6 for c in corners)]
+        return f"R key (tool {tool}), {', '.join(how)}, MB2", len(lines), missing
+
+    def fs_extrude(self, sk, length, boolean, taper=None):
+        """Extrude started from the ribbon, the sketch picked in the graphics window by one of its lines (Curve
+        Rule Inferred Curves: one pick is the whole sketch), Boolean, length (and taper) set, OK. Returns (how,
+        OK available)."""
         from . import controller
         names = self.ao_edge_names(sk)
         line = next(g for g, geo in enumerate(sk.Geometry) if "Line" in geo.TypeId and not sk.getConstruction(g))
@@ -1158,9 +1226,14 @@ class MstFastenerTutorials:
         opened = self.wait_for("the Extrude dialog", up, timeout_ms=6000)
         picked = self.set_combo("nxBoolean", boolean)
         field = self.set_quantity("lengthEdit", length)
+        tapered = ""
+        if taper is not None:
+            self.info.setdefault("extrude panel widgets", []).append(self.task_widgets())
+            name = self.set_quantity("taperEdit", taper) or self.set_quantity("taper", taper)
+            tapered = f", '{name}' = {taper:g}°"
         ok = self.ao_ok()
-        return (f"a hexagon side picked ({route}; Curve Rule Inferred Curves), dialog opened {opened}; Boolean "
-                f"'{picked}', '{field}' = {length:g} mm; OK"), ok
+        return (f"a side picked ({route}; Curve Rule Inferred Curves), dialog opened {opened}; Boolean "
+                f"'{picked}', '{field}' = {length:g} mm{tapered}; OK"), ok
 
     def fs_new_feature(self, type_id, before):
         new = [o for o in App.ActiveDocument.Objects if o.TypeId == type_id and o.Name not in before]
@@ -1590,3 +1663,508 @@ class MstFastenerTutorials:
 
     def aq_show(self):
         self.show("AQ_hexagonal_screw")
+
+
+# ================================================================== AS, AT: Arbor Press L-Bar and Rack (4.7.3, 4.7.4)
+# The book (pp. 83-92), inches. The L-bar: a Block 65 x 65 x 285 at the origin; a Block 182 x 65 x 85 at the origin,
+# moved 200 along ZC (Move Object, Distance); from it a hole Ø35 along YC at (130, -5, 242), 100 long, and a bore Ø66
+# at (130, 22.5, 242), 20 long, subtracted; a Block 25 x 20 x 150 at (157, 22.5, 180) subtracted from it with Combine
+# > Subtract; the two blocks united; Edge Blend R60 on the outer corner and R30 on the inner corner (the figures, p. 86);
+# four Cylinders Ø8 x 20 along XC subtracted; a Block 60 x 20 x 66 at (130, 22.5, 209.5) subtracted.
+# The rack: a Rectangle (0, 0) to (240, 25) extruded 0 to 20; a rectangular Pocket on the top face, Length 35 across the
+# bar, Width 6, Depth 5.034, Taper 14.5° (the figure, p. 89), its centre lines 37.8 from the end and 10 from the side;
+# Pattern Feature along XC, 19 at a pitch of 9.4; a Cylinder Ø10 x 20 along -XC from the centre of the far end face
+# (Between Two Points, two opposite corners), subtracted.
+AS_B1 = (65, 65, 285)
+AS_B2 = (182, 65, 85)
+AS_LIFT = 200
+AS_HOLE = ((130, -5, 242), 35, 100)
+AS_BORE = ((130, 22.5, 242), 66, 20)
+AS_SLOT = ((157, 22.5, 180), (25, 20, 150))
+AS_R_OUTER, AS_R_INNER = 60, 30
+AS_PINS = [(162, 11.25, 210), (162, 11.25, 275), (162, 53.75, 210), (162, 53.75, 275)]
+AS_PIN = (8, 20)
+AS_CUT = ((130, 22.5, 209.5), (60, 20, 66))
+AT_BAR = (240, 25, 20)
+AT_POCKET = (37.8, 10, 35, 6, 5.034, 14.5)          # centre x, centre y, length (Y), width (X), depth, taper
+AT_COUNT, AT_PITCH = 19, 9.4
+AT_HOLE = ((240, 12.5, 10), 10, 20)
+
+
+def _v(p):
+    return App.Vector(*[c * IN for c in p])
+
+
+def as_edge(shape, x, z):
+    """The straight edge of shape along YC at (x, z), inches."""
+    for e in shape.Edges:
+        b = e.BoundBox
+        if b.XLength < 1e-6 and b.ZLength < 1e-6 and b.YLength > 1e-6 and abs(b.XMin - x * IN) < 1e-6 \
+                and abs(b.ZMin - z * IN) < 1e-6:
+            return e
+    return None
+
+
+def as_stages():
+    """The L-bar as the book builds it, stage by stage (Part API, mm)."""
+    import Part
+    y = App.Vector(0, 1, 0)
+    s = {"b1": Part.makeBox(*[c * IN for c in AS_B1]), "b2 at the origin": Part.makeBox(*[c * IN for c in AS_B2]),
+         "slot block": Part.makeBox(*[c * IN for c in AS_SLOT[1]], _v(AS_SLOT[0]))}
+    b2 = Part.makeBox(*[c * IN for c in AS_B2], App.Vector(0, 0, AS_LIFT * IN))
+    s["b2"] = b2
+    b2 = b2.cut(Part.makeCylinder(AS_HOLE[1] / 2 * IN, AS_HOLE[2] * IN, _v(AS_HOLE[0]), y))
+    s["hole"] = b2
+    b2 = b2.cut(Part.makeCylinder(AS_BORE[1] / 2 * IN, AS_BORE[2] * IN, _v(AS_BORE[0]), y))
+    s["bore"] = b2
+    b2 = b2.cut(Part.makeBox(*[c * IN for c in AS_SLOT[1]], _v(AS_SLOT[0])))
+    s["slot"] = b2
+    u = s["b1"].fuse(b2).removeSplitter()
+    s["unite"] = u
+    u = u.makeFillet(AS_R_OUTER * IN, [as_edge(u, 0, AS_B1[2])])
+    s["outer"] = u
+    u = u.makeFillet(AS_R_INNER * IN, [as_edge(u, AS_B1[0], AS_LIFT)])
+    s["inner"] = u
+    for k, p in enumerate(AS_PINS):
+        u = u.cut(Part.makeCylinder(AS_PIN[0] / 2 * IN, AS_PIN[1] * IN, _v(p), App.Vector(1, 0, 0)))
+        s[f"pin{k + 1}"] = u
+    s["final"] = u.cut(Part.makeBox(*[c * IN for c in AS_CUT[1]], _v(AS_CUT[0]))).removeSplitter()
+    return s
+
+
+def at_slot(dx=0.0):
+    """One tooth space: the pocket's rectangle on the top face, tapered inward down to its floor."""
+    import Part
+    cx, cy, length, width, depth, taper = AT_POCKET
+    t = depth * math.tan(math.radians(taper))
+    z1, z0 = AT_BAR[2], AT_BAR[2] - depth
+
+    def rect(inset, z):
+        x0, x1 = cx + dx - width / 2 + inset, cx + dx + width / 2 - inset
+        y0, y1 = cy - length / 2 + inset, cy + length / 2 - inset
+        return Part.makePolygon([_v((x0, y0, z)), _v((x1, y0, z)), _v((x1, y1, z)), _v((x0, y1, z)),
+                                 _v((x0, y0, z))])
+    return Part.makeLoft([rect(0, z1), rect(t, z0)], True, True)
+
+
+def at_stages():
+    import Part
+    s = {"bar": Part.makeBox(*[c * IN for c in AT_BAR])}
+    s["pocket"] = s["bar"].cut(at_slot())
+    rack = s["bar"]
+    for k in range(AT_COUNT):
+        rack = rack.cut(at_slot(k * AT_PITCH))
+    s["pattern"] = rack
+    s["final"] = rack.cut(Part.makeCylinder(AT_HOLE[1] / 2 * IN, AT_HOLE[2] * IN, _v(AT_HOLE[0]),
+                                            App.Vector(-1, 0, 0)))
+    return s
+
+
+class MstArborPressTutorials:
+    """Mixin for tutorial.Replay: tutorials AS (L-bar) and AT (rack)."""
+
+    def AS_STEPS(self):
+        return [self.p_modeling, self.as_new, self.as_save, self.as_block1, self.as_block2, self.as_move,
+                self.as_move_dialog, self.as_hole, self.as_bore, self.as_slot, self.as_subtract,
+                self.as_subtract_dialog, self.as_unite, self.as_unite_dialog, self.as_outer, self.as_outer_dialog,
+                self.as_inner, self.as_inner_dialog, self.as_pins, self.as_cut, self.as_check, self.as_fit,
+                self.as_show]
+
+    def AT_STEPS(self):
+        return [self.p_modeling, self.at_new, self.at_save, self.at_plane, self.at_rectangle, self.at_finish,
+                self.at_extrude, self.at_extrude_section, self.at_pocket_sketch, self.at_pocket_rectangle,
+                self.at_pocket_finish, self.at_pocket, self.at_pocket_section, self.at_pattern,
+                self.at_pattern_dialog, self.at_hole, self.at_check, self.at_fit, self.at_show]
+
+    # ------------------------------------------------------------- helpers
+    def as_body(self, k):
+        bodies = self.ao_bodies()
+        return bodies[k] if len(bodies) > k else None
+
+    def as_vol(self, body, stage, label, how):
+        """A step whose check is a body's shape against a stage of the book's L-bar."""
+        from . import geomcheck
+        ok, detail = geomcheck.compare(body.Shape if body is not None else None, self._as[stage])
+        self.step(label, how, SAME if ok else FAIL, detail)
+        return ok
+
+    def as_primitive(self, command, kind, dims, boolean, label, typed, body, stage, axis="ZC", target=None):
+        """Ribbon command, its dialog filled with typed values, OK; the body compared with the stage."""
+        from . import geomcheck
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon(command)
+        qtest().qWait(900)
+
+        def check():
+            got = self.as_body(body) if isinstance(body, int) else body()
+            ok, detail = geomcheck.compare(got.Shape if got is not None else None, self._as[stage])
+            return ok, f"{got.Label if got is not None else 'no body'}: {detail}"
+        names = ", ".join(f"{n} {v:g}" for n, v in dims)
+        self.ap_dialog(command, kind, [(n, v * IN) for n, v in dims], boolean, label,
+                       f"{names} (in) typed in mm", 0, typed=tuple(c * IN for c in typed), axis=axis, target=target,
+                       check=check)
+
+    # ================================================================ AS: the L-bar
+    def as_new(self):
+        self.tutorial = "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)"
+        self._as = as_stages()
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def as_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file (Arborpress_L-bar)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}")
+        self.units_step()
+        outcome, how, detail, path = self.save_ctrl_s("Arborpress_L-bar.FCStd")
+        self.step("Save it as Arborpress_L-bar", how, outcome, detail)
+        self.wait = 300
+
+    def as_block1(self):
+        self.as_primitive("Block", "Origin and Edge Lengths", (("length", 65), ("width", 65), ("height", 285)),
+                          "None", "Block 65 x 65 x 285 at the origin", (0, 0, 0), 0, "b1")
+        self.key("Ctrl+F")
+        self.key("Home")
+        self.wait = 1200
+
+    def as_block2(self):
+        self.as_primitive("Block", "Origin and Edge Lengths", (("length", 182), ("width", 65), ("height", 85)),
+                          "None", "A second Block 182 x 65 x 85, also at the origin", (0, 0, 0), 1,
+                          "b2 at the origin")
+        self.wait = 400
+
+    def as_move(self):
+        body = self.as_body(1)
+        block = next(o for o in body.Group if o.TypeId == "PartDesign::AdditiveBox")
+        Gui.Selection.clearSelection()
+        # the Block itself, as a click on it in the Part Navigator selects it (through its Body, as a sub-object,
+        # the Placement dialog moved nothing: measured)
+        Gui.Selection.addSelection(App.ActiveDocument.Name, block.Name)
+        self._as_moved = body
+        # NX-Style's Move Object (Ctrl+T) is FreeCAD's dragger, without a typed Distance yet: FreeCAD's Placement
+        # dialog (Menu > Edit > Placement) moves the block by a typed distance. The block, not its Body: a Boolean
+        # with a moved Body as its target ignores the Body's placement (measured, FreeCAD 1.1.4)
+        Gui.runCommand("Std_Placement")
+        self.wait = 1500
+
+    def as_move_dialog(self):
+        from . import geomcheck
+        self.wait_dialog("as_move_dialog")
+        self.info["AS move widgets"] = self.task_widgets()
+        sel = [(s.ObjectName, list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx("", 0)]
+        z = self.set_quantity("zPos", AS_LIFT * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        body = self._as_moved
+        block = next(o for o in body.Group if o.TypeId == "PartDesign::AdditiveBox")
+        self.info["AS move result"] = {"selection": sel, "body placement": str(body.Placement),
+                                       "block placement": str(block.Placement),
+                                       "block map mode": getattr(block, "MapMode", None),
+                                       "block support": str(getattr(block, "AttachmentSupport", None)),
+                                       "offset": str(getattr(block, "AttachmentOffset", None))}
+        ok, detail = geomcheck.compare(body.Shape if body is not None else None, self._as["b2"])
+        self.step("Edit > Move Object: the second block, Distance 200 along ZC, Move Original, OK",
+                  f"the Block selected (Part Navigator), Menu > Edit > Placement, '{z}' = 5080 mm, MB2 = OK",
+                  DIFFERS if ok else FAIL, f"{detail}. NX-Style's Move Object (Ctrl+T) has no Distance motion yet "
+                  "(it is being added); FreeCAD's Placement dialog moves the block by the typed distance. The block "
+                  "moves inside its body: FreeCAD's Unite / Subtract ignores a moved target body's placement")
+        self.wait = 400
+
+    def as_hole(self):
+        self.as_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", 35), ("height", 100)),
+                          "Subtract", "Cylinder along YC at (130, -5, 242), Ø35 x 100, Subtract from the top block",
+                          AS_HOLE[0], 1, "hole", axis="YC", target=self.as_body(1))
+        self.wait = 400
+
+    def as_bore(self):
+        self.as_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", 66), ("height", 20)),
+                          "Subtract", "Cylinder along YC at (130, 22.5, 242), Ø66 x 20, Subtract from the same block",
+                          AS_BORE[0], 1, "bore", axis="YC", target=self.as_body(1))
+        self.wait = 400
+
+    def as_slot(self):
+        self._as_blocks = len(self.ao_bodies())
+        self.as_primitive("Block", "Origin and Edge Lengths", (("length", 25), ("width", 20), ("height", 150)),
+                          "None", "Block 25 x 20 x 150 at (157, 22.5, 180)", AS_SLOT[0],
+                          lambda: self.ao_bodies()[-1] if len(self.ao_bodies()) > self._as_blocks else None,
+                          "slot block")
+        self.wait = 400
+
+    def as_boolean(self, target, tool, kind):
+        doc = App.ActiveDocument
+        Gui.ActiveDocument.ActiveView.setActiveObject("pdbody", target)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, tool.Name)
+        b, where = self.click_ribbon("Unite / Subtract")
+        self._as_where = where
+        self.wait = 1500
+
+    def as_boolean_dialog(self, kind, label, target, stage):
+        self.wait_dialog("as_boolean_dialog")
+        self.info[f"AS boolean widgets {kind}"] = self.task_widgets()
+        picked = self.set_combo("comboType", kind) or self.set_combo("type", kind)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        self.as_vol(target, stage, label, f"the target made the work body, the tool selected (Part Navigator) + "
+                    f"ribbon '{self._as_where} > Unite / Subtract', type '{picked}', MB2 = OK")
+
+    def as_subtract(self):
+        self.as_boolean(self.as_body(1), self.as_body(2), "Cut")
+
+    def as_subtract_dialog(self):
+        self.as_boolean_dialog("Cut", "Combine > Subtract: Target the block with the two holes, Tool the new block",
+                               self.as_body(1), "slot")
+        self.wait = 400
+
+    def as_unite(self):
+        self.as_boolean(self.as_body(0), self.as_body(1), "Fuse")
+
+    def as_unite_dialog(self):
+        self.as_boolean_dialog("Fuse", "Combine > Unite: the two blocks", self.as_body(0), "unite")
+        self.key("Ctrl+F")
+        self.wait = 800
+
+    def as_blend(self, x, z):
+        tip = self.as_body(0).Tip
+        edge = as_edge(tip.Shape, x, z)
+        sub = next((f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, 1) if edge is not None and e.isSame(edge)),
+                   None)
+        Gui.ActiveDocument.ActiveView.setActiveObject("pdbody", self.as_body(0))
+        self.select_subs(tip, [sub] if sub else [])
+        b, self._as_where = self.click_ribbon("Edge Blend")
+        self._as_edge = sub
+        self.wait = 1500
+
+    def as_blend_dialog(self, radius, label, stage):
+        self.wait_dialog("as_blend_dialog")
+        w = self._field(QtWidgets.QAbstractSpinBox, "radius")
+        if w is not None:
+            self.info.setdefault("AS blend radius field", []).append(
+                {"name": w.objectName(), "maximum": w.property("maximum"), "minimum": w.property("minimum"),
+                 "text": w.text(), "unit": str(w.property("unit"))})
+        field = self.set_quantity("radius", radius * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        self.as_vol(self.as_body(0), stage, label, f"{self._as_edge} selected + ribbon '{self._as_where} > Edge "
+                    f"Blend', '{field}' = {radius * IN:g} mm, MB2 = OK")
+        self.wait = 400
+
+    def as_outer(self):
+        self.as_blend(0, AS_B1[2])
+
+    def as_outer_dialog(self):
+        self.as_blend_dialog(AS_R_OUTER, "Edge Blend, Radius 60: the outer corner where the blocks meet", "outer")
+
+    def as_inner(self):
+        self.as_blend(AS_B1[0], AS_LIFT)
+
+    def as_inner_dialog(self):
+        self.as_blend_dialog(AS_R_INNER, "Edge Blend, Radius 30: the inner corner", "inner")
+
+    def as_pins(self):
+        for k, p in enumerate(AS_PINS):
+            self.as_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", 8), ("height", 20)),
+                              "Subtract", f"Cylinder #{k + 1} along XC at ({p[0]:g}, {p[1]:g}, {p[2]:g}), Ø8 x 20, "
+                              "Subtract", p, 0, f"pin{k + 1}", axis="XC")
+        self.wait = 400
+
+    def as_cut(self):
+        self.as_primitive("Block", "Origin and Edge Lengths", (("length", 60), ("width", 20), ("height", 66)),
+                          "Subtract", "Block 60 x 20 x 66 at (130, 22.5, 209.5), Subtract from the top block",
+                          AS_CUT[0], 0, "final")
+        self.key("Ctrl+F")
+        self.wait = 1000
+
+    def as_check(self):
+        self.as_vol(self.as_body(0), "final", "The L-bar", "compared with the book's dimensions built by the Part "
+                    "API")
+        outcome, how, detail, path = self.save_ctrl_s("Arborpress_L-bar.FCStd")
+        self.step("Save and close the file", how, outcome, detail)
+        self.wait = 300
+
+    def as_fit(self):
+        self.fit()
+
+    def as_show(self):
+        self.show("AS_arborpress_lbar")
+
+    # ================================================================ AT: the rack
+    def at_new(self):
+        self.tutorial = "AT: Arbor Press Rack (NX 12 for Engineering Design, 4.7.4; book in inches, typed in mm)"
+        self._at = at_stages()
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def at_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file (Arborpress_rack)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}")
+        self.units_step()
+        outcome, how, detail, path = self.save_ctrl_s("Arborpress_rack.FCStd")
+        self.step("Save it as Arborpress_rack", how, outcome, detail)
+        self.key("End")
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def at_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.wait_for("at: sketch in edit", lambda: self.edited_sketch() is not None)
+        self._at_sk = self.edited_sketch()
+        if self._at_sk is None:
+            self.step("Rectangle: a sketch on the XC-YC plane", f"ribbon '{self._fs_where} > Sketch'", FAIL,
+                      f"no sketch in edit (plane row {picked})")
+            raise RuntimeError("no sketch; tutorial AT cannot continue")
+        self._at_plane = picked
+        self.wait = 800
+
+    def at_rectangle(self):
+        how, n, missing = self.fs_rectangle(self._at_sk, (0, 0), (AT_BAR[0] * IN, AT_BAR[1] * IN))
+        self.step("Rectangle: corner 1 (0, 0, 0), corner 2 (240, 25, 0)",
+                  f"ribbon '{self._fs_where} > Sketch' on '{self._at_plane}', {how}",
+                  DIFFERS if n == 4 and not missing else FAIL,
+                  f"{n} lines; corners {'all at the book' if not missing else f'missing {missing}'}. NX 12's "
+                  "Insert > Curve > Rectangle is a curve outside sketches; NX-Style draws it in a sketch (NX 2212: "
+                  "Sketch > Rectangle)")
+        self.wait = 300
+
+    def at_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def at_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("Ctrl+F")
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def at_extrude_section(self):
+        from . import geomcheck
+        how, ok = self.fs_extrude(self._at_sk, AT_BAR[2] * IN, "None")
+        good, detail = geomcheck.compare(self.body().Shape, self._at["bar"])
+        self.step("Extrude the rectangle along ZC, Start 0, End 20", f"ribbon '{self._fs_where} > Extrude', {how} "
+                  f"{'clicked' if ok else 'unavailable'}", SAME if good else FAIL, detail)
+        self.wait = 400
+
+    def at_pocket_sketch(self):
+        tip = self.body().Tip
+        top = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-9
+                           and abs(f.CenterOfMass.z - AT_BAR[2] * IN) < 1e-6)
+        self.select_sub(tip, top)
+        self._at_top = top
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def at_pocket_rectangle(self):
+        self.wait_for("at: pocket sketch in edit", lambda: self.edited_sketch() is not None)
+        sk = self.edited_sketch()
+        if sk is None:
+            self.step("Pocket: Rectangular, on the top face", f"{self._at_top} + Sketch", FAIL, "no sketch in edit")
+            raise RuntimeError("no sketch; tutorial AT cannot continue")
+        self._at_psk = sk
+        cx, cy, length, width = AT_POCKET[:4]
+        c1 = ((cx - width / 2) * IN, (cy - length / 2) * IN)
+        c2 = ((cx + width / 2) * IN, (cy + length / 2) * IN)
+        on_face = abs(sk.getGlobalPlacement().Base.z - AT_BAR[2] * IN) < 1e-6
+        how, n, missing = self.fs_rectangle(sk, c1, c2)
+        self.step("Pocket: Rectangular, on the top face; Length 35, Width 6; Perpendicular 37.8 from the end and 10 "
+                  "from the side", f"the top face ({self._at_top}) selected + ribbon '{self._fs_where} > Sketch', "
+                  f"{how}", DIFFERS if n == 4 and not missing and on_face else FAIL,
+                  f"{n} lines, corners {'as the book places the pocket' if not missing else f'missing {missing}'}; "
+                  f"on the top face {on_face}. NX 12's Pocket is a legacy feature (positioned with Perpendicular); "
+                  "NX 2212 cuts it with Extrude (Subtract) from a sketched rectangle, whose corners are typed from "
+                  "the pocket's size and position")
+        self.wait = 300
+
+    def at_pocket_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def at_pocket(self):
+        Gui.Selection.clearSelection()
+        self._at_pockets = self.fs_names("PartDesign::Pocket")
+        b, self._fs_where = self.click_ribbon("Extrude (Subtract)")
+        self.wait = 1500
+
+    def at_pocket_section(self):
+        from . import geomcheck
+        depth, taper = AT_POCKET[4], AT_POCKET[5]
+        how, ok = self.fs_extrude(self._at_psk, depth * IN, "Subtract", taper=-taper)
+        good, detail = geomcheck.compare(self.body().Shape, self._at["pocket"])
+        self.step("Depth 5.034, Taper Angle 14.5, OK", f"ribbon '{self._fs_where} > Extrude (Subtract)', {how}",
+                  SAME if good else FAIL, f"{detail}; FreeCAD's taper is negative for walls that close in with depth, "
+                  "as NX's pocket's do")
+        self._at_pocket = self.fs_new_feature("PartDesign::Pocket", self._at_pockets)
+        self.wait = 400
+
+    def at_pattern(self):
+        self.select_sub(self._at_pocket, "")
+        b, self._fs_where = self.click_ribbon("Pattern Feature")
+        self.wait = 1500
+
+    def at_pattern_dialog(self):
+        from . import geomcheck
+        self.wait_dialog("at_pattern_dialog")
+        self.wait_for("at: direction panels", lambda: bool(self.pattern_dirs())
+                      and self.newest("PartDesign::LinearPattern") is not None, 10000)
+        panels = self.pattern_dirs()
+        d1 = self.set_direction(panels[0], "x axis", AT_COUNT, AT_PITCH) if panels else {}
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        good, detail = geomcheck.compare(self.body().Shape, self._at["pattern"])
+        self.step("Pattern Feature: the pocket, Linear, XC, Count 19, Pitch Distance 9.4, OK",
+                  f"the Extrude (Subtract) selected + ribbon '{self._fs_where} > Pattern Feature', {d1}, MB2 = OK",
+                  SAME if good else FAIL, detail)
+        self.wait = 600
+
+    def at_hole(self):
+        from . import geomcheck
+        from .smoke_primitives import choose
+        from .tutorial import qtest
+        self.key("Home")
+        self.fs_zoom(tuple(c * IN for c in AT_HOLE[0]), AT_BAR[1] * IN * 3)
+
+        def between(p):
+            p.activate("origin")
+            choose(p, "originPointType", "Between Two Points")
+            # on an edge near each corner: Between Two Points takes an edge's end nearest the pick
+            picks = []
+            for near in ((AT_BAR[0], 0, AT_BAR[2] * 0.12), (AT_BAR[0], AT_BAR[1] * 0.88, AT_BAR[2])):
+                at = self.ap_screen(tuple(c * IN for c in near))
+                self.mb1_click(at)
+                qtest().qWait(500)
+                picks.append((at.x(), at.y()))
+            return (f"'Between Two Points', MB1 near the end face's corners (240, 0, 0) and (240, 25, 20) at "
+                    f"pixels {picks}: {p.steps['origin'].status.text()}", tuple(c * IN for c in AT_HOLE[0]))
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        qtest().qWait(900)
+
+        def check():
+            ok, detail = geomcheck.compare(self.body().Shape, self._at["final"])
+            return ok, detail
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AT_HOLE[1] * IN),
+                                                                  ("height", AT_HOLE[2] * IN)), "Subtract",
+                       "Cylinder along -XC at the end face's centre (Between Two Points), Ø10 x 20, Subtract",
+                       "Diameter 254 and Height 508 typed", 0, center=between, axis="-XC", check=check)
+        self.key("Ctrl+F")
+        self.wait = 1000
+
+    def at_check(self):
+        from . import geomcheck
+        ok, detail = geomcheck.compare(self.body().Shape, self._at["final"])
+        self.step("The rack", "compared with the book's dimensions built by the Part API", SAME if ok else FAIL,
+                  detail)
+        outcome, how, detail, path = self.save_ctrl_s("Arborpress_rack.FCStd")
+        self.step("Save and close the model", how, outcome, detail)
+        self.wait = 300
+
+    def at_fit(self):
+        self.fit()
+
+    def at_show(self):
+        self.show("AT_arborpress_rack")
