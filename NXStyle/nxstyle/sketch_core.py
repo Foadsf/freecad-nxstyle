@@ -11,6 +11,7 @@ constraint list's check boxes treat the virtual space as hidden in the 3D view. 
 dimensions there, Show (Ctrl+Shift+K) and Show All (Ctrl+Shift+U) bring them back.
 """
 
+import math
 import re
 
 H_AXIS, V_AXIS = -1, -2
@@ -66,6 +67,20 @@ def xy_fields(values, cursor):
         return None
     pairs = [(i, j) for i in range(len(values)) for j in range(len(values)) if i != j]
     return min(pairs, key=lambda p: abs(values[p[0]] - cursor[0]) + abs(values[p[1]] - cursor[1]))
+
+
+def spline_step(prev, point):
+    """What FreeCAD's B-spline tool (NX's Studio Spline) takes for a point after the first: its on-view fields
+    there are the length and the angle (degrees, from the sketch's X axis) from the point before, not X and Y.
+    Returns (length, angle) that put the next point exactly at point."""
+    dx, dy = point[0] - prev[0], point[1] - prev[1]
+    return math.hypot(dx, dy), math.degrees(math.atan2(dy, dx))
+
+
+def spline_step_fields(values, cursor, prev):
+    """Which two of the B-spline tool's on-view fields are the length and the angle, with the pointer at cursor
+    and the last point at prev (matched like xy_fields). Returns (index of length, index of angle) or None."""
+    return xy_fields(values, spline_step(prev, cursor))
 
 
 VISIBILITY = ("hide", "show", "show_all")

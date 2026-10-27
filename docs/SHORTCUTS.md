@@ -46,7 +46,7 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Arc | <kbd>A</kbd> | `Sketcher_CreateArc` | sketch |  |
 | Circle | <kbd>O</kbd> | `Sketcher_CreateCircle` | sketch |  |
 | Polygon | <kbd>P</kbd> | `Sketcher_CreateRegularPolygon` | sketch |  |
-| Studio Spline | <kbd>S</kbd> | `Sketcher_CreateBSpline` | sketch |  |
+| Studio Spline | <kbd>S</kbd> | `Sketcher_CreateBSplineByInterpolation` | sketch | Type Through Points; By Poles is "From control points" in the tool's drop-down; MB2 ends it |
 | Quick Trim | <kbd>T</kbd> | `Sketcher_Trimming` | sketch |  |
 | Quick Extend | <kbd>E</kbd> | `Sketcher_Extend` | sketch |  |
 | Fillet | <kbd>F</kbd> | `Sketcher_CreateFillet` | sketch |  |

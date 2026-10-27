@@ -93,7 +93,9 @@ TABLE = [
     Entry("Arc", "A", "Sketcher_CreateArc", "sketch", nx_id="UG_SKETCH_ARC"),
     Entry("Circle", "O", "Sketcher_CreateCircle", "sketch", nx_id="UG_SKETCH_CIRCLE"),
     Entry("Polygon", "P", ["Sketcher_CreateRegularPolygon", "Sketcher_CreateHexagon"], "sketch"),
-    Entry("Studio Spline", "S", "Sketcher_CreateBSpline", "sketch"),
+    Entry("Studio Spline", "S", ["Sketcher_CreateBSplineByInterpolation", "Sketcher_CreateBSpline"], "sketch",
+          note="Type Through Points (the spline passes through the points); By Poles is 'From control points' "
+               "in the tool's drop-down; MB2 ends it"),
     Entry("Quick Trim", "T", "Sketcher_Trimming", "sketch"),
     Entry("Quick Extend", "E", "Sketcher_Extend", "sketch"),
     Entry("Fillet", "F", "Sketcher_CreateFillet", "sketch"),

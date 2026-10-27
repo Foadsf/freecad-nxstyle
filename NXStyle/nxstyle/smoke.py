@@ -128,6 +128,7 @@ class Smoke:
         yield self.s_sketch_trim, 300             # before Point on Curve: MB2 must not leave the trim's gate up
         yield self.s_sketch_constraints, 300
         yield self.s_sketch_point_typed, 300
+        yield self.s_sketch_studio_spline, 300
         yield self.s_sketch_linear_dimension, 300
         yield self.s_sketch_hide, 300
         yield self.s_sketch_datum, 300
@@ -1082,6 +1083,189 @@ class Smoke:
                    f"{(q.x, q.y) if q is not None else None}; constraints on it {held}")
         sk.deleteAllGeometry()
         sk.Document.recompute()
+
+    def s_sketch_studio_spline(self):
+        """NX's Studio Spline (S) is Type Through Points: exercise 4.10.4's spline, (-50, 0), (-25, 1), (25, -8) and
+        (50, 0) typed, then MB2, makes a cubic through all four (FreeCAD's B-spline by interpolation). The same
+        points as By Poles (FreeCAD's control points, which S started before) leave the inner two off the curve.
+        Within 1e-6, not 1e-12: FreeCAD writes each typed length as a Distance with six decimals ('%f'), and the
+        solver moves the later points by the rounding (7.1e-7 mm at the last point, measured)."""
+        import math
+        import Part
+        import Sketcher
+        from pivy import coin
+        from . import sketch_ui
+        from .ribbon import CommandButton, command_actions, trigger
+        from .tutorial import qtest, settle_view
+        name = "Studio Spline (S): Through Points, four typed points and MB2 make a cubic through all four"
+        sk = sketch_ui.edited_sketch()
+        if sk is None:
+            self.check(name, False, "no sketch in edit")
+            return
+        doc, V = sk.Document, App.Vector
+        pts = [(-50.0, 0.0), (-25.0, 1.0), (25.0, -8.0), (50.0, 0.0)]
+        view, f = self.view(), self.nav()
+        w = f.widget
+        settle_view(view)
+        cam = view.getCameraNode()
+        d = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
+        g = sk.getGlobalPlacement().multVec(V(0, 0, 0))
+        cam.position.setValue(coin.SbVec3f(g.x, g.y, g.z) - d * cam.focalDistance.getValue())
+        # FreeCAD looks for auto-constraints at a typed point as at a click: a curve within its pick radius (5 px)
+        # gets one. Point 2 is 1 mm above the X axis: at 3.75 px/mm it went onto the axis, the spline with it.
+        # So the four points fill the width (the length and angle fields sit between two points, on screen)
+        if hasattr(cam, "height"):
+            cam.height.setValue(w.height() * 115.0 / max(w.width(), 1))
+        QtWidgets.QApplication.processEvents()
+        dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
+
+        def at(x, y):
+            sx, sy = view.getPointOnViewport(sk.getGlobalPlacement().multVec(V(x, y, 0)))
+            return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
+
+        self.info["Studio Spline: view px per mm, FreeCAD pick radius px"] = (
+            round((at(10, 0).x() - at(0, 0).x()) / 10, 2),
+            App.ParamGet("User parameter:BaseApp/Preferences/View").GetFloat("PickRadius", 5.0), w.width(), w.height())
+        away = QtCore.QPoint(w.width() // 2 - 60, w.height() // 2 - 70)       # where MB2 ends a tool
+
+        def running(p):
+            self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            return f.sketch_tool_active()
+
+        def tool_type():
+            """The B-spline tool's construction method as its drop-down in the task panel shows it."""
+            for c in Gui.getMainWindow().findChildren(QtWidgets.QComboBox):
+                if c.isVisible() and "From knots" in [c.itemText(i) for i in range(c.count())]:
+                    return c.currentText()
+            return None
+
+        def end(away):
+            """MB2, as a user ends the tool; Esc after it only so that no tool is left for the next checks."""
+            self.send(f, QtCore.QEvent.MouseMove, away, Qt.NoButton, Qt.NoButton)
+            self.send(f, QtCore.QEvent.MouseButtonPress, away, Qt.MiddleButton, Qt.MiddleButton)
+            self.send(f, QtCore.QEvent.MouseButtonRelease, away, Qt.MiddleButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            ended = not running(away)
+            for _ in range(3):
+                if not running(away):
+                    break
+                qtest().keyClick(w, Qt.Key_Escape)
+                QtWidgets.QApplication.processEvents()
+            return ended
+
+        def draw(start):
+            mw = Gui.getMainWindow()
+            app = QtWidgets.QApplication.instance()
+            if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+                app.setActiveWindow(mw)
+            w.setFocus()
+            g0 = len(sk.Geometry)
+            start()
+            QtWidgets.QApplication.processEvents()
+            out = {"started": f.sketch_tool_active(), "type": tool_type(), "typed": []}
+            prev = None
+            for x, y in pts:
+                near = at(x, y) + QtCore.QPoint(10, -45)     # near the point, clear of it and of the axes
+                self.send(f, QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+                qtest().qWait(200)
+                out["typed"].append(sketch_ui.type_spline_point(sk, w, near, (x, y), prev))
+                prev = (x, y)
+            out["ended"] = end(away)
+            doc.recompute()
+            new = list(range(g0, len(sk.Geometry)))
+            curves = [i for i in new if sk.Geometry[i].TypeId == "Part::GeomBSplineCurve"]
+            out["spline"] = curves[0] if len(curves) == 1 else None
+            out["new"] = new
+            if out["spline"] is not None:
+                e = sk.Geometry[out["spline"]].toShape()
+                out["off"] = [e.distToShape(Part.Vertex(V(x, y, 0)))[0] for x, y in pts]
+                out["degree"] = sk.Geometry[out["spline"]].Degree
+            return out
+
+        buttons = {b.nx_label: b for b in self.shell.ribbon.findChildren(CommandButton)}
+        btn = buttons.get("Studio Spline")
+        entries = [a.objectName() for a in command_actions(btn.command)] if btn is not None else []
+        group = command_actions(btn.command)[0].actionGroup() if entries else None
+        index = group.parent().property("defaultAction") if group is not None else None
+        default = entries[index] if isinstance(index, int) and 0 <= index < len(entries) else None
+        clicked = None
+        if btn is not None:
+            w.setFocus()
+            btn.click()
+            QtWidgets.QApplication.processEvents()
+            clicked = (f.sketch_tool_active(), tool_type())
+            # FreeCAD's keys inside the tool: M switches the type, R toggles Periodic (R is also NX's Rectangle)
+            keys = {}
+            for k, label in ((Qt.Key_M, "M"), (Qt.Key_R, "R")):
+                w.setFocus()
+                qtest().keyClick(w, k)
+                QtWidgets.QApplication.processEvents()
+                box = next((b for b in Gui.getMainWindow().findChildren(QtWidgets.QCheckBox)
+                            if b.isVisible() and "Periodic" in b.text()), None)
+                keys[label] = (tool_type(), box.isChecked() if box is not None else None)
+            self.info["Studio Spline: after M, after R (type, Periodic)"] = keys
+            end(away)
+        self.check("Sketch tab: the Studio Spline button runs Through Points (FreeCAD's B-spline by interpolation, "
+                   "'From knots'); By Poles and the closed kinds are in its drop-down",
+                   btn is not None and default == "Sketcher_CreateBSplineByInterpolation"
+                   and clicked == (True, "From knots") and "Sketcher_CreateBSpline" in entries,
+                   f"button {btn.command if btn else None}, default entry {default}, entries {entries}; click: tool "
+                   f"running and its type {clicked}")
+        try:
+            got = draw(lambda: qtest().keyClick(w, Qt.Key_S))
+            self.info["Studio Spline (S), Through Points"] = got
+            off = got.get("off") or []
+            self.check(name, got["started"] and got["type"] == "From knots" and got["ended"] and off
+                       and max(off) < 1e-6 and got.get("degree") == 3,
+                       f"S started the tool {got['started']}, type {got['type']!r}; typed {got['typed']}; MB2 ended it "
+                       f"{got['ended']}; degree {got.get('degree')}; off the curve (mm) "
+                       f"{[f'{x:.1e}' for x in off]}")
+            sp = got["spline"]
+            knots = {}
+            for i in got["new"]:
+                if "Point" in sk.Geometry[i].TypeId:
+                    q = sk.getPoint(i, 1)
+                    knots[min(range(4), key=lambda k: math.hypot(q.x - pts[k][0], q.y - pts[k][1]))] = i
+            held = [(c.Type, c.First, c.FirstPos, c.Second, c.SecondPos, round(c.Value, 6)) for c in sk.Constraints
+                    if c.First in got["new"] or c.Second in got["new"]]
+            self.info["Studio Spline: constraints FreeCAD keeps (Type, First, Pos, Second, Pos, Value)"] = held
+            self.info["Studio Spline: through points (FreeCAD's knot points), curve"] = (knots, sp)
+            self.info["Studio Spline: through points, solved (x, y)"] = [
+                (repr(sk.getPoint(i, 1).x), repr(sk.getPoint(i, 1).y)) for _k, i in sorted(knots.items())]
+            dims = {}
+            if sp is not None and 1 in knots and 2 in knots:
+                c0 = len(sk.Constraints)
+                sk.addConstraint(Sketcher.Constraint("DistanceY", -1, 1, knots[1], 1, 2.0))
+                doc.recompute()
+                q = sk.getPoint(knots[1], 1)
+                on = sk.Geometry[sp].toShape().distToShape(Part.Vertex(q))[0]
+                dims["DistanceY 2 mm on point 2"] = (round(q.y, 9), f"{on:.1e} mm off", sk.solve())
+                ln = sk.addGeometry(Part.LineSegment(V(25, -30, 0), V(26, -12, 0)), False)
+                sk.addConstraint(Sketcher.Constraint("Coincident", ln, 2, knots[2], 1))
+                doc.recompute()
+                q = sk.getPoint(ln, 2)
+                on2 = sk.Geometry[sp].toShape().distToShape(Part.Vertex(q))[0]
+                dims["line end Coincident with point 3"] = ((round(q.x, 9), round(q.y, 9)), f"{on2:.1e} mm off",
+                                                             sk.solve())
+                ok = abs(dims["DistanceY 2 mm on point 2"][0] - 2) < 1e-6 and on < 1e-6 and on2 < 1e-6 \
+                    and sk.solve() == 0 and len(sk.Constraints) == c0 + 2
+            else:
+                ok = False
+            self.check("a through point takes a dimension and a Coincident, and the curve follows it", ok, dims)
+            sk.deleteAllGeometry()
+            doc.recompute()
+            poles = draw(lambda: trigger("Sketcher_CreateBSpline"))
+            self.info["Studio Spline, By Poles"] = poles
+            off = poles.get("off") or []
+            self.check("By Poles (FreeCAD's control points; S's old mapping): the same typed points leave the inner "
+                       "two off the curve", poles["type"] == "From control points" and off and max(off[0], off[3])
+                       < 1e-6 and min(off[1], off[2]) > 0.1,
+                       f"type {poles['type']!r}; typed {poles['typed']}; MB2 ended it {poles['ended']}; off the curve "
+                       f"(mm) {[f'{x:.1e}' for x in off]}")
+        finally:
+            sk.deleteAllGeometry()
+            doc.recompute()
 
     def s_sketch_linear_dimension(self):
         """NX's Linear Dimension (Sketch tab, Constraints): Horizontal and Vertical between the origin and a point

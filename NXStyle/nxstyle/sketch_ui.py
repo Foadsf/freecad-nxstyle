@@ -204,6 +204,33 @@ def xy_fields(sk, widget, p):
     return (fields[pick[0]], fields[pick[1]]) if pick else None
 
 
+def type_spline_point(sk, widget, p, point, prev=None):
+    """Type one point of a running Studio Spline (FreeCAD's B-spline tool, either type) with the pointer at p.
+
+    The first point (prev None) takes X and Y. FreeCAD 1.1.4 places it as soon as either field gets Enter, the
+    other at the pointer's value, so X is typed without Enter and Enter goes to Y. A later point takes the length
+    and angle from prev (FreeCAD has no X and Y there): Enter in each. Returns the values typed, or None when
+    the two fields are not there."""
+    from .qt import Qt
+    from .tutorial import qtest
+    fields = on_view_fields(widget)
+    cursor = cursor_on_sketch(sk, widget, p)
+    want = tuple(point) if prev is None else core.spline_step(prev, point)
+    pick = (core.xy_fields if prev is None else core.spline_step_fields)(
+        [field_value(w) for w in fields], cursor, *(() if prev is None else (prev,)))
+    if not pick:
+        return None
+    for i, (k, v) in enumerate(zip(pick, want)):
+        x = fields[k]
+        x.setFocus()
+        x.lineEdit().selectAll()
+        qtest().keyClicks(x.lineEdit(), f"{v:.15g}".replace(".", x.locale().decimalPoint()))
+        if prev is not None or i == 1:
+            qtest().keyClick(x.lineEdit(), Qt.Key_Return)
+        qtest().qWait(150)
+    return want
+
+
 # ------------------------------------------------------------------ Hide, Show, Show All (Ctrl+B, Ctrl+Shift+K/U)
 def picked_constraints(sk):
     """(indices of the constraints of sk that are selected, other objects selected, other elements of sk)."""

@@ -20,6 +20,7 @@ This page lists the differences found by working through the xref:tutorials/inde
 * A sketch fillet does not dimension its radius, and removes the constraints that held its corner.
 * Offset Curve takes side and distance from an MB1 click; type the exact distance afterwards.
 * FreeCAD names a dimension in its properties and takes a formula after `=`; NX numbers dimensions p0, p1 ….
+* xref:sketching.adoc#studio-spline[Studio Spline] Through Points is always cubic (NX takes a degree), and its points after the first are typed as length and angle from the point before, not as XC and YC. The first point takes X and Y, but kbd:[Enter] in either field places it. A typed point within FreeCAD's pick radius of a curve (5 pixels at the current zoom) gets an automatic constraint to it, which moves the point.
 
 == Features
 
