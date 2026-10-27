@@ -1,0 +1,61 @@
+= What's new
+:description: Recent additions: selected sections, Extrude and Revolve command boxes, primitives, precise sketching and parametric STEP exchange.
+
+The recent work focuses on the path from a sketch to an editable part, and on carrying more of that intent through STEP.
+This page highlights the additions through 27 October 2026; the {repo}/commits/main/[commit history] has the full record.
+
+== Extrude and Revolve from picked curves
+
+Use a whole sketch, a single curve, or tangent and connected chains from one sketch as the section.
+The collector shows what is selected; an open or invalid section keeps OK unavailable.
+Extrude and Revolve use command boxes for the section, body, Boolean and command state, alongside FreeCAD's feature controls.
+Revolve also supports axis selection.
+
+xref:modeling.adoc#sections[Read about section selection], xref:modeling.adoc#extrude[Extrude] and xref:modeling.adoc#revolve[Revolve].
+xref:tutorials/ae.adoc[Tutorial AE] exercises Extrude creation, editing, errors and cancellation.
+
+NOTE: Sections currently come from one sketch, not several sketches or solid edges.
+Extrude and Revolve do not support the Intersect Boolean; the modeling guide lists the other differences.
+
+== Four primitives, with live previews
+
+*Block*, *Cylinder*, *Cone* and *Sphere* have NX-style dialogs with dimensions, point picking and a Boolean choice.
+Preview the result as you type, apply another primitive, or edit an existing one.
+These primitive commands support None, Unite, Subtract and Intersect.
+
+image::tutorial-AN-03-plate.png[The Arbor Press Plate built from a block, datums and six holes]
+
+xref:modeling.adoc#primitives[Explore the primitive commands] or build the part in xref:tutorials/an.adoc[Tutorial AN: Arbor Press Plate].
+
+== More control while sketching
+
+Type XC and YC coordinates, use the Geometric Constraints gallery, and choose horizontal or vertical linear dimensions.
+Profile closes when you pick its starting point; MB2 ends the drawing tool.
+Quick Trim restores the tangencies that FreeCAD's trim drops.
+Typed lengths preserve their decimal precision.
+
+Practice with the xref:tutorials/af.adoc[Arbor Press Base], xref:tutorials/ag.adoc[Impeller Lower Casing], xref:tutorials/ah.adoc[Impeller blade], xref:tutorials/aj.adoc[Circular Base] or xref:tutorials/ak.adoc[Holder].
+The xref:sketching.adoc[sketching guide] covers the controls.
+
+== STEP with parameters, and a clearer receiving workflow
+
+*STEP with Parameters* writes supported feature history, sketch constraints, spreadsheet parameters and expressions alongside the B-rep.
+*Import STEP with Parameters* rebuilds that supported data into editable FreeCAD objects.
+*Check STEP* reports the application protocol, checks the file against available schemas and reads its product structure and quantities.
+Optional ISO 10303-112 sketch commands add another exchange path.
+
+image::tutorial-AL-04-rebuilt.png[The parameter-driven plate rebuilt into editable features after STEP import]
+
+Try xref:tutorials/al.adoc[Tutorial AL: Design intent through STEP] and xref:tutorials/am.adoc[Tutorial AM: Receiving STEP].
+The xref:parametric-step.adoc[parametric STEP guide] lists the supported entities, features and checks.
+
+IMPORTANT: Feature history stops at the first unsupported feature; the B-rep still carries the whole part.
+Part 112 is not included in AP242, and the checker does not evaluate all WHERE rules.
+These workflows do not establish interoperability with every other CAD system.
+
+== Choose your next step
+
+* xref:quick-start.adoc[Make your first part] if you are new to NX-Style.
+* xref:tutorials/index.adoc[Browse the tutorials] to follow a complete exercise.
+* xref:differences.adoc[Review the differences from NX] before transferring an established workflow.
+* xref:installation.adoc[Update your checkout] to get the latest changes.

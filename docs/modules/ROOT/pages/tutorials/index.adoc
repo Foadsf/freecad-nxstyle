@@ -2,15 +2,25 @@
 :description: NX textbook exercises and Grasshopper video tutorials, step by step in FreeCAD NX-Style, with what is the same and what differs.
 include::partial$generated/tutorial-meta.adoc[]
 
-Tutorials A to N are exercises from NX, GD&T and engineering-graphics textbooks, done in NX-Style the way the book tells an NX user to work.
-Tutorials O to R are Grasshopper video tutorials done on the xref:algorithmic-modeling.adoc[Algorithmic Modeling] canvas (Katydid).
-Tutorials S to AC are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, an opto-mechanical pin location, PMI organised in model views, the model with its PMI exchanged through STEP AP242, a composite position frame evaluated from CMM data, the measurement capability of the inspection methods, and a drawing whose title block comes from the release.
-Tutorial AD joins a laser-cut tray with tabs and slots and lays its parts flat for the cutter.
-Tutorials AF to AK are the sketching examples and exercises of _NX 12 for Engineering Design_: a sketch constrained to size and extruded, a casing sketch built with Move Curve copies, an impeller blade of tangent arcs, a slotted circular base, and a holder with lugs copied round a bolt circle.
-Tutorial AL sends a parameter-driven plate as STEP with its history, sketch constraints and parameters (ISO 10303-55, -108, -111), checks the file against ISO 10303, and rebuilds the plate from the file in a new part.
-Tutorial AM is the receiving end: a supplier's assembly checked against AP242's own schema with its parts list read from the file, and a sketch sent as ISO 10303-112 commands rebuilt and extruded.
-Tutorial AN starts chapter 4 of _NX 12 for Engineering Design_: a plate made with NX's Block, with a datum plane, a datum axis and six holes.
-Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
+Build a part, try an engineering workflow, or explore parametric design.
+The tutorials pair textbook and practical exercises with NX-Style steps and recorded replay outcomes.
+They explain what works the same way, what differs and where FreeCAD reaches a limit.
+
+[.nx-learning-paths]
+* *Start with solid modeling* +
+xref:tutorials/a.adoc[The Adjuster] for a first sketch and extrude, xref:tutorials/ae.adoc[One Extrude, every way] for the command workflow, or xref:tutorials/an.adoc[Arbor Press Plate] for primitives, datums and holes.
+* *Develop your sketching skills* +
+Try the xref:tutorials/af.adoc[Arbor Press Base], xref:tutorials/ah.adoc[Impeller blade] and xref:tutorials/ak.adoc[Holder] for coordinates, tangent arcs and copied curves.
+* *Document and inspect a part* +
+Follow the xref:tutorials/t.adoc[guide bush to ISO GPS], xref:tutorials/aa.adoc[composite position evaluation] and xref:tutorials/ab.adoc[measurement capability] exercises.
+* *Work with assemblies and fabrication* +
+Make the xref:tutorials/g.adoc[Shaft Support assembly], check xref:tutorials/u.adoc[volume claims and clearance], then try a xref:tutorials/w.adoc[sheet-metal bracket] or xref:tutorials/ad.adoc[laser-cut tray].
+* *Explore algorithmic design* +
+Start with xref:tutorials/o.adoc[Katydid basics], then build a xref:tutorials/p.adoc[waffle canopy], xref:tutorials/q.adoc[faceted planter] or xref:tutorials/r.adoc[attractor-driven frames].
+* *Exchange and release the design* +
+Send xref:tutorials/al.adoc[design intent through STEP], inspect xref:tutorials/am.adoc[incoming STEP], or follow a xref:tutorials/v.adoc[release and engineering change].
+
+== How to read the results
 
 The step tables are not written by hand.
 The xref:testing.adoc#tutorial-replay[tutorial replay] presses the same keys, clicks the same NX-named ribbon buttons, clicks sketch points with MB1 and accepts dialogs with MB2, places canvas components by typing their names and drags wires between grips, then checks each result by its volume.

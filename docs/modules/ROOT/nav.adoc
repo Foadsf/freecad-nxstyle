@@ -1,4 +1,5 @@
 * xref:index.adoc[Overview]
+* xref:whats-new.adoc[What's new]
 
 .Getting started
 * xref:installation.adoc[Installation]
