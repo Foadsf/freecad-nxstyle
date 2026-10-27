@@ -124,6 +124,7 @@ class Smoke:
         yield self.s_sketch_point_typed, 300
         yield self.s_sketch_linear_dimension, 300
         yield self.s_sketch_hide, 300
+        yield self.s_sketch_datum, 300
         yield self.s_sketch_arc, 600              # FreeCAD refreshes the command states on a timer
         yield self.s_sketch_radius, 400
         yield self.s_sketch_radius_check, 100
@@ -1059,6 +1060,93 @@ class Smoke:
         sk.deleteAllGeometry()
         doc.recompute()
 
+    def s_sketch_datum(self):
+        """A dimension typed as 28.095 in FreeCAD's Insert Length dialog is stored as 28.095, not cut to the
+        display decimals (NX keeps what you type); opened again and OK'd, it stays 28.095."""
+        import Part
+        from . import sketch_ui
+        sk = sketch_ui.edited_sketch()
+        if sk is None:
+            self.check("a sketch dimension typed as 28.095 is stored as 28.095", False, "no sketch in edit")
+            return
+        doc = sk.Document
+        # 20 mm long: the new dimension's field starts at 20, so the typed 28.095 itself must widen it
+        geo = sk.addGeometry(Part.LineSegment(App.Vector(0, 70, 0), App.Vector(20, 70, 0)), False)
+        doc.recompute()
+        n = len(sk.Constraints)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, sk.Name, f"Edge{geo + 1}")
+        QtWidgets.QApplication.processEvents()
+        for cmd, typed in (("Sketcher_ConstrainDistance", "28.095"), ("Sketcher_ChangeDimensionConstraint", None)):
+            seen = self.datum_dialog_answer(cmd, typed)
+            doc.recompute()
+            made = [i for i, c in enumerate(sk.Constraints) if i >= n and c.Type == "Distance"]
+            stored = sk.Constraints[made[0]].Value if made else None
+            length = sk.Geometry[geo].length()
+            self.check(f"a sketch dimension {'typed as 28.095 in' if typed else 'of 28.095 opened again in'} the "
+                       f"Insert Length dialog (focus in the field, then OK) is stored as 28.095",
+                       seen.get("focus") is True and stored is not None
+                       and abs(stored - 28.095) < 1e-9 and abs(length - 28.095) < 1e-9,
+                       f"dialog {seen.get('title')!r}, field focused {seen.get('focus')}, showed {seen.get('field')!r} "
+                       f"(field value {seen.get('raw')}); stored {stored!r}; line {length!r} mm")
+            if not made:
+                break
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, sk.Name, f"Constraint{made[0] + 1}")
+            QtWidgets.QApplication.processEvents()
+        self.info["precise input (nxstyle/precise_input.py)"] = getattr(self.shell, "precise_input", None) and \
+            self.shell.precise_input.trace
+        sk.deleteAllGeometry()
+        doc.recompute()
+        Gui.Selection.clearSelection()
+
+    def datum_dialog_answer(self, cmd, typed):
+        """Run a sketcher command that opens the Insert Length dialog; type into its field (if typed), OK."""
+        from .ribbon import is_enabled, trigger
+        from .tutorial import qtest
+        seen = {}
+
+        def answer():
+            dlg = QtWidgets.QApplication.activeModalWidget()
+            if dlg is None:
+                if seen.setdefault("polls", 0) < 50:
+                    seen["polls"] += 1
+                    QtCore.QTimer.singleShot(100, answer)
+                return
+            spins = dlg.findChildren(QtWidgets.QAbstractSpinBox)
+            if not spins:
+                dlg.reject()
+                return
+            ed = spins[0].lineEdit()
+            # FreeCAD rounds the value when the field loses focus: without focus the check would prove nothing
+            dlg.activateWindow()
+            app = QtWidgets.QApplication.instance()
+            if hasattr(app, "setActiveWindow"):
+                app.setActiveWindow(dlg)
+            spins[0].setFocus()
+            QtWidgets.QApplication.processEvents()
+            if typed is not None:
+                ed.selectAll()
+                qtest().keyClicks(ed, typed.replace(".", spins[0].locale().decimalPoint()))
+                QtWidgets.QApplication.processEvents()
+            seen.update(title=dlg.windowTitle(), focus=spins[0].hasFocus(), field=ed.text(),
+                        raw=spins[0].property("rawValue"))
+            for box in dlg.findChildren(QtWidgets.QDialogButtonBox):
+                b = box.button(QtWidgets.QDialogButtonBox.Ok)
+                if b is not None:
+                    b.click()
+                    return
+            dlg.reject()
+
+        for _ in range(20):
+            if is_enabled(cmd):
+                break
+            qtest().qWait(100)
+        QtCore.QTimer.singleShot(100, answer)
+        trigger(cmd)
+        QtWidgets.QApplication.processEvents()
+        return seen
+
     def tab_buttons(self, tab=None):
         """(label, command, enabled, FreeCAD isActive, number of QActions) of a ribbon tab's (or every tab's) command
         buttons; add-on actions (ribbon.HOST_ACTIONS) keep their own state and are left out."""
@@ -1939,9 +2027,16 @@ class Smoke:
         ok_same, d_same = geomcheck.compare(same, ref)
         ok_other, d_other = geomcheck.compare(other, ref)
         ok_moved, d_moved = geomcheck.compare(moved, ref)
-        self.check("geometry comparison: the same solid passes, an equal-volume different or moved one fails",
-                   ok_same and not ok_other and not ok_moved and abs(other.Volume - ref.Volume) < 1e-9,
-                   f"same: {d_same} | other: {d_other} | moved: {d_moved}")
+        # a curved solid with a display mesh attached, as the 3D view leaves it: its BoundBox is the mesh's
+        disc = Part.Face(Part.Wire(Part.makeCircle(60))).extrude(App.Vector(0, 0, 20))
+        disc.tessellate(0.5)
+        meshed = disc.BoundBox.YMax
+        ok_disc, d_disc = geomcheck.compare(disc, Part.makeCylinder(60, 20))
+        self.check("geometry comparison: the same solid passes, also a meshed curved one; an equal-volume "
+                   "different or moved one fails",
+                   ok_same and ok_disc and not ok_other and not ok_moved and abs(other.Volume - ref.Volume) < 1e-9,
+                   f"same: {d_same} | meshed disc (BoundBox Y max {meshed:.4f}): {d_disc} | other: {d_other} | "
+                   f"moved: {d_moved}")
 
     def s_assembly_links(self):
         """Volume claims and clearance see a linked part where its assembly puts it, and not its hidden source."""

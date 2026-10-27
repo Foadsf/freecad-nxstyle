@@ -123,7 +123,7 @@ Dimension values are applied through FreeCAD's API, the equivalent of typing the
 
 Each feature is checked by its volume against the same operation done directly with FreeCAD's Part API.
 Volume alone does not prove the shape: a slot cut in the wrong place has the same volume.
-Tutorial A therefore also compares the part with a reference solid built with the Part API: their symmetric difference and their bounding boxes must agree (`nxstyle/geomcheck.py`).
+Tutorial A therefore also compares the part with a reference solid built with the Part API: their symmetric difference and their bounding boxes must agree (`nxstyle/geomcheck.py`). The boxes are exact ones (`optimalBoundingBox` without the display mesh): `Shape.BoundBox` is the box of the mesh once the 3D view has drawn a curved solid, 0.02 to 0.09 mm off for a disc of R60.
 The final part must also be drawn in the graphics window. That is an occupancy check (something is drawn), not a check of the image.
 Save steps press the real kbd:[Ctrl+S] and check that the file was rewritten; only a new part's first file name is given by script, because the replay cannot drive the system file dialog.
 Before the key the part's Comment gets a marker unique to that save; the step passes when the file on disk holds the marker and the part is unmodified. The file's time is no witness: FreeCAD saves to a temporary file and renames it over the old one, and in replays on Windows the new file kept the replaced file's last-write time in 4 of 10 saves, with the change in it.

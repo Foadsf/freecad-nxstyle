@@ -67,6 +67,8 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `titleblock.py`, `titleblock_ui.py` | Title block values and the revision block SVG (no FreeCAD); Populate Title Block from Strata releases and part attributes.
 | `refs.py` | Picked faces as stable references; positions along a direction; hole or pin.
 | `prefs.py` | NX values in FreeCAD's parameter tree (they land in the NX profile's `user.cfg`).
+| `precise_input.py`, `quantity_core.py` | Typed values keep their decimals in FreeCAD's quantity fields, which otherwise cut a value to the *Decimals* preference when they lose focus or are filled from a stored value; how many decimals a value needs (`quantity_core.py`, no FreeCAD).
+| `geomcheck.py` | The tutorials' solid comparison: symmetric-difference volume and exact bounding boxes against a Part API reference.
 | `config.py` | Settings and their defaults (xref:settings.adoc[]).
 | `plm.py` | Strata as the data management.
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).

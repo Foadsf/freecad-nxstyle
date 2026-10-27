@@ -6,6 +6,15 @@ box difference. Both are measured in mm³ and mm. Topology (face and edge counts
 required: two correct builds may split faces differently."""
 
 
+def exact_box(shape):
+    """The shape's extents from its exact geometry.
+
+    Shape.BoundBox is not: once the 3D view has meshed a shape, it is the box of that display mesh (an R60
+    disc meshed at 0.5 mm deviation reads Y ±59.9814), and optimalBoundingBox() by default reads the mesh
+    too. Without triangulation or shape tolerance it is tight for curved faces as well."""
+    return shape.optimalBoundingBox(False, False)
+
+
 def compare(got, ref, rel_tol=1e-6, abs_tol=1e-6):
     """(ok, detail) for solid shapes got and ref."""
     if got is None or got.isNull() or not got.Solids:
@@ -13,7 +22,7 @@ def compare(got, ref, rel_tol=1e-6, abs_tol=1e-6):
     size = max(ref.Volume, 1e-12)
     extra = got.cut(ref).Volume              # material that should not be there
     missing = ref.cut(got).Volume            # material that should be there and is not
-    a, b = got.BoundBox, ref.BoundBox
+    a, b = exact_box(got), exact_box(ref)
     box = max(abs(a.XMin - b.XMin), abs(a.YMin - b.YMin), abs(a.ZMin - b.ZMin),
               abs(a.XMax - b.XMax), abs(a.YMax - b.YMax), abs(a.ZMax - b.ZMax))
     tol = max(rel_tol * size, abs_tol)

@@ -276,9 +276,9 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
     def set_quantity(self, name_part, value):
         """Type a value into a task-panel quantity field (e.g. Length) the way a user does.
 
-        The number is typed in the field's own unit (mm, °). Typed text keeps its precision
-        (3.175 mm stays 3.175); setting the field's rawValue from Python instead rounds it to
-        the Decimals preference (3.17), which once made a 0.125 in shell fail. The features'
+        The number is typed in the field's own unit (mm, °), and read back after the field loses
+        focus, so 3.175 must stay 3.175. Setting the field's rawValue from Python instead rounds it
+        to the Decimals preference (3.17), which once made a 0.125 in shell fail. The features'
         volume checks are what confirm the value FreeCAD used."""
         w = self._field(QtWidgets.QAbstractSpinBox, name_part)
         if w is None:
@@ -300,11 +300,11 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         got = w.value() if isinstance(w, (QtWidgets.QDoubleSpinBox, QtWidgets.QSpinBox)) else w.property("rawValue")
         if not isinstance(got, (int, float)):
             return
-        # both fields show (and report) the value rounded: QDoubleSpinBox to its decimals, FreeCAD's
-        # QuantitySpinBox rawValue to the Decimals preference, though the feature gets the typed 3.175
-        decimals = w.decimals() if isinstance(w, QtWidgets.QDoubleSpinBox) else \
-            App.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals", 2)
-        tol = 1e-6 * max(1.0, abs(float(value))) + 0.5 * 10 ** -decimals
+        # a QDoubleSpinBox holds its value rounded to its decimals; FreeCAD's QuantitySpinBox must hold what was
+        # typed (it rounded to the Decimals preference on focus-out until nxstyle/precise_input.py)
+        tol = 1e-9 * max(1.0, abs(float(value)))
+        if isinstance(w, QtWidgets.QDoubleSpinBox):
+            tol += 0.5 * 10 ** -w.decimals()
         if abs(got - float(value)) > tol:
             self.misread.append(f"typed '{text}' into {w.objectName() or type(w).__name__}, the field read {got:g} "
                                 f"(locale {w.locale().name()}, decimal '{w.locale().decimalPoint()}')")
@@ -4273,14 +4273,13 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         return int(sk.DoF), bool(sk.FullyConstrained), " / ".join(dict.fromkeys(msg))
 
     def datum_dialog(self, value):
-        """Answer FreeCAD's 'Insert length/angle' dialog: type the value, OK."""
+        """Answer FreeCAD's 'Insert length/angle' dialog: type the value, Tab (as a click on OK moves the focus),
+        read the field back (a field that took 28.095 as 28.09 fails the step), OK."""
         def handle(w):
             spins = w.findChildren(QtWidgets.QAbstractSpinBox)
             if not spins:
                 return False
-            ed = spins[0].lineEdit()
-            ed.selectAll()
-            qtest().keyClicks(ed, self.typed_number(spins[0], value))
+            self.type_into(spins[0], value)
             for box in w.findChildren(QtWidgets.QDialogButtonBox):
                 b = box.button(QtWidgets.QDialogButtonBox.Ok)
                 if b is not None:

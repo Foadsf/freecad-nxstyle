@@ -140,7 +140,7 @@ class Shell(QtCore.QObject):
     def setup(self):
         steps = [self._prefs, self._apply_theme, self._register_commands, self._build_ribbon_bar, self._build_border_bar,
                  self._build_resource_bar, self._arrange_docks, self._navigator_status, self._build_cue_line,
-                 self._navigation]
+                 self._navigation, self._precise_input]
         for step in steps:
             try:
                 step()
@@ -709,6 +709,11 @@ class Shell(QtCore.QObject):
 
     def _navigation(self):
         self.navigation = navigation.NavigationManager(self)
+
+    def _precise_input(self):
+        """Typed lengths keep their decimals in FreeCAD's quantity fields (nxstyle/precise_input.py)."""
+        from . import precise_input
+        self.precise_input = precise_input.install()
 
     def _navigator_status(self):
         """Work part, active body, suppressed and failed features above the Part Navigator's tree."""
