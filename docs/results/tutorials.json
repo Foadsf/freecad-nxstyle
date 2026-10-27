@@ -3670,7 +3670,7 @@
    "nx": "Equal Length: the two slanted lines, then the two long vertical lines",
    "replay": "two lines + ribbon 'Sketch › Constraints > Equal', twice",
    "outcome": "same",
-   "detail": "slanted 66.87 / 66.87, verticals 124.71 / 124.71 mm; DoF 13"
+   "detail": "slanted 66.89 / 66.89, verticals 124.63 / 124.63 mm; DoF 13"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3678,7 +3678,7 @@
    "nx": "Collinear, then Equal Length: the two bottom lines",
    "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
    "outcome": "same",
-   "detail": "the bottom lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 40.19 / 40.19 mm; DoF 11"
+   "detail": "the bottom lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 38.38 / 38.38 mm; DoF 11"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3686,7 +3686,7 @@
    "nx": "Tangent: the arc and each vertical line at its ends (only where it is missing)",
    "replay": "arc + line + ribbon 'Tangent' where missing",
    "outcome": "same",
-   "detail": "already tangent from Profile: ['Edge2']; added [('Edge4', 0)]; arc radius 21.381 mm about (0.000, 0.000); DoF 10"
+   "detail": "already tangent from Profile: ['Edge2']; added [('Edge4', 0)]; arc radius 21.379 mm about (0.000, 0.000); DoF 10"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3710,7 +3710,7 @@
    "nx": "Rapid Dimension: eight dimensions, then the values, biggest first; the sketch is fully defined",
    "replay": "picks + ribbon 'Sketch › Constraints > Distance', the value typed in FreeCAD's dimension dialog, 8 times",
    "outcome": "differs",
-   "detail": "height 190.94, width 130, side 125, top 95, notch width 65, notch depth 65, slot 40, centre 35; DoF 0, fully constrained True ('Fully constrained'); corners within 5.7e-14 mm of the book's figure. NX places all dimensions first and edits them; FreeCAD asks for each value as the dimension is made"
+   "detail": "height 190.94, width 130, side 125, top 95, notch width 65, notch depth 65, slot 40, centre 35; DoF 0, fully constrained True ('Fully constrained'); corners within 1.5e-13 mm of the book's figure. NX places all dimensions first and edits them; FreeCAD asks for each value as the dimension is made"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3726,7 +3726,7 @@
    "nx": "Select the sketch, Extrude (X): Z direction, 60 mm, Boolean None",
    "replay": "sketch selected + X; 'lengthEdit' = 60 mm, MB2 = OK",
    "outcome": "same",
-   "detail": "Boolean 'None' (None (a new body): ready (OK or MB2 commits one undo step)); section Sketch; same solid as the reference: 0 mm³ differ, box within 2.8e-14 mm, 16 faces (16 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
+   "detail": "Boolean 'None' (None (a new body): ready (OK or MB2 commits one undo step)); section Sketch; same solid as the reference: 0 mm³ differ, box within 0 mm, 16 faces (16 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3734,7 +3734,7 @@
    "nx": "Save and close the file",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "Arborpress_base.FCStd rewritten by Ctrl+S (1.6 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+   "detail": "Arborpress_base.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -4030,7 +4030,7 @@
    "nx": "Save",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "Circular_base.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+   "detail": "Circular_base.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   }
  ],
  "info": {
