@@ -64,6 +64,7 @@
 * xref:tutorials/ah.adoc[AH: Impeller]
 * xref:tutorials/aj.adoc[AJ: Circular Base]
 * xref:tutorials/ak.adoc[AK: Holder]
+* xref:tutorials/al.adoc[AL: Design intent through STEP]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

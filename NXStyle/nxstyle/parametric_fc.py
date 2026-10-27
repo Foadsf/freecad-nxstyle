@@ -880,7 +880,11 @@ def model_to_document(model, doc):
     body_mode = bool(kinds & {"extrude", "revolve", "fillet", "chamfer", "shell", "pattern"}) or \
         (model["sketches"] and not kinds)
     if body_mode:
-        body = doc.addObject("PartDesign::Body", "Body")
+        # a new part (Ctrl+N) starts with an empty Body: build into it rather than beside it
+        empty = [b for b in doc.findObjects("PartDesign::Body") if not b.Group or
+                 all(o.TypeId == "App::Origin" for o in b.Group)]
+        body = empty[0] if len(empty) == 1 else \
+            doc.addObject("PartDesign::Body", "Body")
         body.Label = model["name"]
     sketches = {}
     for sk in model["sketches"]:
