@@ -52,7 +52,12 @@
         {"cmd": "Sketcher_ToggleActiveConstraint", "label": "Relax Constraint"},
         {"cmd": ["Sketcher_CompConstrainRadDia", "Sketcher_ConstrainRadius"], "label": "Radius / Diameter"},
         {"cmd": "Sketcher_ConstrainAngle", "label": "Angle"},
-        {"cmd": "Sketcher_ConstrainDistance", "label": "Distance"}
+        {"cmd": "Sketcher_ConstrainDistance", "label": "Distance"},
+        {"dropdown": "Linear Dimension", "items": [
+          {"cmd": "Sketcher_ConstrainDistanceX", "label": "Horizontal"},
+          {"cmd": "Sketcher_ConstrainDistanceY", "label": "Vertical"},
+          {"cmd": "Sketcher_ConstrainDistance", "label": "Point-to-Point"}
+        ]}
       ]},
       {"name": "Tools", "items": [
         {"cmd": "Sketcher_ValidateSketch", "label": "Validate Sketch", "size": "large"},

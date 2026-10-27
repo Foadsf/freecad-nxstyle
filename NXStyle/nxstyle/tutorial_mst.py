@@ -627,38 +627,56 @@ class MstCasingTutorials:
                   + (f" ({missing})" if missing else ""))
         self.ag_shot("AG1_dimensioned_curve.png")
 
-    def ag_run_with_value(self, command, subs, value):
-        """Run a FreeCAD command on the picks and answer its value dialog; returns the constraints added."""
+    def sketch_menu(self, entry, at):
+        """MB3 on empty space of the sketch: FreeCAD's sketch menu opens (modal); pick the entry, as a user does.
+        Returns the menu's entries."""
+        from .qt import QtCore
+        from .ribbon import clean_text
         from .tutorial import qtest
-        sk = self._ag_sk
-        n0 = len(sk.Constraints)
-        Gui.Selection.clearSelection()
-        for s in subs:
-            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, s)
+        seen = {"tries": 0}
+
+        def read():
+            m = QtWidgets.QApplication.activePopupWidget()
+            if isinstance(m, QtWidgets.QMenu):
+                seen["items"] = [clean_text(a.text()) for a in m.actions() if a.text()]
+                act = next((a for a in m.actions() if clean_text(a.text()) == entry), None)
+                m.close()
+                if act is not None:
+                    act.trigger()
+            elif seen["tries"] < 30:
+                seen["tries"] += 1
+                QtCore.QTimer.singleShot(100, read)
+        QtCore.QTimer.singleShot(150, read)
+        self.send(QtCore.QEvent.MouseMove, at, Qt.NoButton, Qt.NoButton)
+        self.send(QtCore.QEvent.MouseButtonPress, at, Qt.RightButton, Qt.RightButton)
+        self.send(QtCore.QEvent.MouseButtonRelease, at, Qt.RightButton, Qt.NoButton)
+        for _ in range(40):
+            if "items" in seen:
+                break
+            qtest().qWait(100)
         QtWidgets.QApplication.processEvents()
-        self.modals.handler = self.datum_dialog(value)
-        Gui.runCommand(command)
-        QtWidgets.QApplication.processEvents()
-        qtest().qWait(300)
-        self.modals.handler = None
-        App.ActiveDocument.recompute()
-        return len(sk.Constraints) - n0
+        return seen.get("items", [])
 
     def ag_hide(self):
         sk = self._ag_sk
-        dims = [i for i, c in enumerate(sk.Constraints) if c.Type in ("Distance", "Radius", "DistanceX", "DistanceY")]
+        dims = [i for i, c in enumerate(sk.Constraints) if c.Type in ("Distance", "Radius", "Diameter", "DistanceX",
+                                                                       "DistanceY")]
         Gui.Selection.clearSelection()
         for i in dims:
             Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"Constraint{i + 1}")
         QtWidgets.QApplication.processEvents()
-        Gui.runCommand("Sketcher_SwitchVirtualSpace")
-        QtWidgets.QApplication.processEvents()
+        # FreeCAD hides the sketch object itself while it is edited (its visibility automation) and shows it
+        # again on Finish: Hide must leave that alone
+        before = sk.ViewObject.Visibility
+        items = self.sketch_menu("Hide", self.screen_point(sk, -12 * IN, 4 * IN))
         hidden = [i for i in dims if sk.getVirtualSpace(i)]
-        Gui.Selection.clearSelection()
-        self.step("Select all the dimensions, MB3 > Hide", "dimensions selected, FreeCAD's 'Switch virtual space'",
-                  DIFFERS if dims and len(hidden) == len(dims) else FAIL,
-                  f"{len(hidden)} of {len(dims)} dimensions hidden. FreeCAD hides sketch dimensions by moving them to "
-                  "its 'virtual space' (not on the ribbon or the MB3 menu); Ctrl+B does not hide them")
+        same = sk.ViewObject.Visibility == before
+        self.info["AG MB3 menu on the dimensions"] = items
+        self.step("Select all the dimensions, MB3 > Hide", "dimensions selected, MB3 on empty space > Hide",
+                  SAME if dims and len(hidden) == len(dims) and same else FAIL,
+                  f"{len(hidden)} of {len(dims)} dimensions hidden (FreeCAD's 'virtual space'); the sketch's own "
+                  f"visibility untouched {same}; menu {items}")
+        self.ag_shot("AG1b_dimensions_hidden.png")
 
     # ------------------------------------------------------------- Move Curve (copy), joins
     def ag_move_curve(self, geos, dx, dy, what):
@@ -854,7 +872,9 @@ class MstCasingTutorials:
 
     def ag_save(self):
         left = self.edited_sketch() is None
-        self.step("Finish Sketch", "Ctrl+Q", SAME if left else FAIL, f"sketch edit ended {left}")
+        shown = self._ag_sk.ViewObject.Visibility
+        self.step("Finish Sketch", "Ctrl+Q", SAME if left and shown else FAIL,
+                  f"sketch edit ended {left}; the sketch is shown {shown} (its dimensions stay hidden)")
         outcome, how, detail, path = self.save_ctrl_s("Impeller_lower_casing.FCStd")
         self.step("Save and close the file", how, outcome, detail)
         self.wait = 300
@@ -936,66 +956,88 @@ class MstImpellerTutorials:
         self.frame_sketch(self._ag_sk, 5.5 * IN, 3 * IN, 13 * IN)
         QtWidgets.QApplication.processEvents()
 
-    def ah_points(self):
-        """Point: one at the origin, one at (11.75, 6), typed into FreeCAD's on-view fields when it shows them."""
+    def ah_type_point(self, xy):
+        """With the Point tool running: type XC and YC into FreeCAD's positional on-view fields (NX's input boxes),
+        Enter after each; Enter in the second makes the point. Returns the fields' texts, or None when FreeCAD
+        shows no coordinate fields (then the point is clicked)."""
+        from . import sketch_ui
         from .qt import QtCore
         from .smoke import decode
         from .tutorial import qtest
         sk = self._ag_sk
+        view = self.nav().widget
+        p = self.screen_point(sk, *xy)
+        # the pointer rests clear of the origin and the axes: FreeCAD adds the snap under the pointer as well,
+        # and a snap to the origin on top of the typed (0, 0) is a redundant second Coincident
+        near = p + QtCore.QPoint(45, -40)
+        self.send(QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(200)
+        texts = [w.text() for w in sketch_ui.on_view_fields(view)]
+        fields = sketch_ui.xy_fields(sk, view, near)     # as a user reads them: FreeCAD orders them freely
+        n0 = len(sk.Geometry)
+        for w, v in zip(fields or (), xy):
+            w.setFocus()
+            w.lineEdit().selectAll()
+            qtest().keyClicks(w.lineEdit(), self.typed_number(w, v))
+            qtest().keyClick(w.lineEdit(), *decode("Return"))
+            qtest().qWait(150)
+        self._ah_clicked = len(sk.Geometry) == n0
+        if self._ah_clicked:                   # no fields typed (or not taken): place it with a click
+            self.mb1_click(p if not fields else near)
+        return texts if fields else None
+
+    def ah_points(self):
+        """Point: one on the origin, one at (11.75, 6), typed into FreeCAD's positional on-view fields (NX-Style's
+        profile shows them, as NX's XC and YC boxes)."""
+        sk = self._ag_sk
         self.ah_frame()
         b, where = self.click_ribbon("Point", tab="Sketch")
         QtWidgets.QApplication.processEvents()
+        # the origin point is clicked (it snaps to the origin): typed 0, 0 gets FreeCAD 1.1.4's Coincident with the
+        # origin twice (the solver flags the second redundant), and the arcs drawn on later then take no snaps
         self.mb1_click(self.screen_point(sk, 0, 0))
-        view = self.nav().widget
-        p = self.screen_point(sk, *AH_P2)
-        self.send(QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
-        qtest().qWait(200)
-        area = QtCore.QRect(view.mapToGlobal(QtCore.QPoint(0, 0)), view.size())
-        dock = self.tasks_dock()
-        ovp = [w for w in Gui.getMainWindow().findChildren(QtWidgets.QAbstractSpinBox) if w.isVisible()
-               and not dock.isAncestorOf(w) and area.contains(w.mapToGlobal(w.rect().center()))]
-        n0 = len(sk.Geometry)
-        typed = len(ovp) >= 2
-        if typed:                              # the x and y fields, in that order
-            for w, v in zip(ovp[:2], AH_P2):
-                w.setFocus()
-                w.lineEdit().selectAll()
-                qtest().keyClicks(w.lineEdit(), self.typed_number(w, v))
-                qtest().keyClick(w.lineEdit(), *decode("Return"))
-                qtest().qWait(150)
-        if len(sk.Geometry) == n0:
-            self.mb1_click(p)
+        fields, clicked = [None], [True]
+        fields.append(self.ah_type_point(AH_P2))
+        clicked.append(self._ah_clicked)
         self.mb2_click(self.screen_point(sk, -3 * IN, 9 * IN))
         App.ActiveDocument.recompute()
         pts = [g for g in range(len(sk.Geometry)) if self.ag_kind(g) == "point"]
         self._ah_pts = pts
-        self.info["AH points"] = {"on-view fields": [f"{type(w).__name__}:{w.text()}" for w in ovp], "typed": typed,
+        typed = fields[1] is not None
+        held = [sorted(c.Type for c in sk.Constraints if g in (c.First, c.Second)) for g in pts]
+        self.info["AH points"] = {"on-view fields": fields, "typed": typed, "clicked after typing": clicked,
+                                  "constraints on each point": held,
                                   "points": [tuple(round(c / IN, 4) for c in sk.getPoint(g, 1)[:2]) for g in pts]}
         q = sk.getPoint(pts[1], 1) if len(pts) > 1 else None
-        exact = q is not None and abs(q.x - AH_P2[0]) < 1e-6 and abs(q.y - AH_P2[1]) < 1e-6
+        o = sk.getPoint(pts[0], 1) if pts else None
+        exact = q is not None and abs(q.x - AH_P2[0]) < 1e-9 and abs(q.y - AH_P2[1]) < 1e-9 and o.Length < 1e-9
         self._ah_exact = exact
-        self.step("Point: one at (0, 0, 0), one at (11.75, 6, 0)", f"ribbon '{where} > Point', MB1 at the origin, "
-                  + ("the coordinates typed in the on-view fields" if typed else "MB1 at (11.75, 6)"),
-                  SAME if len(pts) == 2 and exact else DIFFERS if len(pts) == 2 else FAIL,
-                  f"{len(pts)} points; the second at ({q.x / IN:.4f}, {q.y / IN:.4f}) in" if q is not None else
-                  f"{len(pts)} points" + ("" if typed else "; FreeCAD shows no coordinate fields for a point (its "
-                                          "on-view parameters are set to dimensions only), so the click is approximate"))
+        sk.solve()
+        redundant = list(sk.RedundantConstraints)
+        self.step("Point: one at (0, 0, 0), one at (11.75, 6, 0)", f"ribbon '{where} > Point', MB1 on the origin, "
+                  + ("then XC and YC typed in the on-view fields" if typed else "then MB1 at (11.75, 6)"),
+                  SAME if len(pts) == 2 and exact and typed and not redundant else
+                  DIFFERS if len(pts) == 2 and not redundant else FAIL,
+                  (f"{len(pts)} points, at ({o.x / IN:.4f}, {o.y / IN:.4f}) and ({q.x / IN:.4f}, {q.y / IN:.4f}) in; "
+                   f"FreeCAD keeps typed coordinates as constraints: {held}; redundant {redundant}") if q is not None else
+                  f"{len(pts)} points" + ("" if typed else "; FreeCAD showed no coordinate fields, so the clicks are "
+                                          "approximate"))
 
     def ah_fix_point(self):
-        """(not in the book) Where the point could not be typed: its coordinates as horizontal and vertical
-        distances from the origin, FreeCAD's commands (the Sketch tab has no Horizontal or Vertical Distance)."""
+        """(not in the book) Only where the coordinates could not be typed: the second point's horizontal and
+        vertical distances from the origin, from the Sketch tab's Linear Dimension."""
         if self._ah_exact or len(self._ah_pts) < 2:
             return
         sk = self._ag_sk
         v = self.ag_vertex(self._ah_pts[1], 1)
-        dx = self.ag_run_with_value("Sketcher_ConstrainDistanceX", ["RootPoint", v], AH_P2[0])
-        dy = self.ag_run_with_value("Sketcher_ConstrainDistanceY", ["RootPoint", v], AH_P2[1])
+        dx, where = self.sk_constrain(sk, "Linear Dimension", ["RootPoint", v], AH_P2[0], entry="Horizontal")
+        dy, _ = self.sk_constrain(sk, "Linear Dimension", ["RootPoint", v], AH_P2[1], entry="Vertical")
         q = sk.getPoint(self._ah_pts[1], 1)
         ok = dx == 1 and dy == 1 and abs(q.x - AH_P2[0]) < 1e-6 and abs(q.y - AH_P2[1]) < 1e-6
         self.step("(not in the book) Put the second point at (11.75, 6) exactly",
-                  "origin + point, FreeCAD's Horizontal Distance 298.45 and Vertical Distance 152.4 (not on the "
-                  "Sketch tab)", DIFFERS if ok else FAIL, f"point at ({q.x / IN:.4f}, {q.y / IN:.4f}) in. NX "
-                  "creates a point at typed coordinates")
+                  f"origin + point, ribbon '{where} > Linear Dimension' > Horizontal 298.45 and > Vertical 152.4",
+                  DIFFERS if ok else FAIL, f"point at ({q.x / IN:.4f}, {q.y / IN:.4f}) in. NX creates a point at "
+                  "typed coordinates")
 
     def ah_arc_centre(self, c, r, a0, a1):
         """Arc (A, by centre and end points): click the centre, the start, sweep anticlockwise, click the end."""
@@ -1098,7 +1140,8 @@ class MstImpellerTutorials:
         p = self._ah_pts[0] if self._ah_pts else None
         on = p is not None and any(c.Type == "Coincident" and {(c.First, c.FirstPos), (c.Second, c.SecondPos)} ==
                                    {(p, 1), (-1, 1)} for c in sk.Constraints)
-        self.step("The point at the origin: Fixed", "no click needed: the point snapped to the origin" if on else "-",
+        self.step("The point at the origin: Fixed", "no click needed: the point is Coincident with the origin" if on
+                  else "-",
                   DIFFERS if on else FAIL, "FreeCAD's Coincident with the origin already fixes it; Fixed on top would "
                   "be redundant" if on else "the point is not on the origin")
 

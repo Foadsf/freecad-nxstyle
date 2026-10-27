@@ -48,6 +48,9 @@ DEFAULTS = {
     "quickpick_hold_ms": 500,          # rest the pointer (then click) or hold MB1 this long for QuickPick; 0 = off, with select-through
     "default_application": "modeling",  # the application NXStyle starts in (an id from ribbons/apps.json)
     "new_part_datum": True,            # a new empty part starts with a Body (NX Model template)
+    # sketch curves and points take typed coordinates, as NX's XC/YC input boxes: "position" = FreeCAD's on-view
+    # parameters 'Position and dimensions'; "dimensions" (FreeCAD's default), "none", or "freecad" (leave alone)
+    "sketch_input": "position",
     "nx_shortcuts": True,              # bind the NX keys (see Keyboard shortcuts); false keeps FreeCAD's
     "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"

@@ -1,10 +1,14 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
-"""NX sketch constraints in FreeCAD terms, without FreeCAD: the Geometric Constraints gallery (NX: C) and the
-choices behind Collinear. sketch_ui.py runs them.
+"""NX sketch constraints in FreeCAD terms, without FreeCAD: the Geometric Constraints gallery (NX: C), the
+choices behind Collinear, and which constraints Hide, Show and Show All change. sketch_ui.py runs them.
 
 FreeCAD's sketch selections name elements, not geometry: Edge3 is curve 2, H_Axis and V_Axis are -1 and -2,
 ExternalEdge1 is -3. Curves 0 and up belong to the sketch and can move; the axes and external geometry
-cannot.
+cannot. Constraint3 is constraint 2.
+
+FreeCAD hides a sketch constraint by moving it to its "virtual space": the view shows the real space, and its
+constraint list's check boxes treat the virtual space as hidden in the 3D view. NX's Hide (Ctrl+B) puts
+dimensions there, Show (Ctrl+Shift+K) and Show All (Ctrl+Shift+U) bring them back.
 """
 
 import re
@@ -46,6 +50,38 @@ def geo_id(sub):
         return None
     n = int(m.group(2))
     return -2 - n if m.group(1) else n - 1
+
+
+def constraint_id(sub):
+    """FreeCAD's sketch element name -> constraint index, or None for anything that is not a constraint."""
+    m = re.fullmatch(r"Constraint(\d+)", sub or "")
+    return int(m.group(1)) - 1 if m and int(m.group(1)) > 0 else None
+
+
+def xy_fields(values, cursor):
+    """Which two of FreeCAD's positional on-view fields are X and Y: the order of the fields is not fixed, so
+    each is matched to the cursor's sketch coordinates it shows. values: the fields' numbers; cursor: (x, y).
+    Returns (index of X, index of Y), or None with fewer than two fields."""
+    if len(values) < 2:
+        return None
+    pairs = [(i, j) for i in range(len(values)) for j in range(len(values)) if i != j]
+    return min(pairs, key=lambda p: abs(values[p[0]] - cursor[0]) + abs(values[p[1]] - cursor[1]))
+
+
+VISIBILITY = ("hide", "show", "show_all")
+
+
+def visibility_change(kind, picked, hidden):
+    """Which constraints move, and to which space, for Hide / Show / Show All in a sketch.
+
+    picked: constraint indices selected (any order, repeats allowed); hidden: one bool per constraint of the
+    sketch, True when it is in the virtual space. Returns (indices to change, sorted; True to hide them).
+    Show All needs no pick; a constraint already where it should be is left alone."""
+    if kind not in VISIBILITY:
+        raise ValueError(f"unknown visibility change {kind!r}")
+    to_hide = kind == "hide"
+    ids = range(len(hidden)) if kind == "show_all" else sorted({i for i in picked if 0 <= i < len(hidden)})
+    return [i for i in ids if hidden[i] != to_hide], to_hide
 
 
 class NotCollinear(ValueError):

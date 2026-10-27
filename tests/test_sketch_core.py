@@ -63,10 +63,59 @@ class Gallery(unittest.TestCase):
     def test_the_sketch_tab_has_the_new_buttons(self):
         with open(RIBBON, encoding="utf-8") as fh:
             tab = json.load(fh)["tabs"][0]
-        items = {i["label"]: i["cmd"] for g in tab["groups"] for i in g["items"]}
+        items = {i["label"]: i["cmd"] for g in tab["groups"] for i in g["items"] if "label" in i}
         self.assertEqual(items["Point on Curve"], "Sketcher_ConstrainPointOnObject")
         self.assertEqual(items["Collinear"], "NXStyle_SketchCollinear")
         self.assertEqual(items["Geometric Constraints"], "NXStyle_GeometricConstraints")
+
+    def test_linear_dimension_offers_nx_methods(self):
+        """NX's Linear Dimension measures Horizontal, Vertical or Point-to-Point: FreeCAD's DistanceX, DistanceY
+        and Distance, in the Constraints group."""
+        with open(RIBBON, encoding="utf-8") as fh:
+            tab = json.load(fh)["tabs"][0]
+        group = next(g for g in tab["groups"] if g["name"] == "Constraints")
+        drop = next(i for i in group["items"] if i.get("dropdown") == "Linear Dimension")
+        self.assertEqual([(s["label"], s["cmd"]) for s in drop["items"]],
+                         [("Horizontal", "Sketcher_ConstrainDistanceX"), ("Vertical", "Sketcher_ConstrainDistanceY"),
+                          ("Point-to-Point", "Sketcher_ConstrainDistance")])
+
+
+class OnViewFields(unittest.TestCase):
+    def test_fields_matched_to_the_cursor_whatever_their_order(self):
+        # FreeCAD 1.1.4 listed Y before X in the self-test: (15.81, 49.83) shown for a cursor at (49.8, 15.8)
+        self.assertEqual(core.xy_fields([15.81, 49.83], (49.8, 15.8)), (1, 0))
+        self.assertEqual(core.xy_fields([49.83, 15.81], (49.8, 15.8)), (0, 1))
+
+    def test_negative_coordinates_and_extra_fields(self):
+        self.assertEqual(core.xy_fields([7.0, -120.0, -40.0], (-40.1, -119.9)), (2, 1))
+
+    def test_too_few_fields(self):
+        self.assertIsNone(core.xy_fields([3.0], (3.0, 0.0)))
+
+
+class ConstraintVisibility(unittest.TestCase):
+    def test_constraint_names(self):
+        self.assertEqual(core.constraint_id("Constraint1"), 0)
+        self.assertEqual(core.constraint_id("Constraint12"), 11)
+        for sub in ("Constraint0", "Constraint", "Edge1", "Vertex2", "RootPoint", "", None, "MyConstraint1"):
+            self.assertIsNone(core.constraint_id(sub), sub)
+
+    def test_hide_moves_the_picked_shown_ones(self):
+        hidden = [False, True, False, False]
+        self.assertEqual(core.visibility_change("hide", [2, 0, 2, 1], hidden), ([0, 2], True))
+
+    def test_show_moves_the_picked_hidden_ones(self):
+        hidden = [False, True, False, True]
+        self.assertEqual(core.visibility_change("show", [3, 0, 1], hidden), ([1, 3], False))
+
+    def test_show_all_needs_no_pick(self):
+        self.assertEqual(core.visibility_change("show_all", [], [True, False, True]), ([0, 2], False))
+
+    def test_nothing_to_do_and_stale_picks(self):
+        self.assertEqual(core.visibility_change("hide", [0, 7, -1], [True]), ([], True))
+        self.assertEqual(core.visibility_change("show", [], [True]), ([], False))
+        with self.assertRaises(ValueError):
+            core.visibility_change("toggle", [0], [False])
 
 
 if __name__ == "__main__":
