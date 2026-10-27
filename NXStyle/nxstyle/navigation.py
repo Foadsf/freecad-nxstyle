@@ -121,7 +121,7 @@ VIEW_RADIAL = [
 OBJECT_RADIAL = [
     ("Edit Parameters", ["NXStyle_EditParameters", "Std_Edit"]),
     ("Edit Object Display", ["Std_SetAppearance", "Std_DlgDisplayProperties"]),
-    ("Hide", "Std_HideSelection"),
+    ("Hide", ["NXStyle_Hide", "Std_HideSelection"]),
     ("Delete", "Std_Delete"),
     ("Fit Selection", "Std_ViewFitSelection"),
     ("Measure", ["Std_Measure", "Part_Measure_Linear"]),

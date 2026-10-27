@@ -36,9 +36,9 @@
       ]},
       {"name": "Visibility", "items": [
         {"cmd": "NXStyle_ShowHide", "label": "Show and Hide", "size": "large"},
-        {"cmd": "Std_HideSelection", "label": "Hide"},
-        {"cmd": "Std_ShowSelection", "label": "Show"},
-        {"cmd": "Std_ShowObjects", "label": "Show All"},
+        {"cmd": ["NXStyle_Hide", "Std_HideSelection"], "label": "Hide"},
+        {"cmd": ["NXStyle_Show", "Std_ShowSelection"], "label": "Show"},
+        {"cmd": ["NXStyle_ShowAll", "Std_ShowObjects"], "label": "Show All"},
         {"cmd": "NXStyle_InvertVisibility", "label": "Invert Shown and Hidden"},
         {"cmd": "Std_ToggleSelectability", "label": "Selectable"}
       ]},

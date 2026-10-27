@@ -49,6 +49,26 @@ Lines get Horizontal or Vertical when they are drawn within 2° of it.
 After an arc, FreeCAD carries on with a line held tangent to the arc and infers no Horizontal or Vertical on it.
 NX's book clicks *Line* in the Profile dialog there; in FreeCAD press kbd:[M] twice (tangent line, perpendicular line, line) to get the plain line, then add *Tangent* if you want it.
 
+== Typed coordinates
+
+NX's curve and point tools take typed XC and YC values in boxes beside the pointer.
+NX-Style sets FreeCAD's on-view parameters to *Position and dimensions* (setting `sketch_input`), so the first point of a tool shows X and Y fields as well as the length and angle fields.
+Type a value, press kbd:[Enter] for the next field, and the point lands exactly there: *Point*, then 298.45 kbd:[Enter] 152.4 kbd:[Enter] makes a point at (298.45, 152.4) mm.
+FreeCAD keeps typed coordinates as constraints: horizontal and vertical distances from the axes, or Coincident with the origin for (0, 0).
+For a point on the origin, click the origin instead of typing 0 and 0: FreeCAD 1.1.4 then adds the Coincident twice, and the solver reports the second as redundant.
+Set `sketch_input` to `dimensions` for FreeCAD's default (no position fields), `none`, or `freecad` to leave FreeCAD's own choice alone.
+
+== Dimensions
+
+*Rapid Dimension* (kbd:[D]) is FreeCAD's Dimension tool, which infers the kind from the pick.
+*Linear Dimension* on the Sketch tab offers NX's measurement methods: *Horizontal* and *Vertical* (FreeCAD's horizontal and vertical distance) and *Point-to-Point* (FreeCAD's Distance, also the *Distance* button).
+
+Hide::
+Select dimensions or constraints and press kbd:[Ctrl+B], or MB3 > *Hide*, as in NX.
+FreeCAD hides them in its "virtual space"; its constraint list still shows them.
+kbd:[Ctrl+Shift+K] (*Show*) brings back the ones selected in that list, kbd:[Ctrl+Shift+U] (*Show All*) all of them.
+FreeCAD's own Hide Selection does not hide sketch dimensions.
+
 == Geometric constraints
 
 kbd:[C] (or *Geometric Constraints* on the Sketch tab) opens NX's gallery: Coincident, Point on Curve, Tangent, Parallel, Perpendicular, Horizontal, Vertical, Horizontal and Vertical Alignment, Midpoint, Collinear, Concentric, Equal Length and Equal Radius, Fixed and Fully Fixed.

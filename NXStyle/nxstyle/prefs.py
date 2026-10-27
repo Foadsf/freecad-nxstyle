@@ -14,6 +14,9 @@ VIEW = "User parameter:BaseApp/Preferences/View"
 MAIN = "User parameter:BaseApp/Preferences/MainWindow"
 GENERAL = "User parameter:BaseApp/Preferences/General"
 UNITS = "User parameter:BaseApp/Preferences/Units"
+SKETCHER_TOOLS = "User parameter:BaseApp/Preferences/Mod/Sketcher/Tools"
+# FreeCAD's Sketcher > On-View-Parameters choice, by index (SketcherSettings.cpp): each tool reads it when it starts
+SKETCH_INPUT = {"none": 0, "dimensions": 1, "position": 2}
 IMPERIAL_WORDS = ("imperial", "us ", "us customary", "inch", "ft", "feet", "lb")
 
 NATIVE_NX_STYLE = "Gui::SiemensNXNavigationStyle"   # FreeCAD 1.1+ (PR #21813)
@@ -165,6 +168,18 @@ def apply(cfg=None):
     wb = {"modeling": "PartDesignWorkbench", "drafting": "TechDrawWorkbench",
           "assemblies": "AssemblyWorkbench"}.get(app, "PartDesignWorkbench")
     App.ParamGet(GENERAL).SetString("AutoloadModule", wb)
+    apply_sketch_input(cfg)
+
+
+def apply_sketch_input(cfg=None):
+    """NX's sketch curves and points take typed XC/YC coordinates (its on-screen input boxes, and the Point
+    dialog): FreeCAD's on-view parameters show positions only with 'Position and dimensions'. Returns the
+    index written, or None when the setting leaves FreeCAD's choice alone."""
+    cfg = cfg or config.get()
+    index = SKETCH_INPUT.get(cfg.get("sketch_input", "position"))
+    if index is not None:
+        App.ParamGet(SKETCHER_TOOLS).SetInt("OnViewParameterVisibility", index)
+    return index
 
 
 def apply_navigation_to_open_views(cfg=None):

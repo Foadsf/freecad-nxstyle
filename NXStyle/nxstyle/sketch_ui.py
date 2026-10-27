@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
-"""NX sketch constraints FreeCAD lacks: Collinear, and the Geometric Constraints gallery (NX: C).
+"""NX sketch constraints FreeCAD lacks: Collinear, the Geometric Constraints gallery (NX: C), and Hide / Show /
+Show All that reach sketch dimensions (FreeCAD's virtual space; see sketch_core).
 
 Collinear: FreeCAD has no such constraint. Both ends of one line are put on the line through the other
 (point on object), and each is kept only if the solver does not call it redundant: when both lines are already
@@ -159,9 +160,172 @@ def _run(name):
     trigger(name)
 
 
+# ------------------------------------------------------------------ typed coordinates (NX's XC / YC boxes)
+def on_view_fields(widget):
+    """FreeCAD's on-view parameter fields shown over the 3D view widget (not the task panel's)."""
+    from .qt import QtCore
+    area = QtCore.QRect(widget.mapToGlobal(QtCore.QPoint(0, 0)), widget.size())
+
+    def docked(w):
+        while w is not None:
+            if isinstance(w, QtWidgets.QDockWidget):
+                return True
+            w = w.parentWidget()
+        return False
+    return [w for w in Gui.getMainWindow().findChildren(QtWidgets.QAbstractSpinBox) if w.isVisible()
+            and not docked(w) and area.contains(w.mapToGlobal(w.rect().center()))]
+
+
+def field_value(w):
+    v = w.property("rawValue")
+    if isinstance(v, (int, float)):
+        return float(v)
+    import re
+    m = re.search(r"-?\d+(?:[.,]\d+)?", w.text())
+    return float(m.group(0).replace(",", ".")) if m else 0.0
+
+
+def cursor_on_sketch(sk, widget, p):
+    """The sketch's (x, y) under the widget position p."""
+    view = Gui.ActiveDocument.ActiveView
+    dpr = widget.devicePixelRatioF() if hasattr(widget, "devicePixelRatioF") else 1.0
+    xy = (int(p.x() * dpr), int((widget.height() - p.y()) * dpr))
+    get = getattr(view, "getPointOnFocalPlane", None) or view.getPoint
+    g = sk.getGlobalPlacement().inverse().multVec(get(*xy))
+    return g.x, g.y
+
+
+def xy_fields(sk, widget, p):
+    """(X field, Y field) of the running tool's positional on-view fields with the pointer at p, or None."""
+    fields = on_view_fields(widget)
+    pick = core.xy_fields([field_value(w) for w in fields], cursor_on_sketch(sk, widget, p))
+    return (fields[pick[0]], fields[pick[1]]) if pick else None
+
+
+# ------------------------------------------------------------------ Hide, Show, Show All (Ctrl+B, Ctrl+Shift+K/U)
+def picked_constraints(sk):
+    """(indices of the constraints of sk that are selected, other objects selected, other elements of sk)."""
+    ids, others, elements = [], [], []
+    for s in Gui.Selection.getSelectionEx():
+        if s.Object != sk:
+            others.append(s.Object)
+            continue
+        for sub in s.SubElementNames:
+            i = core.constraint_id(sub)
+            if i is None:
+                elements.append(sub)
+            else:
+                ids.append(i)
+    return ids, others, elements
+
+
+def hidden_flags(sk):
+    return [bool(sk.getVirtualSpace(i)) for i in range(len(sk.Constraints))]
+
+
+def set_constraints_hidden(sk, ids, hidden, title):
+    """Move constraints to FreeCAD's virtual space (hidden) or back, as one undo step."""
+    doc = sk.Document
+    doc.openTransaction(title)
+    try:
+        try:
+            sk.setVirtualSpace(list(ids), hidden)
+        except TypeError:                     # a FreeCAD that takes one index at a time
+            for i in ids:
+                sk.setVirtualSpace(i, hidden)
+        doc.commitTransaction()
+    except Exception:
+        doc.abortTransaction()
+        raise
+
+
+class Visibility:
+    """NX's Hide, Show and Show All, which also reach sketch dimensions and constraints: FreeCAD's own
+    commands work on objects only (Std_HideSelection does not hide a picked dimension)."""
+
+    FREECAD = {"hide": "Std_HideSelection", "show": "Std_ShowSelection", "show_all": "Std_ShowObjects"}
+    TEXT = {"hide": ("Hide", "Hide the selected objects; in a sketch, the selected dimensions and constraints "
+                             "(NX: Ctrl+B)"),
+            "show": ("Show", "Show the selected objects; in a sketch, the selected hidden dimensions and "
+                             "constraints, picked in the constraint list (NX: Ctrl+Shift+K)"),
+            "show_all": ("Show All", "Show every object; in a sketch, every hidden dimension and constraint too "
+                                     "(NX: Ctrl+Shift+U)")}
+
+    def __init__(self, kind):
+        self.kind = kind
+        self.last = None                 # what the last run in a sketch changed, for tests
+
+    def GetResources(self):
+        from .commands import _pixmap
+        text, tip = self.TEXT[self.kind]
+        return {"MenuText": text, "ToolTip": tip, "Pixmap": _pixmap(self.FREECAD[self.kind]), "CmdType": "ForEdit"}
+
+    def IsActive(self):
+        if App.ActiveDocument is None:
+            return False
+        return self.kind == "show_all" or bool(Gui.Selection.getSelectionEx())
+
+    def Activated(self):
+        sk = edited_sketch()
+        if sk is None:
+            Gui.runCommand(self.FREECAD[self.kind])
+            return
+        ids, others, elements = picked_constraints(sk)
+        change, hide = core.visibility_change(self.kind, ids, hidden_flags(sk))
+        self.last = {"constraints": change, "others": [o.Name for o in others], "elements": elements}
+        if change:
+            set_constraints_hidden(sk, change, hide, self.TEXT[self.kind][0])
+        if self.kind == "show_all":
+            Gui.runCommand("Std_ShowObjects")
+        else:
+            for o in others:                  # objects picked outside the sketch, as FreeCAD's command does
+                if getattr(o, "ViewObject", None) is not None:
+                    o.ViewObject.Visibility = not hide
+        Gui.Selection.clearSelection()         # hidden constraints cannot stay selected
+        word = "hidden" if hide else "shown"
+        note = f"; {len(elements)} curve or point pick(s) left alone: Hide in a sketch is for dimensions and " \
+               "constraints" if elements else ""
+        _status(f"{len(change)} sketch constraint{'s' if len(change) != 1 else ''} {word}{note}")
+
+
+class SketchMenu:
+    """MB3 menu in a sketch: Hide (or Show) for picked dimensions and constraints, beside FreeCAD's Delete."""
+
+    def modifyContextMenu(self, recipient):
+        if recipient != "Sketch":
+            return []
+        sk = edited_sketch()
+        if sk is None:
+            return []
+        try:
+            ids = picked_constraints(sk)[0]
+            flags = hidden_flags(sk)
+        except Exception:
+            return []
+        out = []
+        if core.visibility_change("hide", ids, flags)[0]:
+            out.append({"insert": "NXStyle_Hide", "menuItem": "Std_Delete"})
+        if core.visibility_change("show", ids, flags)[0]:
+            out.append({"insert": "NXStyle_Show", "menuItem": "Std_Delete"})
+        return out
+
+
+_menu = None
+
+
+def install_context_menu():
+    global _menu
+    if _menu is None and hasattr(Gui, "addWorkbenchManipulator"):
+        _menu = SketchMenu()
+        Gui.addWorkbenchManipulator(_menu)
+
+
 COMMANDS = {
     "NXStyle_SketchCollinear": Collinear(),
     "NXStyle_GeometricConstraints": GeometricConstraints(),
+    "NXStyle_Hide": Visibility("hide"),
+    "NXStyle_Show": Visibility("show"),
+    "NXStyle_ShowAll": Visibility("show_all"),
 }
 
 

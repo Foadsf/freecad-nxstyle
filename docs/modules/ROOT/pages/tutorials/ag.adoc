@@ -33,7 +33,9 @@ One degree of freedom is left: nothing places the curve along X. The book leaves
 
 image::tutorial-AG-01-dimensioned.png[The inner curve of the casing, dimensioned]
 
-Select the dimensions and hide them.
+Select the dimensions, then MB3 > *Hide* (or kbd:[Ctrl+B]).
+
+image::tutorial-AG-01-hidden.png[The curve after Hide: the dimensions are gone, unticked in FreeCAD's constraint list]
 
 === 4. Move Curve: the wall, the edge and the flange
 
@@ -63,4 +65,4 @@ Each of the 19 curves is compared with the book's figure, rebuilt from its dimen
 
 * FreeCAD gives Move Curve's distance as a length and an angle. NX takes a distance along a chosen vector.
 * *Copies* = 1 is NX's *Copy Original*. With 0, FreeCAD moves the curves.
-* FreeCAD hides sketch dimensions by moving them to its "virtual space". That command is not on the ribbon or the MB3 menu.
+* Hidden sketch dimensions go to FreeCAD's "virtual space". Its constraint list still shows them; *Show All* (kbd:[Ctrl+Shift+U]) brings them back.

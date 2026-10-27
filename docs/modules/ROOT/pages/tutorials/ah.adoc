@@ -11,9 +11,9 @@ Sizes:: the book's, in inches, typed in millimetres. The points are at the origi
 === 1. A new part, a sketch and two points
 
 kbd:[Ctrl+N], then *Sketch* on the XC-YC plane and MB2.
-Click *Point* and click the origin. Then place a second point at (11.75, 6) in, which is 298.45 × 152.4 mm.
-NX takes the coordinates in its Point dialog.
-In NX-Style, click near that spot, then give the point its horizontal and vertical distance from the origin.
+Click *Point* and click the origin: the point snaps to it.
+Type the second point's coordinates in the XC and YC fields beside the pointer, kbd:[Enter] after each: (11.75, 6) in, which is 298.45 and 152.4 mm.
+FreeCAD keeps the first point Coincident with the origin and the second at its horizontal and vertical distances from the axes.
 
 === 2. The two end arcs
 
@@ -30,7 +30,7 @@ In NX-Style, open the *Arc* drop-down on the Sketch tab and pick *Arc From 3 Poi
 === 4. Tangent, Fixed and the radii
 
 Make each arc *Tangent* to the next at its end points: four joints.
-The point at the origin is already fixed, because it snapped to the origin.
+The point at the origin is already fixed, because it is Coincident with the origin.
 Give the radii, biggest first: 18 and 15 between the ends, 1.5 and 0.5 at the ends.
 
 image::tutorial-AH-01-impeller.png[The impeller blade sketch with its four tangent arcs]
@@ -47,5 +47,6 @@ The four arcs are checked against the figure solved from the book's data. The R1
 
 == What differs from NX
 
-* NX places a point at typed coordinates. FreeCAD's Point tool shows no coordinate fields by default, and the Sketch tab has no Horizontal or Vertical Distance, so the replay uses FreeCAD's own commands for them.
-* FreeCAD's *Fixed* keeps a point where it is. A point clicked on the origin snaps to it, which already fixes it.
+* FreeCAD keeps typed coordinates as constraints (distances from the axes), so the second point is held before any dimension is added.
+* The first point is clicked on the origin, not typed: FreeCAD 1.1.4 gives a point typed at (0, 0) two Coincident constraints with the origin, and the solver flags the second as redundant.
+* FreeCAD's *Fixed* keeps a point where it is. The point clicked on the origin is Coincident with it, which already fixes it.

@@ -121,6 +121,9 @@ class Smoke:
         yield self.s_sketch_check, 100
         yield self.s_profile, 300
         yield self.s_sketch_constraints, 300
+        yield self.s_sketch_point_typed, 300
+        yield self.s_sketch_linear_dimension, 300
+        yield self.s_sketch_hide, 300
         yield self.s_sketch_arc, 600              # FreeCAD refreshes the command states on a timer
         yield self.s_sketch_radius, 400
         yield self.s_sketch_radius_check, 100
@@ -872,6 +875,187 @@ class Smoke:
         hits = cf.find("Collinear") + cf.find("Point on Curve")
         self.check("Command Finder finds Collinear and Point on Curve",
                    {"NXStyle_SketchCollinear", "Sketcher_ConstrainPointOnObject"} <= set(hits), hits[:6])
+        sk.deleteAllGeometry()
+        doc.recompute()
+
+    def s_sketch_point_typed(self):
+        """NX's sketch Point takes typed XC/YC: NX-Style's profile turns on FreeCAD's positional on-view fields, so
+        typing 298.45 and 152.4 makes a point at exactly (298.45, 152.4) mm (AH's point at 11.75, 6 in)."""
+        from . import prefs, sketch_ui
+        from .ribbon import trigger
+        from .tutorial import qtest
+        sk = sketch_ui.edited_sketch()
+        ovp = App.ParamGet(prefs.SKETCHER_TOOLS).GetInt("OnViewParameterVisibility", 1)
+        if sk is None:
+            self.check("sketch Point at typed XC, YC", False, "no sketch in edit")
+            return
+        f = self.nav()
+        w = f.widget
+        n0 = len(sk.Geometry)
+        Gui.Selection.clearSelection()
+        w.setFocus()
+        trigger("Sketcher_CreatePoint")
+        QtWidgets.QApplication.processEvents()
+        p = QtCore.QPoint(w.width() // 2 + 37, w.height() // 2 - 23)
+        self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(200)
+        texts = [x.text() for x in sketch_ui.on_view_fields(w)]
+        fields = sketch_ui.xy_fields(sk, w, p) or []          # FreeCAD lists the fields in no fixed order
+        cursor = tuple(round(c, 2) for c in sketch_ui.cursor_on_sketch(sk, w, p))
+        want = (298.45, 152.4)
+        for x, v in zip(fields, want):
+            x.setFocus()
+            x.lineEdit().selectAll()
+            qtest().keyClicks(x.lineEdit(), f"{v:.6g}".replace(".", x.locale().decimalPoint()))
+            qtest().keyClick(x.lineEdit(), Qt.Key_Return)
+            qtest().qWait(150)
+        if len(sk.Geometry) == n0 and len(fields) >= 2:      # the typed values are locked: a click confirms them
+            self.send(f, QtCore.QEvent.MouseButtonPress, p, Qt.LeftButton, Qt.LeftButton)
+            self.send(f, QtCore.QEvent.MouseButtonRelease, p, Qt.LeftButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+        self.send(f, QtCore.QEvent.MouseButtonPress, p, Qt.MiddleButton, Qt.MiddleButton)    # MB2 ends the tool
+        self.send(f, QtCore.QEvent.MouseButtonRelease, p, Qt.MiddleButton, Qt.NoButton)
+        QtWidgets.QApplication.processEvents()
+        sk.Document.recompute()
+        made = [g for g in range(n0, len(sk.Geometry)) if "Point" in sk.Geometry[g].TypeId]
+        q = sk.getPoint(made[0], 1) if made else None
+        exact = q is not None and abs(q.x - want[0]) < 1e-9 and abs(q.y - want[1]) < 1e-9
+        # FreeCAD keeps typed coordinates as distances from the axes
+        held = sorted((c.Type, round(c.Value, 6)) for c in sk.Constraints if made and c.First == made[0])
+        self.check("sketch Point at typed XC, YC: positional on-view fields on (NX's input boxes), 298.45 and 152.4 "
+                   "typed make the point exactly there", ovp == 2 and len(fields) >= 2 and len(made) == 1 and exact,
+                   f"OnViewParameterVisibility {ovp}; fields {texts} with the pointer at {cursor}; points made "
+                   f"{len(made)}; at "
+                   f"{(q.x, q.y) if q is not None else None}; constraints on it {held}")
+        sk.deleteAllGeometry()
+        sk.Document.recompute()
+
+    def s_sketch_linear_dimension(self):
+        """NX's Linear Dimension (Sketch tab, Constraints): Horizontal and Vertical between the origin and a point
+        make FreeCAD's horizontal and vertical distances."""
+        import Part
+        from . import sketch_ui
+        from .ribbon import DropdownButton, clean_text
+        from .tutorial import qtest
+        sk = sketch_ui.edited_sketch()
+        drop = next((b for b in self.shell.ribbon.findChildren(DropdownButton) if b.text() == "Linear Dimension"),
+                    None)
+        entries = {clean_text(a.text()): a for a in drop.menu().actions()} if drop is not None else {}
+        if sk is None or drop is None:
+            self.check("Linear Dimension > Horizontal / Vertical on the Sketch tab", False,
+                       f"sketch {sk is not None}, drop-down entries {list(entries)}")
+            return
+        doc = sk.Document
+        g = sk.addGeometry(Part.Point(App.Vector(298.45, 152.4, 0)))      # a free point
+        doc.recompute()
+        p = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher")
+        dialog = p.GetBool("ShowDialogOnDistanceConstraint", True)
+        p.SetBool("ShowDialogOnDistanceConstraint", False)      # no modal datum dialog: the value is the distance
+        vertex = next(f"Vertex{i + 1}" for i in range(4 * len(sk.Geometry)) if sk.getGeoVertexIndex(i) == (g, 1))
+        made = {}
+        try:
+            for label in ("Horizontal", "Vertical"):
+                n = len(sk.Constraints)
+                Gui.Selection.clearSelection()
+                for s in ("RootPoint", vertex):
+                    Gui.Selection.addSelection(doc.Name, sk.Name, s)
+                QtWidgets.QApplication.processEvents()
+                act = entries.get(label)
+                for _ in range(20):            # FreeCAD refreshes the actions' state on a timer
+                    if act is None or act.isEnabled():
+                        break
+                    qtest().qWait(100)
+                if act is not None:
+                    act.trigger()
+                QtWidgets.QApplication.processEvents()
+                doc.recompute()
+                made[label] = [(c.Type, round(c.Value, 6)) for c in sk.Constraints[n:]]
+        finally:
+            p.SetBool("ShowDialogOnDistanceConstraint", dialog)
+        Gui.Selection.clearSelection()
+        self._linear_dims = [i for i, c in enumerate(sk.Constraints) if c.Type in ("DistanceX", "DistanceY")]
+        self.check("Linear Dimension > Horizontal / Vertical (Sketch tab) make FreeCAD's horizontal and vertical "
+                   "distances", list(entries) == ["Horizontal", "Vertical", "Point-to-Point"]
+                   and made == {"Horizontal": [("DistanceX", 298.45)], "Vertical": [("DistanceY", 152.4)]},
+                   f"entries {list(entries)}; made {made}")
+
+    def s_sketch_hide(self):
+        """NX's Hide for sketch dimensions: Ctrl+B, and MB3 > Hide (FreeCAD's sketch MB3 menu), move the picked
+        dimensions to FreeCAD's virtual space; Show All (Ctrl+Shift+U) brings them back; the sketch stays shown."""
+        from . import sketch_ui
+        from .tutorial import qtest
+        sk = sketch_ui.edited_sketch()
+        dims = getattr(self, "_linear_dims", [])
+        if sk is None or len(dims) < 2:
+            self.check("Hide (Ctrl+B) on sketch dimensions", False, f"dimensions {dims}")
+            return
+        doc, f = sk.Document, self.nav()
+        w = f.widget
+
+        def pick(ids):
+            Gui.Selection.clearSelection()
+            for i in ids:
+                Gui.Selection.addSelection(doc.Name, sk.Name, f"Constraint{i + 1}")
+            QtWidgets.QApplication.processEvents()
+
+        def key(k, mods=Qt.NoModifier):
+            app = QtWidgets.QApplication.instance()
+            if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+                app.setActiveWindow(Gui.getMainWindow())
+            w.setFocus()
+            for _ in range(10):                # wait for FreeCAD's command state refresh, as a user would
+                qtest().qWait(100)
+            qtest().keyClick(w, k, mods)
+            QtWidgets.QApplication.processEvents()
+
+        # FreeCAD hides the edited sketch object itself (its visibility automation): Hide must leave that alone
+        before = sk.ViewObject.Visibility
+        pick(dims[:1])
+        key(Qt.Key_B, Qt.ControlModifier)
+        by_key = [bool(sk.getVirtualSpace(i)) for i in dims]
+        after_key = sk.ViewObject.Visibility
+        # MB3 on empty space with the other dimension picked: FreeCAD's sketch menu, with NX-Style's Hide
+        pick(dims[1:2])
+        seen = {}
+
+        def read_menu():
+            m = QtWidgets.QApplication.activePopupWidget()
+            if isinstance(m, QtWidgets.QMenu):
+                seen["items"] = [a.text().replace("&", "") for a in m.actions() if a.text()]
+                hide = next((a for a in m.actions() if a.text().replace("&", "") == "Hide"), None)
+                seen["hide"] = hide is not None
+                if hide is not None:
+                    m.close()
+                    hide.trigger()
+                    seen["Hide changed"] = sketch_ui.COMMANDS["NXStyle_Hide"].last
+                    return
+                m.close()
+            elif seen.setdefault("tries", 0) < 20:
+                seen["tries"] += 1
+                QtCore.QTimer.singleShot(100, read_menu)
+        QtCore.QTimer.singleShot(150, read_menu)
+        corner = QtCore.QPoint(25, w.height() - 25)
+        self.send(f, QtCore.QEvent.MouseMove, corner, Qt.NoButton, Qt.NoButton)
+        self.send(f, QtCore.QEvent.MouseButtonPress, corner, Qt.RightButton, Qt.RightButton)
+        self.send(f, QtCore.QEvent.MouseButtonRelease, corner, Qt.RightButton, Qt.NoButton)
+        for _ in range(30):
+            if "items" in seen:
+                break
+            qtest().qWait(100)
+        QtWidgets.QApplication.processEvents()
+        by_menu = [bool(sk.getVirtualSpace(i)) for i in dims]
+        vis = (before, after_key, sk.ViewObject.Visibility)
+        self.check("Hide on sketch dimensions: Ctrl+B and MB3 > Hide put them in FreeCAD's virtual space; the sketch "
+                   "object's own visibility is untouched", by_key == [True, False] and by_menu == [True, True]
+                   and len(set(vis)) == 1 and seen.get("Hide changed", {}).get("others") == [],
+                   f"after Ctrl+B {by_key}; MB3 menu {seen.get('items')}; after MB3 > Hide {by_menu}; sketch "
+                   f"visibility before / after Ctrl+B / after MB3 {vis}; last Hide {seen.get('Hide changed')}")
+        doc.undo()
+        undone = [bool(sk.getVirtualSpace(i)) for i in dims]
+        key(Qt.Key_U, Qt.ControlModifier | Qt.ShiftModifier)
+        back = [bool(sk.getVirtualSpace(i)) for i in dims]
+        self.check("Undo takes one Hide back; Show All (Ctrl+Shift+U) shows the sketch's hidden dimensions",
+                   undone == [True, False] and back == [False, False], f"after undo {undone}; after Show All {back}")
         sk.deleteAllGeometry()
         doc.recompute()
 

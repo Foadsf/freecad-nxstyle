@@ -735,6 +735,7 @@ def register(apps):
         Gui.addCommand(name, cmd)
     from . import controller
     controller.install_context_menu()
+    sketch_ui.install_context_menu()
     # FreeCAD 1.0 creates a Python command's QAction only when the command is
     # placed in a toolbar or menu. A global custom toolbar (hidden by the shell)
     # makes FreeCAD create the actions, so shortcuts and ribbon buttons work.
