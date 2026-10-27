@@ -342,7 +342,9 @@ class DFMTests(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        root = Path(self.tmp.name)
+        # resolved, as pick_install resolves FreeCAD's path: a TEMP given in 8.3 form (RUNNER~1 on GitHub's
+        # Windows runners) comes back long, and the paths compared below must be in one form
+        root = Path(self.tmp.name).resolve()
         self.bundled = root / "vendor" / "FreeCAD-DFM-Workbench"
         (self.bundled / "freecad" / "DFM").mkdir(parents=True)
         (self.bundled / "freecad" / "DFM" / "init_gui.py").write_text("")
