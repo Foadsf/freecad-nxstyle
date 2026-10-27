@@ -21,6 +21,7 @@ The Home tab's *Feature* group works the NX way:
 . Start the feature: kbd:[X] for *Extrude*, or *Revolve*, *Hole*, *Extrude (Subtract)*, *Revolve (Subtract)*.
 . With nothing selected, pick a plane or a face; a sketch opens on it.
   With a face or datum plane already selected, it opens there at once; with a sketch selected, the feature starts from that sketch.
+  To use curves of an existing sketch instead, pick them (<<sections>>).
 . Draw the section (xref:sketching.adoc[]).
 . kbd:[Ctrl+Q] (*Finish Sketch*) carries straight on into the feature's dialog.
 . Type the values and press *MB2* (or *OK*).
@@ -85,9 +86,10 @@ These NX Extrude options are not offered, and the command box lists them:
 * draft from the section, asymmetric or with matched ends (FreeCAD has a single taper angle);
 * NX's section Offset (FreeCAD's Offset belongs to Up to face);
 * body type Sheet;
-* changing the Boolean while editing an extrude. Delete it and extrude again.
+* changing the Boolean while editing an extrude. Delete it and extrude again;
+* a section of curves from several sketches, or of edges of a solid.
 
-Revolve, Hole and *Revolve (Subtract)* still open FreeCAD's own dialogs directly. They do not have the command box yet.
+Hole still opens FreeCAD's own dialog directly. It does not have the command box yet.
 
 === Unite and subtract between bodies
 
@@ -100,6 +102,7 @@ Revolve, Hole and *Revolve (Subtract)* still open FreeCAD's own dialogs directly
 | NX | FreeCAD (in the Extrude dialog)
 
 | Value | Dimension
+| Start 0, End d, Reverse Direction | Dimension d, *Reversed* ticked (the book's −ZC 0.5 in)
 | Symmetric Value | Symmetric (the value is the total width, as in NX since NX 1926)
 | Start and End limits on both sides | Two sided (a length each way)
 | Until Next | To first
@@ -109,6 +112,59 @@ Revolve, Hole and *Revolve (Subtract)* still open FreeCAD's own dialogs directly
 
 NOTE: *To first* and *Up to face* into a hole stop 1 mm into the part in FreeCAD 1.1.4 (xref:known-issues.adoc[]).
 xref:tutorials/l.adoc[Tutorial L] shows the workaround.
+
+== Sections [[sections]]
+
+Extrude and Revolve take their section as NX's *Section* collector does: a whole sketch, or some curves of one sketch.
+The *Curve Rule* on the Top Border Bar, next to the Selection Scope, says what one pick adds.
+
+* *Inferred Curves* (the default) takes the whole sketch, as before.
+* *Single Curve* takes the picked curve.
+* *Tangent Curves* and *Connected Curves* take its chain (xref:selection.adoc[]); Connected stops where three curves meet.
+
+The curves can be picked before the command, or after it starts.
+With nothing selected the command asks for a sketch plane, as before; pick a sketch curve instead, and FreeCAD's plane pick closes and the dialog opens with that curve.
+Every further pick adds to the section, and Ctrl+MB1 on a picked curve takes it out.
+A plain click on a picked curve changes nothing: FreeCAD would select the whole sketch there, and only *Inferred Curves* takes the whole sketch.
+The section's curves stay selected, so they show which they are, and the command box counts them (*Select Curve (10)*); its tooltip names them.
+Where a solid's face or edge lies on a curve, hold MB1 for QuickPick and choose the sketch's curve.
+
+The feature's Profile is those curves only, so one sketch can hold several loops that share curves or overlap, as the impeller casing of tutorial AG does.
+Until the curves close, the command box says where the section is open or branches, and OK is unavailable.
+A sketch used in part stays shown after OK, because its other curves are still to be used; a whole sketch is hidden, as before.
+A section of a new body (Boolean *None* when the sketch's Body has a solid) is a binder of the picked curves only.
+
+FreeCAD names a curve after the sketch's shape, not after its geometry number: outside the sketch, the first line drawn need not be *Edge1*.
+
+== Revolve [[revolve]]
+
+Revolve has the same command box as Extrude, over FreeCAD's Revolution panel (Groove for *Subtract*).
+*Revolve (Subtract)* starts with *Subtract* chosen; *Intersect* is shown and refused.
+OK adds one undo step, named *Revolve*, and Cancel or kbd:[Esc] leaves nothing behind.
+
+[cols="1,3",options="header"]
+|===
+| NX | What NX-Style builds
+
+| *Specify Vector* XC, YC, ZC through *Specify Point* (0, 0, 0)
+| The Body's own X, Y or Z axis. −XC, −YC and −ZC tick *Reversed*.
+
+| A vector through another point
+| A datum line through that point, which the Revolve keeps (Cancel removes it).
+
+| *Sketch H axis*, *Sketch V axis*, *Line…*
+| The sketch's axis, or the sketch line picked after *Line…*. *Sketch V axis* is the default, as in FreeCAD.
+
+| *Limits* Start 0, End 180
+| *Angle* 180. With the Start on the other side of the sketch plane (Start −30, End 120): *Two angles*, 120 and 30.
+
+| Start and End on one side of the sketch plane, neither 0
+| Not supported: FreeCAD revolves from the sketch plane. The command box says so and OK is unavailable.
+|===
+
+The box drives FreeCAD's panel: what it sets shows there, and what is typed there shows in the box.
+A new axis rebuilds the preview, because FreeCAD's panel takes an axis only from its list.
+When editing a Revolve, change its axis in FreeCAD's axis list; the Boolean cannot change either.
 
 == Primitives: Block, Cylinder, Cone, Sphere [[primitives]]
 

@@ -8,9 +8,10 @@ That gesture and the scope names are taken from NX user material and course note
 
 == Type Filter and Selection Scope
 
-The Top Border Bar holds two filters.
+The Top Border Bar holds two filters and the Curve Rule.
 
 * The *Type Filter* (No Selection Filter, Curve, Datums, Edge, Face, Feature, Point, Sketch, Solid Body) restricts what you can pick, in the graphics window and in the Part Navigator.
+* The *Curve Rule* (Inferred Curves, Single Curve, Tangent Curves, Connected Curves) says what one picked sketch curve adds to the section of Extrude and Revolve (xref:modeling.adoc#sections[]); it does not restrict what you can pick.
 * The *Selection Scope* says where a pick may come from:
 ** *Entire Assembly*: anywhere (the default);
 ** *Within Work Part and Components*: the work part and the components inside it;

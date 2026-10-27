@@ -242,6 +242,8 @@ class GateManager:
     def __init__(self):
         self.global_kind = None             # Type Filter key, None = no filter
         self.scope = "assembly"             # Selection Scope key
+        self.curve_rule = "inferred"        # Curve Rule key (selection_core.SECTION_RULES) for sections
+        self.rule_listeners = []            # f(rule) when the curve rule changes
         self.tasks = []                     # [(token, Layer)], top last
         self.gate = NxGate()
         self.installed = False
@@ -328,6 +330,17 @@ class GateManager:
         self.deferred = False
         self.install()
         return "after the dialog" if self.deferred else "now"
+
+    def set_curve_rule(self, rule):
+        """The curve rule a section collector applies to a picked curve (it does not gate the selection)."""
+        if rule not in {k for _, k in core.SECTION_RULES} or rule == self.curve_rule:
+            return
+        self.curve_rule = rule
+        for f in list(self.rule_listeners):
+            try:
+                f(rule)
+            except Exception:
+                pass
 
     def push(self, layer):
         token = self._next
@@ -450,6 +463,29 @@ class ScopeFilter(QtWidgets.QComboBox):
     def select(self, key):
         i = self.findData(key)
         if i >= 0:
+            self.setCurrentIndex(i)
+
+
+class CurveRule(QtWidgets.QComboBox):
+    """NX's Curve Rule on the Selection bar: how a section collector (Extrude, Revolve) takes a picked sketch
+    curve. Inferred Curves takes the whole sketch; Single, Tangent and Connected Curves take that curve or its
+    chain."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("NXCurveRule")
+        self.setToolTip("Curve Rule: what one pick adds to a section (Extrude, Revolve). Inferred Curves takes the "
+                        "whole sketch; Single Curve the picked curve")
+        for label, key in core.SECTION_RULES:
+            self.addItem(label, key)
+        self.setMinimumContentsLength(12)
+        self.select(manager().curve_rule)
+        self.currentIndexChanged.connect(lambda i: manager().set_curve_rule(self.itemData(i)))
+        manager().rule_listeners.append(self.select)
+
+    def select(self, key):
+        i = self.findData(key)
+        if i >= 0 and i != self.currentIndex():
             self.setCurrentIndex(i)
 
 
