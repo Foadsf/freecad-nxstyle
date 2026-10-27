@@ -70,6 +70,8 @@
 * xref:tutorials/an.adoc[AN: Arbor Press Plate]
 * xref:tutorials/ao.adoc[AO: Impeller Lower Casing, Extrude and Revolve]
 * xref:tutorials/ap.adoc[AP: Impeller Shaft]
+* xref:tutorials/aq.adoc[AQ: Hexagonal Screw]
+* xref:tutorials/ar.adoc[AR: Hexagonal Nut]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]
