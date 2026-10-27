@@ -26,7 +26,7 @@ Modeling › PMI tab › Exchange:
 |===
 | Button | Does
 | *STEP with Parameters* | The selected Body (or Part solid, or sketch) as STEP AP242. OpenCASCADE writes the B-rep and the product structure, the file any CAD system opens; the history, sketches, constraints and spreadsheet parameters go into the same file. The Information window lists what went in, by part of ISO 10303, the result of the file check, and anything that could not be written.
-| *Import STEP with Parameters* | Rebuilds what such a file carries: a PartDesign Body (or Part CSG objects), its sketches with their constraints, a *Parameters* spreadsheet, and the expressions that tie them. When the file also has the B-rep, the rebuilt solid is compared with it. A file without parametric data comes in as its B-rep.
+| *Import STEP with Parameters* | Rebuilds what such a file carries: a PartDesign Body (into the open part's Body while it is empty, as after kbd:[Ctrl+N]; or Part CSG objects), its sketches with their constraints, a *Parameters* spreadsheet, and the expressions that tie them. When the file also has the B-rep, the rebuilt solid is compared with it. A file without parametric data comes in as its B-rep.
 | *Check STEP* | Any STEP file against ISO 10303-21 and the schemas of Parts 42, 43, 55, 108, 111 and 112 (below).
 |===
 
@@ -58,6 +58,7 @@ The report names it; the B-rep still carries the whole part.
 Sketches come back placed where they were, not attached to faces or planes.
 Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for.
 
+xref:tutorials/al.adoc[Tutorial AL] goes through it on the ribbon.
 The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution, and a Part CSG tree.
 Exported, checked (no errors), imported into a new document: the rebuilt solids equal the originals exactly, and still do after the same parameter change in both.
 

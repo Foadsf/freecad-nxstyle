@@ -57,3 +57,4 @@ include::partial$outcome-legend.adoc[]
 * NX exchanges PMI through STEP AP242 and JT, with graphical PMI and saved views; NX-Style's files carry the semantic PMI only.
 * A count (4X), the envelope Ⓔ and the ISO 2768 note have no AP242 form in OpenCASCADE, so this plate is dimensioned without them.
 * The report of the degrees of freedom a datum system arrests is NX-Style's.
+* The file carries the shape and its PMI; xref:tutorials/al.adoc[tutorial AL] sends the history, the sketch constraints and the parameters too.

@@ -4159,6 +4159,54 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Holder.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 1,
+   "nx": "A plate driven by parameters: Length, Width, Thick, HoleR in a spreadsheet; the sketch's dimensions and the extrusion's length are expressions of them; an edge blend, a hole through all and a pattern of it",
+   "replay": "modelled by script (tutorials J and K build such expressions with the ribbon and the Expressions table)",
+   "outcome": "differs",
+   "detail": "features ['Pad', 'EdgeBlend', 'ExtrudeSubtract', 'PatternFeature']; volume 36587.766 mm³; expressions ['HoleSketch: Spreadsheet.HoleR', 'Pad: Spreadsheet.Thick', 'Sketch: Spreadsheet.Length', 'Sketch: Spreadsheet.Width']"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 2,
+   "nx": "PMI > STEP with Parameters: the part, its history, its sketches with their constraints and its parameters in one STEP AP242 file",
+   "replay": "Plate selected, ribbon 'PMI › Exchange > STEP with Parameters', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "instances by part: ISO 10303-42 442, ISO 10303-55 10, ISO 10303-108 74, ISO 10303-111 3; nothing left out. NX's STEP export writes the B-rep (and PMI); the history, the sketch constraints and the expressions stay in the .prt"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 3,
+   "nx": "Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112",
+   "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "0 error(s), 6 warning(s), 12 note(s); the warnings name the places where ISO 10303-108 contradicts itself. NX has no such check"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 4,
+   "nx": "New part, PMI > Import STEP with Parameters: the part rebuilt from the file, editable",
+   "replay": "Ctrl+N, ribbon 'PMI › Exchange > Import STEP with Parameters', the file typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "into the new part's Body: features ['Pad', 'Fillet', 'Pocket', 'LinearPattern']; a Parameters spreadsheet and the expressions ['Parameters.HoleR', 'Parameters.Length', 'Parameters.Thick', 'Parameters.Width']; against the source part: 0.000000 mm³ differ, and against the B-rep in the file the same (the report's last line). NX's STEP import gives a solid without history"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 5,
+   "nx": "A design change in the received part: HoleR 6 → 4 mm; the three holes follow, as in the source",
+   "replay": "HoleR typed into the Parameters spreadsheet by script (the same change in the source part)",
+   "outcome": "differs",
+   "detail": "volume 36587.766 → 38472.721 mm³ in both parts; 0.000000 mm³ differ"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 6,
+   "nx": "The rebuilt plate after the change",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "22.6% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   }
  ],
  "info": {
