@@ -429,8 +429,15 @@ class DFMTests(unittest.TestCase):
 
     def test_deps_pinned_and_installed_without_their_requirements(self):
         calls = []
+
+        def pip(cmd):           # what the vtk wheel leaves: its DLLs and its Python package
+            calls.append(cmd)
+            for d in ("vtk.libs", "vtkmodules", "OCP"):
+                (self.deps / d).mkdir(parents=True, exist_ok=True)
+            (self.deps / "vtk.py").write_text("")
+            return 0
         saved = launch_nx.subprocess.call
-        launch_nx.subprocess.call = lambda cmd: calls.append(cmd) or 0
+        launch_nx.subprocess.call = pip
         try:
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(launch_nx.main(["--freecad", str(self.install.exe), "--install-dfm-deps"]), 0)
@@ -441,6 +448,8 @@ class DFMTests(unittest.TestCase):
         self.assertIn("--no-deps", cmd)                    # vtk's numpy 2 would shadow FreeCAD's
         self.assertEqual(cmd[cmd.index("--target") + 1], str(self.deps))
         self.assertTrue(all("==" in d for d in launch_nx.DFM_DEPS) and all(d in cmd for d in launch_nx.DFM_DEPS))
+        # FreeCAD's own vtkmodules must stay the one imported (FEM); OCP keeps the DLLs it links to
+        self.assertEqual(sorted(p.name for p in self.deps.iterdir()), ["OCP", "vtk.libs"])
 
     def test_real_submodule_is_a_freecad_workbench(self):
         real = self._saved[0]

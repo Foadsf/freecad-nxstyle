@@ -18,6 +18,7 @@ python launch_nx.py --install-dfm-deps
 
 This runs FreeCAD's own Python (`pip install --no-deps`) and puts cadquery-ocp 7.8.1.1.post1, VTK 9.3.1 and gmsh 4.15.2 in `FreeCAD-NXStyle/pydeps/py311`, beside the NX profiles and outside the FreeCAD installation.
 cadquery-ocp 7.8.1 matches the OpenCASCADE 7.8.1 that FreeCAD 1.1 is built on. `--no-deps` keeps VTK from bringing in numpy 2 and matplotlib, which would shadow FreeCAD's own copies.
+Of VTK only its DLLs are kept, which OCP links to: FreeCAD ships VTK 9.3.1's Python package itself for Pre/Post (FEM), and a second copy on the path made switching to Pre/Post hang.
 The launcher then adds that folder to FreeCAD's module path (`-M`) ahead of the add-on, and never downloads anything by itself.
 
 == The buttons

@@ -425,6 +425,7 @@ DFM_DIR = HERE / "vendor" / "FreeCAD-DFM-Workbench"   # git submodule of github.
 # Draft Analysis and Check Wall Thickness. --no-deps: vtk's own requirements (numpy 2, matplotlib) would
 # shadow FreeCAD's.
 DFM_DEPS = ("cadquery-ocp==7.8.1.1.post1", "vtk==9.3.1", "gmsh==4.15.2")
+DFM_VTK_SHADOWS = ("vtkmodules", "vtk.py")     # the vtk wheel's Python side, removed after installing
 
 
 def freecad_python(install: Install) -> tuple[Path | None, str]:
@@ -486,7 +487,17 @@ def install_dfm_deps(install: Install) -> int:
     cmd = [str(exe), "-m", "pip", "install", "--disable-pip-version-check", "--no-deps", "--upgrade",
            "--target", str(target), *DFM_DEPS]
     print(" ".join(cmd))
-    return subprocess.call(cmd)
+    code = subprocess.call(cmd)
+    if code == 0:
+        # FreeCAD ships VTK 9.3.1's Python package itself, and FEM uses it: a second copy on the path shadows
+        # it and Pre/Post hangs (measured, smoke run 2026-10-27). OCP needs only the wheel's DLLs, vtk.libs.
+        for name in DFM_VTK_SHADOWS:
+            p = target / name
+            if p.is_dir():
+                shutil.rmtree(p)
+            elif p.exists():
+                p.unlink()
+    return code
 
 
 # --------------------------------------------------------------------------
