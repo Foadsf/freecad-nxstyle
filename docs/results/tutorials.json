@@ -3806,7 +3806,7 @@
    "nx": "Move Curve: the 4 curves, Distance 0.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 4.8e-07 mm"
+   "detail": "4 copies made; largest error 4.4e-07 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3822,7 +3822,7 @@
    "nx": "Move Curve: the lower curve, -1.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 7.9e-05 mm"
+   "detail": "4 copies made; largest error 2.0e-05 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3838,7 +3838,7 @@
    "nx": "Move Curve: the outer end line, -0.5 along XC, Copy Original",
    "replay": "1 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "1 copies made; largest error 2.8e-07 mm"
+   "detail": "1 copies made; largest error 4.0e-07 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -4375,6 +4375,102 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Arborpress_plate.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Open Impeller_lower_casing (tutorial AG's part)",
+   "replay": "File > Open (by script)",
+   "outcome": "same",
+   "detail": "the sketch with 19 of the 19 curves of the book's figure; shown True"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Revolve, Selection Filter Single Curve, the 10 curves of the wall",
+   "replay": "ribbon 'Home › Feature > Revolve' (FreeCAD asks for a plane: True), Curve Rule 'Single Curve', MB1 on each curve: 10 by click",
+   "outcome": "same",
+   "detail": "the section holds 10 curves, the wall's True; the first pick closes FreeCAD's plane list and opens the dialog with it"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Axis: Specify Vector XC, Specify Point (0, 0, 0); Start 0, End 180",
+   "replay": "'XC' chosen, X, Y, Z and the angles typed in the box",
+   "outcome": "same",
+   "detail": "axis {'vector': 'XC', 'point': (0.0, 0.0, 0.0)}, limits (0.0, 180.0)"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "OK: the revolved wall",
+   "replay": "OK clicked",
+   "outcome": "same",
+   "detail": "volume 10035710.6 mm^3, expected 10035710.6; 1 solid(s); Profile the 10 curves True; below the sketch plane True; one undo step True (['Revolve'])"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Extrude, Single Curve, the outer curves of the casing (its edge)",
+   "replay": "ribbon 'Home › Feature > Extrude' (plane asked: True), Curve Rule 'Single Curve', MB1 on each curve: 9 by QuickPick, 1 by click",
+   "outcome": "same",
+   "detail": "the section holds 10 curves, the edge's True; where a curve lies on the wall's face, QuickPick lists it (the book's note: press and hold MB1)"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Extrude it 0.5 in along -ZC, OK",
+   "replay": "Boolean 'None' in the box; 'lengthEdit' = 12.7 mm and Reversed clicked (True) in FreeCAD's panel; OK clicked",
+   "outcome": "same",
+   "detail": "volume 381783.1 mm^3, expected 381783.1; z -12.70 to 0.00 mm; its own body (2 bodies): with Unite it would touch the wall only along a line, two solids in one body, so the edge is a body of its own, as the book's Solid Body filter in the next step shows"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Mirror the edge through the centre plane, Copy",
+   "replay": "the edge's body made the work body and its Extrude selected (Part Navigator) + ribbon 'Home › Pattern > Mirror Feature', plane 'Base XZ-plane', MB2 = OK",
+   "outcome": "differs",
+   "detail": "the edge's body holds 2 solids, 763566.3 mm^3 (twice 381783.1), symmetric about XZ (y -419.1 to 419.1 mm). NX's Edit > Transform copies the solid unparametrised; Mirror Feature keeps the copy following the edge"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Revolve, Single Curve, the 4 curves of the flange",
+   "replay": "ribbon 'Home › Feature > Revolve' (plane asked: True), Curve Rule 'Single Curve', MB1 on each curve: 4 by QuickPick",
+   "outcome": "same",
+   "detail": "the section holds 4 curves, the flange's True; two of them lie on the wall's and the edge's lines, and QuickPick tells them apart"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "XC through the origin, Start 0, End 180, as for the casing",
+   "replay": "'XC', X, Y, Z and the angles typed; Boolean Unite by itself",
+   "outcome": "same",
+   "detail": "axis {'vector': 'XC', 'point': (0.0, 0.0, 0.0)}, limits (0.0, 180.0), Boolean unite"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "OK: the flange, united with the wall",
+   "replay": "OK clicked",
+   "outcome": "same",
+   "detail": "volume 10377418.9 mm^3, expected 10377418.9; 1 solid(s); the flange's volume added to the wall's"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "The lower casing: the wall with its flange, the edge on both sides",
+   "replay": "compared with the book's curves revolved and extruded by the Part API",
+   "outcome": "same",
+   "detail": "wall and flange: same solid as the reference: 0 mm³ differ, box within 0 mm, 14 faces (14 in the reference); edges: same solid as the reference: 0 mm³ differ, box within 0 mm, 24 faces (24 in the reference)"
+  },
+  {
+   "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Save the model",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Impeller_lower_casing.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
