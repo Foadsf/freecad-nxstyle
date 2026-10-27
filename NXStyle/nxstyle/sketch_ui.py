@@ -309,6 +309,17 @@ class SketchMenu:
             out.append({"insert": "NXStyle_Hide", "menuItem": "Std_Delete"})
         if core.visibility_change("show", ids, flags)[0]:
             out.append({"insert": "NXStyle_Show", "menuItem": "Std_Delete"})
+        # FreeCAD enables command actions on a timer after a selection change (Gui.updateCommands() only schedules
+        # it): MB3 right after picking would show these entries greyed, and a click on them does nothing. Enable
+        # them for the selection the menu is built for.
+        for entry in out:
+            try:
+                cmd = Gui.Command.get(entry["insert"])
+                active = cmd.isActive()
+                for a in cmd.getAction():
+                    a.setEnabled(active)
+            except Exception:
+                pass
         return out
 
 

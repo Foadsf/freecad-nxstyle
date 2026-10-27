@@ -1154,9 +1154,17 @@ class Smoke:
         key(Qt.Key_B, Qt.ControlModifier)
         by_key = [bool(sk.getVirtualSpace(i)) for i in dims]
         after_key = sk.ViewObject.Visibility
-        # MB3 on empty space with the other dimension picked: FreeCAD's sketch menu, with NX-Style's Hide
+        # MB3 on empty space with the other dimension picked: FreeCAD's sketch menu, with NX-Style's Hide. MB3 comes
+        # right after the pick, before FreeCAD's command-state timer runs: Hide is still greyed from the empty
+        # selection (the AG replay's "0 of 6 hidden"), so the menu must enable it itself
+        Gui.Selection.clearSelection()
+        hide_action = Gui.Command.get("NXStyle_Hide").getAction()
+        for _ in range(30):                    # FreeCAD's timer greys Hide for the empty selection
+            if not any(a.isEnabled() for a in hide_action):
+                break
+            qtest().qWait(100)
         pick(dims[1:2])
-        seen = {}
+        seen = {"stale": [a.isEnabled() for a in hide_action]}
 
         def read_menu():
             m = QtWidgets.QApplication.activePopupWidget()
@@ -1165,6 +1173,7 @@ class Smoke:
                 hide = next((a for a in m.actions() if a.text().replace("&", "") == "Hide"), None)
                 seen["hide"] = hide is not None
                 if hide is not None:
+                    seen["enabled"] = hide.isEnabled()
                     m.close()
                     hide.trigger()
                     seen["Hide changed"] = sketch_ui.COMMANDS["NXStyle_Hide"].last
@@ -1173,7 +1182,7 @@ class Smoke:
             elif seen.setdefault("tries", 0) < 20:
                 seen["tries"] += 1
                 QtCore.QTimer.singleShot(100, read_menu)
-        QtCore.QTimer.singleShot(150, read_menu)
+        QtCore.QTimer.singleShot(0, read_menu)
         corner = QtCore.QPoint(25, w.height() - 25)
         self.send(f, QtCore.QEvent.MouseMove, corner, Qt.NoButton, Qt.NoButton)
         self.send(f, QtCore.QEvent.MouseButtonPress, corner, Qt.RightButton, Qt.RightButton)
@@ -1187,9 +1196,14 @@ class Smoke:
         vis = (before, after_key, sk.ViewObject.Visibility)
         self.check("Hide on sketch dimensions: Ctrl+B and MB3 > Hide put them in FreeCAD's virtual space; the sketch "
                    "object's own visibility is untouched", by_key == [True, False] and by_menu == [True, True]
-                   and len(set(vis)) == 1 and seen.get("Hide changed", {}).get("others") == [],
+                   and len(set(vis)) == 1 and (seen.get("Hide changed") or {}).get("others") == [],
                    f"after Ctrl+B {by_key}; MB3 menu {seen.get('items')}; after MB3 > Hide {by_menu}; sketch "
                    f"visibility before / after Ctrl+B / after MB3 {vis}; last Hide {seen.get('Hide changed')}")
+        self.check("MB3 right after picking a dimension: the menu's Hide is enabled and works, though FreeCAD's "
+                   "command-state timer has not run since the pick", seen.get("stale") == [False]
+                   and seen.get("enabled") is True and by_menu[1],
+                   f"Hide action enabled just after the pick {seen.get('stale')} (must be [False], else this check "
+                   f"does not reach the race); in the menu {seen.get('enabled')}; dimension hidden {by_menu[1]}")
         doc.undo()
         undone = [bool(sk.getVirtualSpace(i)) for i in dims]
         key(Qt.Key_U, Qt.ControlModifier | Qt.ShiftModifier)
