@@ -84,6 +84,49 @@ def visibility_change(kind, picked, hidden):
     return [i for i in ids if hidden[i] != to_hide], to_hide
 
 
+GEO_UNDEF = -2000          # FreeCAD's GeoId for "no curve" (a constraint's unused Third)
+TRIM_MOVES = ("Tangent", "Perpendicular")
+
+
+def trim_losses(before, after, trimmed, pieces, renumber):
+    """Tangent and Perpendicular constraints FreeCAD's trim dropped instead of moving them to a piece.
+
+    FreeCAD 1.1 moves such a constraint on the trimmed curve to the first piece it finds an intersection with
+    (SketchObject::deriveConstraintsForPieces). A line held tangent where it ends, as Profile makes it (point on
+    the circle plus Tangent) or as Tangent makes it (end on the curve, tangent there), touches the circle at its
+    very end; OCC's extrema then find the contact or not by the sign of a rounding error, and the constraint
+    is dropped. The caller puts each one back on the piece the other curve still touches.
+
+    before, after: (Type, First, FirstPos, Second, SecondPos, Third) of every constraint; before in the
+    numbering before the trim, after in the numbering after it. trimmed: the trimmed curve, numbered as before;
+    pieces: what is left of it, numbered as after; renumber: the other curves' numbers, before -> after (a
+    curve the trim deleted maps to None). Returns [(Type, other curve, its point or 0 for the edge)] as after."""
+    left = [c for c in after if c[0] in TRIM_MOVES]
+    lost = []
+    for kind, a, apos, b, bpos, third in before:
+        if kind not in TRIM_MOVES or third != GEO_UNDEF or (a == trimmed) == (b == trimmed):
+            continue
+        other, pos, tpos = (b, bpos, apos) if a == trimmed else (a, apos, bpos)
+        if tpos:                   # an end of the trimmed curve: FreeCAD moves those with the end
+            continue
+        other = renumber.get(other, other) if other >= 0 else other
+        if other is None:
+            continue
+        match = next((c for c in left if c[0] == kind and {c[1], c[3]} & {other}
+                      and {c[1], c[3]} & set(pieces)), None)
+        if match is not None:
+            left.remove(match)     # a pair can hold twice (a line across an arc): count them
+        else:
+            lost.append((kind, other, pos))
+    return lost
+
+
+def moved_constraint(kind, other, pos, piece):
+    """Sketcher.Constraint's arguments for a lost constraint put back on piece: the point first, as FreeCAD
+    writes an end held on a curve."""
+    return (kind, other, pos, piece) if pos else (kind, other, piece)
+
+
 class NotCollinear(ValueError):
     """The picks cannot be made collinear; the message says why, for the cue line."""
 

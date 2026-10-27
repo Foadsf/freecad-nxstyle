@@ -4086,7 +4086,7 @@
    "nx": "Quick Trim: the Ø3.50 circle between the slot's sides, MB2",
    "replay": "T key, MB1 on the circle inside the slot, MB2",
    "outcome": "same",
-   "detail": "1 arc R1.75, full circle left False; its ends held to the slot's sides 2 of 2; DoF 0 ('Fully constrained'); geometry 10 -> 10"
+   "detail": "1 arc R1.75, full circle left False; its ends held to the slot's sides 2 of 2; DoF 0 ('Fully constrained'); geometry 10 -> 10; 1 tangency FreeCAD's trim dropped put back by NX-Style"
   },
   {
    "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",

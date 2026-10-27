@@ -118,5 +118,68 @@ class ConstraintVisibility(unittest.TestCase):
             core.visibility_change("toggle", [0], [False])
 
 
+def constraints(rows):
+    """'Type First/FirstPos Second/SecondPos' rows, as tutorial AK records them -> constraint tuples."""
+    out = []
+    for row in rows:
+        kind, a, b = row.split()
+        (f, fp), (s, sp) = (map(int, x.split("/")) for x in (a, b))
+        out.append((kind, f, fp, s, sp, core.GEO_UNDEF))
+    return out
+
+
+# tutorial AK, run C:\dev\nxruns\ak4 (FreeCAD 1.1.4): the constraints on the Ø3.50 circle (curve 3) before and
+# after Quick Trim between the slot's sides (curves 8, 9). The top side (5) lost its Tangent, the bottom (7) not
+AK4_BEFORE = ["Coincident 3/3 0/3", "Diameter 3/0 -2000/0", "PointOnObject 5/1 3/0", "Tangent 5/0 3/0",
+              "PointOnObject 7/2 3/0", "Tangent 7/0 3/0", "PointOnObject 8/1 3/0", "PointOnObject 9/1 3/0"]
+AK4_AFTER = ["Coincident 3/3 0/3", "Diameter 3/0 -2000/0", "PointOnObject 5/1 3/0", "PointOnObject 7/2 3/0",
+             "Tangent 7/0 3/0", "Coincident 8/1 3/1", "Coincident 9/1 3/2"]
+
+
+class TrimLosses(unittest.TestCase):
+    def test_the_tangency_ak4_lost(self):
+        lost = core.trim_losses(constraints(AK4_BEFORE), constraints(AK4_AFTER), 3, [3], {})
+        self.assertEqual(lost, [("Tangent", 5, 0)])
+        self.assertEqual(core.moved_constraint(*lost[0], 3), ("Tangent", 5, 3))
+
+    def test_nothing_lost_when_the_trim_kept_both(self):
+        # run ak8: the same trim kept both sides' Tangent
+        after = constraints(AK4_AFTER) + constraints(["Tangent 5/0 3/0"])
+        self.assertEqual(core.trim_losses(constraints(AK4_BEFORE), after, 3, [3], {}), [])
+
+    def test_an_end_held_tangent_comes_back_on_its_point(self):
+        before = constraints(["Tangent 1/1 0/0", "Tangent 3/2 0/0"])
+        after = constraints(["Tangent 3/2 0/0"])
+        lost = core.trim_losses(before, after, 0, [0], {})
+        self.assertEqual(lost, [("Tangent", 1, 1)])
+        self.assertEqual(core.moved_constraint(*lost[0], 0), ("Tangent", 1, 1, 0))
+
+    def test_renumbered_curves_and_two_pieces(self):
+        # a line cut into two: the other curves after it shift down by one deleted curve, the new piece is last
+        before = constraints(["Perpendicular 6/0 2/0", "Tangent 2/0 7/0"])
+        after = constraints(["Perpendicular 5/0 8/0"])
+        lost = core.trim_losses(before, after, 2, [2, 8], {6: 5, 7: 6})
+        self.assertEqual(lost, [("Tangent", 6, 0)])
+
+    def test_a_cutting_curve_held_at_the_cut_is_kept_in_another_form(self):
+        # FreeCAD turns an edge tangency with the cutting curve into one at the new end: not a loss
+        before = constraints(["Tangent 4/0 1/0"])
+        after = constraints(["Tangent 4/2 1/0"])
+        self.assertEqual(core.trim_losses(before, after, 1, [1], {}), [])
+
+    def test_left_alone(self):
+        before = [("Tangent", 1, 0, 0, 0, 5),                     # tangent via a point: FreeCAD's own rule
+                  ("Tangent", 1, 2, 0, 1, core.GEO_UNDEF),        # at an end of the trimmed curve: moves with it
+                  ("Tangent", 1, 0, 2, 0, core.GEO_UNDEF),        # not on the trimmed curve
+                  ("PointOnObject", 1, 1, 0, 0, core.GEO_UNDEF),  # not a tangency
+                  ("Tangent", 4, 0, 0, 0, core.GEO_UNDEF)]        # its other curve was deleted
+        self.assertEqual(core.trim_losses(before, [], 0, [0], {4: None}), [])
+
+    def test_one_kept_constraint_answers_for_one_lost(self):
+        before = constraints(["Tangent 1/0 0/0", "Tangent 1/0 0/0"])
+        after = constraints(["Tangent 1/0 0/0"])
+        self.assertEqual(core.trim_losses(before, after, 0, [0], {}), [("Tangent", 1, 0)])
+
+
 if __name__ == "__main__":
     unittest.main()

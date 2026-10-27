@@ -44,8 +44,8 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `quickpick.py` | QuickPick: the list of everything under the cursor, with the refused rows greyed.
 | `collector_ui.py` | The selection collector widget, the curve rules on FreeCAD edges, and Edge Blend.
 | `navigator_status.py` | The Part Navigator's status strip and the marks on suppressed and failed features.
-| `sketch_core.py` | NX's Geometric Constraints gallery in FreeCAD terms, sketch element names, and which line Collinear moves (no FreeCAD).
-| `sketch_ui.py` | Collinear (point-on-curve constraints, none redundant) and the Geometric Constraints menu (C).
+| `sketch_core.py` | NX's Geometric Constraints gallery in FreeCAD terms, sketch element names, which line Collinear moves, and which tangencies FreeCAD's trim dropped (no FreeCAD).
+| `sketch_ui.py` | Collinear (point-on-curve constraints, none redundant), the Geometric Constraints menu (C), and Quick Trim's guard that puts back the tangencies FreeCAD's trim drops.
 | `finder.py` | The Command Finder.
 | `showhide.py` | The Show and Hide panel.
 | `gdt.py`, `gdt_ui.py` | Feature Control Frame and Datum Feature Symbol for TechDraw.
