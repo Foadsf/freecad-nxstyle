@@ -9,7 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "NXStyle"))
 
-from nxstyle import express, iso10303, p21, parametric, procedural_sketch  # noqa: E402
+from nxstyle import express, express_eval, iso10303, p21, parametric, procedural_sketch  # noqa: E402
 
 
 def rect_face(x0, y0, x1, y1, z=0.0):
@@ -206,10 +206,14 @@ class Parametric(unittest.TestCase):
         errors = [i for i in issues if i.level == "error"]
         self.assertEqual(errors, [])
         warnings = [i for i in issues if i.level == "warning"]
-        # only the conflict between 108 6.3.4 WR4 and 8.4.9, once per sketch: parameter values are typed
-        # (MATHS_REAL, ISO 10303-50) and parameters are real variables usable in ISO 13584-20 expressions
-        self.assertTrue(all("WR4 not met" in w.message for w in warnings), warnings)
+        # every warning is a documented contradiction of the standards: 6.3.4 WR4's prose against 8.4.9 (once
+        # per sketch), Cor.2's neutral_sketch_representation WR1 against its clause, and
+        # variational_representation WR2 against the dual model (express_eval.KNOWN)
+        known = ("WR4 as stated in prose", "contradicts the clause", "cannot be met here")
+        self.assertTrue(all(any(k in w.message for k in known) for w in warnings), warnings)
         self.assertEqual(sum("WR4" in w.message for w in warnings), 2)
+        # every rule of the schemas was decided: the file has no B-rep from an AP the bundled schemas lack
+        self.assertTrue(any(i.message.endswith(", 0 not evaluated") for i in issues if i.level == "info"))
         inv = iso10303.inventory(f)
         for std in ("ISO 10303-42", "ISO 10303-43", "ISO 10303-55", "ISO 10303-108", "ISO 10303-111",
                     "ISO 13584-20"):
@@ -251,10 +255,10 @@ class Parametric(unittest.TestCase):
         seq = f.by_name("PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE")[0]
         seq.records = [r for r in seq.records if r.name != "SOLID_MODEL"]
         bp = f.by_name("BOUND_VARIATIONAL_PARAMETER")[0]
-        bp.record("MATHS_VARIABLE").params[1] = "renamed"
+        bp.records[0].params[2] = "renamed"                  # maths_variable.name (a simple instance)
         iar = f.by_name("INSTANCE_ATTRIBUTE_REFERENCE")[0]
         iar.records[0].params[0] = "GEOMETRY_SCHEMA.CIRCLE.WIDTH"
-        msgs = " ".join(i.message for i in iso10303.rules(f))
+        msgs = " ".join(i.message for i in iso10303.check(f) if i.level == "error")
         self.assertIn("procedural_solid_representation_sequence WR1", msgs)
         self.assertIn("variational_parameter WR2", msgs)
         self.assertIn("instance_attribute_reference", msgs)
@@ -309,7 +313,10 @@ def part112_file():
     copy = f.add("CIRCLE", "", f.add("AXIS2_PLACEMENT_2D", "", P(110, 0), f.add("DIRECTION", "", [1.0, 0.0])), 4.0)
     cmds.append(f.add("CREATE_PATTERN_CIRCULAR", "pc", [copy], f.add("GEOMETRIC_CURVE_SET", "", [copy]), 3,
                       math.pi / 2, P(100, 0), True, P(110, 0)))
-    near = f.add("NEAR_POINT_RELATIONSHIP", "", p21.UNSET, circle, P(100, 4))
+    near_point = P(100, 4)
+    # a near point is a hint, not geometry; a representation in the sketch's context founds it (43 WR1)
+    f.add("REPRESENTATION", "near points", [near_point], ctx)
+    near = f.add("NEAR_POINT_RELATIONSHIP", "", p21.UNSET, circle, near_point)
     cmds.append(f.add("CREATE_LINE_SEGMENT_POINT_TANGENT", "tan", P(100, 20), circle, near))
     seq = f.add("PROCEDURAL_SHAPE_REPRESENTATION_SEQUENCE", "sketch", cmds, [], "Part 112 test")
     f.add("PROCEDURAL_SHAPE_REPRESENTATION", "Part112 commands", [seq], ctx)
@@ -427,6 +434,115 @@ class ApplicationProtocols(unittest.TestCase):
         SUBTYPE_CONSTRAINT sc FOR product; END_SUBTYPE_CONSTRAINT; END_SCHEMA;"""
         d = express.Dictionary.from_text(text)
         self.assertEqual([a["name"] for a in d.attributes("product")], ["id", "name"])
+
+
+TINY = """SCHEMA tiny;
+TYPE pos = REAL; WHERE WR1: SELF > 0.0; END_TYPE;
+TYPE shape_select = SELECT (circle, square); END_TYPE;
+TYPE kind = ENUMERATION OF (round, flat); END_TYPE;
+ENTITY item ABSTRACT SUPERTYPE OF (ONEOF (circle, square)); name : STRING; END_ENTITY;
+ENTITY circle SUBTYPE OF (item); r : pos;
+  DERIVE d : REAL := 2.0 * r;
+  INVERSE owners : SET [0:?] OF holder FOR members;
+  WHERE WR1: d < 100.0; END_ENTITY;
+ENTITY square SUBTYPE OF (item); side : pos; UNIQUE UR1: SELF\\item.name; END_ENTITY;
+ENTITY holder; members : SET [1:?] OF shape_select; n : INTEGER; sizes : LIST [1:n] OF pos; k : kind;
+  WHERE WR1: SIZEOF(QUERY(m <* members | 'TINY.CIRCLE' IN TYPEOF(m))) >= 1;
+        WR2: 'TINY.SHAPE_SELECT' IN TYPEOF(members[1]);
+        WR3: count_round(members) = SIZEOF(QUERY(m <* members | 'TINY.CIRCLE' IN TYPEOF(m)));
+        WR4: (k = round) OR (k = flat);
+        WR5: NOT EXISTS(unknown_function(SELF)) OR TRUE; END_ENTITY;
+FUNCTION count_round (s : SET OF shape_select) : INTEGER;
+  LOCAL c : INTEGER := 0; seen : SET OF shape_select := []; END_LOCAL;
+  REPEAT i := 1 TO HIINDEX(s);
+    IF 'TINY.CIRCLE' IN TYPEOF(s[i]) THEN c := c + 1; seen := seen + s[i] + s[i]; END_IF;
+  END_REPEAT;
+  IF SIZEOF(seen) <> c THEN RETURN (-1); END_IF;
+  RETURN (c);
+END_FUNCTION;
+RULE one_holder FOR (holder); WHERE WR1: SIZEOF(holder) <= 1; END_RULE;
+END_SCHEMA;"""
+
+
+class ExpressRules(unittest.TestCase):
+    """express_eval: the interpreter, and each kind of rule with a violation and a control."""
+    HEAD = "ISO-10303-21;HEADER;FILE_DESCRIPTION((''),'2;1');FILE_NAME('','2026-01-01T00:00',(''),(''),'','','');" \
+           "FILE_SCHEMA(('TINY'));ENDSEC;DATA;"
+
+    def d(self):
+        return express.Dictionary.from_text(TINY)
+
+    def ev(self, text, rows=()):
+        f = p21.loads(self.HEAD + "".join(rows) + "ENDSEC;END-ISO-10303-21;")
+        e = express_eval.Evaluator(f, self.d())
+        return e.eval(express_eval.parse_expr(text),
+                      express_eval._Scope())
+
+    def test_expressions(self):
+        U = express_eval.UNKNOWN
+        cases = {"1 + 2 * 3": 7, "7 DIV 2": 3, "7 MOD 3": 1, "2 ** 3": 8, "10 / 4": 2.5, "-ABS(-2.5)": -2.5,
+                 "? + 1": None, "? = 1": U, "? AND FALSE": False, "? OR TRUE": True, "NOT UNKNOWN": U,
+                 "TRUE XOR FALSE": True, "SIZEOF([1, 2, 2] + [3])": 4, "SIZEOF([1, 2] * [2, 3])": 1,
+                 "2 IN [1, 2]": True, "[1, 2] <= [1, 2, 3]": True, "SIZEOF(QUERY(x <* [1, 5, 9] | x > 2))": 2,
+                 "{1 <= 2 < 3}": True, "{1 <= 3 < 3}": False, "HIINDEX([4, 5, 6])": 3, "NVL(?, 4)": 4,
+                 "EXISTS(?)": False, "ODD(3)": True, "SQRT(16.0)": 4.0, "[7, 8, 9][2]": 8, "[7][5]": None}
+        for text, want in cases.items():
+            self.assertEqual(self.ev(text), want, text)
+        self.assertEqual(self.ev("'AB' + 'C'"), "ABC")
+        self.assertEqual(self.ev("'ABC'[2]"), "B")
+        self.assertIs(self.ev("'A12' LIKE '@##'"), True)
+        self.assertIs(self.ev("VALUE('2.5') = 2.5"), True)
+        self.assertEqual(sorted(self.ev("TYPEOF(3)")), ["INTEGER", "NUMBER", "REAL"])
+
+    def file(self, rows):
+        return p21.loads(self.HEAD + "".join(rows) + "ENDSEC;END-ISO-10303-21;")
+
+    def test_rules_hold(self):
+        rows = ["#1=CIRCLE('c',5.);", "#2=SQUARE('s',2.);", "#3=HOLDER((#1,#2),2,(1.,2.),.ROUND.);"]
+        r = express_eval.rules(self.file(rows), self.d())
+        self.assertEqual([i for i in r.issues if i.level == "error"], [])
+        self.assertEqual(r.violated, 0)
+        # the derived attribute, the inverse, the SELECT in TYPEOF, the function (a SET drops the duplicate)
+        ev = express_eval.Evaluator(self.file(rows), self.d())
+        c, h = ev.inst(1), ev.inst(3)
+        self.assertEqual(ev.attribute(c, "d"), 10.0)
+        self.assertEqual([x.pid for x in ev.attribute(c, "owners")], [3])
+        self.assertIn("TINY.SHAPE_SELECT", ev.typeof(c))
+        self.assertEqual(ev.eval(express_eval.parse_expr("COUNT_ROUND(MEMBERS)"), express_eval._Scope(self_=h,
+                                                                                                         entity="holder")), 1)
+        # the function the schema does not declare: reported, not guessed
+        self.assertIn("holder.wr5", r.unevaluated)
+
+    def test_rules_violated(self):
+        rows = ["#1=CIRCLE('c',60.);", "#2=CIRCLE('n',-1.);", "#3=SQUARE('s',2.);", "#4=SQUARE('s',3.);",
+                "#5=HOLDER((#3),1,(1.,2.),.ROUND.);", "#6=HOLDER((#1),1,(1.),.FLAT.);"]
+        msgs = [f"#{i.id} {i.message}" for i in express_eval.rules(self.file(rows), self.d()).issues
+                if i.level == "error"]
+        text = "\n".join(msgs)
+        self.assertIn("#1 circle WR1 is violated", text)                        # derived d = 120
+        self.assertIn("#2 circle.r: the value -1. breaks pos WR1", text)        # a defined type's rule
+        self.assertIn("#4 square UR1", text)                                    # UNIQUE over the population
+        self.assertIn("#5 holder WR1 is violated", text)                        # no circle among the members
+        self.assertIn("#5 holder.sizes has 2 element(s); its upper bound n is 1", text)
+        self.assertIn("global rule one_holder WR1", text)
+        self.assertNotIn("#6 holder", text)
+
+    def test_unknown_entities_leave_rules_undecided(self):
+        # an instance of an entity the schemas do not define may use #1: USEDIN-based rules are not decided
+        d = express.Dictionary.from_text(TINY.replace("WR1: d < 100.0;", "WR1: SIZEOF(USEDIN(SELF, '')) > 0;"))
+        f = self.file(["#1=CIRCLE('c',5.);", "#2=SOMETHING_ELSE(#1);"])
+        r = express_eval.rules(f, d)
+        self.assertEqual(r.violated, 0)
+        self.assertIn("circle.wr1", r.unevaluated)
+
+    def test_complex_constructor_and_group(self):
+        ev = express_eval.Evaluator(self.file([]), self.d())
+        s = express_eval._Scope()
+        v = ev.eval(express_eval.parse_expr("CIRCLE(4.0) || ITEM('x')"), s)
+        self.assertEqual(v.names, frozenset({"circle", "item"}))
+        s.vars["V"] = v
+        self.assertEqual(ev.eval(express_eval.parse_expr("V\\ITEM.NAME"), s), "x")
+        self.assertEqual(ev.eval(express_eval.parse_expr("V.D"), s), 8.0)
 
 
 if __name__ == "__main__":

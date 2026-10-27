@@ -14,10 +14,13 @@ name in its part (applied in the order given), and ISO 10303-108 Cor.1's renamin
 variational_parameter is applied to the whole of Part 108 first. Short names come from each part's
 Annex A table.
 
-The schemas Parts 42 to 112 refer to in ISO 10303-41, ISO 10303-50 and ISO 13584-20 (units, measures,
-maths spaces and expressions) are not among the parts above; resources/iso10303/supplement.exp declares
-the part of them these schemas use, and is always added. --exp adds any other EXPRESS (for example the
-long form of an application protocol, from the ISO SC4 site).
+ISO 10303-41, ISO 10303-50 and ISO 13584-20 (units, measures, maths spaces and expressions) are read the
+same way (--part 41=..., --part 50=..., --part 13584-20=...). resources/iso10303/supplement.exp declares
+the one type they leave out, and is always added. --exp adds any other EXPRESS (for example the long form
+of an application protocol, from the ISO SC4 site).
+
+Everything an EXPRESS interpreter needs is kept: the WHERE and UNIQUE rules, DERIVE expressions, INVERSE
+declarations, FUNCTIONs, RULEs and CONSTANTs (express_eval evaluates them).
 """
 
 import argparse
@@ -33,11 +36,19 @@ from nxstyle import express  # noqa: E402
 
 RES = os.path.join(HERE, "..", "NXStyle", "nxstyle", "resources", "iso10303")
 NOISE = re.compile(
-    r"©|°ISO|\bc\s+ISO|ISO \d{4,5}-\d+(:\d{4})?(/Cor\.\d:\d{4})?\(E\)|All rights reserved|Copyright International|"
+    r"©|°ISO|\bc\s+ISO|ISO \d{4,5}-\d+(:\s?\d{4})?(/Cor\.\d:\d{4})?\(E\)|All rights reserved|Copyright International|"
     r"^Standardization\b|Organization for$|Provided by IHS|Reproduced by IHS|No reproduction or networking|Not for Resale|Licensee=|"
-    r"^\s*(\d+|[ivx]+|c|⃝ISO|ISO)\s*$")
+    r"^\s*(\d+|[ivx]+|c|⃝ISO|ISO)\s*$|^\s*(\d+\s+c|c\s+\d+)\s*$")   # page numbers with a lost ©
 WATERMARK = re.compile(r"(?<!\S)[`,\-]*`[`,\-]*(?!\S)")   # IHS watermark runs; EXPRESS never uses "`"
 CAPTION = re.compile(r"^(Figure|Table|NOTE|EXAMPLE)\b")      # figures printed inside a specification
+# Errors in the printed EXPRESS, corrected as the AP242 long form (ISO/TS 10303-442) prints the same rule:
+# (part, printed, corrected, why). Each is reported when it is applied, and fails loudly if not found.
+ERRATA = [
+    ("108", "NOT('GEOMETRY_SCHEMA.GEOMETRIC_REPRESENTATION_ITEM' IN TYPEOF(q)\nAND",
+     "NOT(('GEOMETRY_SCHEMA.GEOMETRIC_REPRESENTATION_ITEM' IN TYPEOF(q))\nAND",
+     "neutral_sketch_representation WR1: AND binds tighter than IN (ISO 10303-11 12.1), so the rule as "
+     "printed applies IN to a LOGICAL"),
+]
 RENAMES_108 = [("unbound_model_parameter_semantics", "unbound_variational_parameter_semantics"),
                ("unbound_model_parameter", "unbound_variational_parameter"),
                ("bound_model_parameter", "bound_variational_parameter"),
@@ -62,7 +73,7 @@ def express_blocks(text):
             continue
         if s == "(*" and inside:
             inside = False
-            out.append("\n".join(_drop_figure_labels(cur)))
+            out.append("\n".join(_join_split_strings(_drop_figure_labels(cur))))
             continue
         if inside:
             s = WATERMARK.sub("", s).replace("’", "'").replace("‘", "'")
@@ -73,6 +84,18 @@ def express_blocks(text):
                 mark = len(cur)
             elif s and not CAPTION.match(s) and all(ord(c) < 127 for c in s):
                 cur.append(s)
+    return out
+
+
+def _join_split_strings(lines):
+    """A string literal broken over two lines by the page layout ('..._DEFINITI' / 'ON'): EXPRESS strings
+    never hold a line break, so a line with an odd number of quotes continues on the next."""
+    out = []
+    for s in lines:
+        if out and "--" not in out[-1] and out[-1].count("'") % 2:
+            out[-1] += s
+        else:
+            out.append(s)
     return out
 
 
@@ -167,6 +190,12 @@ def main(argv=None):
         num, path = spec.split("=", 1)
         cor = "\n".join(express_blocks(text_of(path)))
         texts[num] = apply_corrigendum(texts[num], cor)
+    for num, printed, corrected, why in ERRATA:
+        if num in texts:
+            if printed not in texts[num]:
+                raise SystemExit(f"erratum for ISO 10303-{num} not found: {why}")
+            texts[num] = texts[num].replace(printed, corrected, 1)
+            print(f"  erratum applied to ISO 10303-{num}: {why}", file=sys.stderr)
     if "108" in texts:                               # Cor.1: non_negative_length_measure moved to Part 41
         texts["108"] = re.sub(r"^TYPE non_negative_length_measure\b.*?END_TYPE;", "", texts["108"],
                               flags=re.M | re.S)

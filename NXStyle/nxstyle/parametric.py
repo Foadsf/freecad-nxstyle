@@ -184,7 +184,7 @@ class _Writer:
         self.ctx3, self.ctx2 = ctx3, ctx2
         self.cache = {}
         self.notes = []
-        self.reals = None
+        self.reals = self._generics = None
 
     def add(self, name, *params):
         return self.f.add(name, *params)
@@ -257,6 +257,13 @@ class _Writer:
         if self.reals is None:
             self.reals = self.add("ELEMENTARY_SPACE", E("ES_REALS"))
         return self.reals
+
+    def generics(self):
+        """The values space of a bound parameter: its current value is derived as ? (108 Cor.1), and
+        ISO 10303-50 MEMBER_OF makes ? a member of the generics space only (variational_parameter WR1)."""
+        if self._generics is None:
+            self._generics = self.add("ELEMENTARY_SPACE", E("ES_GENERICS"))
+        return self._generics
 
     # topology snapshots (picked edges and faces, profile faces), 3D
     def curve3(self, c):
@@ -370,15 +377,17 @@ class _Params:
         w = self.w
         if not expr_vars(expr):
             return []
-        bp = w.entity(["bound_variational_parameter", "maths_real_variable"], {
-            "representation_item.name": name, "maths_variable.values_space": w.space(), "maths_variable.name": name})
+        # A simple instance, not a real variable: maths_real_variable WR1 (ISO 10303-50) wants a space of
+        # reals, and the generics space it must have is not one. It is never an operand, only assigned to.
+        bp = w.entity(["bound_variational_parameter"], {
+            "representation_item.name": name, "maths_variable.values_space": w.generics(),
+            "maths_variable.name": name})
         iar = w.add("INSTANCE_ATTRIBUTE_REFERENCE", attribute, owner)
         w.add("BOUND_PARAMETER_ENVIRONMENT", bp, iar)
-        if expr[0] == "var":
-            con = w.add("EQUAL_PARAMETER_CONSTRAINT", name, U, [bp], [self.unbound_param(expr[1])])
-        else:
-            refs = [self.unbound_param(v) for v in sorted(expr_vars(expr))]
-            con = w.add("FREE_FORM_ASSIGNMENT", name, U, [bp], refs, self.expression(expr))
+        # a FREE_FORM_ASSIGNMENT even for a plain reference: invalidate_vrep_item (108, 6.3.3 WR2) wants
+        # every unbound parameter used by a FREE_FORM_CONSTRAINT, which EQUAL_PARAMETER_CONSTRAINT is not
+        refs = [self.unbound_param(v) for v in sorted(expr_vars(expr))]
+        con = w.add("FREE_FORM_ASSIGNMENT", name, U, [bp], refs, self.expression(expr))
         return [bp, con]
 
     def items(self):
@@ -496,10 +505,18 @@ def _write_sketch(w, sk, params):
     cur = w.add("NEUTRAL_SKETCH_REPRESENTATION", sk["name"], items, ctx, E("CURVES"))
     # The wrapper is not itself a NEUTRAL_SKETCH_REPRESENTATION: that entity's items may only be points
     # and curves (8.4.9), so it could not hold the constraints; 6.3.4 WR4 cannot be met at the same time.
-    var = w.cx(("REPRESENTATION", [sk["name"], items + var_items, ctx]),
-               ("SHAPE_REPRESENTATION", []), ("VARIATIONAL_REPRESENTATION", []))
-    w.add("VARIATIONAL_CURRENT_REPRESENTATION_RELATIONSHIP", sk["name"], U, var, cur, cur)
+    # A sketch without constraints or parameters has no wrapper: variational_representation WR1 (6.3.3)
+    # wants at least one variational item.
+    var = None
+    if var_items:
+        var = w.cx(("REPRESENTATION", [sk["name"], items + var_items, ctx]),
+                   ("SHAPE_REPRESENTATION", []), ("VARIATIONAL_REPRESENTATION", []))
+        w.add("VARIATIONAL_CURRENT_REPRESENTATION_RELATIONSHIP", sk["name"], U, var, cur, cur)
+    # The map's origin must lie in the sketch's context (43, representation_map WR1). The sketch cannot
+    # hold a placement (8.4.9 admits points and curves) nor can its wrapper (6.3.4 WR1 makes the wrapper's
+    # geometry equal the sketch's), so a plain REPRESENTATION in the same context holds it.
     origin2 = w.add("AXIS2_PLACEMENT_2D", "", w.fresh_point([0.0, 0.0]), w.add("DIRECTION", "", [1.0, 0.0]))
+    w.add("REPRESENTATION", f"{sk['name']} origin", [origin2], ctx)
     rmap = w.add("REPRESENTATION_MAP", origin2, cur)
     rep = w.add("REPOSITIONED_NEUTRAL_SKETCH", sk["name"], rmap, w.placement(sk["placement"]))
     positioned = []
@@ -839,11 +856,20 @@ def to_step(model, f=None, brep=None, sketch_commands=False):
             continue
         var_items += P.bind(f"{ft['name']}.{attr}" + (f".{k}" if k else ""), owner, FEATURE_ATTR[key], e)
     var_items += P.items()
-    for name in params:                             # parameters nothing uses still belong to the model
+    idle = []
+    for name, p in params.items():                  # parameters nothing uses still belong to the model
         if name not in P.unbound and not any(name in s_params(sk) for sk in model.get("sketches", [])):
-            w.notes.append(f"parameter {name} drives nothing; written without a constraint")
-            P.unbound_param(name)
-            var_items.append(P.unbound[name])
+            w.notes.append(f"parameter {name} drives nothing; written as a named value")
+            unit = p.get("unit")
+            v = T("LENGTH_MEASURE", float(p["value"])) if unit == "mm" else \
+                T("PLANE_ANGLE_MEASURE", math.radians(p["value"])) if unit == "deg" else \
+                T("NUMERIC_MEASURE", float(p["value"]))
+            idle.append(w.add("VALUE_REPRESENTATION_ITEM", name, v))
+    if idle:
+        # Not a variational parameter: an unbound parameter must be used by a FREE_FORM_CONSTRAINT of its
+        # variational representation (108, invalidate_vrep_item) and may be in no other kind (6.3.2 WR1).
+        # A named value (43, VALUE_REPRESENTATION_ITEM) keeps it, without its description.
+        w.add("REPRESENTATION", model.get("name", "model") + " unused parameters", idle, w.ctx3)
     if var_items:
         cur = w.add("SHAPE_REPRESENTATION", model.get("name", "model") + " history", [seq], w.ctx3)
         var = w.cx(("REPRESENTATION", [model.get("name", "model") + " parameters", [seq] + var_items, w.ctx3]),
@@ -1241,6 +1267,19 @@ def from_step(f):
         v = v * rd.L if unit == "mm" else v * rd.A if unit == "deg" else v
         params[name] = {"name": name, "value": math.degrees(v) if unit == "deg" else v, "unit": unit,
                         "description": text}
+    for rep in rd.m.all_of("representation"):       # parameters that drive nothing: named values
+        if not str(rd.get(rep, "name") or "").endswith(" unused parameters"):
+            continue
+        for it in rd.get(rep, "items") or []:
+            if not rd.isa(it, "value_representation_item"):
+                continue
+            val = rd.get(it, "value_component")
+            kind = val.keyword.upper() if isinstance(val, p21.Typed) else ""
+            v = rd.value(val)
+            name = rd.get(it, "representation_item.name")
+            unit = "mm" if kind == "LENGTH_MEASURE" else "deg" if kind == "PLANE_ANGLE_MEASURE" else ""
+            v = v * rd.L if unit == "mm" else math.degrees(v * rd.A) if unit == "deg" else v
+            params.setdefault(name, {"name": name, "value": v, "unit": unit, "description": ""})
     for env in rd.m.all_of("bound_parameter_environment"):
         bp, iar = rd.get(env, "syntactic_representation"), rd.get(env, "semantics")
         owner, attr = rd.get(iar, "owning_instance"), rd.get(iar, "attribute_name")
@@ -1272,6 +1311,23 @@ def from_step(f):
             c.pop("ref", None)
         sketches.append(sk)
         by_current[int(cur)] = sk
+        if rep is not None:
+            by_rep[rep] = sk["name"]
+    for inst in rd.m.all_of("neutral_sketch_representation"):  # sketches without constraints: no wrapper
+        cur = p21.Ref(inst.id)
+        if inst.id in by_current:
+            continue
+        rep = None
+        for m in rd.m.users(cur):
+            if rd.isa(m, "representation_map"):
+                for u in rd.m.users(m.id):
+                    if rd.isa(u, "repositioned_neutral_sketch"):
+                        rep = u.id
+        sk = _read_sketch(rd, cur, cur, rep)
+        for c in sk["constraints"]:
+            c.pop("ref", None)
+        sketches.append(sk)
+        by_current[inst.id] = sk
         if rep is not None:
             by_rep[rep] = sk["name"]
     face_sketch = {}
@@ -1547,4 +1603,9 @@ def merge(brep_file, model, sketch_commands=False):
     if fs and not any(s.startswith("AP242") for s in fs.params[0]):
         notes.append(f"FILE_SCHEMA was {fs.params[0]}; set to AP242 (the schema that holds Parts 55, 108, 111)")
         fs.params[0] = [SCHEMAS[0] + " { 1 0 10303 442 1 1 4 }"]
+    # AP242 (editions 2 to the current long form) requires this name (rule
+    # ap242_application_protocol_definition_required); OpenCASCADE writes the AP's name without "_mim_lf".
+    for apd in f.by_name("APPLICATION_PROTOCOL_DEFINITION"):
+        if apd.records[0].params[1] == "ap242_managed_model_based_3d_engineering":
+            apd.records[0].params[1] = "ap242_managed_model_based_3d_engineering_mim_lf"
     return f, notes
