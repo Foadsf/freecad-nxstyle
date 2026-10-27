@@ -51,6 +51,16 @@ def in_sketch_edit():
         return False
 
 
+def tool_hints_shown():
+    """FreeCAD's input hints in the status bar ('pick edge to trim'): a tool handler shows them when it starts
+    and clears them when it ends (Gui::ToolHandler::activate / deactivate)."""
+    try:
+        label = Gui.getMainWindow().findChild(QtWidgets.QLabel, "hintLabel")
+        return bool(label is not None and label.text())
+    except Exception:
+        return False
+
+
 def accept_task_dialog():
     """Press OK in the open task dialog, like NX's MB2 = OK. Returns True on success."""
     try:
@@ -286,7 +296,12 @@ class NxMouse(QtCore.QObject):
             status("Rotation point set; drag MB2 to rotate about it")
 
     def sketch_tool_active(self):
-        """FreeCAD's sketcher tools set a custom (bitmap) cursor on the view."""
+        """Is one of FreeCAD's sketcher tools running? It shows its input hints, and sets a custom (bitmap)
+        cursor on the view. The cursor alone does not tell: while a tool has a selection gate up (Quick Trim
+        takes edges only), each preselection puts FreeCAD's forbidden or arrow cursor in place of the tool's
+        (Selection::setPreselect, rmvPreselect), and MB2 then left the tool and its gate running."""
+        if in_sketch_edit() and tool_hints_shown():
+            return True
         try:
             return self.widget.cursor().shape() == Qt.BitmapCursor
         except Exception:

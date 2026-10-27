@@ -1292,9 +1292,9 @@ def from_step(f):
         for s in seqs:
             _read_sequence(rd, s, model, names, face_sketch, bindings)
         models.append(model)
-    if not models and (sketches or params):
-        models.append({"name": "sketches", "parameters": list(params.values()), "sketches": sketches,
-                       "features": []})
+    if not models and (sketches or params):           # sketches alone: named after the sketch when there is one
+        name = sketches[0]["name"] if len(sketches) == 1 else "Sketches"
+        models.append({"name": name, "parameters": list(params.values()), "sketches": sketches, "features": []})
     return models, rd.notes
 
 

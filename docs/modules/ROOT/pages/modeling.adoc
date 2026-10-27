@@ -110,6 +110,79 @@ Revolve, Hole and *Revolve (Subtract)* still open FreeCAD's own dialogs directly
 NOTE: *To first* and *Up to face* into a hole stop 1 mm into the part in FreeCAD 1.1.4 (xref:known-issues.adoc[]).
 xref:tutorials/l.adoc[Tutorial L] shows the workaround.
 
+== Primitives: Block, Cylinder, Cone, Sphere [[primitives]]
+
+*Block*, *Cylinder*, *Cone* and *Sphere* are separate buttons in the Feature group (NX has them under *More › Design Feature*).
+Each opens NX's dialog in the task panel: *Type*, the point (*Origin*, *Axis* or *Center Point*), *Dimensions* and *Boolean*.
+The solid is previewed as you type, and the last lengths, type and vector are kept for the next time.
+
+[cols="1,3",options="header"]
+|===
+| Command | NX types offered
+
+| *Block* | Origin and Edge Lengths, Height and Two Points, Two Diagonal Points
+| *Cylinder* | Axis, Diameter, and Height
+| *Cone* | Diameters and Height
+| *Sphere* | Center Point and Diameter
+|===
+
+*Specify Vector* offers XC, YC, ZC, −XC, −YC and −ZC, and *Reverse Direction*.
+XC, YC and ZC are FreeCAD's absolute X, Y and Z, because FreeCAD has no movable WCS.
+
+=== Specify Point
+
+NX's Point dialog is part of the command's panel: its *Type* and the *XC*, *YC*, *ZC* output coordinates.
+Type the coordinates, or pick in the graphics window; the pick goes to the highlighted step and is snapped by the Type.
+
+* *Inferred Point*: a vertex, the centre of an arc or a sphere, the nearer end of another edge, or the picked spot on a face.
+* *Existing Point*, *End Point*, *Point on Curve/Edge*, *Point on Face*.
+* *Arc/Ellipse/Sphere Center*: an arc, circle or ellipse, a sphere, or a flat face bounded by a circle (click the top face of a cylinder for its centre).
+* *Between Two Points*: two picks, and the point midway.
+
+The point is copied, not linked: NX's primitives are not associative either.
+
+=== Boolean
+
+[cols="1,3",options="header"]
+|===
+| NX Boolean | What NX-Style builds
+
+| *None*
+| An additive primitive (PartDesign Additive Box, Cylinder, Cone, Sphere) in a new Body. In a part whose Body has no solid yet, it goes into that Body.
+
+| *Unite*
+| An additive primitive in the target body.
+
+| *Subtract*
+| A subtractive primitive (PartDesign Subtractive Box, ...) in the target body.
+
+| *Intersect*
+| The primitive in a new tool Body, hidden, and a PartDesign Boolean (*Common*) with that Body in the target body.
+|===
+
+With one body in the part, that body is the target.
+With several, *Select Body* is highlighted: pick the body in the graphics window, or choose it from the list.
+
+The result stays a feature in the body's history.
+*Edit Parameters* (also on an Intersect's Boolean) reopens the same dialog with the values; the Boolean cannot be changed there.
+Double-clicking the feature opens FreeCAD's own primitive dialog instead.
+
+=== OK, Apply, Cancel
+
+* *OK* (or MB2) adds one undo step, named after the command (*Block*); one Undo takes the primitive back, with any Body or Boolean it made.
+* *Apply* commits the primitive and keeps the dialog open for the next one.
+* *Cancel* or kbd:[Esc] leaves nothing behind.
+* An error leaves *OK* unavailable: a zero length, a Unite that would leave a separate solid, an Intersect that leaves nothing, or no target body.
+* Typed lengths keep their decimals, and a unit may be typed (`0.75 in`).
+
+=== Not supported yet
+
+* Cylinder's *Arc and Height*, Sphere's *Arc*, and Cone's half-angle types and *Two Coaxial Arcs*; use *Arc/Ellipse/Sphere Center* for the point and type the sizes.
+* A vector from a picked face or edge.
+* The Point dialog's other types (Cursor Location, Control Point, Intersection Point, Quadrant Point, ...) and its Offset.
+* When editing, a Block is shown as *Origin and Edge Lengths*, whatever type made it.
+* The Boolean is not remembered between commands: each starts with *None*.
+
 == Datums
 
 *Feature › Datum* has Datum Plane, Datum Axis, Point and Datum CSYS.
@@ -155,6 +228,7 @@ Inside a Body the mirror unites by itself.
 
 * *Edit Parameters* reopens the feature's dialog. It is on the ribbon, the radial menu, and the MB3 menu of the feature in the Part Navigator.
   An extrude opens in the Extrude dialog with its command box (<<extrude>>), so *Cancel* puts every value back.
+  A Block, Cylinder, Cone or Sphere opens in its NX dialog (<<primitives>>).
   Double-clicking the feature opens FreeCAD's own dialog without the command box.
   NX also lets you edit a dimension shown in the graphics window; here the change goes through the dialog or the sketch.
 * kbd:[F2] or MB3 › *Rename* in the Part Navigator gives a feature a name.

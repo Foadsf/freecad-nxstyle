@@ -4207,6 +4207,62 @@
    "replay": "render of the graphics window",
    "outcome": "same",
    "detail": "22.6% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 1,
+   "nx": "The supplier's fixture as STEP AP242: a plate, two brackets, four bolts (one bracket and the bolts as links)",
+   "replay": "assembled and exported by script with FreeCAD's own STEP export",
+   "outcome": "differs",
+   "detail": "21160 bytes"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 2,
+   "nx": "Check STEP with 'Download the AP's schema': the application protocol named, every entity checked against AP242's own long form, the product structure listed",
+   "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, the box ticked, MB2 = OK",
+   "outcome": "differs",
+   "detail": "0 error(s), 0 warning(s), 1 note(s); checked against AP242's long form: True; parts list: 1 x BasePlate; 2 x Bracket; 4 x Bolt; 1 x BasePlate; 4 x Bolt; 2 x Bracket. NX has no STEP checker; its BOM comes from the assembly navigator"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 3,
+   "nx": "The supplier's bracket profile as ISO 10303-112 commands: a rectangle, two R5 rounds (fillets with trimming), a Ø16 bore, a Ø4 hole and its circular pattern",
+   "replay": "the file written by script, as another CAD system would send it",
+   "outcome": "differs",
+   "detail": "8 commands"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 4,
+   "nx": "Check STEP on the sketch file: the Part 112 commands against ISO 10303-112's schema",
+   "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "0 error(s), 0 warning(s), 0 note(s); ISO 10303-112: 6 instances of ISO 10303-112 entities"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 5,
+   "nx": "New part, Import STEP with Parameters: the commands evaluated into a FreeCAD sketch",
+   "replay": "Ctrl+N, ribbon 'PMI › Exchange > Import STEP with Parameters', the file typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "one sketch: {'LineSegment': 4, 'ArcOfCircle': 2, 'Circle': 5}, every wire closed: True; Part 112 does not position a sketch, so it lies on XY. NX imports a STEP sketch as curves without its history"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 6,
+   "nx": "Extrude the received profile 8 mm: the bracket",
+   "replay": "Pad by script on the imported sketch",
+   "outcome": "differs",
+   "detail": "volume 17103.5400 mm³, expected 17103.5400 (60 × 40 less two R5 corners, the Ø16 bore and four Ø4 holes, times 8): the commands' geometry is exact"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 7,
+   "nx": "The bracket from the received profile",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "22.9% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   }
  ],
  "info": {
