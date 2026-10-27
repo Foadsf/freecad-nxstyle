@@ -29,7 +29,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from .qt import QtCore, QtWidgets, Qt, mouse_event
-from .ribbon import CommandButton
+from .ribbon import CommandButton, clean_text
 from .tutorial_extrude import ExtrudeTutorials
 from .tutorial_inspection import InspectionTutorials
 from .tutorial_katydid import KatydidTutorials
@@ -963,17 +963,41 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         return sorted({f"{w.objectName()}:{type(w).__name__}" for w in self.tasks_dock().findChildren(QtWidgets.QWidget)
                        if w.objectName() and not w.objectName().startswith("qt_")})
 
-    def click_dropdown(self, drop_label, item_label):
+    def ribbon_dropdown(self, drop_label, tab=None):
+        """(button, tab index) of a ribbon drop-down: an NX drop-down (DropdownButton) or a FreeCAD group command's
+        button (its menu lists the group's entries); with tab given, that tab is searched first."""
         from .ribbon import DropdownButton
         r = self.shell.ribbon
-        for i in range(r.stack.count()):
-            for b in r.stack.widget(i).findChildren(DropdownButton):
-                if b.text() == drop_label:
-                    for a in b.menu().actions():
-                        if a.text() == item_label:
-                            r.tabs.setCurrentIndex(i)
-                            a.trigger()
-                            return r.tabs.tabText(i)
+        order = sorted(range(r.stack.count()), key=lambda i: tab is not None and r.tabs.tabText(i) != tab)
+        for i in order:
+            for b in r.stack.widget(i).findChildren(QtWidgets.QToolButton):
+                label = b.text() if isinstance(b, DropdownButton) else getattr(b, "nx_label", None)
+                if isinstance(b, (DropdownButton, CommandButton)) and label == drop_label and b.menu() is not None:
+                    return b, i
+        return None, -1
+
+    def dropdown_entries(self, drop_label, tab=None):
+        b, _i = self.ribbon_dropdown(drop_label, tab)
+        return [clean_text(a.text()) for a in b.menu().actions() if not a.isSeparator()] if b is not None else []
+
+    def click_dropdown(self, drop_label, item_label, tab=None):
+        """Open a ribbon drop-down and pick an entry, as a user does; returns the tab or None."""
+        b, i = self.ribbon_dropdown(drop_label, tab)
+        if b is None:
+            return None
+        r = self.shell.ribbon
+        for a in b.menu().actions():
+            if clean_text(a.text()) == item_label:
+                r.tabs.setCurrentIndex(i)
+                QtWidgets.QApplication.processEvents()
+                for _ in range(20):               # FreeCAD refreshes the entries' state on a timer, as a user waits
+                    if a.isEnabled():
+                        break
+                    qtest().qWait(100)
+                self.info.setdefault("ribbon clicks while disabled", []).extend(
+                    [] if a.isEnabled() else [f"{drop_label} > {item_label}"])
+                a.trigger()
+                return r.tabs.tabText(i)
         return None
 
     def newest(self, type_id):
@@ -4217,8 +4241,9 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
             return False
         return handle
 
-    def sk_constrain(self, sk, label, subs, value=None):
-        """Select sketch elements, click the NX-named constraint button; type a value if asked."""
+    def sk_constrain(self, sk, label, subs, value=None, entry=None):
+        """Select sketch elements, click the NX-named constraint button (or pick an entry of its drop-down); type a
+        value if asked."""
         n0 = len(sk.Constraints)
         Gui.Selection.clearSelection()
         for s in subs:
@@ -4226,7 +4251,10 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         QtWidgets.QApplication.processEvents()
         if value is not None:
             self.modals.handler = self.datum_dialog(value)
-        b, where = self.click_ribbon(label, tab="Sketch")
+        if entry is not None:
+            where = self.ribbon_button(label, "Sketch")[2] if self.click_dropdown(label, entry, tab="Sketch") else ""
+        else:
+            b, where = self.click_ribbon(label, tab="Sketch")
         QtWidgets.QApplication.processEvents()
         qtest().qWait(200)
         self.modals.handler = None

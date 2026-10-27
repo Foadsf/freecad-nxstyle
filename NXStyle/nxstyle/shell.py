@@ -20,8 +20,8 @@ from . import (commands, config, navigation, navigator_status, prefs, ribbon_lay
                shortcuts, theme)
 from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
-from .ribbon import (CommandButton, Ribbon, command_actions, expand_tabs, known_commands, resolve,
-                     spec_groups, sub_actions)
+from .ribbon import (CommandButton, Ribbon, command_action, command_actions, expand_tabs, known_commands,
+                     provide_actions, resolve, spec_commands, spec_groups, sub_actions)
 from .selection_filter import ScopeFilter, TypeFilter
 
 OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
@@ -180,14 +180,7 @@ class Shell(QtCore.QObject):
     def _register_commands(self):
         names = commands.register(self.apps)
         if not all(command_actions(n) for n in names):
-            # Re-activate the workbench so FreeCAD builds the global toolbar
-            current = Gui.activeWorkbench().name()
-            self._loading = True
-            try:
-                Gui.activateWorkbench("NoneWorkbench")
-                Gui.activateWorkbench(current)
-            finally:
-                self._loading = False
+            self.reactivate_workbench()        # so FreeCAD builds the global toolbar
         missing = [n for n in names if not command_actions(n)]
         if missing:
             App.Console.PrintWarning(f"NXStyle: no QAction for {missing}\n")
@@ -199,6 +192,26 @@ class Shell(QtCore.QObject):
             icon = src.icon() if src is not None else self._workbench_icon(app["workbench"])
             if acts and icon is not None and not icon.isNull():
                 acts[0].setIcon(icon)
+
+    def reactivate_workbench(self):
+        """Activate the current workbench again: FreeCAD rebuilds its toolbars, the custom ones included, and makes
+        the actions of the commands they hold. Not while a task dialog is open (sketch edit): FreeCAD then makes
+        them at the next activation."""
+        if Gui.Control.activeDialog():
+            return
+        # hidden first, as on every application switch: FreeCAD saves the toolbars' visibility when the workbench is
+        # left (and restores it when that setting changes); otherwise FEM's toolbars came back after enforce_ui
+        # (measured, with Workbench.reloadActive() as well)
+        if not self.native_ui and self.cfg.get("hide_native_toolbars", True):
+            for tb in self.native_toolbars():
+                tb.hide()
+        current = Gui.activeWorkbench().name()
+        self._loading = True
+        try:
+            Gui.activateWorkbench("NoneWorkbench")
+            Gui.activateWorkbench(current)
+        finally:
+            self._loading = False
 
     @staticmethod
     def _workbench_icon(name):
@@ -320,6 +333,7 @@ class Shell(QtCore.QObject):
             tabs = [{"name": app["title"], "groups": None}] + expand_tabs(
                 {"tabs": [{"include": "common:View"}, {"include": "common:Tools"},
                           {"include": "common:Application"}]})
+        pages = []
         for t in tabs:
             if t.get("requires") and not any(c in known for c in t["requires"]):
                 continue                     # e.g. the PLM tab without the Strata add-on
@@ -329,7 +343,13 @@ class Shell(QtCore.QObject):
                 groups = self._auto_groups()
             else:
                 groups = spec_groups(t)
-            r.add_tab(t["name"], groups, known=known)
+            pages.append((t["name"], groups))
+        # once for the application, the Sketch tab included: the workbench is activated again, so not in sketch edit
+        sketch = spec_groups(config.load_json("ribbons", "sketch.json")["tabs"][0])
+        provide_actions([c for _name, groups in pages + [("Sketch", sketch)] for c in spec_commands(groups, known)],
+                        self.reactivate_workbench)
+        for name, groups in pages:
+            r.add_tab(name, groups, known=known)
         if not r.select(app.get("first_tab", "")):
             r.tabs.setCurrentIndex(0)
         self._sketch_tab(navigation.in_sketch_edit(), force=True)
@@ -376,10 +396,10 @@ class Shell(QtCore.QObject):
 
     @staticmethod
     def _freecad_label(name):
-        acts = command_actions(name)
-        if acts:
+        act = command_action(name)
+        if act is not None:
             from .ribbon import clean_text
-            return clean_text(acts[0].text()) or name
+            return clean_text(act.text()) or name
         return name
 
     def preload(self, workbenches):
@@ -907,10 +927,13 @@ class Shell(QtCore.QObject):
         for name in Gui.listCommands():
             if name in self._tracked:
                 continue
-            acts = command_actions(name)
-            if not acts:
+            act = command_action(name)
+            if act is None:
                 continue
-            acts[0].triggered.connect(lambda _=False, n=name: commands.remember(n))
+            try:
+                act.triggered.connect(lambda _=False, n=name: commands.remember(n))
+            except RuntimeError:            # a stale Qt wrapper must not stop the shell's start; tried again later
+                continue
             self._tracked.add(name)
 
     def _reclaim_keys(self):

@@ -35,6 +35,7 @@ It ends with the count of checks passed, failed and skipped (129 checks on FreeC
 * every key in xref:keyboard-shortcuts.adoc[] reaches its command through Qt's real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;
 * MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;
 * the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;
+* every button of the Modeling, Drafting and Sketch ribbons is enabled whenever its FreeCAD command is active, FreeCAD group commands (Line, Radius / Diameter) included; *Radius / Diameter* clicked on a selected arc makes a Radius constraint;
 * the window-size matrix (xref:#window-matrix[below]) for Modeling, Drafting and Pre/Post: nothing clipped and every command reachable at 1366x768 and 1920x1080, each at 100, 125, 150 and 200 % scaling;
 * a window too short for the ribbon minimises it, a tab then drops its page down, and the ribbon comes back when the window is taller;
 * a group set to *Always Collapsed* stays so after the ribbon is rebuilt and is saved in `nxstyle.ribbon.json`, and its menu entry runs the command;
