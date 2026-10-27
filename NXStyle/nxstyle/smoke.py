@@ -160,6 +160,7 @@ class Smoke:
         yield self.s_extrude_key_check, 300
         yield self.s_section, 300
         yield self.s_primitives, 300
+        yield self.s_thread, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -2224,6 +2225,12 @@ class Smoke:
         an arc centre, each Boolean, one undo step, Apply, Cancel and Esc, Edit Parameters (smoke_primitives.py)."""
         from . import smoke_primitives
         smoke_primitives.run(self)
+
+    def s_thread(self):
+        """Thread from its ribbon button and a click on the book's 0.25 in shank: Detailed against a Part API build
+        of the same helix, the hand, one undo step, Edit Parameters, Cancel, Symbolic (smoke_thread.py)."""
+        from . import smoke_thread
+        smoke_thread.run(self)
 
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""
