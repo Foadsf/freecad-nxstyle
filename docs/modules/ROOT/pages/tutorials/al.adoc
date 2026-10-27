@@ -39,7 +39,7 @@ It reads the file as ISO 10303-21, names its application protocol (AP242), check
 The warnings are not mistakes in the file.
 Each names a place where the standards contradict themselves, so that no file can meet every rule there (see xref:parametric-step.adoc#_where_iso_10303_contradicts_itself[Where ISO 10303 contradicts itself]).
 Every rule of the schemas is evaluated, the schemas' own functions included, and the report says how many: the rules that are not met are exactly those warnings.
-The notes count the entities of the application protocol itself (the product structure, the B-rep shape representation): tick *Download the AP's schema if it is missing* and they are checked against AP242's own long form too, with the same result, no error (see xref:parametric-step.adoc#_application_protocols[Application protocols]).
+The notes count the entities of the application protocol itself (the product structure, the B-rep shape representation), and the rules that need them are counted as not evaluated: tick *Download the AP's schema if it is missing* and they are checked against AP242's own long form too, every rule decided, with the same result, no error (see xref:parametric-step.adoc#_application_protocols[Application protocols]).
 
 image::tutorial-AL-02-check.png[Check STEP: no errors, the warnings and what they mean]
 
