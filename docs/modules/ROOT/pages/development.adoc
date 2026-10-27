@@ -74,7 +74,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `config.py` | Settings and their defaults (xref:settings.adoc[]).
 | `plm.py` | Strata as the data management.
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
-| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `smoke_selection.py` holds the self-test's selection scenarios; `tutorial_katydid.py`, `tutorial_precision.py` and `tutorial_inspection.py` hold tutorials O–R, S–Z and AA–AC.
+| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `smoke_selection.py` holds the self-test's selection scenarios and `smoke_section.py` its Extrude and Revolve sections; `tutorial_katydid.py`, `tutorial_precision.py` and `tutorial_inspection.py` hold tutorials O–R, S–Z and AA–AC.
 |===
 
 == Ribbon files

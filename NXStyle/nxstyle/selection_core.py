@@ -18,6 +18,9 @@ SCOPES = [
 SCOPE_LABELS = {key: label for label, key in SCOPES}
 
 RULES = [("Single Curve", "single"), ("Tangent Curves", "tangent"), ("Connected Curves", "connected")]
+# the Selection bar's curve rule for a section (Extrude, Revolve): NX's default, Inferred Curves, takes a sketch's
+# curves all together when one of them is picked
+SECTION_RULES = [("Inferred Curves", "inferred")] + RULES
 TANGENT_TOL_DEG = 0.5          # two curves meeting closer than this to a straight continuation are tangent
 
 NOUNS = {"edge": "an edge", "face": "a face", "vertex": "a point", "curve": "a curve", "body": "a solid body",

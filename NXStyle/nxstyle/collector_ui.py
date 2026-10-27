@@ -69,6 +69,8 @@ class CollectorWidget(QtWidgets.QFrame):
     the latest refusal."""
 
     def __init__(self, collector, rules=True, parent=None):
+        """rules: True for the curve rules (selection_core.RULES), a list of (label, key) for others, False for
+        none."""
         super().__init__(parent)
         self.collector = collector
         self.setObjectName("NXCollector")
@@ -85,9 +87,9 @@ class CollectorWidget(QtWidgets.QFrame):
         self.rule = QtWidgets.QComboBox()
         self.rule.setObjectName("NXCollectorRule")
         self.rule.setAccessibleName("Curve rule")
-        for label, key in core.RULES:
+        for label, key in (core.RULES if rules is True else rules or []):
             self.rule.addItem(label, key)
-        self.rule.setVisible(rules)
+        self.rule.setVisible(bool(rules))
         row.addWidget(self.rule)
         lay.addLayout(row)
         self.items = QtWidgets.QListWidget()
