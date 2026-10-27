@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import launch_nx  # noqa: E402
@@ -334,6 +335,62 @@ class LCInterlockingTests(unittest.TestCase):
             self.skipTest("vendor/LCInterlocking not checked out (git submodule update --init)")
         self.assertIn("LCInterlockingWorkbench", (real / "InitGui.py").read_text(encoding="utf-8"))
         self.assertTrue((real / "lasercut" / "join.py").is_file())    # what a profile copy is recognised by
+
+
+class CarbonTests(unittest.TestCase):
+    """Carbon is a server: nothing is loaded, the launcher says how Publish to Manufacturing connects."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.profile = Path(self.tmp.name) / "profile"
+        (self.profile / "config").mkdir(parents=True)
+        self.env = mock.patch.dict(os.environ, {}, clear=False)
+        self.env.start()
+        os.environ.pop("CARBON_API_KEY", None)
+        os.environ.pop("CARBON_URL", None)
+
+    def tearDown(self):
+        self.env.stop()
+        self.tmp.cleanup()
+
+    def settings(self, data):
+        (self.profile / "config" / "nxstyle.json").write_text(json.dumps(data))
+
+    def test_not_set_up_by_default(self):
+        self.assertIn("not set up", launch_nx.find_carbon(self.profile))
+
+    def test_switched_off_by_flag_or_config(self):
+        self.assertEqual(launch_nx.find_carbon(self.profile, disabled=True), "off (--no-carbon)")
+        self.settings({"manufacturing": "none"})
+        self.assertIn("manufacturing", launch_nx.find_carbon(self.profile))
+
+    def test_key_source_is_named_never_the_key(self):
+        self.settings({"carbon": {"url": "https://app.carbon.ms"}})
+        self.assertIn("API key missing", launch_nx.find_carbon(self.profile))
+        key = self.profile / "config" / "carbon.key"
+        key.write_text("crbn_secretsecret1234")
+        why = launch_nx.find_carbon(self.profile)
+        self.assertIn(str(key), why)
+        os.environ["CARBON_API_KEY"] = "crbn_fromtheenvironment"
+        why = launch_nx.find_carbon(self.profile)
+        self.assertIn("CARBON_API_KEY", why)
+        self.assertNotIn("secret", why)
+        self.assertNotIn("fromtheenvironment", why)
+
+    def test_flag_turns_the_commands_off(self):
+        exe = Path(self.tmp.name) / "FreeCAD"
+        exe.write_text("")
+
+        def dry(*flags):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                launch_nx.main(["--freecad", str(exe), "--profile", str(self.profile), "--dry-run", *flags])
+            return json.loads(out.getvalue())
+        res = dry("--no-carbon")
+        self.assertEqual(res["carbon"], "off (--no-carbon)")
+        self.assertEqual(res["command"], dry()["command"])          # a server: nothing is loaded either way
+        env = launch_nx.build_env(launch_nx.prepare_profile(self.profile), {"NXSTYLE_CARBON": "0"})
+        self.assertEqual(env["NXSTYLE_CARBON"], "0")
 
 
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")

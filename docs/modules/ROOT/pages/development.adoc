@@ -17,7 +17,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `vendor/freecad-strata/` | Strata, as a git submodule.
 | `vendor/Katydid/` | Katydid, as a git submodule.
 | `tests/` | Launcher unit tests.
-| `tools/` | `gen_docs.py` (the generated parts of these docs), `tutorial_table.py`, `iso10303_dictionary.py` (the EXPRESS dictionary from the ISO parts).
+| `tools/` | `gen_docs.py` (the generated parts of these docs), `tutorial_table.py`, `iso10303_dictionary.py` (the EXPRESS dictionary from the ISO parts), `carbon_spec.py` (the Carbon API schemas the tests check against).
 | `docs/` | This site's AsciiDoc sources (Antora), the replay results and the old Markdown notes.
 |===
 
@@ -73,6 +73,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `geomcheck.py` | The tutorials' solid comparison: symmetric-difference volume and exact bounding boxes against a Part API reference.
 | `config.py` | Settings and their defaults (xref:settings.adoc[]).
 | `plm.py` | Strata as the data management.
+| `carbon.py`, `carbon_ui.py` | Carbon as the manufacturing system: the HTTP client, publishing a release package (item, revision, model, documents, BOM, inspection plan) and the status (no FreeCAD; also `python -m nxstyle.carbon`); the Manufacturing commands, the connection dialog and the assembly's BOM from FreeCAD links. xref:manufacturing.adoc[]
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
 | `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `smoke_selection.py` holds the self-test's selection scenarios; `tutorial_katydid.py`, `tutorial_precision.py` and `tutorial_inspection.py` hold tutorials O–R, S–Z and AA–AC.
 |===
@@ -162,6 +163,18 @@ Katydid is its own project and stays unmodified in `vendor/Katydid`; NX-Style ad
 * The canvas is a floating `QDockWidget` named `KatydidDock`; NX-Style leaves it out of the navigator tab strip.
 
 Update the pin the same way: `git submodule update --remote vendor/Katydid`, then the self-test.
+
+== Carbon [[carbon]]
+
+Carbon is a server, not an add-on, so it is not a submodule and the launcher loads nothing for it (`find_carbon` only reports how it is set up; `--no-carbon` sets `NXSTYLE_CARBON=0`, which leaves the commands unregistered).
+It is AGPL-3.0 with commercial Enterprise files, so NX-Style copies none of it and talks to it over its HTTP API only (xref:manufacturing.adoc#_why_a_connection_not_a_bundled_copy[why]).
+
+* `carbon.Client.call("items.createPart", {...})` is `POST <server>/api/v1/items/createPart` with the arguments as the body and the key as a bearer token; lists answer `{"results", "count"}`, refusals `{"code", "status", "message", "data": {"category"}}`. 429 and 503 are retried (`Retry-After`).
+* `carbon.OPERATIONS` lists every operation used. `tests/data/carbon-openapi.json` holds their schemas, cut from Carbon's published OpenAPI document by `python tools/carbon_spec.py` (or from a server's own `/api/v1/openapi.json`); the stand-in server of the tests rejects any request those schemas reject.
+* `carbon.Publisher` does the reads and either makes or lists the writes (`dry_run`), which is what *Review* shows.
+* Uploads take two steps, as in Carbon's own browser upload: a signed URL from Carbon (`createModelUploadUrl`, `createItemDocumentUploadUrl`), a PUT of the bytes to it (without the API key), then for a model `insertModelUpload`.
+
+When Carbon renames an operation, `tools/carbon_spec.py` says which; `tests/test_carbon.py` then fails until `carbon.py` follows.
 
 == Rules the code keeps
 

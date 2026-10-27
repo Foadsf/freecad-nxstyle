@@ -24,6 +24,7 @@
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
 * xref:release-package.adoc[Release packages]
+* xref:manufacturing.adoc[Manufacturing (Carbon)]
 * xref:settings.adoc[Settings]
 
 .Tutorials

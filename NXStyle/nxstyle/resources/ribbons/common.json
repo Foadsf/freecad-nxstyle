@@ -88,7 +88,7 @@
         {"cmd": "NXStyle_ToggleNativeUI", "label": "FreeCAD Menus and Toolbars"}
       ]}
     ]},
-    {"name": "PLM", "requires": ["Strata_Panel"], "groups": [
+    {"name": "PLM", "requires": ["Strata_Panel", "NXStyle_CarbonPublish"], "groups": [
       {"name": "Versions", "items": [
         {"cmd": "Strata_Panel", "label": "Versions and History", "size": "large", "optional": true},
         {"cmd": "Strata_CreateVersion", "label": "Create Version", "size": "large", "optional": true},
@@ -97,6 +97,11 @@
       {"name": "Release", "items": [
         {"cmd": "Strata_Releases", "label": "Releases", "size": "large", "optional": true},
         {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}
+      ]},
+      {"name": "Manufacturing", "items": [
+        {"cmd": "NXStyle_CarbonPublish", "label": "Publish to Manufacturing", "size": "large", "optional": true},
+        {"cmd": "NXStyle_CarbonStatus", "label": "Manufacturing Status", "optional": true},
+        {"cmd": "NXStyle_CarbonConnection", "label": "Manufacturing Connection", "optional": true}
       ]},
       {"name": "Team", "items": [
         {"cmd": "Strata_Sync", "label": "Sync", "size": "large", "optional": true}

@@ -56,6 +56,19 @@ DEFAULTS = {
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
     "sheet_metal": "sheetmetal",       # NX Sheet Metal: FreeCAD's "sheetmetal" add-on (bundled), or "none"
     "laser_cut": "lcinterlocking",     # Laser Cut: the "lcinterlocking" add-on (bundled), or "none"
+    "manufacturing": "carbon",         # manufacturing ERP/MES/quality: "carbon" (a Carbon server), or "none"
+    "carbon": {                        # The Carbon connection; PLM › Manufacturing Connection sets it, never the API key.
+        "url": "",                     # url: https://app.carbon.ms (Carbon Cloud) or your own server.
+        "api_key_file": "",            # api_key_file: "" = carbon.key in this config folder; CARBON_API_KEY wins.
+        "location": "",                # location: the stock location for Manufacturing Status; "" = the first.
+        "allow_unreleased": False,     # allow_unreleased: true also publishes a part with no Strata release.
+        "new_part": {                  # new_part: what a part new to Carbon gets (Carbon's item fields).
+            "replenishmentSystem": "Make",
+            "defaultMethodType": "Make to Order",
+            "itemTrackingType": "Inventory",
+            "unitOfMeasureCode": "EA",
+        },
+    },
 }
 
 BACKGROUNDS = {

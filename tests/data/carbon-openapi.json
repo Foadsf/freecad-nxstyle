@@ -1,0 +1,7797 @@
+{
+ "openapi": "3.1.1",
+ "info": {
+  "title": "Carbon API",
+  "version": "1.0.0",
+  "description": "Carbon's service-layer API — read and write your manufacturing data the safe way."
+ },
+ "servers": [
+  {
+   "url": "https://app.carbon.ms/api/v1"
+  }
+ ],
+ "x-nxstyle": {
+  "source": "https://app.carbon.ms/api/v1/openapi.json",
+  "fetched": "2026-10-27",
+  "operations": 22,
+  "of": 1618
+ },
+ "components": {
+  "schemas": {
+   "Error": {
+    "type": "object",
+    "description": "An operation's refusal. `message` is written for a person; `data.category` names the kind of refusal.",
+    "properties": {
+     "defined": {
+      "type": "boolean"
+     },
+     "code": {
+      "type": "string",
+      "examples": [
+       "NOT_FOUND"
+      ]
+     },
+     "status": {
+      "type": "integer",
+      "examples": [
+       404
+      ]
+     },
+     "message": {
+      "type": "string",
+      "examples": [
+       "Job not found"
+      ]
+     },
+     "data": {
+      "type": "object",
+      "properties": {
+       "category": {
+        "type": "string",
+        "enum": [
+         "validation",
+         "entitlement",
+         "forbidden",
+         "notFound",
+         "conflict",
+         "rule",
+         "rateLimited",
+         "internal",
+         "unavailable"
+        ]
+       }
+      }
+     }
+    },
+    "required": [
+     "code",
+     "status",
+     "message"
+    ]
+   }
+  },
+  "securitySchemes": {
+   "bearerAuth": {
+    "type": "http",
+    "scheme": "bearer",
+    "description": "A Carbon API key (`crbn_…`) sent as a Bearer token."
+   }
+  }
+ },
+ "paths": {
+  "/settings/getCompanies": {
+   "post": {
+    "operationId": "settings.getCompanies",
+    "summary": "List the companies the caller belongs to, with their logo URLs",
+    "description": "List the companies the caller belongs to, with their logo URLs.",
+    "tags": [
+     "settings"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "logoLight": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "logoDark": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "logoLightIcon": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "logoDarkIcon": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "logoWatermark": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "active": {
+              "type": [
+               "boolean",
+               "null"
+              ]
+             },
+             "addressLine1": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "addressLine2": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "auditLogEnabled": {
+              "type": [
+               "boolean",
+               "null"
+              ]
+             },
+             "baseCurrencyCode": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "city": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "companyGroupId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "companyGroupName": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "companyId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "countryCode": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "createdAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "customIndustryDescription": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "email": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "employeeType": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "eori": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "fax": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "featureRequests": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "id": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "industryId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "isEliminationEntity": {
+              "type": [
+               "boolean",
+               "null"
+              ]
+             },
+             "name": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "ownerId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "parentCompanyId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "phone": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "postalCode": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "registrationNumber": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "role": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "customer",
+               "employee",
+               "supplier"
+              ]
+             },
+             "selectedModules": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "slackChannel": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "stateProvince": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "suggestionNotificationGroup": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "taxId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "timezone": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updatedBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "userId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "vatNumber": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "website": {
+              "type": [
+               "string",
+               "null"
+              ]
+             }
+            },
+            "required": [
+             "logoLight",
+             "logoDark",
+             "logoLightIcon",
+             "logoDarkIcon",
+             "logoWatermark",
+             "active",
+             "addressLine1",
+             "addressLine2",
+             "auditLogEnabled",
+             "baseCurrencyCode",
+             "city",
+             "companyGroupId",
+             "companyGroupName",
+             "companyId",
+             "countryCode",
+             "createdAt",
+             "customIndustryDescription",
+             "email",
+             "employeeType",
+             "eori",
+             "fax",
+             "featureRequests",
+             "id",
+             "industryId",
+             "isEliminationEntity",
+             "name",
+             "ownerId",
+             "parentCompanyId",
+             "phone",
+             "postalCode",
+             "registrationNumber",
+             "role",
+             "selectedModules",
+             "slackChannel",
+             "stateProvince",
+             "suggestionNotificationGroup",
+             "taxId",
+             "timezone",
+             "updatedBy",
+             "userId",
+             "vatNumber",
+             "website"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/resources/getLocationsList": {
+   "post": {
+    "operationId": "resources.getLocationsList",
+    "summary": "Get locations list",
+    "description": "Get locations list.",
+    "tags": [
+     "resources"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string"
+             },
+             "name": {
+              "type": "string"
+             },
+             "timezone": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "name",
+             "timezone"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getParts": {
+   "post": {
+    "operationId": "items.getParts",
+    "summary": "Get parts",
+    "description": "Get parts.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "limit": {
+          "type": "number",
+          "description": "Rows per page. Left out, the read is not paged."
+         },
+         "offset": {
+          "type": "number"
+         },
+         "search": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "supplierId": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "filters": {
+          "type": "array",
+          "description": "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "column": {
+             "type": "string"
+            },
+            "operator": {
+             "type": "string",
+             "enum": [
+              "between",
+              "contains",
+              "eq",
+              "gt",
+              "gte",
+              "in",
+              "lt",
+              "lte",
+              "neq",
+              "startsWith"
+             ]
+            },
+            "value": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "column",
+            "operator",
+            "value"
+           ]
+          }
+         },
+         "sorts": {
+          "type": "array",
+          "description": "Orders the list by returned fields, first to last.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "sortBy": {
+             "type": "string"
+            },
+            "sortAsc": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "sortBy",
+            "sortAsc"
+           ]
+          }
+         }
+        },
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": [
+            "array",
+            "null"
+           ],
+           "items": {
+            "type": "object",
+            "properties": {
+             "active": {
+              "type": [
+               "boolean",
+               "null"
+              ]
+             },
+             "defaultMethodType": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "Make to Order",
+               "Pull from Inventory",
+               "Purchase to Order"
+              ]
+             },
+             "description": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "itemTrackingType": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "Batch",
+               "Inventory",
+               "Non-Inventory",
+               "Serial"
+              ]
+             },
+             "name": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "replenishmentSystem": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "Buy",
+               "Buy and Make",
+               "Make"
+              ]
+             },
+             "unitOfMeasureCode": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "revision": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "readableId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "readableIdWithRevision": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "id": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "companyId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "thumbnailPath": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "supplierIds": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "revisions": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "customFields": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "tags": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "itemPostingGroupId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "createdBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "createdAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updatedBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updatedAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "supersessionMode": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "Consume First",
+               "No Stock",
+               "Prefer New",
+               "Stock Only"
+              ]
+             },
+             "mpn": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "suppliers": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             }
+            },
+            "required": [
+             "active",
+             "defaultMethodType",
+             "description",
+             "itemTrackingType",
+             "name",
+             "replenishmentSystem",
+             "unitOfMeasureCode",
+             "revision",
+             "readableId",
+             "readableIdWithRevision",
+             "id",
+             "companyId",
+             "thumbnailPath",
+             "supplierIds",
+             "revisions",
+             "customFields",
+             "tags",
+             "itemPostingGroupId",
+             "createdBy",
+             "createdAt",
+             "updatedBy",
+             "updatedAt",
+             "supersessionMode",
+             "mpn",
+             "suppliers"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getItem": {
+   "post": {
+    "operationId": "items.getItem",
+    "summary": "Get item",
+    "description": "Get item.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "id"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "active": {
+           "type": "boolean"
+          },
+          "assignee": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "changeOrderId": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "companyId": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "createdAt": {
+           "type": "string"
+          },
+          "createdBy": {
+           "type": "string"
+          },
+          "defaultMethodType": {
+           "type": [
+            "string",
+            "null"
+           ],
+           "enum": [
+            "Make to Order",
+            "Pull from Inventory",
+            "Purchase to Order"
+           ]
+          },
+          "description": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "embedding": {},
+          "id": {
+           "type": "string"
+          },
+          "itemTrackingType": {
+           "type": "string",
+           "enum": [
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+           ]
+          },
+          "modelUploadId": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "mpn": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "name": {
+           "type": "string"
+          },
+          "notes": {
+           "anyOf": [
+            {
+             "type": "string"
+            },
+            {
+             "type": "number"
+            },
+            {
+             "type": "boolean"
+            },
+            {
+             "type": "object",
+             "additionalProperties": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object"
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "array",
+             "items": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "null"
+            }
+           ]
+          },
+          "readableId": {
+           "type": "string"
+          },
+          "readableIdWithRevision": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "replenishmentSystem": {
+           "type": "string",
+           "enum": [
+            "Buy",
+            "Buy and Make",
+            "Make"
+           ]
+          },
+          "revision": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "revisionStatus": {
+           "type": "string",
+           "enum": [
+            "Design",
+            "Obsolete",
+            "Production",
+            "Prototype"
+           ]
+          },
+          "sourcingType": {
+           "type": "string",
+           "enum": [
+            "Drop Ship",
+            "Ship from Inventory",
+            "Specified"
+           ]
+          },
+          "thumbnailPath": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "trackingMethod": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+           ]
+          },
+          "unitOfMeasureCode": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "updatedAt": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "updatedBy": {
+           "type": [
+            "string",
+            "null"
+           ]
+          }
+         },
+         "required": [
+          "active",
+          "assignee",
+          "changeOrderId",
+          "companyId",
+          "createdAt",
+          "createdBy",
+          "defaultMethodType",
+          "description",
+          "embedding",
+          "id",
+          "itemTrackingType",
+          "modelUploadId",
+          "mpn",
+          "name",
+          "notes",
+          "readableId",
+          "readableIdWithRevision",
+          "replenishmentSystem",
+          "revision",
+          "revisionStatus",
+          "sourcingType",
+          "thumbnailPath",
+          "trackingMethod",
+          "type",
+          "unitOfMeasureCode",
+          "updatedAt",
+          "updatedBy"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getPart": {
+   "post": {
+    "operationId": "items.getPart",
+    "summary": "Get part",
+    "description": "Get part.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "itemId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "itemId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "active": {
+           "type": "boolean"
+          },
+          "assignee": {
+           "type": "string"
+          },
+          "companyId": {
+           "type": "string"
+          },
+          "createdAt": {
+           "type": "string"
+          },
+          "createdBy": {
+           "type": "string"
+          },
+          "customFields": {
+           "anyOf": [
+            {
+             "type": "string"
+            },
+            {
+             "type": "number"
+            },
+            {
+             "type": "boolean"
+            },
+            {
+             "type": "object",
+             "additionalProperties": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object"
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "array",
+             "items": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "null"
+            }
+           ]
+          },
+          "defaultMethodType": {
+           "type": "string",
+           "enum": [
+            "Make to Order",
+            "Pull from Inventory",
+            "Purchase to Order"
+           ]
+          },
+          "description": {
+           "type": "string"
+          },
+          "id": {
+           "type": "string"
+          },
+          "itemPostingGroupId": {
+           "type": "string"
+          },
+          "itemTrackingType": {
+           "type": "string",
+           "enum": [
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+           ]
+          },
+          "modelId": {
+           "type": "string"
+          },
+          "modelName": {
+           "type": "string"
+          },
+          "modelPath": {
+           "type": "string"
+          },
+          "modelSize": {
+           "type": "number"
+          },
+          "mpn": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "notes": {
+           "anyOf": [
+            {
+             "type": "string"
+            },
+            {
+             "type": "number"
+            },
+            {
+             "type": "boolean"
+            },
+            {
+             "type": "object",
+             "additionalProperties": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object"
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "array",
+             "items": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "null"
+            }
+           ]
+          },
+          "readableId": {
+           "type": "string"
+          },
+          "readableIdWithRevision": {
+           "type": "string"
+          },
+          "replenishmentSystem": {
+           "type": "string",
+           "enum": [
+            "Buy",
+            "Buy and Make",
+            "Make"
+           ]
+          },
+          "revision": {
+           "type": "string"
+          },
+          "revisions": {
+           "anyOf": [
+            {
+             "type": "string"
+            },
+            {
+             "type": "number"
+            },
+            {
+             "type": "boolean"
+            },
+            {
+             "type": "object",
+             "additionalProperties": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object"
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "array",
+             "items": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             }
+            },
+            {
+             "type": "null"
+            }
+           ]
+          },
+          "sourcingType": {
+           "type": "string",
+           "enum": [
+            "Drop Ship",
+            "Ship from Inventory",
+            "Specified"
+           ]
+          },
+          "tags": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "thumbnailPath": {
+           "type": "string"
+          },
+          "unitOfMeasure": {
+           "type": "string"
+          },
+          "unitOfMeasureCode": {
+           "type": "string"
+          },
+          "updatedAt": {
+           "type": "string"
+          },
+          "updatedBy": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "active",
+          "assignee",
+          "companyId",
+          "createdAt",
+          "createdBy",
+          "customFields",
+          "defaultMethodType",
+          "description",
+          "id",
+          "itemPostingGroupId",
+          "itemTrackingType",
+          "modelId",
+          "modelName",
+          "modelPath",
+          "modelSize",
+          "mpn",
+          "name",
+          "notes",
+          "readableId",
+          "readableIdWithRevision",
+          "replenishmentSystem",
+          "revision",
+          "revisions",
+          "sourcingType",
+          "tags",
+          "thumbnailPath",
+          "unitOfMeasure",
+          "unitOfMeasureCode",
+          "updatedAt",
+          "updatedBy"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/createPart": {
+   "post": {
+    "operationId": "items.createPart",
+    "summary": "Create a part",
+    "description": "Create a part.\n\nWrites the item and its part row, its item group and unit cost, batch size,\ndefault storage unit and shelf life (`upsertPart`).",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         },
+         "replenishmentSystem": {
+          "type": "string",
+          "enum": [
+           "Buy",
+           "Buy and Make",
+           "Make"
+          ]
+         },
+         "defaultMethodType": {
+          "type": "string",
+          "enum": [
+           "Make to Order",
+           "Pull from Inventory",
+           "Purchase to Order"
+          ]
+         },
+         "itemTrackingType": {
+          "type": "string",
+          "enum": [
+           "Batch",
+           "Inventory",
+           "Non-Inventory",
+           "Serial"
+          ]
+         },
+         "unitOfMeasureCode": {
+          "type": "string"
+         },
+         "id": {
+          "type": "string"
+         },
+         "revision": {
+          "type": "string"
+         },
+         "readableId": {
+          "type": "string"
+         },
+         "description": {
+          "type": "string"
+         },
+         "mpn": {
+          "type": "string"
+         },
+         "postingGroupId": {
+          "type": "string"
+         },
+         "unitCost": {
+          "type": "number"
+         },
+         "defaultStorageUnitId": {
+          "type": "string"
+         },
+         "shelfLifeMode": {},
+         "shelfLifeDays": {
+          "type": "number"
+         },
+         "shelfLifeTriggerProcessId": {
+          "type": "string"
+         },
+         "shelfLifeTriggerTiming": {
+          "type": "string",
+          "enum": [
+           "After",
+           "Before"
+          ]
+         },
+         "shelfLifeCalculateFromBom": {
+          "anyOf": [
+           {
+            "type": "string"
+           },
+           {
+            "type": "boolean"
+           }
+          ]
+         },
+         "modelUploadId": {
+          "type": "string"
+         },
+         "lotSize": {
+          "type": "number"
+         },
+         "customFields": {
+          "type": "object",
+          "additionalProperties": {
+           "anyOf": [
+            {
+             "type": "string"
+            },
+            {
+             "type": "number"
+            },
+            {
+             "type": "boolean"
+            }
+           ]
+          }
+         }
+        },
+        "required": [
+         "name",
+         "replenishmentSystem",
+         "defaultMethodType",
+         "itemTrackingType",
+         "unitOfMeasureCode",
+         "id",
+         "revision"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {}
+         },
+         "required": [
+          "id"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/createRevision": {
+   "post": {
+    "operationId": "items.createRevision",
+    "summary": "Create revision",
+    "description": "Create revision.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "item": {
+          "type": "object",
+          "properties": {
+           "companyId": {
+            "type": [
+             "string",
+             "null"
+            ]
+           },
+           "id": {
+            "type": "string"
+           },
+           "name": {
+            "type": "string"
+           },
+           "type": {
+            "type": "string",
+            "enum": [
+             "Consumable",
+             "Fixture",
+             "Material",
+             "Part",
+             "Service",
+             "Tool"
+            ]
+           },
+           "modelUploadId": {
+            "type": [
+             "string",
+             "null"
+            ]
+           },
+           "description": {
+            "type": [
+             "string",
+             "null"
+            ]
+           },
+           "unitOfMeasureCode": {
+            "type": [
+             "string",
+             "null"
+            ]
+           },
+           "readableId": {
+            "type": "string"
+           },
+           "defaultMethodType": {
+            "type": [
+             "string",
+             "null"
+            ],
+            "enum": [
+             "Make to Order",
+             "Pull from Inventory",
+             "Purchase to Order"
+            ]
+           },
+           "itemTrackingType": {
+            "type": "string",
+            "enum": [
+             "Batch",
+             "Inventory",
+             "Non-Inventory",
+             "Serial"
+            ]
+           },
+           "mpn": {
+            "type": [
+             "string",
+             "null"
+            ]
+           },
+           "replenishmentSystem": {
+            "type": "string",
+            "enum": [
+             "Buy",
+             "Buy and Make",
+             "Make"
+            ]
+           },
+           "sourcingType": {
+            "type": "string",
+            "enum": [
+             "Drop Ship",
+             "Ship from Inventory",
+             "Specified"
+            ]
+           },
+           "thumbnailPath": {
+            "type": [
+             "string",
+             "null"
+            ]
+           }
+          },
+          "required": [
+           "companyId",
+           "id",
+           "name",
+           "type",
+           "modelUploadId",
+           "description",
+           "unitOfMeasureCode",
+           "readableId",
+           "defaultMethodType",
+           "itemTrackingType",
+           "mpn",
+           "replenishmentSystem",
+           "sourcingType",
+           "thumbnailPath"
+          ],
+          "additionalProperties": {}
+         },
+         "revision": {
+          "type": "string"
+         },
+         "active": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "item",
+         "revision"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "id"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getMakeMethods": {
+   "post": {
+    "operationId": "items.getMakeMethods",
+    "summary": "Get make methods",
+    "description": "Get make methods.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "itemId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "itemId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "changeOrderId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "companyId": {
+              "type": "string"
+             },
+             "createdAt": {
+              "type": "string"
+             },
+             "createdBy": {
+              "type": "string"
+             },
+             "customFields": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "array",
+                   "items": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "id": {
+              "type": "string"
+             },
+             "itemId": {
+              "type": "string"
+             },
+             "status": {
+              "type": "string",
+              "enum": [
+               "Active",
+               "Archived",
+               "Draft"
+              ]
+             },
+             "tags": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "updatedAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updatedBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "version": {
+              "type": "number"
+             }
+            },
+            "required": [
+             "changeOrderId",
+             "companyId",
+             "createdAt",
+             "createdBy",
+             "customFields",
+             "id",
+             "itemId",
+             "status",
+             "tags",
+             "updatedAt",
+             "updatedBy",
+             "version"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/createMethodVersion": {
+   "post": {
+    "operationId": "items.createMethodVersion",
+    "summary": "Create a new Draft version of an item's make method, copied from one of its versions",
+    "description": "Create a new Draft version of an item's make method, copied from one of its versions.\n\nThe new version takes `copyFromId`'s header and, through get-method, its\nwhole bill of materials and process. `activeVersionId` must be `copyFromId`:\na Draft source is made Active first (the item's only version, when its\nsuccessor is drafted). With strict backflush on, that activation is refused\nwhile a pulled line has no Pull From storage unit, as `methodVersionToActive`\nrefuses it. A failed copy leaves no new version behind.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "copyFromId": {
+          "type": "string"
+         },
+         "version": {
+          "type": "number"
+         },
+         "activeVersionId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "copyFromId",
+         "version"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string"
+          },
+          "itemId": {
+           "type": "string"
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+           ]
+          }
+         },
+         "required": [
+          "id",
+          "itemId",
+          "type"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getMethodMaterialsByMakeMethod": {
+   "post": {
+    "operationId": "items.getMethodMaterialsByMakeMethod",
+    "summary": "Get method materials by make method",
+    "description": "Get method materials by make method.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "makeMethodId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "makeMethodId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "companyId": {
+              "type": "string"
+             },
+             "createdAt": {
+              "type": "string"
+             },
+             "createdBy": {
+              "type": "string"
+             },
+             "customFields": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "array",
+                   "items": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "id": {
+              "type": "string"
+             },
+             "itemId": {
+              "type": "string"
+             },
+             "itemType": {
+              "type": "string"
+             },
+             "kit": {
+              "type": "boolean"
+             },
+             "makeMethodId": {
+              "type": "string"
+             },
+             "materialMakeMethodId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "methodOperationId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "methodType": {
+              "type": "string",
+              "enum": [
+               "Make to Order",
+               "Pull from Inventory",
+               "Purchase to Order"
+              ]
+             },
+             "order": {
+              "type": "number"
+             },
+             "productionQuantity": {
+              "type": [
+               "number",
+               "null"
+              ]
+             },
+             "quantity": {
+              "type": "number"
+             },
+             "scrapQuantity": {
+              "type": "number"
+             },
+             "sourcingType": {
+              "type": "string",
+              "enum": [
+               "Drop Ship",
+               "Ship from Inventory",
+               "Specified"
+              ]
+             },
+             "storageUnitIds": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "array",
+                   "items": {
+                    "anyOf": [
+                     {},
+                     {
+                      "type": "null"
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "tags": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "unitOfMeasureCode": {
+              "type": "string"
+             },
+             "updatedAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updatedBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "item": {
+              "type": "object",
+              "properties": {
+               "name": {
+                "type": "string"
+               },
+               "itemTrackingType": {
+                "type": "string",
+                "enum": [
+                 "Batch",
+                 "Inventory",
+                 "Non-Inventory",
+                 "Serial"
+                ]
+               },
+               "replenishmentSystem": {
+                "type": "string",
+                "enum": [
+                 "Buy",
+                 "Buy and Make",
+                 "Make"
+                ]
+               },
+               "defaultMethodType": {
+                "type": [
+                 "string",
+                 "null"
+                ],
+                "enum": [
+                 "Make to Order",
+                 "Pull from Inventory",
+                 "Purchase to Order"
+                ]
+               },
+               "sourcingType": {
+                "type": "string",
+                "enum": [
+                 "Drop Ship",
+                 "Ship from Inventory",
+                 "Specified"
+                ]
+               }
+              },
+              "required": [
+               "name",
+               "itemTrackingType",
+               "replenishmentSystem",
+               "defaultMethodType",
+               "sourcingType"
+              ]
+             },
+             "methodMaterialStep": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "methodOperationStepId": {
+                 "type": "string"
+                },
+                "quantity": {
+                 "type": [
+                  "number",
+                  "null"
+                 ]
+                }
+               },
+               "required": [
+                "methodOperationStepId",
+                "quantity"
+               ]
+              }
+             }
+            },
+            "required": [
+             "companyId",
+             "createdAt",
+             "createdBy",
+             "customFields",
+             "id",
+             "itemId",
+             "itemType",
+             "kit",
+             "makeMethodId",
+             "materialMakeMethodId",
+             "methodOperationId",
+             "methodType",
+             "order",
+             "productionQuantity",
+             "quantity",
+             "scrapQuantity",
+             "sourcingType",
+             "storageUnitIds",
+             "tags",
+             "unitOfMeasureCode",
+             "updatedAt",
+             "updatedBy",
+             "item",
+             "methodMaterialStep"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/createMethodMaterial": {
+   "post": {
+    "operationId": "items.createMethodMaterial",
+    "summary": "Create a method material",
+    "description": "Create a method material.\n\nUpsert method material",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string",
+          "description": "Updates the existing record with this key; creates one when there is none."
+         },
+         "makeMethodId": {
+          "type": "string"
+         },
+         "order": {
+          "type": "number"
+         },
+         "itemType": {
+          "type": "string",
+          "enum": [
+           "Consumable",
+           "Material",
+           "Part"
+          ]
+         },
+         "methodType": {
+          "type": "string",
+          "enum": [
+           "Make to Order",
+           "Pull from Inventory",
+           "Purchase to Order"
+          ]
+         },
+         "sourcingType": {
+          "type": "string",
+          "enum": [
+           "Drop Ship",
+           "Ship from Inventory",
+           "Specified"
+          ]
+         },
+         "quantity": {
+          "type": "number"
+         },
+         "unitOfMeasureCode": {
+          "type": "string"
+         },
+         "kit": {
+          "type": "string",
+          "enum": [
+           "false",
+           "true"
+          ]
+         },
+         "itemId": {
+          "type": "string"
+         },
+         "methodOperationId": {
+          "type": "string"
+         },
+         "storageUnitIds": {
+          "type": [
+           "object",
+           "null"
+          ],
+          "additionalProperties": {}
+         },
+         "customFields": {}
+        },
+        "required": [
+         "id",
+         "makeMethodId",
+         "order",
+         "itemType",
+         "methodType",
+         "sourcingType",
+         "quantity",
+         "unitOfMeasureCode"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "id"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/updateMethodMaterial": {
+   "post": {
+    "operationId": "items.updateMethodMaterial",
+    "summary": "Update a method material",
+    "description": "Update a method material.\n\nUpsert method material",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string",
+          "description": "Updates the existing record with this key; creates one when there is none."
+         },
+         "makeMethodId": {
+          "type": "string"
+         },
+         "order": {
+          "type": "number"
+         },
+         "itemType": {
+          "type": "string",
+          "enum": [
+           "Consumable",
+           "Material",
+           "Part"
+          ]
+         },
+         "methodType": {
+          "type": "string",
+          "enum": [
+           "Make to Order",
+           "Pull from Inventory",
+           "Purchase to Order"
+          ]
+         },
+         "sourcingType": {
+          "type": "string",
+          "enum": [
+           "Drop Ship",
+           "Ship from Inventory",
+           "Specified"
+          ]
+         },
+         "quantity": {
+          "type": "number"
+         },
+         "unitOfMeasureCode": {
+          "type": "string"
+         },
+         "kit": {
+          "type": "string",
+          "enum": [
+           "false",
+           "true"
+          ]
+         },
+         "itemId": {
+          "type": "string"
+         },
+         "methodOperationId": {
+          "type": "string"
+         },
+         "storageUnitIds": {
+          "type": [
+           "object",
+           "null"
+          ],
+          "additionalProperties": {}
+         },
+         "customFields": {}
+        },
+        "required": [
+         "id",
+         "makeMethodId",
+         "order",
+         "itemType",
+         "methodType",
+         "sourcingType",
+         "quantity",
+         "unitOfMeasureCode"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "id"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/createModelUploadUrl": {
+   "post": {
+    "operationId": "items.createModelUploadUrl",
+    "summary": "Create a presigned upload URL for a CAD model",
+    "description": "Create a presigned upload URL for a CAD model.\n\nFirst step of the two-step model upload: PUT the file bytes (STEP or another\nsupported format) to the returned `signedUrl`, then call `insertModelUpload`\nwith the returned `modelId`, `path` and the file's size in bytes. The file is\nstaged in the `temp-staging` bucket, as the browser upload does, so models up\nto 2.5 GB are accepted.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "name"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "modelId": {
+           "type": "string"
+          },
+          "path": {
+           "type": "string"
+          },
+          "signedUrl": {
+           "type": "string"
+          },
+          "token": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "modelId",
+          "path",
+          "signedUrl",
+          "token"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/insertModelUpload": {
+   "post": {
+    "operationId": "items.insertModelUpload",
+    "summary": "Record an uploaded CAD model and attach it",
+    "description": "Record an uploaded CAD model and attach it.\n\nSecond step of the model upload, and what the browser's model dropzone calls.\nRecords the model staged at `path` (from `createModelUploadUrl`) and makes it\nthe model of each record named: an item, a job, a sales RFQ line, a quote line\nand a sales order line. Every record is checked first, so a wrong id leaves no\nmodel behind. With none, the model is only recorded; pass its id as\n`modelUploadId` to a part or a job later. Starts the optimisation, which also\nrenders the thumbnail. Set `convert` for a STEP file whose assembly structure\nis needed (assembly instructions, step slides); it runs only while the\nassembler is up.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "modelId": {
+          "type": "string"
+         },
+         "path": {
+          "type": "string"
+         },
+         "name": {
+          "type": "string"
+         },
+         "size": {
+          "type": "number"
+         },
+         "itemId": {
+          "type": "string"
+         },
+         "jobId": {
+          "type": "string"
+         },
+         "salesRfqLineId": {
+          "type": "string"
+         },
+         "quoteLineId": {
+          "type": "string"
+         },
+         "salesOrderLineId": {
+          "type": "string"
+         },
+         "convert": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "modelId",
+         "path",
+         "name",
+         "size"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "modelUploadId": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "modelUploadId"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/createItemDocumentUploadUrl": {
+   "post": {
+    "operationId": "items.createItemDocumentUploadUrl",
+    "summary": "Create a presigned upload URL for an item (part/material/tool/consumable/service) document",
+    "description": "Create a presigned upload URL for an item (part/material/tool/consumable/service) document.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "itemId": {
+          "type": "string"
+         },
+         "name": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "itemId",
+         "name"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "signedUrl": {
+           "type": "string"
+          },
+          "token": {
+           "type": "string"
+          },
+          "path": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "signedUrl",
+          "token",
+          "path"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getItemFiles": {
+   "post": {
+    "operationId": "items.getItemFiles",
+    "summary": "Get item files",
+    "description": "Get item files.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "itemId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "itemId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "name": {
+              "type": "string"
+             },
+             "id": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updated_at": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "created_at": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "last_accessed_at": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "metadata": {
+              "type": [
+               "object",
+               "null"
+              ],
+              "properties": {
+               "eTag": {
+                "type": "string"
+               },
+               "size": {
+                "type": "number"
+               },
+               "mimetype": {
+                "type": "string"
+               },
+               "cacheControl": {
+                "type": "string"
+               },
+               "lastModified": {
+                "type": "string"
+               },
+               "contentLength": {
+                "type": "number"
+               },
+               "httpStatusCode": {
+                "type": "number"
+               }
+              },
+              "required": [
+               "eTag",
+               "size",
+               "mimetype",
+               "cacheControl",
+               "lastModified",
+               "contentLength",
+               "httpStatusCode"
+              ],
+              "additionalProperties": {}
+             },
+             "bucket_id": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "owner": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "buckets": {
+              "type": [
+               "object",
+               "null"
+              ],
+              "properties": {
+               "id": {
+                "type": "string"
+               },
+               "type": {
+                "anyOf": [
+                 {},
+                 {
+                  "type": "string",
+                  "enum": [
+                   "STANDARD"
+                  ]
+                 },
+                 {
+                  "type": "string",
+                  "enum": [
+                   "ANALYTICS"
+                  ]
+                 },
+                 {
+                  "type": "null"
+                 }
+                ]
+               },
+               "name": {
+                "type": "string"
+               },
+               "owner": {
+                "type": "string"
+               },
+               "file_size_limit": {
+                "type": [
+                 "number",
+                 "null"
+                ]
+               },
+               "allowed_mime_types": {
+                "type": [
+                 "array",
+                 "null"
+                ],
+                "items": {
+                 "type": "string"
+                }
+               },
+               "created_at": {
+                "type": "string"
+               },
+               "updated_at": {
+                "type": "string"
+               },
+               "public": {
+                "type": "boolean"
+               },
+               "versioning_status": {
+                "type": [
+                 "string",
+                 "null"
+                ],
+                "enum": [
+                 "DISABLED",
+                 "ENABLED",
+                 "SUSPENDED"
+                ]
+               }
+              },
+              "required": [
+               "id",
+               "name",
+               "owner",
+               "created_at",
+               "updated_at",
+               "public"
+              ]
+             },
+             "version": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "archived_at": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "is_delete_marker": {
+              "type": [
+               "boolean",
+               "null"
+              ]
+             },
+             "is_versioned": {
+              "type": [
+               "boolean",
+               "null"
+              ]
+             }
+            },
+            "required": [
+             "name",
+             "id",
+             "updated_at",
+             "created_at",
+             "last_accessed_at",
+             "metadata"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/items/getItemQuantities": {
+   "post": {
+    "operationId": "items.getItemQuantities",
+    "summary": "Get item quantities",
+    "description": "Get item quantities.",
+    "tags": [
+     "items"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "itemId": {
+          "type": "string"
+         },
+         "locationId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "itemId",
+         "locationId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "active": {
+           "type": "boolean"
+          },
+          "daysRemaining": {
+           "type": "number"
+          },
+          "demandAccumulationPeriod": {
+           "type": "number"
+          },
+          "demandAccumulationSafetyStock": {
+           "type": "number"
+          },
+          "demandForecast": {
+           "type": "number"
+          },
+          "dimension": {
+           "type": "string"
+          },
+          "dimensionId": {
+           "type": "string"
+          },
+          "finish": {
+           "type": "string"
+          },
+          "finishId": {
+           "type": "string"
+          },
+          "grade": {
+           "type": "string"
+          },
+          "gradeId": {
+           "type": "string"
+          },
+          "id": {
+           "type": "string"
+          },
+          "itemTrackingType": {
+           "type": "string",
+           "enum": [
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+           ]
+          },
+          "leadTime": {
+           "type": "number"
+          },
+          "lotSize": {
+           "type": "number"
+          },
+          "materialFormId": {
+           "type": "string"
+          },
+          "materialSubstanceId": {
+           "type": "string"
+          },
+          "materialType": {
+           "type": "string"
+          },
+          "materialTypeId": {
+           "type": "string"
+          },
+          "maximumInventoryQuantity": {
+           "type": "number"
+          },
+          "maximumOrderQuantity": {
+           "type": "number"
+          },
+          "minimumOrderQuantity": {
+           "type": "number"
+          },
+          "name": {
+           "type": "string"
+          },
+          "orderMultiple": {
+           "type": "number"
+          },
+          "quantityOnHand": {
+           "type": "number"
+          },
+          "quantityOnHold": {
+           "type": "number"
+          },
+          "quantityOnProductionDemand": {
+           "type": "number"
+          },
+          "quantityOnProductionOrder": {
+           "type": "number"
+          },
+          "quantityOnPurchaseOrder": {
+           "type": "number"
+          },
+          "quantityOnSalesOrder": {
+           "type": "number"
+          },
+          "quantityRejected": {
+           "type": "number"
+          },
+          "readableId": {
+           "type": "string"
+          },
+          "readableIdWithRevision": {
+           "type": "string"
+          },
+          "reorderingPolicy": {
+           "type": "string",
+           "enum": [
+            "Demand-Based Reorder",
+            "Fixed Reorder Quantity",
+            "Manual Reorder",
+            "Maximum Quantity"
+           ]
+          },
+          "reorderPoint": {
+           "type": "number"
+          },
+          "reorderQuantity": {
+           "type": "number"
+          },
+          "replenishmentSystem": {
+           "type": "string",
+           "enum": [
+            "Buy",
+            "Buy and Make",
+            "Make"
+           ]
+          },
+          "storageTypeIds": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "storageUnitIds": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "tags": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          },
+          "thumbnailPath": {
+           "type": "string"
+          },
+          "type": {
+           "type": "string",
+           "enum": [
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+           ]
+          },
+          "unitOfMeasureCode": {
+           "type": "string"
+          },
+          "usageLast30Days": {
+           "type": "number"
+          },
+          "usageLast90Days": {
+           "type": "number"
+          }
+         },
+         "required": [
+          "active",
+          "daysRemaining",
+          "demandAccumulationPeriod",
+          "demandAccumulationSafetyStock",
+          "demandForecast",
+          "dimension",
+          "dimensionId",
+          "finish",
+          "finishId",
+          "grade",
+          "gradeId",
+          "id",
+          "itemTrackingType",
+          "leadTime",
+          "lotSize",
+          "materialFormId",
+          "materialSubstanceId",
+          "materialType",
+          "materialTypeId",
+          "maximumInventoryQuantity",
+          "maximumOrderQuantity",
+          "minimumOrderQuantity",
+          "name",
+          "orderMultiple",
+          "quantityOnHand",
+          "quantityOnHold",
+          "quantityOnProductionDemand",
+          "quantityOnProductionOrder",
+          "quantityOnPurchaseOrder",
+          "quantityOnSalesOrder",
+          "quantityRejected",
+          "readableId",
+          "readableIdWithRevision",
+          "reorderingPolicy",
+          "reorderPoint",
+          "reorderQuantity",
+          "replenishmentSystem",
+          "storageTypeIds",
+          "storageUnitIds",
+          "tags",
+          "thumbnailPath",
+          "type",
+          "unitOfMeasureCode",
+          "usageLast30Days",
+          "usageLast90Days"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/quality/getInspectionDocumentsForItem": {
+   "post": {
+    "operationId": "quality.getInspectionDocumentsForItem",
+    "summary": "Get inspection documents for item",
+    "description": "Get inspection documents for item.",
+    "tags": [
+     "quality"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "itemId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "itemId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string"
+             },
+             "fileName": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "drawingNumber": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "version": {
+              "type": "number"
+             }
+            },
+            "required": [
+             "id",
+             "fileName",
+             "drawingNumber",
+             "version"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/quality/upsertInspectionDocument": {
+   "post": {
+    "operationId": "quality.upsertInspectionDocument",
+    "summary": "Upsert inspection document",
+    "description": "Upsert inspection document.",
+    "tags": [
+     "quality"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "partId": {
+          "type": "string"
+         },
+         "name": {
+          "type": "string"
+         },
+         "drawingNumber": {
+          "type": "string"
+         },
+         "pdfUrl": {
+          "type": "string"
+         },
+         "annotations": {
+          "type": "string"
+         },
+         "features": {
+          "type": "string"
+         },
+         "id": {
+          "type": "string"
+         },
+         "pageCount": {
+          "type": "number"
+         },
+         "defaultPageWidth": {
+          "type": "number"
+         },
+         "defaultPageHeight": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "partId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "id"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/quality/getInspectionFeatures": {
+   "post": {
+    "operationId": "quality.getInspectionFeatures",
+    "summary": "Get inspection features",
+    "description": "Get inspection features.",
+    "tags": [
+     "quality"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "inspectionDocumentId": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "inspectionDocumentId"
+        ],
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "id": {
+              "type": "string"
+             },
+             "inspectionDocumentId": {
+              "type": "string"
+             },
+             "companyId": {
+              "type": "string"
+             },
+             "pageNumber": {
+              "type": "number"
+             },
+             "label": {
+              "type": "string"
+             },
+             "description": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "nominalValue": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "tolerancePlus": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "toleranceMinus": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "unit": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "type": {
+              "type": "string"
+             },
+             "samplingPlanType": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "samplingSampleSize": {
+              "type": [
+               "number",
+               "null"
+              ]
+             },
+             "samplingPercentage": {
+              "type": [
+               "number",
+               "null"
+              ]
+             },
+             "samplingAql": {
+              "type": [
+               "number",
+               "null"
+              ]
+             },
+             "samplingInspectionLevel": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "samplingSeverity": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "gaugeTypeId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "balloonId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "createdBy": {
+              "type": "string"
+             },
+             "updatedBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "createdAt": {
+              "type": "string"
+             },
+             "updatedAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             }
+            },
+            "required": [
+             "id",
+             "inspectionDocumentId",
+             "companyId",
+             "pageNumber",
+             "label",
+             "description",
+             "nominalValue",
+             "tolerancePlus",
+             "toleranceMinus",
+             "unit",
+             "type",
+             "samplingPlanType",
+             "samplingSampleSize",
+             "samplingPercentage",
+             "samplingAql",
+             "samplingInspectionLevel",
+             "samplingSeverity",
+             "gaugeTypeId",
+             "balloonId",
+             "createdBy",
+             "updatedBy",
+             "createdAt",
+             "updatedAt"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/quality/saveInspectionDocument": {
+   "post": {
+    "operationId": "quality.saveInspectionDocument",
+    "summary": "Save an inspection plan's characteristics and balloons in one transaction",
+    "description": "Save an inspection plan's characteristics and balloons in one transaction.\n\n`features` and `balloons` are create / update / delete sets. `balloons` may\nbe the legacy shape (balloons carrying their characteristic), which needs\n`anchors` and is translated into features and balloon geometry; `anchors`\nalone is translated the same way. Persisted balloon ids sent where a\ncharacteristic id belongs are mapped to their characteristic. The default\nsampling rule (`samplingDefault`) is saved first: a failure after the\nfeatures were created would leave the editor holding temporary ids, and\nits retry would create them twice. Returns the saved rows and the maps\nfrom temporary to persisted ids.",
+    "tags": [
+     "quality"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "inspectionDocumentId": {
+          "type": "string"
+         },
+         "pdfUrl": {
+          "type": "string"
+         },
+         "pageCount": {
+          "type": "number"
+         },
+         "defaultPageWidth": {
+          "type": "number"
+         },
+         "defaultPageHeight": {
+          "type": "number"
+         },
+         "features": {
+          "type": "object",
+          "properties": {
+           "create": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "pageNumber": {
+               "type": "number"
+              },
+              "label": {
+               "type": "string"
+              },
+              "gaugeTypeId": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "samplingPlanType": {
+               "type": [
+                "string",
+                "null"
+               ],
+               "enum": [
+                "AQL",
+                "All",
+                "First",
+                "Percentage"
+               ]
+              },
+              "samplingSampleSize": {
+               "type": [
+                "number",
+                "null"
+               ]
+              },
+              "samplingPercentage": {
+               "type": [
+                "number",
+                "null"
+               ]
+              },
+              "samplingAql": {
+               "type": [
+                "number",
+                "null"
+               ]
+              },
+              "samplingInspectionLevel": {
+               "type": [
+                "string",
+                "null"
+               ],
+               "enum": [
+                "I",
+                "II",
+                "III",
+                "S1",
+                "S2",
+                "S3",
+                "S4"
+               ]
+              },
+              "samplingSeverity": {
+               "type": [
+                "string",
+                "null"
+               ],
+               "enum": [
+                "Normal",
+                "Reduced",
+                "Tightened"
+               ]
+              },
+              "id": {
+               "type": "string"
+              },
+              "tempId": {
+               "type": "string"
+              },
+              "description": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "nominalValue": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "tolerancePlus": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "toleranceMinus": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "unit": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "type": {
+               "type": "string",
+               "enum": [
+                "Checkbox",
+                "File",
+                "Inspection",
+                "List",
+                "Measurement",
+                "Person",
+                "Task",
+                "Timestamp",
+                "Value"
+               ]
+              }
+             },
+             "required": [
+              "pageNumber",
+              "label"
+             ]
+            }
+           },
+           "update": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string"
+              },
+              "gaugeTypeId": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "samplingPlanType": {
+               "type": [
+                "string",
+                "null"
+               ],
+               "enum": [
+                "AQL",
+                "All",
+                "First",
+                "Percentage"
+               ]
+              },
+              "samplingSampleSize": {
+               "type": [
+                "number",
+                "null"
+               ]
+              },
+              "samplingPercentage": {
+               "type": [
+                "number",
+                "null"
+               ]
+              },
+              "samplingAql": {
+               "type": [
+                "number",
+                "null"
+               ]
+              },
+              "samplingInspectionLevel": {
+               "type": [
+                "string",
+                "null"
+               ],
+               "enum": [
+                "I",
+                "II",
+                "III",
+                "S1",
+                "S2",
+                "S3",
+                "S4"
+               ]
+              },
+              "samplingSeverity": {
+               "type": [
+                "string",
+                "null"
+               ],
+               "enum": [
+                "Normal",
+                "Reduced",
+                "Tightened"
+               ]
+              },
+              "pageNumber": {
+               "type": "number"
+              },
+              "label": {
+               "type": "string"
+              },
+              "description": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "nominalValue": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "tolerancePlus": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "toleranceMinus": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "unit": {
+               "type": [
+                "string",
+                "null"
+               ]
+              },
+              "type": {
+               "type": "string",
+               "enum": [
+                "Checkbox",
+                "File",
+                "Inspection",
+                "List",
+                "Measurement",
+                "Person",
+                "Task",
+                "Timestamp",
+                "Value"
+               ]
+              }
+             },
+             "required": [
+              "id"
+             ]
+            }
+           },
+           "delete": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           }
+          }
+         },
+         "balloons": {
+          "anyOf": [
+           {
+            "type": "object",
+            "properties": {
+             "create": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "pageNumber": {
+                 "type": "number"
+                },
+                "regionX": {
+                 "type": "number"
+                },
+                "regionY": {
+                 "type": "number"
+                },
+                "regionWidth": {
+                 "type": "number"
+                },
+                "regionHeight": {
+                 "type": "number"
+                },
+                "xCoordinate": {
+                 "type": "number"
+                },
+                "yCoordinate": {
+                 "type": "number"
+                },
+                "id": {
+                 "type": "string"
+                },
+                "tempInspectionFeatureId": {
+                 "type": "string"
+                },
+                "inspectionFeatureId": {
+                 "type": "string"
+                },
+                "tempBalloonAnchorId": {
+                 "type": "string"
+                }
+               },
+               "required": [
+                "pageNumber",
+                "regionX",
+                "regionY",
+                "regionWidth",
+                "regionHeight",
+                "xCoordinate",
+                "yCoordinate"
+               ]
+              }
+             },
+             "update": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string"
+                },
+                "pageNumber": {
+                 "type": "number"
+                },
+                "regionX": {
+                 "type": "number"
+                },
+                "regionY": {
+                 "type": "number"
+                },
+                "regionWidth": {
+                 "type": "number"
+                },
+                "regionHeight": {
+                 "type": "number"
+                },
+                "xCoordinate": {
+                 "type": "number"
+                },
+                "yCoordinate": {
+                 "type": "number"
+                }
+               },
+               "required": [
+                "id"
+               ]
+              }
+             },
+             "delete": {
+              "type": "array",
+              "items": {
+               "type": "string"
+              }
+             }
+            }
+           },
+           {
+            "type": "object",
+            "properties": {
+             "create": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "tempBalloonAnchorId": {
+                 "type": "string"
+                },
+                "label": {
+                 "type": "string"
+                },
+                "xCoordinate": {
+                 "type": "number"
+                },
+                "yCoordinate": {
+                 "type": "number"
+                },
+                "nominalValue": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "tolerancePlus": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "toleranceMinus": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "unit": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "description": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "type": {
+                 "type": "string",
+                 "enum": [
+                  "Checkbox",
+                  "File",
+                  "Inspection",
+                  "List",
+                  "Measurement",
+                  "Person",
+                  "Task",
+                  "Timestamp",
+                  "Value"
+                 ]
+                }
+               },
+               "required": [
+                "tempBalloonAnchorId",
+                "label",
+                "xCoordinate",
+                "yCoordinate"
+               ]
+              }
+             },
+             "update": {
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "id": {
+                 "type": "string"
+                },
+                "label": {
+                 "type": "string"
+                },
+                "xCoordinate": {
+                 "type": "number"
+                },
+                "yCoordinate": {
+                 "type": "number"
+                },
+                "nominalValue": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "tolerancePlus": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "toleranceMinus": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "unit": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "description": {
+                 "type": [
+                  "string",
+                  "null"
+                 ]
+                },
+                "type": {
+                 "type": "string",
+                 "enum": [
+                  "Checkbox",
+                  "File",
+                  "Inspection",
+                  "List",
+                  "Measurement",
+                  "Person",
+                  "Task",
+                  "Timestamp",
+                  "Value"
+                 ]
+                }
+               },
+               "required": [
+                "id"
+               ]
+              }
+             },
+             "delete": {
+              "type": "array",
+              "items": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          ]
+         },
+         "anchors": {
+          "type": "object",
+          "properties": {
+           "create": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "tempId": {
+               "type": "string"
+              },
+              "pageNumber": {
+               "type": "number"
+              },
+              "xCoordinate": {
+               "type": "number"
+              },
+              "yCoordinate": {
+               "type": "number"
+              },
+              "width": {
+               "type": "number"
+              },
+              "height": {
+               "type": "number"
+              }
+             },
+             "required": [
+              "tempId",
+              "pageNumber",
+              "xCoordinate",
+              "yCoordinate",
+              "width",
+              "height"
+             ]
+            }
+           },
+           "update": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "id": {
+               "type": "string"
+              },
+              "pageNumber": {
+               "type": "number"
+              },
+              "xCoordinate": {
+               "type": "number"
+              },
+              "yCoordinate": {
+               "type": "number"
+              },
+              "width": {
+               "type": "number"
+              },
+              "height": {
+               "type": "number"
+              }
+             },
+             "required": [
+              "id"
+             ]
+            }
+           },
+           "delete": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           }
+          }
+         },
+         "samplingDefault": {
+          "type": "object",
+          "properties": {
+           "samplingPlanType": {
+            "type": [
+             "string",
+             "null"
+            ],
+            "enum": [
+             "AQL",
+             "All",
+             "First",
+             "Percentage"
+            ]
+           },
+           "samplingSampleSize": {
+            "type": [
+             "number",
+             "null"
+            ]
+           },
+           "samplingPercentage": {
+            "type": [
+             "number",
+             "null"
+            ]
+           },
+           "samplingAql": {
+            "type": [
+             "number",
+             "null"
+            ]
+           },
+           "samplingInspectionLevel": {
+            "type": [
+             "string",
+             "null"
+            ],
+            "enum": [
+             "I",
+             "II",
+             "III",
+             "S1",
+             "S2",
+             "S3",
+             "S4"
+            ]
+           },
+           "samplingSeverity": {
+            "type": [
+             "string",
+             "null"
+            ],
+            "enum": [
+             "Normal",
+             "Reduced",
+             "Tightened"
+            ]
+           }
+          },
+          "required": [
+           "samplingPlanType",
+           "samplingSampleSize",
+           "samplingPercentage",
+           "samplingAql",
+           "samplingInspectionLevel",
+           "samplingSeverity"
+          ]
+         }
+        },
+        "required": [
+         "inspectionDocumentId"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "success": {
+           "type": "boolean"
+          },
+          "featureIdMap": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "string"
+           }
+          },
+          "balloonAnchorIdMap": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "string"
+           }
+          },
+          "features": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "additionalProperties": {}
+           }
+          },
+          "anchors": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "additionalProperties": {}
+           }
+          },
+          "balloons": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "additionalProperties": {}
+           }
+          }
+         },
+         "required": [
+          "success",
+          "featureIdMap",
+          "balloonAnchorIdMap",
+          "features",
+          "anchors",
+          "balloons"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/quality/getIssues": {
+   "post": {
+    "operationId": "quality.getIssues",
+    "summary": "Get issues",
+    "description": "Get issues.",
+    "tags": [
+     "quality"
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "limit": {
+          "type": "number",
+          "description": "Rows per page. Left out, the read is not paged."
+         },
+         "offset": {
+          "type": "number"
+         },
+         "search": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "filters": {
+          "type": "array",
+          "description": "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "column": {
+             "type": "string"
+            },
+            "operator": {
+             "type": "string",
+             "enum": [
+              "between",
+              "contains",
+              "eq",
+              "gt",
+              "gte",
+              "in",
+              "lt",
+              "lte",
+              "neq",
+              "startsWith"
+             ]
+            },
+            "value": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "column",
+            "operator",
+            "value"
+           ]
+          }
+         },
+         "sorts": {
+          "type": "array",
+          "description": "Orders the list by returned fields, first to last.",
+          "items": {
+           "type": "object",
+           "properties": {
+            "sortBy": {
+             "type": "string"
+            },
+            "sortAsc": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "sortBy",
+            "sortAsc"
+           ]
+          }
+         }
+        },
+        "additionalProperties": {}
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "results": {
+           "type": [
+            "array",
+            "null"
+           ],
+           "items": {
+            "type": "object",
+            "properties": {
+             "approvalRequirements": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string",
+               "enum": [
+                "MRB"
+               ]
+              }
+             },
+             "assignee": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "closeDate": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "companyId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "containmentStatus": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "content": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "createdAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "createdBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "customFields": {
+              "anyOf": [
+               {
+                "type": "string"
+               },
+               {
+                "type": "number"
+               },
+               {
+                "type": "boolean"
+               },
+               {
+                "type": "object",
+                "additionalProperties": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object"
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "array",
+                "items": {
+                 "anyOf": [
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "number"
+                  },
+                  {
+                   "type": "boolean"
+                  },
+                  {
+                   "type": "object",
+                   "additionalProperties": {}
+                  },
+                  {
+                   "type": "array",
+                   "items": {}
+                  },
+                  {
+                   "type": "null"
+                  }
+                 ]
+                }
+               },
+               {
+                "type": "null"
+               }
+              ]
+             },
+             "description": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "dueDate": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "id": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "items": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "locationId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "name": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "nonConformanceId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "nonConformanceTypeId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "nonConformanceWorkflowId": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "openDate": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "priority": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "Critical",
+               "High",
+               "Low",
+               "Medium"
+              ]
+             },
+             "quantity": {
+              "type": [
+               "number",
+               "null"
+              ]
+             },
+             "requiredActionIds": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "source": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "External",
+               "Internal"
+              ]
+             },
+             "status": {
+              "type": [
+               "string",
+               "null"
+              ],
+              "enum": [
+               "Closed",
+               "In Progress",
+               "Registered"
+              ]
+             },
+             "tags": {
+              "type": [
+               "array",
+               "null"
+              ],
+              "items": {
+               "type": "string"
+              }
+             },
+             "updatedAt": {
+              "type": [
+               "string",
+               "null"
+              ]
+             },
+             "updatedBy": {
+              "type": [
+               "string",
+               "null"
+              ]
+             }
+            },
+            "required": [
+             "approvalRequirements",
+             "assignee",
+             "closeDate",
+             "companyId",
+             "containmentStatus",
+             "content",
+             "createdAt",
+             "createdBy",
+             "customFields",
+             "description",
+             "dueDate",
+             "id",
+             "items",
+             "locationId",
+             "name",
+             "nonConformanceId",
+             "nonConformanceTypeId",
+             "nonConformanceWorkflowId",
+             "openDate",
+             "priority",
+             "quantity",
+             "requiredActionIds",
+             "source",
+             "status",
+             "tags",
+             "updatedAt",
+             "updatedBy"
+            ]
+           }
+          },
+          "count": {
+           "type": [
+            "number",
+            "null"
+           ],
+           "description": "Total matching rows, present on paginated reads."
+          }
+         },
+         "required": [
+          "results"
+         ]
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "The input is invalid; `message` names each field.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "No API key, or not a valid one.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "402": {
+      "description": "The company's plan does not include this.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "403": {
+      "description": "The key or its creator lacks the permission (JSON from the operation, text from the key's scopes).",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       },
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "The record does not exist, or belongs to another company.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "409": {
+      "description": "The record changed since it was read; read it again.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Refused by a business rule; `message` says which.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "429": {
+      "description": "Rate limited; wait for `Retry-After` seconds.",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "500": {
+      "description": "An internal failure; the detail is logged, not returned.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "A service the operation needs is unavailable; retry.",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Error"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

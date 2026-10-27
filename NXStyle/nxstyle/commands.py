@@ -711,8 +711,8 @@ def register(apps):
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
-    from . import (alignment_ui, claims, clearance, collector_ui, gdt_ui, msa_ui, parametric_ui, pmi_ui, package_ui,
-                   position_ui, sheetmetal_ui, sketch_ui, stackup_ui, titleblock_ui)
+    from . import (alignment_ui, carbon_ui, claims, clearance, collector_ui, gdt_ui, msa_ui, parametric_ui, pmi_ui,
+                   package_ui, position_ui, sheetmetal_ui, sketch_ui, stackup_ui, titleblock_ui)
     table.update(collector_ui.COMMANDS)
     table.update(sketch_ui.COMMANDS)
     table.update(alignment_ui.COMMANDS)
@@ -728,6 +728,7 @@ def register(apps):
     table.update(pmi_ui.COMMANDS)
     table.update(parametric_ui.COMMANDS)
     table["NXStyle_PublishPackage"] = package_ui.PublishPackage()
+    table.update(carbon_ui.commands())
     for key in config.BACKGROUNDS:
         table[f"NXStyle_Background_{key}"] = Background(key)
     for app in apps:

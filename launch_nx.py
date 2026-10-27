@@ -416,6 +416,34 @@ def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | N
 
 
 # --------------------------------------------------------------------------
+# Carbon: the manufacturing system (ERP, MES, quality) behind PLM › Manufacturing. A server, not an add-on:
+# nothing is loaded; NXStyle's own client (nxstyle/carbon.py) talks to it, so this only reports how it is set up
+# --------------------------------------------------------------------------
+CARBON_KEY_ENV = "CARBON_API_KEY"
+
+
+def find_carbon(profile: Path, disabled: bool = False) -> str:
+    """How Publish to Manufacturing will connect, for the start-up lines. Never prints the key."""
+    if disabled:
+        return "off (--no-carbon)"
+    cfg = read_settings(profile)
+    if cfg.get("manufacturing", "carbon") != "carbon":
+        return f"off (nxstyle.json: manufacturing = {cfg.get('manufacturing')!r})"
+    c = cfg.get("carbon") or {}
+    url = c.get("url") or os.environ.get("CARBON_URL", "")
+    if not url:
+        return "not set up (PLM > Manufacturing Connection)"
+    key_file = Path(c.get("api_key_file") or profile / "config" / "carbon.key")
+    if os.environ.get(CARBON_KEY_ENV, "").strip():
+        where = CARBON_KEY_ENV
+    elif key_file.is_file():
+        where = str(key_file)
+    else:
+        where = "missing (PLM > Manufacturing Connection)"
+    return f"{url}, API key {where}"
+
+
+# --------------------------------------------------------------------------
 # Hidden desktop (Windows): run the self-test without windows on the user's screen
 # --------------------------------------------------------------------------
 # A test run gets a hard memory ceiling. On 2026-10-12 a tutorial replay grew
@@ -709,6 +737,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
     ap.add_argument("--no-lcinterlocking", action="store_true",
                     help="start without the LCInterlocking add-on (Laser Cut; on by default)")
+    ap.add_argument("--no-carbon", action="store_true",
+                    help="start without the Carbon commands (PLM > Manufacturing; they need a Carbon server)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -748,12 +778,16 @@ def main(argv: list[str] | None = None) -> int:
     extra["NXSTYLE_SHEETMETAL_EXPECTED"] = "1" if sheetmetal or "NX profile" in sheetmetal_why else "0"
     lcinterlocking, lcinterlocking_why = find_lcinterlocking(profile.resolve(), disabled=args.no_lcinterlocking)
     extra["NXSTYLE_LCINTERLOCKING_EXPECTED"] = "1" if lcinterlocking or "NX profile" in lcinterlocking_why else "0"
+    carbon_why = find_carbon(profile.resolve(), disabled=args.no_carbon)
+    if args.no_carbon:
+        extra["NXSTYLE_CARBON"] = "0"
     cmd = build_command(install, args.files, passthrough,
                         tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
-                          "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "command": cmd},
+                          "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "carbon": carbon_why,
+                          "command": cmd},
                          indent=2))
         return 0
 
@@ -766,6 +800,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Katydid: {katydid_why}")
     print(f"SheetMetal: {sheetmetal_why}")
     print(f"LCInterlocking: {lcinterlocking_why}")
+    print(f"Carbon: {carbon_why}")
 
     if harness:
         if os.name == "nt":
