@@ -73,7 +73,9 @@
 * xref:tutorials/ap.adoc[AP: Impeller Shaft]
 * xref:tutorials/aq.adoc[AQ: Hexagonal Screw]
 * xref:tutorials/ar.adoc[AR: Hexagonal Nut]
+* xref:tutorials/as.adoc[AS: Arbor Press L-Bar]
 * xref:tutorials/at.adoc[AT: Arbor Press Rack]
+* xref:tutorials/au.adoc[AU: Impeller, the solid]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

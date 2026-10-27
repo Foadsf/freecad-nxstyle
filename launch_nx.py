@@ -761,7 +761,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AN,AO,AP,AQ,AR,AT",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AN,AO,AP,AQ,AR,AS,AT,AU",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
                          "G Shaft Support assembly, H GD&T plate drawing, I Gasket (trim, fillet, "
@@ -782,8 +782,9 @@ def main(argv: list[str] | None = None) -> int:
                          "AP Impeller Shaft: Cylinder, Cone and Cylinder united, each at the centre of the last edge, "
                          "AQ Hexagonal Screw: cylinders, a hexagon head, a Sphere Intersect, "
                          "AR Hexagonal Nut: a hexagon, Sphere Intersect, Mirror, hole, Chamfer, "
-                         "AS Arbor Press L-Bar: Blocks, Move Object, Combine, Edge Blend (work in progress: not in "
-                         "the default list), AT Arbor Press Rack: a tapered pocket patterned 19 times, a hole)")
+                         "AS Arbor Press L-Bar: Blocks, Move Object, Combine, Edge Blend, "
+                         "AT Arbor Press Rack: a tapered pocket patterned 19 times, a hole, "
+                         "AU Impeller: AH's blade with a Cone, Extrude, Circular Pattern and two holes (runs AH first))")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "

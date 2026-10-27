@@ -873,7 +873,14 @@ class MstShaftTutorials:
             from .tutorial import qtest
             qtest().qWait(500)                   # the dialog rebuilds its preview for the new target
         chosen = p.steps["body"].chosen()
+        status = p.status.text() if getattr(p, "status", None) is not None else ""
         pressed = ok()
+        if not pressed:                      # OK unavailable: say why, and leave nothing open for the next step
+            self.info.setdefault("primitive refused", []).append({"label": label, "status": status,
+                                                                  "error": getattr(p, "error", None),
+                                                                  "target": chosen})
+            from .smoke_primitives import button
+            button(QtWidgets.QDialogButtonBox.Cancel)
         if not callable(center):
             where = tuple(typed) if center is None else (0, 0, center[0])
         at_point = got is not None and all(abs(a - b) < 1e-6 for a, b in zip(got, where))
@@ -883,8 +890,8 @@ class MstShaftTutorials:
                + f", {how_extra}, Boolean '{mode}'" + (f", Select Body '{target.Label}' from the list"
                                                        if target is not None else "") + ", OK")
         if not (pressed and at_point and undo == [command] and (target is None or chosen == target.Name)):
-            self.step(label, how, FAIL, f"OK pressed {pressed}; point {got}, wanted {where}; target {chosen}; "
-                      f"undo {App.ActiveDocument.UndoNames[:2]}")
+            self.step(label, how, FAIL, f"OK pressed {pressed} (dialog: {status[:200]}); point {got}, wanted {where}; "
+                      f"target {chosen}; undo {App.ActiveDocument.UndoNames[:2]}")
             return False
         extra = f"; origin {tuple(round(c, 6) for c in got)}; one undo step {undo}" + \
             (f"; with {chosen}" if boolean != "None" else "")
@@ -1217,7 +1224,7 @@ class MstFastenerTutorials:
         OK available)."""
         from . import controller
         names = self.ao_edge_names(sk)
-        line = next(g for g, geo in enumerate(sk.Geometry) if "Line" in geo.TypeId and not sk.getConstruction(g))
+        line = next(g for g, geo in enumerate(sk.Geometry) if "Point" not in geo.TypeId and not sk.getConstruction(g))
         route = self.curve_pick(sk, line, names[line])
 
         def up():
@@ -1713,11 +1720,12 @@ def as_stages():
          "slot block": Part.makeBox(*[c * IN for c in AS_SLOT[1]], _v(AS_SLOT[0]))}
     b2 = Part.makeBox(*[c * IN for c in AS_B2], App.Vector(0, 0, AS_LIFT * IN))
     s["b2"] = b2
-    b2 = b2.cut(Part.makeCylinder(AS_HOLE[1] / 2 * IN, AS_HOLE[2] * IN, _v(AS_HOLE[0]), y))
+    # removeSplitter after each cut: without it the third cut came out invalid (measured, OCCT 7.8)
+    b2 = b2.cut(Part.makeCylinder(AS_HOLE[1] / 2 * IN, AS_HOLE[2] * IN, _v(AS_HOLE[0]), y)).removeSplitter()
     s["hole"] = b2
-    b2 = b2.cut(Part.makeCylinder(AS_BORE[1] / 2 * IN, AS_BORE[2] * IN, _v(AS_BORE[0]), y))
+    b2 = b2.cut(Part.makeCylinder(AS_BORE[1] / 2 * IN, AS_BORE[2] * IN, _v(AS_BORE[0]), y)).removeSplitter()
     s["bore"] = b2
-    b2 = b2.cut(Part.makeBox(*[c * IN for c in AS_SLOT[1]], _v(AS_SLOT[0])))
+    b2 = b2.cut(Part.makeBox(*[c * IN for c in AS_SLOT[1]], _v(AS_SLOT[0]))).removeSplitter()
     s["slot"] = b2
     u = s["b1"].fuse(b2).removeSplitter()
     s["unite"] = u
@@ -1837,39 +1845,34 @@ class MstArborPressTutorials:
 
     def as_move(self):
         body = self.as_body(1)
-        block = next(o for o in body.Group if o.TypeId == "PartDesign::AdditiveBox")
         Gui.Selection.clearSelection()
-        # the Block itself, as a click on it in the Part Navigator selects it (through its Body, as a sub-object,
-        # the Placement dialog moved nothing: measured)
-        Gui.Selection.addSelection(App.ActiveDocument.Name, block.Name)
+        Gui.Selection.addSelection(App.ActiveDocument.Name, body.Name)      # the block's body, Part Navigator
         self._as_moved = body
-        # NX-Style's Move Object (Ctrl+T) is FreeCAD's dragger, without a typed Distance yet: FreeCAD's Placement
-        # dialog (Menu > Edit > Placement) moves the block by a typed distance. The block, not its Body: a Boolean
-        # with a moved Body as its target ignores the Body's placement (measured, FreeCAD 1.1.4)
-        Gui.runCommand("Std_Placement")
-        self.wait = 1500
+        self.key("Ctrl+T")
+        self.wait = 1200
 
     def as_move_dialog(self):
-        from . import geomcheck
-        self.wait_dialog("as_move_dialog")
-        self.info["AS move widgets"] = self.task_widgets()
-        sel = [(s.ObjectName, list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx("", 0)]
-        z = self.set_quantity("zPos", AS_LIFT * IN)
-        self.mb2_click()
+        from . import geomcheck, move_ui
+        from .smoke_primitives import choose, ok
+        p = move_ui.current()
+        label = "Edit > Move Object: the second block, Motion Distance, ZC, Distance 200, Move Original, OK"
+        if p is None:
+            self.step(label, "Ctrl+T", FAIL, "the Move Object dialog did not open")
+            raise RuntimeError("no Move Object dialog; tutorial AS cannot continue")
+        motion = choose(p, "nxMotion", "Distance")
+        result = choose(p, "nxResult", "Move Original")
+        vector = choose(p, "nxVector", "ZC")
+        self.type_into(self._field(QtWidgets.QAbstractSpinBox, "distance"), AS_LIFT * IN)
+        pressed = ok()
         App.ActiveDocument.recompute()
         body = self._as_moved
-        block = next(o for o in body.Group if o.TypeId == "PartDesign::AdditiveBox")
-        self.info["AS move result"] = {"selection": sel, "body placement": str(body.Placement),
-                                       "block placement": str(block.Placement),
-                                       "block map mode": getattr(block, "MapMode", None),
-                                       "block support": str(getattr(block, "AttachmentSupport", None)),
-                                       "offset": str(getattr(block, "AttachmentOffset", None))}
-        ok, detail = geomcheck.compare(body.Shape if body is not None else None, self._as["b2"])
-        self.step("Edit > Move Object: the second block, Distance 200 along ZC, Move Original, OK",
-                  f"the Block selected (Part Navigator), Menu > Edit > Placement, '{z}' = 5080 mm, MB2 = OK",
-                  DIFFERS if ok else FAIL, f"{detail}. NX-Style's Move Object (Ctrl+T) has no Distance motion yet "
-                  "(it is being added); FreeCAD's Placement dialog moves the block by the typed distance. The block "
-                  "moves inside its body: FreeCAD's Unite / Subtract ignores a moved target body's placement")
+        last = dict(move_ui.HISTORY[-1]) if move_ui.HISTORY else {}
+        good, detail = geomcheck.compare(body.Shape if body is not None else None, self._as["b2"])
+        self.step(label, f"the block's body selected (Part Navigator), Ctrl+T, Motion '{motion}', Result '{result}', "
+                  f"Specify Vector '{vector}', Distance 5080 mm typed, OK",
+                  SAME if pressed and good and last.get("outcome") == "committed" else FAIL,
+                  f"{detail}; undo {last.get('undo')}. The block moves inside its body (the body stays where it is), "
+                  "so a later Unite / Subtract into it cuts where it is")
         self.wait = 400
 
     def as_hole(self):
@@ -1907,6 +1910,12 @@ class MstArborPressTutorials:
         picked = self.set_combo("comboType", kind) or self.set_combo("type", kind)
         self.mb2_click()
         App.ActiveDocument.recompute()
+        s = target.Shape
+        self.info.setdefault("AS boolean result", []).append(
+            {"kind": kind, "target": target.Name, "tip": target.Tip.Name if target.Tip else None,
+             "volume": s.Volume if not s.isNull() else None, "valid": s.isValid() if not s.isNull() else None,
+             "type": s.ShapeType if not s.isNull() else None, "solids": len(s.Solids) if not s.isNull() else None,
+             "bbox": str(s.BoundBox) if not s.isNull() else None, "placement": str(target.Placement)})
         self.as_vol(target, stage, label, f"the target made the work body, the tool selected (Part Navigator) + "
                     f"ribbon '{self._as_where} > Unite / Subtract', type '{picked}', MB2 = OK")
 
@@ -1939,11 +1948,6 @@ class MstArborPressTutorials:
 
     def as_blend_dialog(self, radius, label, stage):
         self.wait_dialog("as_blend_dialog")
-        w = self._field(QtWidgets.QAbstractSpinBox, "radius")
-        if w is not None:
-            self.info.setdefault("AS blend radius field", []).append(
-                {"name": w.objectName(), "maximum": w.property("maximum"), "minimum": w.property("minimum"),
-                 "text": w.text(), "unit": str(w.property("unit"))})
         field = self.set_quantity("radius", radius * IN)
         self.mb2_click()
         App.ActiveDocument.recompute()
@@ -1967,13 +1971,13 @@ class MstArborPressTutorials:
         for k, p in enumerate(AS_PINS):
             self.as_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", 8), ("height", 20)),
                               "Subtract", f"Cylinder #{k + 1} along XC at ({p[0]:g}, {p[1]:g}, {p[2]:g}), Ø8 x 20, "
-                              "Subtract", p, 0, f"pin{k + 1}", axis="XC")
+                              "Subtract", p, 0, f"pin{k + 1}", axis="XC", target=self.as_body(0))
         self.wait = 400
 
     def as_cut(self):
         self.as_primitive("Block", "Origin and Edge Lengths", (("length", 60), ("width", 20), ("height", 66)),
                           "Subtract", "Block 60 x 20 x 66 at (130, 22.5, 209.5), Subtract from the top block",
-                          AS_CUT[0], 0, "final")
+                          AS_CUT[0], 0, "final", target=self.as_body(0))
         self.key("Ctrl+F")
         self.wait = 1000
 
@@ -2168,3 +2172,164 @@ class MstArborPressTutorials:
 
     def at_show(self):
         self.show("AT_arborpress_rack")
+
+
+# ================================================================== AU: Impeller, the solid (4.7.5)
+# The book (pp. 92-94), inches. Tutorial AH's blade sketch reopened; a Cone along -XC from (14, 0, 0), base Ø15,
+# top Ø8, height 16.25; the blade (the airfoil curve) extruded 12 along ZC and united; Pattern Feature, Circular,
+# about XC through the origin, 5 at 72°; a Cylinder Ø4 x 16 subtracted from the cone's large end and a Cylinder
+# Ø0.275 x 0.25 from its small end.
+AU_CONE = ((14, 0, 0), 15, 8, 16.25)
+AU_BLADE = 12
+AU_COUNT = 5
+AU_BORE = ((14, 0, 0), 4, 16)
+AU_PIN = ((14 - 16.25, 0, 0), 0.275, 0.25)
+
+
+class MstImpellerSolidTutorials:
+    """Mixin for tutorial.Replay: tutorial AU (it continues tutorial AH's part)."""
+
+    def AU_STEPS(self):
+        return [self.p_modeling, self.au_open, self.au_cone, self.au_extrude, self.au_extrude_section,
+                self.au_pattern, self.au_pattern_dialog, self.au_bore, self.au_pin, self.au_check, self.au_fit,
+                self.au_show]
+
+    def au_stages(self, sk):
+        import Part
+        x = App.Vector(1, 0, 0)
+        (p, d1, d2, h) = AU_CONE
+        s = {"cone": Part.makeCone(d1 / 2 * IN, d2 / 2 * IN, h * IN, _v(p), -x)}
+        face = Part.Face(Part.Wire(Part.__sortEdges__(sk.Shape.Edges)))
+        blade = face.extrude(App.Vector(0, 0, AU_BLADE * IN))
+        s["blade"] = s["cone"].fuse(blade).removeSplitter()
+        all_blades = s["cone"]
+        for k in range(AU_COUNT):
+            b = blade.copy()
+            b.rotate(App.Vector(0, 0, 0), x, 360.0 / AU_COUNT * k)
+            all_blades = all_blades.fuse(b)
+        s["pattern"] = all_blades.removeSplitter()
+        (p, d, h) = AU_BORE
+        s["bore"] = s["pattern"].cut(Part.makeCylinder(d / 2 * IN, h * IN, _v(p), -x)).removeSplitter()
+        (p, d, h) = AU_PIN
+        s["final"] = s["bore"].cut(Part.makeCylinder(d / 2 * IN, h * IN, _v(p), x)).removeSplitter()
+        return s
+
+    def au_compare(self, stage, label, how):
+        from . import geomcheck
+        body = self.body()
+        ok, detail = geomcheck.compare(body.Shape if body is not None else None, self._au[stage])
+        self.step(label, how, SAME if ok else FAIL, detail)
+        return ok
+
+    def au_open(self):
+        import os
+        from .tutorial import OUT
+        self.tutorial = "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, " \
+                        "typed in mm)"
+        path = os.path.join(OUT, "Impeller_impeller.FCStd")
+        for name, d in list(App.listDocuments().items()):
+            if os.path.normcase(d.FileName or "") == os.path.normcase(path):
+                App.closeDocument(name)
+        QtWidgets.QApplication.processEvents()
+        doc = App.openDocument(path) if os.path.exists(path) else None
+        sk = next((o for o in doc.Objects if o.TypeId == "Sketcher::SketchObject"), None) if doc else None
+        closed = sk is not None and any(w.isClosed() for w in sk.Shape.Wires)
+        self.step("Open Impeller_impeller (tutorial AH's part)", "File > Open (by script)",
+                  SAME if closed else FAIL, f"the blade sketch, {len(sk.Shape.Edges)} curves in a closed loop"
+                  if closed else f"no closed blade sketch at {path}: tutorial AH saves it")
+        if not closed:
+            raise RuntimeError("no blade sketch; tutorial AU cannot continue")
+        self._au_sk = sk
+        self._au = self.au_stages(sk)
+        self.key("Ctrl+F")
+        self.key("Home")
+        self.wait = 1500
+
+    def au_cone(self):
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cone")
+        qtest().qWait(900)
+        (p, d1, d2, h) = AU_CONE
+
+        def check():
+            from . import geomcheck
+            return geomcheck.compare(self.body().Shape, self._au["cone"])
+        self.ap_dialog("Cone", "Diameters and Height", (("baseDiameter", d1 * IN), ("topDiameter", d2 * IN),
+                                                        ("height", h * IN)), "None",
+                       "Cone: Diameters and Height, -XC, Point Dialog (14, 0, 0), Base 15, Top 8, Height 16.25, OK",
+                       "Base 381, Top 203.2, Height 412.75 typed", 0, typed=tuple(c * IN for c in p), axis="-XC",
+                       check=check)
+        self.key("Ctrl+F")
+        self.wait = 1000
+
+    def au_extrude(self):
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def au_extrude_section(self):
+        how, ok = self.fs_extrude(self._au_sk, AU_BLADE * IN, "Unite")
+        self.au_compare("blade", "Extrude the airfoil 12 along ZC, Boolean Unite with the cone",
+                        f"ribbon '{self._fs_where} > Extrude', {how} {'clicked' if ok else 'unavailable'}")
+        self._au_pad = self.newest("PartDesign::Pad")
+        self.wait = 400
+
+    def au_pattern(self):
+        self.select_sub(self._au_pad, "")
+        b, self._fs_where = self.click_ribbon("Circular Pattern")
+        self.wait = 1500
+
+    def au_pattern_dialog(self):
+        self.wait_dialog("au_pattern_dialog")
+        axis = self.choose("x axis", "axis") or self.choose("x axis", "direction")
+        count = self.set_spin("occurrences", AU_COUNT)
+        pat = self.newest("PartDesign::PolarPattern")
+        if pat is None or pat.Occurrences != AU_COUNT:
+            if pat is not None:
+                pat.Occurrences = 2
+            Gui.Control.closeDialog()
+            self.step("Pattern Feature: the blade, Circular, XC through the origin, Count 5, Pitch Angle 72, OK",
+                      f"ribbon '{self._fs_where} > Circular Pattern'", FAIL, f"count not set: {self.pattern_state()}")
+            return
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        self.au_compare("pattern", "Pattern Feature: the blade, Circular, XC through the origin, Count 5, Pitch "
+                        "Angle 72, OK", f"the Extrude selected + ribbon '{self._fs_where} > Circular Pattern', axis "
+                        f"'{axis}', '{count}' = 5 over 360° (72° apart), MB2 = OK")
+        self.key("Ctrl+F")
+        self.wait = 800
+
+    def au_cylinder(self, spec, axis, label, stage):
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        qtest().qWait(900)
+        (p, d, h) = spec
+
+        def check():
+            from . import geomcheck
+            return geomcheck.compare(self.body().Shape, self._au[stage])
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", d * IN), ("height", h * IN)),
+                       "Subtract", label, f"Diameter {d * IN:g} and Height {h * IN:g} typed", 0,
+                       typed=tuple(c * IN for c in p), axis=axis, check=check)
+
+    def au_bore(self):
+        self.au_cylinder(AU_BORE, "-XC", "Cylinder Ø4 x 16 into the cone's large end, Subtract", "bore")
+        self.wait = 400
+
+    def au_pin(self):
+        self.au_cylinder(AU_PIN, "XC", "Cylinder Ø0.275 x 0.25 into the cone's small end, Subtract", "final")
+        self.wait = 400
+
+    def au_check(self):
+        self.au_compare("final", "The impeller", "compared with the book's dimensions built by the Part API")
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_impeller.FCStd")
+        self.step("Save and close the part", how, outcome, detail)
+        self.wait = 300
+
+    def au_fit(self):
+        self.fit()
+
+    def au_show(self):
+        self.show("AU_impeller")

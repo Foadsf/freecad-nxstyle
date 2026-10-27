@@ -40,7 +40,8 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 
 | Sketch, extrude, revolve | xref:tutorials/a.adoc[A], xref:tutorials/b.adoc[B], xref:tutorials/l.adoc[L]
 | Datum planes and holes | xref:tutorials/c.adoc[C], xref:tutorials/e.adoc[E], xref:tutorials/an.adoc[AN]
-| Primitives: Block, Cylinder, Cone, Sphere | xref:tutorials/an.adoc[AN], xref:tutorials/ap.adoc[AP], xref:tutorials/aq.adoc[AQ], xref:tutorials/ar.adoc[AR]
+| Primitives: Block, Cylinder, Cone, Sphere | xref:tutorials/an.adoc[AN], xref:tutorials/ap.adoc[AP], xref:tutorials/aq.adoc[AQ], xref:tutorials/ar.adoc[AR], xref:tutorials/as.adoc[AS], xref:tutorials/au.adoc[AU]
+| Move Object, combining bodies (Unite / Subtract) | xref:tutorials/as.adoc[AS]
 | Threads, polygons, Intersect, chamfers | xref:tutorials/aq.adoc[AQ], xref:tutorials/ar.adoc[AR]
 | Datum axes | xref:tutorials/an.adoc[AN]
 | Patterns, mirror, shell, edge blend | xref:tutorials/d.adoc[D], xref:tutorials/f.adoc[F], xref:tutorials/ao.adoc[AO], xref:tutorials/at.adoc[AT]
@@ -101,7 +102,7 @@ include::partial$outcome-legend.adoc[]
 * Tutorial AE is ours: the acceptance case of the Extrude command (None for a new body, Unite, Subtract, edit, cancel, undo, reopen).
 * Tutorial AL is ours: the plate and its parameters; the exchange follows ISO 10303-55 annex E and ISO 10303-108 Cor.1 annex F.
 * Tutorial AM is ours: the fixture and the bracket profile; the commands follow ISO 10303-112 clause 4.2.2 (selection by ISO 10303-55).
-* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN; section 4.2.2: tutorial AP; section 4.4: tutorial AO; sections 4.7.1 and 4.7.2: tutorials AQ and AR; section 4.7.4: tutorial AT.
+* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN; section 4.2.2: tutorial AP; section 4.4: tutorial AO; sections 4.7.1 and 4.7.2: tutorials AQ and AR; sections 4.7.3, 4.7.4 and 4.7.5: tutorials AS, AT and AU.
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.
 
 == The videos

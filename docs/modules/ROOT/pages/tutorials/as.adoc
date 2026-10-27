@@ -1,0 +1,60 @@
+= Tutorial AS: Arbor Press L-Bar
+:description: An L-bar from NX primitives: two Blocks, one moved with Move Object, holes and a slot subtracted, the blocks combined, two Edge Blends, four pin holes and a clamp slot (NX 12 for Engineering Design, 4.7.3).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.7.3 (L-Bar).
+You learn:: Block, Move Object (Distance), Cylinder and Block with Subtract and Select Body, Combine Subtract and Unite (Unite / Subtract), Edge Blend
+Sizes:: the book's, in inches, typed in millimetres. Blocks 65 × 65 × 285 and 182 × 65 × 85, the second lifted 200. Holes Ø35 and Ø66 along YC, a slot block 25 × 20 × 150. Blends R60 and R30. Four holes Ø8 × 20 along XC, and a block 60 × 20 × 66.
+
+The book's figures on p. 86 show which edges the blends go on: R60 on the outer corner, R30 on the inner one.
+
+== Step by step
+
+=== 1. Two blocks, one moved up
+
+kbd:[Ctrl+N] and save the part as `Arborpress_L-bar`.
+Click *Block* and type Length 65, Width 65 and Height 285 at the origin. Click *OK*.
+Click *Block* again for 182 × 65 × 85, also at the origin.
+It becomes a body of its own (Boolean *None*).
+
+Select the second block's body in the Part Navigator and press kbd:[Ctrl+T] (*Move Object*).
+Choose Motion *Distance*, Result *Move Original* and the vector *ZC*, type Distance 5080 mm (200 in), and click *OK*.
+
+=== 2. The holes and the slot in the top block
+
+Click *Cylinder*, choose *YC*, type the point (130, −5, 242) in, Diameter 35 and Height 100.
+Choose *Subtract*, choose the top block in *Select Body*, and click *OK*.
+Do the same for the Ø66 × 20 cylinder at (130, 22.5, 242).
+
+Click *Block* for 25 × 20 × 150 at (157, 22.5, 180), with Boolean *None*.
+Make the top block the work body (double-click it in the Part Navigator), select the new block and click *Unite / Subtract*.
+Choose *Cut* and press MB2: that is NX's Combine > Subtract with the top block as target.
+
+=== 3. One L-bar, rounded
+
+Make the first block the work body, select the top block and click *Unite / Subtract*. Keep *Fuse* and press MB2.
+
+Select the outer edge where the blocks meet, click *Edge Blend*, type 1524 mm (60 in) and press MB2.
+Do the same with 762 mm (30 in) on the inner edge.
+
+=== 4. The pin holes and the clamp slot
+
+Add four Cylinders along *XC*, Ø8 × 20, at (162, 11.25, 210), (162, 11.25, 275), (162, 53.75, 210) and (162, 53.75, 275). Subtract each from the L-bar (*Select Body*).
+Then add a Block 60 × 20 × 66 at (130, 22.5, 209.5) and subtract it.
+
+image::tutorial-AS-01-lbar.png[The finished L-bar: the rounded corner, the hole, the slot and the clamp jaws with their pin holes]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AS.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each step is compared with the book's dimensions built by FreeCAD's Part API.
+
+== What differs from NX
+
+* NX's Combine > Subtract and Unite pick a target and tools in one dialog. NX-Style uses FreeCAD's Unite / Subtract: make the target the work body, select the tool, and choose the type.
+* Move Object moves a PartDesign body's features, not the body's placement. FreeCAD's Unite / Subtract ignores a moved target body's placement; see xref:modeling.adoc#move-object[Move Object].

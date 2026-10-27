@@ -3878,7 +3878,7 @@
    "nx": "Create a new file in inches (Impeller_impeller)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed1']"
+   "detail": "new document ['Unnamed']"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -3942,7 +3942,7 @@
    "nx": "Rapid Dimension: the radii 1.5 and 0.5 at the ends, 18 and 15 between",
    "replay": "arc + ribbon 'Radius / Diameter', the value typed in FreeCAD's dialog, 4 times",
    "outcome": "same",
-   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 2.2e-13 mm of the solved figure (centres, radii, ends)"
+   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 2.3e-13 mm of the solved figure (centres, radii, ends)"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -4737,6 +4737,166 @@
    "detail": "Impeller_hexa-nut.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Create a new file (Arborpress_L-bar)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed1']"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Save it as Arborpress_L-bar",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_L-bar.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Block 65 x 65 x 285 at the origin",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 0/0/0 typed, length 65, width 65, height 285 (in) typed in mm, Boolean 'None', OK",
+   "outcome": "same",
+   "detail": "Body: same solid as the reference: 0 mm³ differ, box within 0 mm, 6 faces (6 in the reference); origin (0.0, 0.0, 0.0); one undo step ['Block']"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "A second Block 182 x 65 x 85, also at the origin",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 0/0/0 typed, length 182, width 65, height 85 (in) typed in mm, Boolean 'None', OK",
+   "outcome": "same",
+   "detail": "Body001: same solid as the reference: 0 mm³ differ, box within 0 mm, 6 faces (6 in the reference); origin (0.0, 0.0, 0.0); one undo step ['Block']"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Edit > Move Object: the second block, Motion Distance, ZC, Distance 200, Move Original, OK",
+   "replay": "the block's body selected (Part Navigator), Ctrl+T, Motion 'Distance', Result 'Move Original', Specify Vector 'ZC', Distance 5080 mm typed, OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 6 faces (6 in the reference); undo Move Object. The block moves inside its body (the body stays where it is), so a later Unite / Subtract into it cuts where it is"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Cylinder along YC at (130, -5, 242), Ø35 x 100, Subtract from the top block",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'YC', XC/YC/ZC 3302/-127/6146.8 typed, diameter 35, height 100 (in) typed in mm, Boolean 'Subtract', Select Body 'Body001' from the list, OK",
+   "outcome": "same",
+   "detail": "Body001: same solid as the reference: 0 mm³ differ, box within 2.7e-12 mm, 7 faces (7 in the reference); origin (3302.0, -127.0, 6146.8); one undo step ['Cylinder']; with Body001"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Cylinder along YC at (130, 22.5, 242), Ø66 x 20, Subtract from the same block",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'YC', XC/YC/ZC 3302/571.5/6146.8 typed, diameter 66, height 20 (in) typed in mm, Boolean 'Subtract', Select Body 'Body001' from the list, OK",
+   "outcome": "same",
+   "detail": "Body001: same solid as the reference: 0 mm³ differ, box within 2.7e-12 mm, 11 faces (11 in the reference); origin (3302.0, 571.5, 6146.8); one undo step ['Cylinder']; with Body001"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Block 25 x 20 x 150 at (157, 22.5, 180)",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 3987.8/571.5/4572 typed, length 25, width 20, height 150 (in) typed in mm, Boolean 'None', OK",
+   "outcome": "same",
+   "detail": "Body002: same solid as the reference: 0 mm³ differ, box within 9.1e-13 mm, 6 faces (6 in the reference); origin (3987.8, 571.5, 4572.0); one undo step ['Block']"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Combine > Subtract: Target the block with the two holes, Tool the new block",
+   "replay": "the target made the work body, the tool selected (Part Navigator) + ribbon 'Home › Feature > Unite / Subtract', type 'Cut', MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.8e-12 mm, 14 faces (14 in the reference)"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Combine > Unite: the two blocks",
+   "replay": "the target made the work body, the tool selected (Part Navigator) + ribbon 'Home › Feature > Unite / Subtract', type 'Fuse', MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.4e-12 mm, 16 faces (16 in the reference)"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Edge Blend, Radius 60: the outer corner where the blocks meet",
+   "replay": "Edge39 selected + ribbon 'Home › Feature > Edge Blend', 'filletRadius' = 1524 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.8e-12 mm, 17 faces (17 in the reference)"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Edge Blend, Radius 30: the inner corner",
+   "replay": "Edge32 selected + ribbon 'Home › Feature > Edge Blend', 'filletRadius' = 762 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.8e-12 mm, 18 faces (18 in the reference)"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Cylinder #1 along XC at (162, 11.25, 210), Ø8 x 20, Subtract",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 4114.8/285.75/5334 typed, diameter 8, height 20 (in) typed in mm, Boolean 'Subtract', Select Body 'Body' from the list, OK",
+   "outcome": "same",
+   "detail": "Body: same solid as the reference: 0 mm³ differ, box within 2.3e-12 mm, 20 faces (20 in the reference); origin (4114.8, 285.75, 5334.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Cylinder #2 along XC at (162, 11.25, 275), Ø8 x 20, Subtract",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 4114.8/285.75/6985 typed, diameter 8, height 20 (in) typed in mm, Boolean 'Subtract', Select Body 'Body' from the list, OK",
+   "outcome": "same",
+   "detail": "Body: same solid as the reference: 0 mm³ differ, box within 7.7e-12 mm, 22 faces (22 in the reference); origin (4114.8, 285.75, 6985.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Cylinder #3 along XC at (162, 53.75, 210), Ø8 x 20, Subtract",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 4114.8/1365.25/5334 typed, diameter 8, height 20 (in) typed in mm, Boolean 'Subtract', Select Body 'Body' from the list, OK",
+   "outcome": "same",
+   "detail": "Body: same solid as the reference: 0 mm³ differ, box within 5.9e-12 mm, 24 faces (24 in the reference); origin (4114.8, 1365.25, 5334.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Cylinder #4 along XC at (162, 53.75, 275), Ø8 x 20, Subtract",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 4114.8/1365.25/6985 typed, diameter 8, height 20 (in) typed in mm, Boolean 'Subtract', Select Body 'Body' from the list, OK",
+   "outcome": "same",
+   "detail": "Body: same solid as the reference: 0 mm³ differ, box within 1.4e-11 mm, 26 faces (26 in the reference); origin (4114.8, 1365.25, 6985.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 18,
+   "nx": "Block 60 x 20 x 66 at (130, 22.5, 209.5), Subtract from the top block",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 3302/571.5/5321.3 typed, length 60, width 20, height 66 (in) typed in mm, Boolean 'Subtract', Select Body 'Body' from the list, OK",
+   "outcome": "same",
+   "detail": "Body: same solid as the reference: 0 mm³ differ, box within 1.2e-11 mm, 29 faces (29 in the reference); origin (3302.0, 571.5, 5321.3); one undo step ['Block']; with Body"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 19,
+   "nx": "The L-bar",
+   "replay": "compared with the book's dimensions built by the Part API",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.2e-11 mm, 29 faces (29 in the reference)"
+  },
+  {
+   "tutorial": "AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)",
+   "n": 20,
+   "nx": "Save and close the file",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_L-bar.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
    "tutorial": "AT: Arbor Press Rack (NX 12 for Engineering Design, 4.7.4; book in inches, typed in mm)",
    "n": 1,
    "nx": "Create a new file (Arborpress_rack)",
@@ -4823,6 +4983,70 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Arborpress_rack.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Open Impeller_impeller (tutorial AH's part)",
+   "replay": "File > Open (by script)",
+   "outcome": "same",
+   "detail": "the blade sketch, 4 curves in a closed loop"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Cone: Diameters and Height, -XC, Point Dialog (14, 0, 0), Base 15, Top 8, Height 16.25, OK",
+   "replay": "ribbon 'Home › Feature', Type 'Diameters and Height', Specify Vector '-XC', XC/YC/ZC 355.6/0/0 typed, Base 381, Top 203.2, Height 412.75 typed, Boolean 'None', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 5.7e-14 mm, 3 faces (3 in the reference); origin (355.6, 0.0, 0.0); one undo step ['Cone']"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Extrude the airfoil 12 along ZC, Boolean Unite with the cone",
+   "replay": "ribbon 'Home › Feature > Extrude', a side picked (QuickPick; Curve Rule Inferred Curves), dialog opened True; Boolean 'Unite', 'lengthEdit' = 304.8 mm; OK clicked",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.8e-13 mm, 8 faces (8 in the reference)"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Pattern Feature: the blade, Circular, XC through the origin, Count 5, Pitch Angle 72, OK",
+   "replay": "the Extrude selected + ribbon 'Home › Pattern > Circular Pattern', axis 'Base X-axis', 'spinOccurrences' = 5 over 360° (72° apart), MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.8e-13 mm, 28 faces (28 in the reference)"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Cylinder Ø4 x 16 into the cone's large end, Subtract",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector '-XC', XC/YC/ZC 355.6/0/0 typed, Diameter 101.6 and Height 406.4 typed, Boolean 'Subtract', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 2.9e-13 mm, 30 faces (30 in the reference); origin (355.6, 0.0, 0.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Cylinder Ø0.275 x 0.25 into the cone's small end, Subtract",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC -57.15/0/0 typed, Diameter 6.985 and Height 6.35 typed, Boolean 'Subtract', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 3.4e-13 mm, 31 faces (31 in the reference); origin (-57.15, 0.0, 0.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "The impeller",
+   "replay": "compared with the book's dimensions built by the Part API",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 3.4e-13 mm, 31 faces (31 in the reference)"
+  },
+  {
+   "tutorial": "AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Save and close the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Impeller_impeller.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   }
  ],
  "info": {

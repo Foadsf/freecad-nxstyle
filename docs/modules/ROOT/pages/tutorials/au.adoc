@@ -1,0 +1,51 @@
+= Tutorial AU: Impeller, the solid
+:description: Tutorial AH's blade sketch made into an impeller: a Cone, the blade extruded and united, a circular Pattern Feature of five blades, and two holes (NX 12 for Engineering Design, 4.7.5).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.7.5 (Impeller). It continues the blade sketch of section 3.5.3, xref:tutorials/ah.adoc[tutorial AH].
+You learn:: Cone with a typed point and a vector, Extrude with Unite, Pattern Feature with a circular layout, Cylinder with Subtract
+Sizes:: the book's, in inches, typed in millimetres. A cone along −XC from (14, 0, 0), Ø15 to Ø8, 16.25 long. The blade extruded 12 along ZC. Five blades, 72° apart about XC. A hole Ø4 × 16 into the large end and Ø0.275 × 0.25 into the small end.
+
+The replay runs tutorial AH first and opens the part it saved.
+
+== Step by step
+
+=== 1. The cone
+
+Open `Impeller_impeller`, the part of tutorial AH.
+Click *Cone*, keep *Diameters and Height* and choose *−XC*.
+Type the point (355.6, 0, 0) mm, which is (14, 0, 0) in.
+Then type Base Diameter 381, Top Diameter 203.2 and Height 412.75 mm (15, 8 and 16.25 in).
+Click *OK*.
+
+=== 2. The blade
+
+Click *Extrude* and click one of the blade's arcs: with the Curve Rule on Inferred Curves the pick takes the whole closed outline.
+Choose *Unite*, type 304.8 mm (12 in) and click *OK*.
+
+=== 3. Five blades
+
+Select the Extrude and click *Circular Pattern* (Home › Pattern).
+Choose the X axis, 5 occurrences over 360° (72° apart), and press MB2.
+
+=== 4. The holes
+
+Click *Cylinder*, choose *−XC*, type the point (14, 0, 0) in, and type Diameter 4 and Height 16. Choose *Subtract*, and click *OK*.
+Click *Cylinder* again, choose *XC*, type the point (−2.25, 0, 0) in at the small end, and type Diameter 0.275 and Height 0.25. Choose *Subtract*, and click *OK*.
+
+image::tutorial-AU-01-impeller.png[The impeller: the cone with five blades and the hole in its end]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AU.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each step is compared with the book's dimensions built by FreeCAD's Part API.
+
+== What differs from NX
+
+* NX has one Pattern Feature with a Layout list. FreeCAD has separate buttons; the circular one is *Circular Pattern*.
+* The book places the two holes "on the side" of the cone. Here their points are typed at the cone's two ends.
