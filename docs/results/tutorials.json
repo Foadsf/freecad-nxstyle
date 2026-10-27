@@ -3742,7 +3742,7 @@
    "nx": "Create a new file in inches (Impeller_lower_casing)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed1']"
+   "detail": "new document ['Unnamed']"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3796,9 +3796,9 @@
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
    "n": 8,
    "nx": "Select all the dimensions, MB3 > Hide",
-   "replay": "dimensions selected, FreeCAD's 'Switch virtual space'",
-   "outcome": "differs",
-   "detail": "6 of 6 dimensions hidden. FreeCAD hides sketch dimensions by moving them to its 'virtual space' (not on the ribbon or the MB3 menu); Ctrl+B does not hide them"
+   "replay": "dimensions selected, MB3 on empty space > Hide",
+   "outcome": "same",
+   "detail": "6 of 6 dimensions hidden (FreeCAD's 'virtual space'); the sketch's own visibility untouched True; menu ['Toggle Driving/Reference Constraints', 'Toggle Constraints', 'Select Associated Geometry', 'Hide', 'Delete']"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3806,7 +3806,7 @@
    "nx": "Move Curve: the 4 curves, Distance 0.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 4.5e-07 mm"
+   "detail": "4 copies made; largest error 4.8e-07 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3822,7 +3822,7 @@
    "nx": "Move Curve: the lower curve, -1.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 4.5e-07 mm"
+   "detail": "4 copies made; largest error 7.9e-05 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3838,7 +3838,7 @@
    "nx": "Move Curve: the outer end line, -0.5 along XC, Copy Original",
    "replay": "1 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "1 copies made; largest error 4.2e-07 mm"
+   "detail": "1 copies made; largest error 2.8e-07 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3862,7 +3862,7 @@
    "nx": "Finish Sketch",
    "replay": "Ctrl+Q",
    "outcome": "same",
-   "detail": "sketch edit ended True"
+   "detail": "sketch edit ended True; the sketch is shown True (its dimensions stay hidden)"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3870,7 +3870,7 @@
    "nx": "Save and close the file",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "Impeller_lower_casing.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+   "detail": "Impeller_lower_casing.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -3878,7 +3878,7 @@
    "nx": "Create a new file in inches (Impeller_impeller)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed2']"
+   "detail": "new document ['Unnamed1']"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -3900,29 +3900,21 @@
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
    "n": 4,
    "nx": "Point: one at (0, 0, 0), one at (11.75, 6, 0)",
-   "replay": "ribbon 'Sketch › Curve > Point', MB1 at the origin, MB1 at (11.75, 6)",
-   "outcome": "differs",
-   "detail": "2 points; the second at (11.7455, 5.9727) in"
+   "replay": "ribbon 'Sketch › Curve > Point', MB1 on the origin, then XC and YC typed in the on-view fields",
+   "outcome": "same",
+   "detail": "2 points, at (0.0000, 0.0000) and (11.7500, 6.0000) in; FreeCAD keeps typed coordinates as constraints: [['Coincident'], ['DistanceX', 'DistanceY']]; redundant []"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
    "n": 5,
-   "nx": "(not in the book) Put the second point at (11.75, 6) exactly",
-   "replay": "origin + point, FreeCAD's Horizontal Distance 298.45 and Vertical Distance 152.4 (not on the Sketch tab)",
-   "outcome": "differs",
-   "detail": "point at (11.7500, 6.0000) in. NX creates a point at typed coordinates"
+   "nx": "Arc by Center and Endpoints: R1.5 about the origin point, R0.5 about the other point",
+   "replay": "A key, MB1 on the centre point, the start, round to the end, MB2 (twice)",
+   "outcome": "same",
+   "detail": "arcs made; centres on the points True; radii 1.482, 0.526 in (sized below)"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
    "n": 6,
-   "nx": "Arc by Center and Endpoints: R1.5 about the origin point, R0.5 about the other point",
-   "replay": "A key, MB1 on the centre point, the start, round to the end, MB2 (twice)",
-   "outcome": "same",
-   "detail": "arcs made; centres on the points True; radii 1.483, 0.528 in (sized below)"
-  },
-  {
-   "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
-   "n": 7,
    "nx": "Arc by 3 Points: the top end points, then a point between; the same for the bottom",
    "replay": "ribbon 'Sketch > Arc' dropdown > 'Arc From 3 Points', MB1 on both end points and between, MB2 (twice)",
    "outcome": "same",
@@ -3930,7 +3922,7 @@
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
-   "n": 8,
+   "n": 7,
    "nx": "Constraints: every arc Tangent to the next at its end points",
    "replay": "two arcs + ribbon 'Tangent', 4 times",
    "outcome": "same",
@@ -3938,23 +3930,23 @@
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
-   "n": 9,
+   "n": 8,
    "nx": "The point at the origin: Fixed",
-   "replay": "no click needed: the point snapped to the origin",
+   "replay": "no click needed: the point is Coincident with the origin",
    "outcome": "differs",
    "detail": "FreeCAD's Coincident with the origin already fixes it; Fixed on top would be redundant"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
-   "n": 10,
+   "n": 9,
    "nx": "Rapid Dimension: the radii 1.5 and 0.5 at the ends, 18 and 15 between",
    "replay": "arc + ribbon 'Radius / Diameter', the value typed in FreeCAD's dialog, 4 times",
    "outcome": "same",
-   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 3.4e-11 mm of the solved figure (centres, radii, ends)"
+   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 2.2e-13 mm of the solved figure (centres, radii, ends)"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
-   "n": 11,
+   "n": 10,
    "nx": "Finish Sketch",
    "replay": "Ctrl+Q",
    "outcome": "same",
@@ -3962,11 +3954,11 @@
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
-   "n": 12,
+   "n": 11,
    "nx": "Save and close the file",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "Impeller_impeller.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+   "detail": "Impeller_impeller.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",
