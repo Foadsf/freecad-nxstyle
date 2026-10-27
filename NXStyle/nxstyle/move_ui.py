@@ -445,7 +445,9 @@ class MovePanel:
         self.previewed = True
         if v["result"] == "Move Original":
             for name, kind in self.objects:
-                move(self.doc.getObject(name), kind, motions[0])
+                warning = move(self.doc.getObject(name), kind, motions[0])
+                if warning:
+                    self.warnings.append(warning)
         else:
             for name, kind in self.objects:
                 obj = self.doc.getObject(name)
@@ -643,9 +645,117 @@ class MovePanel:
         del HISTORY[:-50]
 
 
+# ------------------------------------------------------------------ moving a Body
+BINDERS = ("PartDesign::SubShapeBinder", "PartDesign::ShapeBinder")
+
+
+def _support(o):
+    sup = getattr(o, "AttachmentSupport", None)
+    if sup is None:
+        sup = getattr(o, "Support", None) or []
+    return [s[0] for s in sup if s and s[0] is not None]
+
+
+def _origin_names(body):
+    origin = getattr(body, "Origin", None)
+    if origin is None:
+        return set()
+    return {origin.Name} | {f.Name for f in getattr(origin, "OriginFeatures", [])}
+
+
+def body_plan(body):
+    """How to move a PartDesign Body without touching its Placement: [(object, 'placement' | 'offset' | 'source' |
+    'tool')], or the reason it cannot be done that way.
+
+    FreeCAD 1.1's PartDesign Boolean puts the tool's shape (with its Placement) into the target's local frame, so a
+    target Body's own Placement is ignored: a Body moved by its Placement and then cut into is cut where it was.
+    So the move goes inside the Body: free primitives, sketches and datums by their Placement, objects attached to
+    the Body's origin by their Attachment Offset, the Body's own base solid by its Placement, the tool bodies of its
+    Booleans as Bodies; everything built on those follows."""
+    origin, inside = _origin_names(body), {o.Name for o in body.Group}
+    plan = []
+    for o in body.Group:
+        if o.Name in origin or o.TypeId == "App::Origin":
+            continue
+        if o.TypeId in BINDERS:
+            return f"{o.Label} copies geometry from elsewhere"
+        if "MapMode" in o.PropertiesList:
+            sup = _support(o)
+            if o.MapMode == "Deactivated" or not sup:
+                plan.append((o, "placement"))
+                continue
+            names = {s.Name for s in sup}
+            if names <= origin:
+                plan.append((o, "offset"))
+            elif not names <= inside:
+                return f"{o.Label} is attached to " + ", ".join(sorted(s.Label for s in sup if s.Name not in inside))
+            others = {x.Name for x in o.OutList} - names
+            if others & origin:
+                return f"{o.Label} refers to the body's origin"
+            continue
+        if o.isDerivedFrom("PartDesign::FeatureBase"):
+            src = getattr(body, "BaseFeature", None)
+            if src is not None:
+                if any(u is not o and u is not body for u in src.InList):
+                    return f"its base feature {src.Label} is used elsewhere too"
+                plan.append((src, "source"))
+            continue
+        if o.isDerivedFrom("PartDesign::Boolean"):
+            for tool in o.Group:
+                if tool.isDerivedFrom("PartDesign::Body"):
+                    plan.append((tool, "tool"))
+            continue
+        if o.isDerivedFrom("PartDesign::Feature"):
+            if {x.Name for x in o.OutList} & origin:     # a Revolve about the origin's Z axis, a Mirror on XY, ...
+                return f"{o.Label} refers to the body's origin"
+            continue                                     # built on its profile or the previous feature: follows
+        return f"{o.Label} ({o.TypeId}) has a position of its own"
+    return plan
+
+
+def move_body(body, m):
+    """Move a PartDesign Body by the global motion m inside it (body_plan); returns None, or the reason it could
+    not (then nothing was changed)."""
+    plan = body_plan(body)
+    if isinstance(plan, str):
+        return plan
+    g = pair(body.getGlobalPlacement())
+    local = core.compose(core.inverse(g), core.compose(m, g))      # m in the Body's own frame
+    for o, how in plan:
+        if how == "tool":
+            why = move_body(o, m)
+            if why:
+                o.Placement = placement(core.moved(local_motion(o, m), pair(o.Placement)))
+        elif how == "offset":
+            o.AttachmentOffset = placement(core.moved_offset(local, pair(o.Placement), pair(o.AttachmentOffset)))
+        elif how == "source":                            # FeatureBase reads the geometry only, not its Placement
+            o.Shape = baked(o.Shape, placement(local))
+        else:                                            # in the Body's frame
+            o.Placement = placement(core.moved(local, pair(o.Placement)))
+    return None
+
+
+def baked(shape, p=None):
+    """A copy of shape with its location and then p put into the geometry (PartDesign's FeatureBase ignores a
+    shape's location and its source's Placement; measured in FreeCAD 1.1.4)."""
+    s = shape.copy()
+    loc = s.Placement
+    s.Placement = App.Placement()
+    s = s.transformGeometry(loc.toMatrix())
+    return s.transformGeometry(p.toMatrix()) if p is not None else s
+
+
 # ------------------------------------------------------------------ moving and copying
 def move(obj, kind, m):
-    """Move obj by the global motion m: its Placement, or its Attachment Offset when it is attached."""
+    """Move obj by the global motion m: a Body inside itself (move_body), else its Placement, or its Attachment
+    Offset when it is attached. Returns a warning, or None."""
+    if kind == "body":
+        why = move_body(obj, m)
+        if why is None:
+            return None
+        obj.Placement = placement(core.moved(local_motion(obj, m), pair(obj.Placement)))
+        return (f"{obj.Label} moved by its Placement ({why}): FreeCAD 1.1's Unite / Subtract ignores that when "
+                f"{obj.Label} is the target")
     local = local_motion(obj, m)
     if _attached(obj):
         obj.AttachmentOffset = placement(core.moved_offset(local, pair(obj.Placement), pair(obj.AttachmentOffset)))
@@ -673,8 +783,8 @@ def _copy_look(src, dst):
 def copy(obj, kind, m):
     """A copy of obj moved by the global motion m, in obj's container; returns the copy.
 
-    - body: a new PartDesign Body whose base feature is a static copy of the solid (NX's copy is not associative
-      either), so the copy is a body NX-Style's commands can keep modelling;
+    - body: a new PartDesign Body whose base feature is a static copy of the solid, already moved (NX's copy is not
+      associative either; the new Body keeps the original's Placement, so a Boolean into it is right, body_plan);
     - part: a static Part feature with the shape (Part's Simple Copy);
     - link: another link to the same object (a component's copy in an assembly)."""
     doc = obj.Document
@@ -682,17 +792,17 @@ def copy(obj, kind, m):
     where = placement(core.moved(local, pair(obj.Placement)))
     parent = _container(obj)
     if kind == "body":
-        shape = obj.Shape.copy()
-        shape.transformShape(obj.Placement.inverse().toMatrix())       # into the body's own coordinates
+        # the solid moved, in the new Body's coordinates (the Body's shape is in its container's, and the new Body
+        # gets the original's Placement)
         base = doc.addObject("Part::Feature", "MovedSolid")
         base.Label = f"{obj.Label} solid"
-        base.Shape = shape
+        base.Shape = baked(obj.Shape, obj.Placement.inverse().multiply(placement(local)))
         new = doc.addObject("PartDesign::Body", "Body")
         if parent is not None:
             parent.addObject(base)
             parent.addObject(new)
         new.BaseFeature = base
-        new.Placement = where
+        new.Placement = obj.Placement
         if getattr(base, "ViewObject", None) is not None:
             base.ViewObject.Visibility = False
         _copy_look(obj, new)

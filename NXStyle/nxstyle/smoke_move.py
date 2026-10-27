@@ -2,7 +2,9 @@
 """Self-test of NX's Move Object (called from smoke.py), started by its key (Ctrl+T) and driven through the panel:
 
 - the book's L-bar (NX 12 for Engineering Design 4.7.3): two Blocks as separate bodies, the second moved 200 in
-  along ZC (typed as 5080 mm) with Move Original; its placement, its bounding box, one undo step, Undo;
+  along ZC (typed as 5080 mm) with Move Original; its placement, its bounding box, one undo step, Undo; then the
+  moved body as the target of the ribbon's Unite / Subtract, checked by volume against the Part API;
+- sketched bodies: a pad's sketch moved by its Attachment Offset, a Revolve about the origin's axis by its Body;
 - 4.6.9: a cylinder picked in the graphics window and moved 5 in (127 mm) along XC;
 - Copy Original, 2 copies: two new bodies, each the solid moved once and twice;
 - Angle (with Apply) and Point to Point typed;
@@ -141,22 +143,25 @@ def book(smoke):
         previewed = shifted(top, box0, (0, 0, 5080))
         pressed = ok()
         rec = last()
-        lifted = (abs(top.Placement.Base.z - 5080) < TOL and abs(top.Placement.Base.x) < TOL
-                  and abs(top.Placement.Base.y) < TOL and shifted(top, box0, (0, 0, 5080)))
-        detail = {"placement": base(top), "box": box_of(top), "box before": box0, "history": rec,
-                  "undo": doc.UndoNames[:3], "previewed": previewed}
+        block = top.Group[0] if top.Group else None
+        lifted = (base(top) == (0, 0, 0) and block is not None and base(block) == (0, 0, 5080)
+                  and shifted(top, box0, (0, 0, 5080)))
+        detail = {"body placement": base(top), "block placement": base(block) if block else None, "box": box_of(top),
+                  "box before": box0, "history": rec, "undo": doc.UndoNames[:3], "previewed": previewed}
         smoke.info["move book"] = detail
         smoke.shot("move_book.png")
-        smoke.check("Move Object (book 4.7.3): Distance 200 in (5080 mm) along ZC, Move Original, OK: the body's "
-                    "Placement is (0, 0, 5080) and its box is the old one lifted 5080; the other block unmoved; one "
-                    "undo step 'Move Object'",
+        smoke.check("Move Object (book 4.7.3): Distance 200 in (5080 mm) along ZC, Move Original, OK: the block "
+                    "inside the body moves to (0, 0, 5080) (the Body's Placement stays, so a later Unite / Subtract "
+                    "into it is right) and its box is the old one lifted 5080; the other block unmoved; one undo "
+                    "step 'Move Object'",
                     pressed and previewed and lifted and box_of(first) == first0 and rec.get("outcome") == "committed"
                     and rec.get("undo_steps") == 1 and doc.UndoNames[:1] == ["Move Object"]
                     and len(bodies(doc)) == 2, detail)
         doc.undo()
         doc.recompute()
-        smoke.check("Undo puts the body back where it was (Placement and box)",
-                    base(top) == (0, 0, 0) and shifted(top, box0, (0, 0, 0)), {"placement": base(top)})
+        smoke.check("Undo puts the body back where it was",
+                    base(top) == (0, 0, 0) and base(block) == (0, 0, 0) and shifted(top, box0, (0, 0, 0)),
+                    {"block placement": base(block), "box": box_of(top)})
         # negative control: the position check refuses the block where it was (as a Distance of 0 leaves it)
         smoke.check("Negative control: the position check fails on the unmoved block",
                     not shifted(top, box0, (0, 0, 5080)), box_of(top))
@@ -175,6 +180,130 @@ def book(smoke):
                         remembered and wrong, {"box": box_of(top), "remembered": remembered})
             doc.undo()
             doc.recompute()
+
+
+def task_combo(name, text):
+    """Choose an entry of a FreeCAD task panel's combo box (objectName) as a user does; returns the text shown."""
+    dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+    combo = next((c for c in dock.findChildren(QtWidgets.QComboBox) if c.objectName() == name), None) \
+        if dock is not None else None
+    if combo is None:
+        return None
+    i = combo.findText(text)
+    if i >= 0:
+        combo.setCurrentIndex(i)
+        combo.activated.emit(i)
+    QtWidgets.QApplication.processEvents()
+    qwait(300)
+    return combo.currentText()
+
+
+def combine(smoke):
+    """The L-bar's sequence (4.7.3): the block moved 200 in along ZC by Move Object, then Unite / Subtract (the
+    ribbon's PartDesign Boolean) cuts a slot block out of it, the moved body being the target."""
+    import Part
+    with Scenario(smoke, "SmokeMoveCombine") as sc:
+        doc = sc.doc
+        size, slot_at, slot = (182 * IN, 65 * IN, 85 * IN), (157 * IN, 22.5 * IN, 180 * IN), (25 * IN, 20 * IN,
+                                                                                               150 * IN)
+        target = sc.block((0, 0, 0), size)
+        vol0 = target.Shape.Volume
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, target.Name)
+        p = ctrl_t(smoke, doc, "Distance", "Move Original")
+        if p is None:
+            smoke.check("Move Object: Ctrl+T opens the dialog", False, "no panel")
+            return
+        choose(p, "nxVector", "ZC")
+        type_into("distance", "5080", p)
+        ok()
+        tool = sc.block(slot_at, slot, "Slot")
+        # what the slot overlaps of the lifted block (z 5080 .. 5080 + 85 in), from the Part API
+        lifted = Part.makeBox(*size, App.Vector(0, 0, 5080))
+        cutter = Part.makeBox(*slot, App.Vector(*slot_at))
+        want = lifted.cut(cutter).Volume
+        Gui.getDocument(doc.Name).ActiveView.setActiveObject("pdbody", target)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, tool.Name)
+        from .smoke_primitives import ribbon_click
+        ribbon_click(smoke, "Unite / Subtract")
+        qwait(800)
+        kind = task_combo("comboType", "Cut")
+        pressed = ok()
+        doc.recompute()
+        booleans = [o for o in doc.Objects if o.TypeId == "PartDesign::Boolean"]
+        vol = target.Shape.Volume
+        good = (pressed and kind == "Cut" and len(booleans) == 1 and booleans[0].isValid()
+                and abs(vol - want) <= 1e-6 * want and want < vol0 - 1.0 and len(target.Shape.Solids) == 1)
+        detail = {"volume": vol, "want": want, "before": vol0, "combo": kind, "pressed": pressed,
+                  "booleans": [(b.Name, b.Type, b.isValid()) for b in booleans], "box": box_of(target),
+                  "undo": doc.UndoNames[:3]}
+        smoke.info["move then combine"] = detail
+        smoke.check("Move Object then Unite / Subtract (book 4.7.3): the block lifted 200 in by Ctrl+T, then the "
+                    "ribbon's Unite / Subtract, Cut, with the moved body as the target and the slot block as the tool: "
+                    "the slot is cut where the block now is (volume of the Part API's cut of the lifted block)",
+                    good, detail)
+
+        # negative control: the same Boolean on a body moved by its Placement (what Move Object avoids) cuts nothing
+        other = sc.block((0, 0, 0), size)
+        other.Placement = App.Placement(App.Vector(0, 0, 5080), App.Rotation())
+        tool2 = sc.block(slot_at, slot, "Slot")
+        b = other.newObject("PartDesign::Boolean", "Cut")
+        b.Type = "Cut"
+        b.addObject(tool2)
+        doc.recompute()
+        missed = abs(other.Shape.Volume - vol0) < 1e-6 * vol0
+        smoke.check("Negative control: in FreeCAD 1.1 a Body moved by its Placement and then cut into keeps its "
+                    "volume (the Boolean ignores the target's Placement), so the volume check above would fail",
+                    missed, {"volume": other.Shape.Volume, "before": vol0, "want": want})
+
+
+def sketched(smoke):
+    """A sketch on the body's XY plane, padded: its Attachment Offset moves; a Revolve about the origin's Z axis
+    cannot be moved inside its body: the body moves by its Placement, with a warning."""
+    import Part
+    with Scenario(smoke, "SmokeMoveSketch") as sc:
+        doc = sc.doc
+
+        def sketch_body(plane, pts):
+            body = doc.addObject("PartDesign::Body", "Body")
+            sk = body.newObject("Sketcher::SketchObject", "Sketch")
+            sk.AttachmentSupport = [(body.Origin.OriginFeatures[plane], "")]
+            sk.MapMode = "FlatFace"
+            for i in range(len(pts)):
+                sk.addGeometry(Part.LineSegment(App.Vector(*pts[i]), App.Vector(*pts[(i + 1) % len(pts)])))
+            return body, sk
+
+        padded, sk = sketch_body(3, [(0, 0, 0), (30, 0, 0), (30, 20, 0), (0, 20, 0)])        # XY_Plane
+        pad = padded.newObject("PartDesign::Pad", "Pad")
+        pad.Profile, pad.Length = sk, 10
+        turned, sk2 = sketch_body(4, [(40, 0, 0), (50, 0, 0), (50, 10, 0), (40, 10, 0)])      # XZ_Plane
+        rev = turned.newObject("PartDesign::Revolution", "Revolve")
+        rev.Profile = sk2
+        rev.ReferenceAxis = (turned.Origin.OriginFeatures[2], [""])                           # Z_Axis
+        rev.Angle = 90
+        doc.recompute()
+        box_pad, box_rev = box_of(padded), box_of(turned)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, padded.Name)
+        Gui.Selection.addSelection(doc.Name, turned.Name)
+        p = ctrl_t(smoke, doc, "Distance", "Move Original")
+        if p is None:
+            smoke.check("Move Object: Ctrl+T opens the dialog", False, "no panel")
+            return
+        choose(p, "nxVector", "XC")
+        type_into("distance", "50", p)
+        warnings = list(p.warnings)
+        ok()
+        good = (shifted(padded, box_pad, (50, 0, 0)) and base(padded) == (0, 0, 0)
+                and abs(sk.AttachmentOffset.Base.x - 50) < TOL and shifted(turned, box_rev, (50, 0, 0))
+                and abs(turned.Placement.Base.x - 50) < TOL
+                and any(turned.Label in w and "Placement" in w for w in warnings))
+        smoke.check("Move Object on sketched bodies: a pad on a sketch on the XY plane moves by the sketch's "
+                    "Attachment Offset (the Body stays); a Revolve about the origin's Z axis moves by its Body's "
+                    "Placement, with a warning that Unite / Subtract into it would not see the move",
+                    good, {"pad box": box_of(padded), "offset": tuple(sk.AttachmentOffset.Base),
+                           "revolve box": box_of(turned), "revolve body": base(turned), "warnings": warnings})
 
 
 def cylinder(smoke):
@@ -198,7 +327,7 @@ def cylinder(smoke):
         type_into("distance", "127", p)
         pressed = ok()
         rec = last()
-        moved = shifted(body, box0, (127, 0, 0)) and abs(body.Placement.Base.x - 127) < TOL
+        moved = shifted(body, box0, (127, 0, 0)) and base(body) == (0, 0, 0) and base(body.Group[0]) == (127, 0, 0)
         smoke.check("Move Object (4.6.9): with nothing selected the dialog asks for objects (OK unavailable); a "
                     "click on the cylinder's face takes its body; 5 in (127 mm) along XC moves it; one undo step",
                     waiting and picked == [body.Name] and pressed and moved and rec.get("undo_steps") == 1,
@@ -245,7 +374,21 @@ def copies(smoke):
         smoke.check("Move Object Copy Original, Number of Copies 2, 50 mm along YC: two new bodies, each one solid of "
                     "the original's volume, at +50 and +100 YC; the original where it was; the copied solid hidden; "
                     "one undo step", good, detail)
-        doc.undo()
+        # a copy moved again: its base solid is rebuilt where the move puts it (FeatureBase reads geometry only)
+        steps = 1
+        if len(made) == 2 and made[1] is not None:
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, made[1].Name)
+            p = ctrl_t(smoke, doc, "Distance", "Move Original")
+            if p is not None:
+                choose(p, "nxVector", "ZC")
+                type_into("distance", "30", p)
+                steps += int(ok())
+            smoke.check("A copy moved again by Move Object goes where the move puts it (+100 YC, +30 ZC), still one "
+                        "solid of the original's volume", shifted(made[1], box0, (0, 100, 30))
+                        and abs(made[1].Shape.Volume - vol0) < 1e-6, box_of(made[1]))
+        for _ in range(steps):
+            doc.undo()
         doc.recompute()
         smoke.check("Undo removes both copies (no object left over)", {o.Name for o in doc.Objects} == names0,
                     sorted({o.Name for o in doc.Objects} - names0))
@@ -267,17 +410,12 @@ def angle_and_points(smoke):
             type_into(f"point{axis}", v, p)
         type_into("angle", "90", p)
         applied = button(QtWidgets.QDialogButtonBox.Apply)
-        # Apply committed the body turned 90 deg about the vertical through (10, 0, 0): Placement (10, -10, 0) with
-        # the quarter turn; the dialog then previews the next turn, as OK would make it (x -10..10, y -10..0)
-        rec = last()
-        base_q = rec.get("placements", {}).get(body.Name)
-        s = 0.5 ** 0.5
-        turned = base_q is not None and all(abs(a - w) < TOL for a, w in zip(base_q[0] + base_q[1],
-                                                                                (10, -10, 0, 0, 0, s, s)))
+        # Apply committed the block turned 90 deg about the vertical through (10, 0, 0) (x 0..10, y 0..20); the
+        # dialog then previews the next turn, as OK would make it (x -10..10, y -10..0)
+        steps_after_apply = last().get("undo_steps")
         b = box_of(body)
         preview = all(abs(a - w) < TOL for a, w in zip(b, (-10, -10, 0, 10, 0, 5)))
         still = move_ui.current() is p and p.open
-        steps_after_apply = rec.get("undo_steps")
         choose(p, "nxMotion", "Point to Point")
         for key, pt in (("from", (0, 0, 0)), ("to", (100, 0, 50))):
             for axis, c in zip(("XC", "YC", "ZC"), pt):
@@ -285,13 +423,18 @@ def angle_and_points(smoke):
         pressed = ok()
         b2 = box_of(body)
         moved = all(abs(a - w) < TOL for a, w in zip(b2, (100, 0, 50, 110, 20, 55)))
-        smoke.check("Move Object Angle 90 about ZC through (10, 0, 0), Apply: the block's body turns about that axis "
-                    "(one step) and the dialog stays open previewing the next turn; then Point to Point (0, 0, 0) to "
-                    "(100, 0, 50), OK, moves the turned block on (a second step)",
+        steps = doc.UndoNames[:2]
+        doc.undo()                                      # back to what Apply committed
+        doc.recompute()
+        b1 = box_of(body)
+        turned = all(abs(a - w) < TOL for a, w in zip(b1, (0, 0, 0, 10, 20, 5)))
+        smoke.check("Move Object Angle 90 about ZC through (10, 0, 0), Apply: one step that turns the block about "
+                    "that axis, and the dialog stays open previewing the next turn; then Point to Point (0, 0, 0) to "
+                    "(100, 0, 50), OK, moves the turned block on (a second step; Undo goes back to the turned block)",
                     applied and turned and preview and still and steps_after_apply == 1 and pressed and moved
-                    and doc.UndoNames[:2] == ["Move Object", "Move Object"],
-                    {"applied placement": base_q, "preview box": b, "after point to point": b2,
-                     "undo": doc.UndoNames[:3], "history": move_ui.HISTORY[-2:]})
+                    and steps == ["Move Object", "Move Object"],
+                    {"preview box": b, "after point to point": b2, "after one undo": b1, "undo": steps,
+                     "history": move_ui.HISTORY[-2:]})
 
 
 def cancel(smoke):
@@ -365,7 +508,7 @@ def bindings(smoke):
 
 
 def run(smoke):
-    for scenario in (bindings, book, cylinder, copies, angle_and_points, cancel):
+    for scenario in (bindings, book, combine, sketched, cylinder, copies, angle_and_points, cancel):
         try:
             scenario(smoke)
         except Exception:
