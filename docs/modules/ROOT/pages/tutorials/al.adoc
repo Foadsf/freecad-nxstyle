@@ -68,6 +68,6 @@ include::partial$outcome-legend.adoc[]
 == What differs from NX
 
 * NX's STEP export writes the B-rep (with PMI in AP242); the history, the sketch constraints and the expressions stay in the `.prt`, and a STEP import gives a solid without history.
-* The sketches come back placed where they were, not attached to faces or planes.
-* The history stops at the first feature ISO 10303-111 and -42 cannot represent (Hole, Mirrored, Draft, Loft…); the report names it, and the B-rep in the file still carries the whole part.
+* Sketches attached to an origin plane or to a face come back attached (the face found again by its geometry); others come back placed where they were.
+* A feature ISO 10303-111 and -42 cannot represent (Draft, Loft…) is written as a hybrid step with its explicit solid, so the history goes on past it; the report names it, and the B-rep in the file still carries the whole part.
 * In FreeCAD 1.1.4 itself, changing this plate's Length or Thick loses the edge blend's edge (FreeCAD's topological naming, in the source part as much as in the rebuilt one), so the change here is HoleR.

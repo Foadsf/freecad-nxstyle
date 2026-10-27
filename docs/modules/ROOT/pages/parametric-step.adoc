@@ -48,23 +48,39 @@ It is off by default, because no edition of AP242 includes Part 112 (see the tab
 | Distance, Horizontal/Vertical Distance | `CLGC_WITH_DIMENSION` (a line's length), `PDGC_WITH_DIMENSION` (to a point, a line, or an auxiliary line through the anchor point)
 | Radius, Diameter, Angle | `RGC_WITH_DIMENSION`, `AGC_WITH_DIMENSION`
 | Symmetric (about a line), Block | `SYMMETRY_`, `FIXED_ELEMENT_GEOMETRIC_CONSTRAINT`
+| A sketch attached to an origin plane, a datum plane or a planar face (Flat face) | The sketch's plane on the support's plane: `INCIDENCE_GEOMETRIC_CONSTRAINT`, or `PARALLEL_GEOMETRIC_CONSTRAINT` and `SDGC_WITH_DIMENSION` at an offset (108 7.4); a supporting face as a `FACE_SURFACE`
 | Pad, Pocket (length, two sides, symmetric, through all, taper) | `EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS` (`_WITH_DRAFT_ANGLE`) (111), united or subtracted by `BOOLEAN_RESULT` (42)
-| Revolution, Groove | `REVOLVED_FACE_SOLID` (`_WITH_TRIM_CONDITIONS`)
+| Pad, Pocket up to face, up to first, up to last, with an offset | The same, its first trim condition the face reached (a `FACE_SURFACE`, also picked as `USER_SELECTED_SHAPE_ELEMENTS`), intent `.UP_TO_NEXT.` (up to first), `.UNSPECIFIED.` (up to a face, up to last) or `.OFFSET.` with the offset (111 4.4.48)
+| Revolution, Groove (also up to face) | `REVOLVED_FACE_SOLID` (`_WITH_TRIM_CONDITIONS`, the face as trim condition)
+| Hole: simple (flat or drill point), counterbore, countersink, through all | Per position of its sketch, in a nested sequence: `SOLID_WITH_FLAT_BOTTOM_ROUND_HOLE`, `SOLID_WITH_CONICAL_BOTTOM_ROUND_HOLE` (half the drill point angle), `SOLID_WITH_STEPPED_ROUND_HOLE` with `SOLID_WITH_THROUGH_DEPRESSION` and its exit face; two segments for a counterbore, a `CONICAL_STEPPED_HOLE_TRANSITION` at the entrance for a countersink (`_AND_CONICAL_TRANSITIONS`) (111 4.4.19-27)
 | Fillet, Chamfer | `USER_SELECTED_SHAPE_ELEMENTS` (55) with the picked edges, then `SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND`, `SOLID_WITH_SINGLE_OFFSET_` / `DOUBLE_OFFSET_` / `ANGLE_BASED_CHAMFER`
 | Thickness | `SHELLED_SOLID` with the removed faces
-| Linear and polar pattern of one feature | A nested sequence of `SOLID_REPLICA` operations
+| Linear pattern, polar pattern, Mirrored, of one or more features | A nested sequence of `SOLID_REPLICA` operations, each feature through every placement; a mirror is a `CARTESIAN_TRANSFORMATION_OPERATOR_3D` with left-handed axes (42 4.4.21)
+| MultiTransform | A nested sequence per step, holding the new placements of that step (it applied to all before it)
+| Pipe (Standard mode, along a tangent-continuous sketch path, the profile normal to the path at its start) | `SURFACE_CURVE_SWEPT_FACE_SOLID` (42 6.4.35): the profile face in the sweep's frame (_z_ = 0, _x_ along the path plane's normal), the path a `COMPOSITE_CURVE`, the path's plane the reference surface
+| Draft, Loft, other Pipes and Holes, a pattern of holes or fillets, other features with a solid | A hybrid step (55 5.2.2): a nested sequence whose rationale names the feature, with what was picked (drafted faces, neutral plane, the loft's sketches) and the feature's explicit solid (`MANIFOLD_SOLID_BREP`), on its own or added or subtracted by `BOOLEAN_RESULT`
 | Additive and subtractive primitives; Part Box, Cylinder, Cone, Sphere, Torus; Cut, Fuse, Common | `BLOCK`, `RIGHT_CIRCULAR_CYLINDER`, `RIGHT_CIRCULAR_CONE`, `SPHERE`, `TORUS`, `BOOLEAN_RESULT`
 | The whole history | `PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE` in a `PROCEDURAL_SHAPE_REPRESENTATION`, tied to the B-rep by `EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP` (55)
 |===
 
-The history stops at the first feature none of these parts can represent: Hole, Mirrored, Draft, Loft, Pipe, Helix, up-to-face extents, a pattern of several features.
-The report names it; the B-rep still carries the whole part.
-Sketches come back placed where they were, not attached to faces or planes.
-Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for.
+Some features have no entity in ISO 10303-42 or -111, and are written as hybrid steps: their result as an explicit solid, so that the history goes on past them.
+Draft has none: `EXTRUDED_FACE_SOLID_WITH_DRAFT_ANGLE` drafts an extrusion as it is made, not chosen faces of a solid.
+Loft has none: `SECTIONED_SPINE` leaves the shape between its sections undefined and is no solid.
+A Pipe is Part 42's sweep only in Standard mode along a planar, tangent-continuous path with the profile normal to it; Fixed, Frenet, Auxiliary or Binormal modes, several sections and corner transitions are hybrid steps.
+Threaded, tapered and counterdrilled holes are hybrid steps too, and so is a pattern of holes or fillets (a replica needs a tool solid; Part 111's own patterns of placed features are not used).
+A system that does not know the step still gets its shape; NX-Style rebuilds Draft, Loft and Pipe steps as FreeCAD features from what they record (the rationale carries FreeCAD's angle, mode or ruled flag), and stops at other hybrid steps.
+No ISO 10303 attribute carries a draft angle, and hole radii and depths are lists, so expressions on those are not written.
+The report names every hybrid step and anything else that was not written.
+
+The placing of a hole points out of the hole entrance, as ISO 10303-111 4.4.22 defines it.
+Part 111's offset of an up-to extent is unsigned; the side is taken from the reached extent, which goes in the extrusion's depth.
+A sketch attached to an origin plane, or to a face that is found again on the rebuilt features by its geometry, comes back attached (Flat face, with the attachment offset that keeps it in place); other attachment modes, and supports that are not found, leave it placed where it was.
+Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for, and a hole's sketch is the one whose circles sit at its positions.
 
 xref:tutorials/al.adoc[Tutorial AL] goes through it on the ribbon.
-The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution, and a Part CSG tree.
+The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution; holes of each kind on sketches attached to a face; a Mirrored, a linear pattern of two features and a MultiTransform; extrusions up to a face, up to the first face and with an offset; a Draft followed by a Fillet, a Pipe, a Fixed-mode Pipe and a Loft; and a Part CSG tree.
 Exported, checked (no errors), imported into a new document: the rebuilt solids equal the originals exactly, and still do after the same parameter change in both.
+The holes, replicas and sweep are also built from the ISO definitions alone (Part 111's segments and cones, Part 42's sweep frame) and compared with FreeCAD's.
 
 == Check STEP
 
