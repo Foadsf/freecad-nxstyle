@@ -60,6 +60,9 @@ def _strip_comments(text):
             i += 2
         elif depth:
             i += 1
+        elif text.startswith("--", i):             # a line comment may hold an apostrophe or "(*"
+            j = text.find("\n", i)
+            i = n if j < 0 else j
         elif text[i] == "'":                       # keep strings intact (they may hold "(*")
             j = i + 1
             while j < n:
@@ -811,7 +814,8 @@ class _Checker:
             self.params(inst, n, inst.records[0].params, self.d.attributes(n))
             return
         # complex instance (external mapping)
-        if names != sorted(names):
+        upper = [n.upper() for n in names]            # the basic alphabet's order: "_" after the letters
+        if upper != sorted(upper):
             self.add("error", inst.id, "partial records of a complex instance must be in name order (10.2.5.3)")
         nset = set(names)
         need = self.d.complex_closure(nset)

@@ -1,0 +1,64 @@
+= Tutorial AN: Arbor Press Plate
+:description: A plate made with NX's Block, a datum plane offset from its top face, a datum axis through two corners, and six simple holes drilled from points on the top face (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 4.2.1 (Model a Block), 4.3 (Reference Features) and 4.5.1 (General Hole). The book builds the plate in three visits; here they follow one another.
+You learn:: Block with Origin and Edge Lengths, Fit and Trimetric, Datum Plane at an offset, Datum Axis through two points, Hole with its points sketched on a face
+Sizes:: the book's, in inches, typed in millimetres. A block 65 × 85 × 20 with its origin at (0, 0, 0). A datum plane 15 above the top face. Six simple holes Ø8, 25 deep with a 118° tip, at (11.25, 10), (32.5, 23.5), (53.75, 10), (11.25, 75), (32.5, 61.5) and (53.75, 75).
+
+The book's figure picks the datum axis's points without coordinates: a bottom corner and the opposite top corner of the front face.
+Here they are (65, 0, 0) and (0, 0, 20), so the axis is the front face's diagonal.
+The plate is 20 thick, so holes 25 deep go through it.
+
+== Step by step
+
+=== 1. The block
+
+kbd:[Ctrl+N], then *Block* (Home › Feature).
+In the Block dialog keep *Origin and Edge Lengths*, leave XC, YC and ZC at 0, and type Length 65, Width 85 and Height 20.
+Click *OK*.
+
+kbd:[Ctrl+F] fits the view, and kbd:[Home] turns it to Trimetric (NX: MB3 > Orient View > Trimetric).
+Save the part as `Arborpress_plate`.
+
+image::tutorial-AN-01-block.png[The block, 65 by 85 by 20]
+
+=== 2. A datum plane and a datum axis
+
+Select the block's top face and choose *Datum* > *Datum Plane*.
+FreeCAD attaches the plane to the face; in the Dialog panel type 15 in the offset along Z and press MB2.
+
+Select two corners of the block, here (65, 0, 0) and (0, 0, 20), and choose *Datum* > *Datum Axis*.
+FreeCAD takes the axis through the two points, as NX's Inferred type does; press MB2.
+
+image::tutorial-AN-02-datums.png[The datum plane above the top face and the datum axis along the front face's diagonal]
+
+=== 3. The holes
+
+Select the top face and click *Hole*.
+NX-Style starts a sketch on the face, which is NX's Sketch Section in the Hole dialog's Position group.
+Click *Point* (Sketch › Curve), then for each of the six points type XC and YC in the fields beside the pointer, pressing kbd:[Enter] after each.
+Press MB2, then kbd:[Ctrl+Q].
+
+The Hole dialog opens.
+Keep the simple hole, and type Diameter 8, Depth 25 and the tip angle 118°.
+Press MB2.
+
+image::tutorial-AN-03-plate.png[The plate with its six holes]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AN.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The finished plate is compared with the book's, built from its dimensions: the block less six holes through it.
+
+== What differs from NX
+
+* NX's Point Dialog opens as its own window. In NX-Style's Block dialog its XC, YC and ZC are fields of the dialog itself.
+* NX's Datum Plane dialog offers the offset as soon as you pick the face. FreeCAD attaches the plane to the face and takes the offset as the attachment's Z offset.
+* NX places a hole's points with the Point Dialog in the hole's sketch. FreeCAD's Hole drills at the sketch's points, and the points are typed in the on-view fields, which are NX's XC and YC boxes.
+* FreeCAD's Hole always subtracts from its body; NX's Hole has a Boolean group.

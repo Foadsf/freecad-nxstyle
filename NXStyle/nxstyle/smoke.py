@@ -120,6 +120,7 @@ class Smoke:
         yield self.s_sketch_enter, 1500
         yield self.s_sketch_check, 100
         yield self.s_profile, 300
+        yield self.s_sketch_trim, 300             # before Point on Curve: MB2 must not leave the trim's gate up
         yield self.s_sketch_constraints, 300
         yield self.s_sketch_point_typed, 300
         yield self.s_sketch_linear_dimension, 300
@@ -128,9 +129,6 @@ class Smoke:
         yield self.s_sketch_arc, 600              # FreeCAD refreshes the command states on a timer
         yield self.s_sketch_radius, 400
         yield self.s_sketch_radius_check, 100
-        # last in the sketch: after Quick Trim (MB2 ended it), picks of sketch points were refused in the checks
-        # after it (Point on Curve), with NX-Style's trim guard off too; not yet explained
-        yield self.s_sketch_trim, 300
         yield self.s_sketch_leave, 1200
         yield self.s_sketch_left, 100
         yield self.s_drafting, 2500
@@ -161,6 +159,7 @@ class Smoke:
         yield self.s_extrude_key, 1500
         yield self.s_extrude_key_check, 300
         yield self.s_section, 300
+        yield self.s_primitives, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -858,7 +857,15 @@ class Smoke:
         def tangent(g):
             return any(k.Type == "Tangent" and g in (k.First, k.Second) for k in sk.Constraints)
 
-        def trim(guarded):
+        def point_pickable():
+            """FreeCAD's trim gate takes edges only: a sketch point is refused until the tool has ended."""
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, sk.Name, "Vertex1")
+            ok = any("Vertex1" in s.SubElementNames for s in Gui.Selection.getSelectionEx(doc.Name))
+            Gui.Selection.clearSelection()
+            return ok
+
+        def trim(guarded, cut=True):
             sketch_ui.trim_guard.enabled = guarded
             sketch_ui.trim_guard.last = None
             c, top, bot = outline()
@@ -866,11 +873,13 @@ class Smoke:
             w.setFocus()
             qtest().keyClick(w, Qt.Key_T)
             QtWidgets.QApplication.processEvents()
-            a = math.radians(4)
-            click(at(r * math.cos(a), r * math.sin(a)))
-            qtest().qWait(100)                      # the guard runs once FreeCAD's tool has committed
+            if cut:
+                a = math.radians(4)
+                click(at(r * math.cos(a), r * math.sin(a)))
+                qtest().qWait(100)                  # the guard runs once FreeCAD's tool has committed
             away = at(-15, 30)
-            click(away, Qt.MiddleButton)
+            click(away, Qt.MiddleButton)            # the hover before it puts FreeCAD's cursor in place of the tool's
+            point = point_pickable()
             ended = not running(away)
             for _ in range(3):                      # leave no tool running for the next checks
                 if not running(away):
@@ -881,9 +890,11 @@ class Smoke:
             arcs = [i for i, x in enumerate(sk.Geometry) if "ArcOfCircle" in x.TypeId]
             solved = sk.solve() == 0 and not list(getattr(sk, "MalformedConstraints", []))
             return {"arcs": len(arcs), "top": tangent(top), "bottom": tangent(bot), "n0": n0, "ended": ended,
-                    "dof": getattr(sk, "DoF", None), "solved": solved, "guard": sketch_ui.trim_guard.last}
+                    "point": point, "dof": getattr(sk, "DoF", None), "solved": solved,
+                    "guard": sketch_ui.trim_guard.last}
 
         try:
+            idle = trim(True, cut=False)
             control = trim(False)
             got = trim(True)
             after = len(sk.Constraints)
@@ -905,6 +916,10 @@ class Smoke:
                    f"{(got['guard'] or {}).get('put back')}; undo {undone} (constraints, arc left), redo {redone}; "
                    f"control, FreeCAD alone: {dropped} of 2 tangencies dropped"
                    + ("" if dropped else " (the control did not reach the defect: FreeCAD may have fixed its trim)"))
+        runs = {"no trim": idle, "trim, guard off": control, "trim": got}
+        self.check("MB2 ends Quick Trim and its edges-only selection gate: a sketch point can be picked after it",
+                   all(x["ended"] and x["point"] for x in runs.values()),
+                   "; ".join(f"{k}: ended {x['ended']}, point pickable {x['point']}" for k, x in runs.items()))
 
     def s_sketch_constraints(self):
         """Point on Curve, Collinear and NX's Geometric Constraints gallery (C), run from the Sketch tab."""
@@ -2203,6 +2218,12 @@ class Smoke:
         -Z, the flange revolved, then Cancel (smoke_section.py)."""
         from . import smoke_section
         smoke_section.run(self)
+
+    def s_primitives(self):
+        """Block, Cylinder, Cone and Sphere from their ribbon buttons: typed values, the vector, a point snapped at
+        an arc centre, each Boolean, one undo step, Apply, Cancel and Esc, Edit Parameters (smoke_primitives.py)."""
+        from . import smoke_primitives
+        smoke_primitives.run(self)
 
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""

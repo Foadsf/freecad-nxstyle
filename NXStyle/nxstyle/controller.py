@@ -1725,14 +1725,17 @@ CONTROLLER = Controller()
 # Part Navigator / graphics window MB3 menu
 # --------------------------------------------------------------------------
 class ContextMenu:
-    """Adds Edit Parameters (through the controller) to the MB3 menu of a feature it can edit."""
+    """Adds Edit Parameters (through the controller, or the primitives' NX dialog) to the MB3 menu of a feature
+    it can edit."""
 
     def modifyContextMenu(self, recipient):
+        from . import primitive_ui
         try:
             sel = Gui.Selection.getSelection()
         except Exception:
             return []
-        if len(sel) == 1 and adapter_for(sel[0]) is not None and not CONTROLLER.busy():
+        if len(sel) == 1 and (adapter_for(sel[0]) is not None or primitive_ui.editable(sel[0]) is not None) \
+                and not CONTROLLER.busy():
             return [{"insert": "NXStyle_EditParameters", "menuItem": "Std_ToggleVisibility"}]
         return []
 

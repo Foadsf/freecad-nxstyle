@@ -632,8 +632,8 @@ class ControlledFeature(SketchFirstFeature):
 
 
 class EditParameters:
-    """NX Edit Parameters: a feature the controller has an adapter for opens in its command panel; any other
-    feature opens FreeCAD's own dialog (Std_Edit)."""
+    """NX Edit Parameters: a feature the controller has an adapter for opens in its command panel, a primitive
+    (Block, Cylinder, Cone, Sphere) in its NX dialog; any other feature opens FreeCAD's own dialog (Std_Edit)."""
 
     @staticmethod
     def _feature():
@@ -641,16 +641,28 @@ class EditParameters:
         sel = Gui.Selection.getSelection()
         return sel[0] if len(sel) == 1 and controller.adapter_for(sel[0]) is not None else None
 
+    @staticmethod
+    def _primitive():
+        from . import primitive_ui
+        sel = Gui.Selection.getSelection()
+        return primitive_ui.editable(sel[0]) if len(sel) == 1 else None
+
     def GetResources(self):
         return {"MenuText": "Edit Parameters",
-                "ToolTip": "Reopen the selected feature's dialog; an Extrude or a Revolve opens in the NX command panel",
+                "ToolTip": "Reopen the selected feature's dialog; an Extrude or a Revolve opens in the NX command "
+                           "panel, a Block, Cylinder, Cone or Sphere in its NX dialog",
                 "Pixmap": _pixmap("Std_Edit", "Std_DlgParameter")}
 
     def IsActive(self):
         return _has_doc() and not Gui.Control.activeDialog() and bool(Gui.Selection.getSelection())
 
     def Activated(self):
-        from . import controller
+        from . import controller, primitive_ui
+        prim = self._primitive()
+        if prim is not None:
+            Gui.Selection.clearSelection()
+            primitive_ui.start(prim[0], prim[1])
+            return
         feat = self._feature()
         if feat is None:
             Gui.runCommand("Std_Edit")
@@ -714,8 +726,9 @@ def register(apps):
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
     from . import (alignment_ui, claims, clearance, collector_ui, gdt_ui, msa_ui, parametric_ui, pmi_ui, package_ui,
-                   position_ui, sheetmetal_ui, sketch_ui, stackup_ui, titleblock_ui)
+                   position_ui, primitive_ui, sheetmetal_ui, sketch_ui, stackup_ui, titleblock_ui)
     table.update(collector_ui.COMMANDS)
+    table.update(primitive_ui.COMMANDS)
     table.update(sketch_ui.COMMANDS)
     table.update(alignment_ui.COMMANDS)
     table.update(position_ui.COMMANDS)

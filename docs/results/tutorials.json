@@ -4159,6 +4159,222 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Holder.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 1,
+   "nx": "A plate driven by parameters: Length, Width, Thick, HoleR in a spreadsheet; the sketch's dimensions and the extrusion's length are expressions of them; an edge blend, a hole through all and a pattern of it",
+   "replay": "modelled by script (tutorials J and K build such expressions with the ribbon and the Expressions table)",
+   "outcome": "differs",
+   "detail": "features ['Pad', 'EdgeBlend', 'ExtrudeSubtract', 'PatternFeature']; volume 36587.766 mm³; expressions ['HoleSketch: Spreadsheet.HoleR', 'Pad: Spreadsheet.Thick', 'Sketch: Spreadsheet.Length', 'Sketch: Spreadsheet.Width']"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 2,
+   "nx": "PMI > STEP with Parameters: the part, its history, its sketches with their constraints and its parameters in one STEP AP242 file",
+   "replay": "Plate selected, ribbon 'PMI › Exchange > STEP with Parameters', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "instances by part: ISO 10303-42 442, ISO 10303-55 10, ISO 10303-108 74, ISO 10303-111 3; nothing left out. NX's STEP export writes the B-rep (and PMI); the history, the sketch constraints and the expressions stay in the .prt"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 3,
+   "nx": "Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112",
+   "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "0 error(s), 6 warning(s), 13 note(s); the warnings name the places where ISO 10303-108 contradicts itself. NX has no such check"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 4,
+   "nx": "New part, PMI > Import STEP with Parameters: the part rebuilt from the file, editable",
+   "replay": "Ctrl+N, ribbon 'PMI › Exchange > Import STEP with Parameters', the file typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "into the new part's Body: features ['Pad', 'Fillet', 'Pocket', 'LinearPattern']; a Parameters spreadsheet and the expressions ['Parameters.HoleR', 'Parameters.Length', 'Parameters.Thick', 'Parameters.Width']; against the source part: 0.000000 mm³ differ, and against the B-rep in the file the same (the report's last line). NX's STEP import gives a solid without history"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 5,
+   "nx": "A design change in the received part: HoleR 6 → 4 mm; the three holes follow, as in the source",
+   "replay": "HoleR typed into the Parameters spreadsheet by script (the same change in the source part)",
+   "outcome": "differs",
+   "detail": "volume 36587.766 → 38472.721 mm³ in both parts; 0.000000 mm³ differ"
+  },
+  {
+   "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
+   "n": 6,
+   "nx": "The rebuilt plate after the change",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "22.6% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 1,
+   "nx": "The supplier's fixture as STEP AP242: a plate, two brackets, four bolts (one bracket and the bolts as links)",
+   "replay": "assembled and exported by script with FreeCAD's own STEP export",
+   "outcome": "differs",
+   "detail": "21160 bytes"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 2,
+   "nx": "Check STEP with 'Download the AP's schema': the application protocol named, every entity checked against AP242's own long form, the product structure listed",
+   "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, the box ticked, MB2 = OK",
+   "outcome": "differs",
+   "detail": "0 error(s), 0 warning(s), 1 note(s); checked against AP242's long form: True; parts list: 1 x BasePlate; 2 x Bracket; 4 x Bolt; 1 x BasePlate; 4 x Bolt; 2 x Bracket. NX has no STEP checker; its BOM comes from the assembly navigator"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 3,
+   "nx": "The supplier's bracket profile as ISO 10303-112 commands: a rectangle, two R5 rounds (fillets with trimming), a Ø16 bore, a Ø4 hole and its circular pattern",
+   "replay": "the file written by script, as another CAD system would send it",
+   "outcome": "differs",
+   "detail": "8 commands"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 4,
+   "nx": "Check STEP on the sketch file: the Part 112 commands against ISO 10303-112's schema",
+   "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "0 error(s), 0 warning(s), 0 note(s); ISO 10303-112: 6 instances of ISO 10303-112 entities"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 5,
+   "nx": "New part, Import STEP with Parameters: the commands evaluated into a FreeCAD sketch",
+   "replay": "Ctrl+N, ribbon 'PMI › Exchange > Import STEP with Parameters', the file typed, MB2 = OK",
+   "outcome": "differs",
+   "detail": "one sketch: {'LineSegment': 4, 'ArcOfCircle': 2, 'Circle': 5}, every wire closed: True; Part 112 does not position a sketch, so it lies on XY. NX imports a STEP sketch as curves without its history"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 6,
+   "nx": "Extrude the received profile 8 mm: the bracket",
+   "replay": "Pad by script on the imported sketch",
+   "outcome": "differs",
+   "detail": "volume 17103.5400 mm³, expected 17103.5400 (60 × 40 less two R5 corners, the Ø16 bore and four Ø4 holes, times 8): the commands' geometry is exact"
+  },
+  {
+   "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
+   "n": 7,
+   "nx": "The bracket from the received profile",
+   "replay": "render of the graphics window",
+   "outcome": "same",
+   "detail": "22.9% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Create a new file (Arborpress_plate)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed']"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Block: Origin and Edge Lengths, Point Dialog at (0, 0, 0), Length 65, Width 85, Height 20, OK",
+   "replay": "ribbon 'Home › Feature > Block', Type 'Origin and Edge Lengths', XC/YC/ZC 0 and the lengths typed (1651, 2159, 508 mm), OK",
+   "outcome": "same",
+   "detail": "Boolean None; block 1651.0 x 2159.0 x 508.0 mm from (0, 0, 0); one undo step ['Block']. The Point Dialog's XC, YC, ZC are fields in the Block dialog (NX opens it as its own window)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Fit (Ctrl+F), Orient View > Trimetric",
+   "replay": "Ctrl+F, Home (NX's Trimetric key)",
+   "outcome": "same",
+   "detail": "view direction (-0.4096, 0.7094, -0.5736) (trimetric 1.000000); all eight corners of the block in the window True"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Save the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_plate.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Datum Plane (Inferred): the top face of the block",
+   "replay": "top face (Face6) selected + ribbon 'Home > Datum > Datum Plane'",
+   "outcome": "same",
+   "detail": "the plane is attached to the face; FreeCAD's attachment dialog opens with it"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Offset Distance 15, OK",
+   "replay": "'attachmentOffsetZ' = 381 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "datum plane at z = 889.00 mm (top face 508 + 381), normal (0.0, 0.0, 1.0)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Datum Axis: the two points on the block",
+   "replay": "Vertex6 and Vertex1 selected + ribbon 'Home > Datum > Datum Axis'",
+   "outcome": "same",
+   "detail": "FreeCAD infers Through Two Points from the two vertices, as NX's Inferred does"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "OK: the Datum Axis is the diagonal",
+   "replay": "MB2 = OK",
+   "outcome": "same",
+   "detail": "mode TwoPointLine; direction (-0.9558, 0.0, 0.2941) along the diagonal of the front face (65 x 20); through the first point within 6e-14 mm"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Hole: General Hole, Position > Sketch on the top face",
+   "replay": "top face selected + ribbon 'Home › Feature > Hole'",
+   "outcome": "same",
+   "detail": "the Hole starts a sketch on the face, and Finish Sketch carries on into the Hole dialog, as NX's Sketch Section in the Position group"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Point Dialog: the six points of the table, each OK",
+   "replay": "ribbon 'Sketch › Curve > Point', XC and YC typed in the on-view fields for each point, MB2",
+   "outcome": "same",
+   "detail": "6 points; all at the table coordinates; sketch on the top face (z = 508.0 mm)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Simple Hole: Diameter 8, Depth 25, Tip Angle 118°, Boolean Subtract, OK",
+   "replay": "dialog open True; 'Diameter' = 203.2 mm, 'Dimension', 'Depth' = 635 mm, 'DrillPointAngle' = 118°, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 1711926130.6 mm^3, expected 1711926130.6; 1 solid(s); the plate is 20 thick, so the holes go through it; values as typed True; FreeCAD's Hole always subtracts from its body"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 13,
+   "nx": "The plate: the block with its six holes",
+   "replay": "compared with the book's dimensions",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 12 faces (12 in the reference)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Save the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_plate.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   }
  ],
  "info": {

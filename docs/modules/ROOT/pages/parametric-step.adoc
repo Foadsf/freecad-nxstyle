@@ -15,7 +15,8 @@ ISO 10303 has parts for exactly that, and NX-Style writes and reads them:
 | ISO 10303-55 | The construction history: an ordered sequence of operations, picked edges and faces, and the dual model (history and B-rep in one file)
 | ISO 10303-108 (with Cor.1 and Cor.2) | Parameters, the expressions between them, geometric constraints, sketches
 | ISO 10303-111 | Feature operations on solids: blends, chamfers, shells, extrusions with trim conditions and draft
-| ISO 10303-112 | 2D sketch commands: in the checker's schemas (files that use them are checked); sketches are written with ISO 10303-108 instead, which keeps the constraints
+| ISO 10303-112 | 2D sketch commands: a Part 112 sketch from another system is evaluated into a FreeCAD sketch; on request, each sketch is also written as Part 112 commands (below)
+| AP203, AP214, AP242 | The application protocols: recognised from the file, and checked against their own long-form schemas once those are in the schema cache (below); the product structure (BOM) is read from any of them
 |===
 
 == On the ribbon
@@ -26,9 +27,12 @@ Modeling › PMI tab › Exchange:
 |===
 | Button | Does
 | *STEP with Parameters* | The selected Body (or Part solid, or sketch) as STEP AP242. OpenCASCADE writes the B-rep and the product structure, the file any CAD system opens; the history, sketches, constraints and spreadsheet parameters go into the same file. The Information window lists what went in, by part of ISO 10303, the result of the file check, and anything that could not be written.
-| *Import STEP with Parameters* | Rebuilds what such a file carries: a PartDesign Body (or Part CSG objects), its sketches with their constraints, a *Parameters* spreadsheet, and the expressions that tie them. When the file also has the B-rep, the rebuilt solid is compared with it. A file without parametric data comes in as its B-rep.
-| *Check STEP* | Any STEP file against ISO 10303-21 and the schemas of Parts 42, 43, 55, 108, 111 and 112 (below).
+| *Import STEP with Parameters* | Rebuilds what such a file carries: a PartDesign Body (into the open part's Body while it is empty, as after kbd:[Ctrl+N]; or Part CSG objects), its sketches with their constraints, a *Parameters* spreadsheet, and the expressions that tie them. When the file also has the B-rep, the rebuilt solid is compared with it. A file without parametric data comes in as its B-rep.
+| *Check STEP* | Any STEP file against ISO 10303-21 and the schemas of Parts 42, 43, 55, 108, 111 and 112, and against its application protocol's schema when that is in the cache (tick *Download the AP's schema* to get it once). The report names the AP and lists the product structure (BOM).
 |===
+
+*STEP with Parameters* has *Also write each sketch as ISO 10303-112 commands*: every sketch then also goes into the file as Part 112 modelling commands, paired with its constrained Part 108 form.
+It is off by default, because no edition of AP242 includes Part 112 (see the table below): a strict AP242 reader would not know those entities.
 
 == What is written
 
@@ -58,6 +62,7 @@ The report names it; the B-rep still carries the whole part.
 Sketches come back placed where they were, not attached to faces or planes.
 Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for.
 
+xref:tutorials/al.adoc[Tutorial AL] goes through it on the ribbon.
 The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution, and a Part CSG tree.
 Exported, checked (no errors), imported into a new document: the rebuilt solids equal the originals exactly, and still do after the same parameter change in both.
 
@@ -80,6 +85,44 @@ Run from the `NXStyle` folder; no FreeCAD needed.
 Other WHERE rules are listed in the schemas but not evaluated, and entities of other parts (an application protocol's product structure, PMI) are counted, not checked.
 `--exp file.exp` adds more EXPRESS, for example the long form of AP242 from the ISO SC4 site, and then those are checked too.
 
+== Application protocols
+
+A STEP file is written to an application protocol (AP), named in its header.
+NX-Style recognises AP203 (edition 1, `CONFIG_CONTROL_DESIGN`, and edition 2), AP214 (`AUTOMOTIVE_DESIGN`, with the version its object identifier gives) and AP242 (`AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF`).
+An AP's own entities, such as the product structure, the B-rep shape representations, PMI and presentation, are checked against the AP's long-form schema once it is in the schema cache:
+
+[source,bash]
+----
+python -m nxstyle.iso10303 schema fetch AP242      # also AP203, AP203E2, AP214
+python -m nxstyle.iso10303 schema add mim_lf.exp   # any other long form, e.g. another AP242 edition
+python -m nxstyle.iso10303 schema list
+python -m nxstyle.iso10303 bom assembly.stp
+----
+
+`fetch` takes AP242's long form from `standards.iso.org` (ISO/TS 10303-442 edition 7) and AP203 and AP214's from the STEPcode project, compiles it and keeps it in the user's cache folder (`~/.cache/freecad-nxstyle/iso10303`, `%LOCALAPPDATA%\FreeCAD-NXStyle\iso10303`; `NXSTYLE_ISO10303_SCHEMAS` overrides).
+The cache holds one schema per name, so the AP242 editions replace each other; the last one added is the one used.
+The schemas are not in this repository.
+
+What the APs' long forms contain, counted entity by entity (the PMI column: ten entities semantic PMI rests on, such as `datum_system`, `dimensional_size`, `limits_and_fits`, `position_tolerance`; AP203 edition 2 and AP214 edition 3 lack the two of AP242's datum reference frames, `datum_system` and `datum_reference_compartment`):
+
+[cols="2,1,1,1,1,1",options="header"]
+|===
+| Schema | Part 55 (15) | Part 108 (65) | Part 111 (52) | Part 112 (43) | PMI (10)
+| AP203 edition 1 | 0 | 0 | 0 | 0 | 0
+| AP203 edition 2 | 12 | 3 | 49 | 0 | 8
+| AP214 edition 3 | 0 | 0 | 0 | 0 | 8
+| AP242 editions 2, 3 and current | 13 | 65 | 49 | 0 | 10
+|===
+
+Everything *STEP with Parameters* writes for Parts 55, 108 and 111 is in AP242, and its files check without an error against AP242's own schema.
+Part 112 is in none of them.
+
+xref:tutorials/am.adoc[Tutorial AM] checks a supplier's assembly against AP242's schema, reads its parts list, and rebuilds a sketch sent as Part 112 commands.
+
+*bom* (and *Check STEP*) reads the product structure: products, their definitions and the next-assembly-usage occurrences, as the assembly tree with quantities and the parts list with the totals.
+
+Lengths and plane angles are read in the file's units (millimetres, metres, inches, radians, degrees: SI and conversion-based units); numbers inside expressions are taken as they are.
+
 == Where ISO 10303 contradicts itself
 
 Writing data that every rule accepts turned up places where the parts cannot all be met at once.
@@ -89,6 +132,7 @@ NX-Style's choice in each case, and what the checker says about it:
 * ISO 10303-55 5.4.4 and 5.4.5 require a solid sequence to be a `SOLID_MODEL` and its elements to be geometric items, which `USER_SELECTED_SHAPE_ELEMENTS` is not; Part 55's own example (annex E) writes both as simple instances. NX-Style writes complex instances that meet the rules.
 * A procedural representation may only hold sequences (55 4.3.3), so parameters of the history wrap a shape representation that holds the sequence.
 * ISO 10303-108 Cor.1 annex F writes the current value of an unbound parameter untyped (`3.0`), where ISO 10303-21 10.1.8 asks for a typed SELECT value; NX-Style follows annex F and the checker warns.
+* ISO 10303-112's own example (4.2.2) uses `SKETCH_OPERATE_FILLET`, which the schema does not define (the command is `create_fillet`, with seven attributes), and writes `$` for a sequence's suppressed items, which is not optional. Its ellipse commands say the second semi-axis is "the projection onto the line defined by the first two points", which would lie along the first axis; NX-Style takes the distance from that line.
 * The examples of Cor.1 annex F have slips: `#550` names itself as its value space (for `#540`), `#410` uses `#360` (for `#400`), and `UNBOUND_PARAMETER_SEMANTICS` is the pre-corrigendum name of `UNBOUND_VARIATIONAL_PARAMETER_SEMANTICS`. Cor.2 rewrites WR1 of `neutral_sketch_representation` to demand three-dimensional items, against the two dimensions of 8.4.9.
 
 == The schemas

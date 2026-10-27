@@ -1,0 +1,73 @@
+= Tutorial AL: Design intent through STEP (ISO 10303-55, -108, -111)
+:description: A parameter-driven plate sent as STEP with its history, sketch constraints and parameters, the file checked against ISO 10303, and the plate rebuilt from the file alone in a new part, where a design change works as at the source.
+
+[horizontal]
+Standards:: ISO 10303-21 (the STEP file), ISO 10303-11 (EXPRESS), ISO 10303-42 and -43 (geometry, representations), ISO 10303-55 (construction history), ISO 10303-108 with Cor.1 and Cor.2 (parameters, constraints, sketches), ISO 10303-111 (features)
+You learn:: STEP with Parameters, Check STEP, Import STEP with Parameters, a design change in a part that came from a file
+Sizes:: A plate 80 × 50 × 10, its long edge rounded R3, a Ø12 hole repeated three times 20 apart
+Background:: xref:parametric-step.adoc[]
+
+A STEP file usually carries the finished shape and nothing about how it was made.
+The supplier who receives it can measure it, machine it or cut it, but cannot change a dimension: there is no dimension to change.
+Here the plate goes out with its design intent, the history, the sketch constraints and the parameters, in the same STEP file as its shape, and a new part is rebuilt from that file and edited.
+
+== Step by step
+
+=== 1. The plate and its parameters
+
+The plate is made by script, the way tutorials xref:tutorials/j.adoc[J] and xref:tutorials/k.adoc[K] make expressions with the ribbon:
+
+* a spreadsheet with *Length* 80 mm, *Width* 50 mm, *Thick* 10 mm and *HoleR* 6 mm;
+* a sketch on XY, a rectangle constrained to the origin, its two sizes the expressions `Spreadsheet.Length` and `Spreadsheet.Width`;
+* *Extrude* by `Spreadsheet.Thick`, *Edge Blend* R3 on the long vertical edge;
+* a circle of radius `Spreadsheet.HoleR`, cut through all with *Extrude (Subtract)*, and a *Pattern Feature* of the hole: three, 40 mm overall along X.
+
+=== 2. Out: STEP with Parameters
+
+Select the body, then *PMI › STEP with Parameters*, a file name, OK.
+
+The Information window lists what went into the file, by part of ISO 10303: the B-rep OpenCASCADE writes (Part 42), the history (Part 55), the features (Part 111), the sketches with their constraints and the four parameters with the expressions that use them (Part 108).
+The last line is the file's check against the standards: no error.
+
+image::tutorial-AL-01-export.png[What went into the STEP file, by part of ISO 10303]
+
+=== 3. Check STEP
+
+*PMI › Check STEP*, the same file, OK.
+It reads the file as ISO 10303-21, names its application protocol (AP242), checks every instance against the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112, and lists the product structure (here one part): 0 errors.
+
+The warnings are not mistakes in the file.
+Each untyped parameter value is written the way ISO 10303-108 Cor.1 writes it, where ISO 10303-21 asks for a typed one, and two rules of ISO 10303-108 contradict each other for every constrained sketch (see xref:parametric-step.adoc#_where_iso_10303_contradicts_itself[Where ISO 10303 contradicts itself]).
+The notes count the entities of the application protocol itself (the product structure, the B-rep shape representation): tick *Download the AP's schema if it is missing* and they are checked against AP242's own long form too, with the same result, no error (see xref:parametric-step.adoc#_application_protocols[Application protocols]).
+
+image::tutorial-AL-02-check.png[Check STEP: no errors, the warnings and what they mean]
+
+=== 4. In: Import STEP with Parameters
+
+kbd:[Ctrl+N], *PMI › Import STEP with Parameters*, the file, OK.
+
+The new part's body fills with the history: the sketches with their constraints, the extrusion, the edge blend, the hole through all and its pattern, with the names they had at the source.
+A *Parameters* spreadsheet holds Length, Width, Thick and HoleR, and the four expressions use it.
+The rebuilt solid is compared with the B-rep in the file: they are the same, to the last mm³.
+
+image::tutorial-AL-03-import.png[The import report: the rebuilt history against the B-rep in the file]
+
+=== 5. A design change in the received part
+
+Change *HoleR* to 4 mm in the Parameters spreadsheet.
+The three holes follow; the same change in the source part gives the same solid.
+
+image::tutorial-AL-04-rebuilt.png[The rebuilt plate after the change, with its feature tree]
+
+== The replay
+
+include::partial$generated/tutorial-AL.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX's STEP export writes the B-rep (with PMI in AP242); the history, the sketch constraints and the expressions stay in the `.prt`, and a STEP import gives a solid without history.
+* The sketches come back placed where they were, not attached to faces or planes.
+* The history stops at the first feature ISO 10303-111 and -42 cannot represent (Hole, Mirrored, Draft, Loft…); the report names it, and the B-rep in the file still carries the whole part.
+* In FreeCAD 1.1.4 itself, changing this plate's Length or Thick loses the edge blend's edge (FreeCAD's topological naming, in the source part as much as in the rebuilt one), so the change here is HoleR.

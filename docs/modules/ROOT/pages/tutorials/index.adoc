@@ -7,6 +7,9 @@ Tutorials O to R are Grasshopper video tutorials done on the xref:algorithmic-mo
 Tutorials S to AC are precision-engineering work: a tolerance stack-up checked against the book's numbers, a part documented to ISO GPS in 3D, volume claims and assembly clearance in a system layout, a release with an engineering change, a sheet metal bracket whose flat pattern is checked by hand, an opto-mechanical pin location, PMI organised in model views, the model with its PMI exchanged through STEP AP242, a composite position frame evaluated from CMM data, the measurement capability of the inspection methods, and a drawing whose title block comes from the release.
 Tutorial AD joins a laser-cut tray with tabs and slots and lays its parts flat for the cutter.
 Tutorials AF to AK are the sketching examples and exercises of _NX 12 for Engineering Design_: a sketch constrained to size and extruded, a casing sketch built with Move Curve copies, an impeller blade of tangent arcs, a slotted circular base, and a holder with lugs copied round a bolt circle.
+Tutorial AL sends a parameter-driven plate as STEP with its history, sketch constraints and parameters (ISO 10303-55, -108, -111), checks the file against ISO 10303, and rebuilds the plate from the file in a new part.
+Tutorial AM is the receiving end: a supplier's assembly checked against AP242's own schema with its parts list read from the file, and a sketch sent as ISO 10303-112 commands rebuilt and extruded.
+Tutorial AN starts chapter 4 of _NX 12 for Engineering Design_: a plate made with NX's Block, with a datum plane, a datum axis and six holes.
 Every page lists the original steps beside the NX-Style steps, so you can follow along with the book or the video, or without them.
 
 The step tables are not written by hand.
@@ -26,7 +29,9 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | You want to learn | Tutorials
 
 | Sketch, extrude, revolve | xref:tutorials/a.adoc[A], xref:tutorials/b.adoc[B], xref:tutorials/l.adoc[L]
-| Datum planes and holes | xref:tutorials/c.adoc[C], xref:tutorials/e.adoc[E]
+| Datum planes and holes | xref:tutorials/c.adoc[C], xref:tutorials/e.adoc[E], xref:tutorials/an.adoc[AN]
+| Primitives: Block, Cylinder, Cone, Sphere | xref:tutorials/an.adoc[AN]
+| Datum axes | xref:tutorials/an.adoc[AN]
 | Patterns, mirror, shell, edge blend | xref:tutorials/d.adoc[D], xref:tutorials/f.adoc[F]
 | Sketch constraints, trim, offset | xref:tutorials/i.adoc[I], xref:tutorials/j.adoc[J], xref:tutorials/af.adoc[AF], xref:tutorials/ak.adoc[AK]
 | Copying sketch curves (Move Curve, Rotate Curve) | xref:tutorials/ag.adoc[AG], xref:tutorials/ak.adoc[AK]
@@ -55,6 +60,10 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | Composite position, functional gauges, evaluating CMM data | xref:tutorials/aa.adoc[AA]
 | Measurement uncertainty, TUR, guard bands, gauge R&R | xref:tutorials/ab.adoc[AB]
 | Title block and revision block from the release | xref:tutorials/ac.adoc[AC]
+| Design intent through STEP: history, sketch constraints and parameters out and back in (ISO 10303-55, -108, -111) | xref:tutorials/al.adoc[AL]
+| Checking a STEP file against ISO 10303 and its application protocol's schema | xref:tutorials/al.adoc[AL], xref:tutorials/am.adoc[AM]
+| The bill of materials in a STEP file | xref:tutorials/am.adoc[AM]
+| Sketches sent as ISO 10303-112 commands | xref:tutorials/am.adoc[AM]
 |===
 
 == Results
@@ -78,7 +87,9 @@ include::partial$outcome-legend.adoc[]
 * The PLM books of John Stark, Michael Grieves, and Antti Saaksvuori and Anselmi Immonen: release and engineering change, tutorial V.
 * Tutorial U's layout is ours; Assembly Clearance follows NX's.
 * Tutorial AE is ours: the acceptance case of the Extrude command (None for a new body, Unite, Subtract, edit, cancel, undo, reopen).
-* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK.
+* Tutorial AL is ours: the plate and its parameters; the exchange follows ISO 10303-55 annex E and ISO 10303-108 Cor.1 annex F.
+* Tutorial AM is ours: the fixture and the bracket profile; the commands follow ISO 10303-112 clause 4.2.2 (selection by ISO 10303-55).
+* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN.
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.
 
 == The videos
