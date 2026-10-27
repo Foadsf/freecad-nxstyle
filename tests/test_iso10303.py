@@ -448,20 +448,28 @@ class HistoryGaps(unittest.TestCase):
                               "path_edges": [line_edge([30, 20, 10], [30, 20, 20]), arc], "normal": [0, -1, 0],
                               "plane": path["placement"], "op": "union"})
         f, got, _ = self.written(m)
-        sweep = f.by_name("SURFACE_CURVE_SWEPT_FACE_SOLID")
+        sweep = f.by_name("SURFACE_CURVE_SWEPT_AREA_SOLID")         # in AP242, unlike the _FACE_ form
         self.assertEqual(len(sweep), 1)
+        self.assertEqual(f.by_name("SURFACE_CURVE_SWEPT_FACE_SOLID"), [])
         total = sweep[0].params[4]
         self.assertAlmostEqual(total, 10 + math.pi / 2 * 1.0)   # the line's length plus the arc's angle (42, 4.4.41)
         ft = got["features"][1]
         self.assertEqual((ft["type"], ft["sketch"], ft["path"], ft["op"]), ("pipe", "PipeProfile", "Path", "union"))
         self.assertEqual(ft["normal"], [0.0, -1.0, 0.0])
         self.assertEqual(ft["path_edges"][1]["p2"], [40.0, 20.0, 30.0])
-        # the swept face lies in z = 0 of the sweep's frame, centred on the directrix (42, 6.4.35 IP1)
-        local = parametric._Reader(f).face(sweep[0].params[1])
-        circle = local["loops"][0][0]
-        self.assertTrue(all(abs(e["p1"][2]) < 1e-12 for loop in local["loops"] for e in loop))
-        self.assertEqual([round(c, 12) for c in circle["curve"]["center"]], [0.0, 0.0, 0.0])
-        self.assertAlmostEqual(circle["curve"]["r"], 2.0)
+        # the swept area lies in z = 0 of the sweep's frame (42, 6.4.39 IP1); its plane is the sketch's plane
+        # moved there, so the pcurves are the sketch's own curves: a circle of radius 2 about (30, 20), in halves
+        rd = parametric._Reader(f)
+        area = sweep[0].params[1]
+        plane = rd.a2p3(rd.get(rd.get(area, "basis_surface"), "position"))
+        self.assertAlmostEqual(plane["origin"][2], 0.0)
+        self.assertAlmostEqual(abs(plane["axis"][2]), 1.0)
+        self.assertEqual(len(f.by_name("OUTER_BOUNDARY_CURVE")), 1)
+        self.assertEqual(len(f.by_name("BOUNDED_PCURVE")), 2)
+        arcs = [i for i in f.by_name("CIRCLE") if len(f.get(f.get(i.params[1]).params[1]).params[1]) == 2
+                and abs(i.params[2] - 2.0) < 1e-12]
+        centres = {tuple(f.get(f.get(c.params[1]).params[1]).params[1]) for c in arcs}
+        self.assertIn((30.0, 20.0), centres)
 
     def test_hybrid_steps(self):
         m = base_model()

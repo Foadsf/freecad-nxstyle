@@ -57,8 +57,11 @@ to_step(model) writes it as ISO 10303 entities; from_step(file) reads it back:
   ISO 10303-42/111    EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS (and _WITH_DRAFT_ANGLE; up to a face: the face
                       as trim condition, intent UP_TO_NEXT, OFFSET or UNSPECIFIED, the unsigned offset, the
                       reached extent as depth), REVOLVED_FACE_SOLID (_WITH_TRIM_CONDITIONS, also up to a
-                      face), SURFACE_CURVE_SWEPT_FACE_SOLID (a pipe: the profile in z = 0 of the sweep frame,
-                      the path a COMPOSITE_CURVE, the path's plane as reference surface), BOOLEAN_RESULT,
+                      face), SURFACE_CURVE_SWEPT_AREA_SOLID (a pipe: a CURVE_BOUNDED_SURFACE on the sketch's
+                      plane moved into z = 0 of the sweep frame, its boundaries BOUNDARY_CURVEs of
+                      BOUNDED_PCURVEs whose 2D curves are the sketch's (u, v) curves in a DEFINITIONAL_-
+                      REPRESENTATION; the path a COMPOSITE_CURVE, the path's plane as reference surface;
+                      AP242 has no SURFACE_CURVE_SWEPT_FACE_SOLID), BOOLEAN_RESULT,
                       SOLID_WITH_FLAT_BOTTOM_ / CONICAL_BOTTOM_ROUND_HOLE, SOLID_WITH_STEPPED_ROUND_HOLE
                       (+ SOLID_WITH_THROUGH_DEPRESSION, + _AND_CONICAL_TRANSITIONS), one per position, the
                       placing's z axis out of the entrance (4.4.22), SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND,
@@ -854,25 +857,94 @@ def _edge_tangent(e):
     raise StepError(f"no tangent for a {c['type']} edge")
 
 
+def _pcurve_context(w):
+    if "pctx" not in w.cache:
+        w.cache["pctx"] = w.cx(("GEOMETRIC_REPRESENTATION_CONTEXT", [2]), ("PARAMETRIC_REPRESENTATION_CONTEXT", []),
+                               ("REPRESENTATION_CONTEXT", ["2D", "parameter space"]))
+    return w.cache["pctx"]
+
+
+def _segments_2d(loop, frame):
+    """A face loop -> 2D segments in the plane's (u, v): ("line", p, q) or ("arc", c, r, p, q, ccw)."""
+    o, x, ax = frame["origin"], _norm(frame["x"]), _norm(frame["axis"])
+    y = _cross(ax, x)
+
+    def uv(p):
+        d = _sub(p, o)
+        return [_dot(d, x), _dot(d, y)]
+    out = []
+    for e in loop:
+        c = e["curve"]
+        p, q = uv(e["p1"]), uv(e["p2"])
+        if c["type"] == "line":
+            out.append(("line", p, q))
+        elif c["type"] == "circle":
+            ccw = _dot(_norm(c["axis"]), ax) > 0
+            ctr, r = uv(c["center"]), float(c["r"])
+            if _dist(p, q) < 1e-9:                   # a full circle: two halves, each trimmed by its end points
+                opp = [2 * ctr[0] - p[0], 2 * ctr[1] - p[1]]
+                out += [("arc", ctr, r, p, opp, ccw), ("arc", ctr, r, opp, p, ccw)]
+            else:
+                out.append(("arc", ctr, r, p, q, ccw))
+        else:
+            raise StepError(f"a {c['type']} edge in a swept profile is not written as a pcurve")
+    return out
+
+
+def _boundary(w, name, segs, plane, outer):
+    """A closed loop of a plane as OUTER_BOUNDARY_CURVE / BOUNDARY_CURVE: BOUNDED_PCURVEs on the plane whose
+    2D curves (TRIMMED_CURVEs) are in a DEFINITIONAL_REPRESENTATION of a parametric context (42, 4.4.41-4.4.47, 5.4.1)."""
+    ctx = _pcurve_context(w)
+    parts = []
+    for sg in segs:
+        p2 = lambda v: w.add("CARTESIAN_POINT", "", [float(v[0]), float(v[1])])   # noqa: E731
+        if sg[0] == "line":
+            _k, p, q = sg
+            d = _sub(q, p)
+            ln = math.hypot(*d) or 1.0
+            basis = w.add("LINE", "", p2(p), w.add("VECTOR", "", w.add("DIRECTION", "", [d[0] / ln, d[1] / ln]), ln))
+            tc = w.add("TRIMMED_CURVE", "", basis, [p2(p)], [p2(q)], True, E("CARTESIAN"))
+        else:
+            _k, c, r, p, q, ccw = sg
+            basis = w.add("CIRCLE", "", w.add("AXIS2_PLACEMENT_2D", "", p2(c), w.add("DIRECTION", "", [1.0, 0.0])),
+                          float(r))
+            tc = w.add("TRIMMED_CURVE", "", basis, [p2(p)], [p2(q)], bool(ccw), E("CARTESIAN"))
+        rep = w.add("DEFINITIONAL_REPRESENTATION", "", [tc], ctx)
+        pc = w.entity(["bounded_pcurve"], {"representation_item.name": "", "pcurve.basis_surface": plane,
+                                           "pcurve.reference_to_curve": rep})
+        parts.append(w.add("COMPOSITE_CURVE_SEGMENT", E("CONTINUOUS"), True, pc))
+    return w.add("OUTER_BOUNDARY_CURVE" if outer else "BOUNDARY_CURVE", name, parts, False)
+
+
 def _write_pipe(w, ft, sketches, model_sketches):
-    """A profile swept along a planar path: SURFACE_CURVE_SWEPT_FACE_SOLID (42, 6.4.35) per profile face, the
-    face moved into the sweep's local frame at the start of the path (z = 0, x along the path plane's normal
-    N, z along the tangent), the path a COMPOSITE_CURVE on the plane of the path sketch."""
+    """A profile swept along a planar path: SURFACE_CURVE_SWEPT_AREA_SOLID (42, 6.4.39) per profile face. The
+    swept area is a CURVE_BOUNDED_SURFACE on a PLANE in z = 0 of the sweep's local frame at the start of the
+    path (x along the path plane's normal N, z along the tangent): the sketch's plane moved into that frame,
+    so that the pcurves of its boundaries are the sketch's own (u, v) curves. The path is a COMPOSITE_CURVE,
+    the plane of the path sketch the reference surface."""
     msk = model_sketches[ft["sketch"]]
     if not msk.get("faces"):
         raise StepError(f"{ft['name']}: sketch {ft['sketch']} has no closed profile")
     edges = ft["path_edges"]
     c0, t0 = edges[0]["p1"], _edge_tangent(edges[0])
-    frame = sweep_frame(ft["normal"], t0)
-    inv = _transpose(frame)
+    inv = _transpose(sweep_frame(ft["normal"], t0))
     shift = _mul(_apply(inv, c0), -1.0)
+    sp = msk["placement"]
+    local = {"origin": _xform_point(inv, shift, sp["origin"]), "axis": _apply(inv, sp["axis"]), "x": _apply(inv, sp["x"])}
+    if abs(abs(_norm(local["axis"])[2]) - 1) > 1e-7 or abs(local["origin"][2]) > 1e-6:
+        raise StepError(f"{ft['name']}: the profile is not in the normal plane at the start of the path")
+    local["origin"][2] = 0.0
     directrix, total = w.composite(f"{ft['path']}.path", edges)
     pl = ft.get("plane") or {"origin": c0, "axis": ft["normal"], "x": t0}
     ref = w.add("PLANE", f"{ft['path']}.plane", w.a2p3(pl["origin"], ft["normal"], pl["x"]))
     tools = []
     for k, fc in enumerate(msk["faces"]):
-        local = w.face(_xform_face(fc, inv, shift), f"{ft['sketch']}.face{k}")
-        tools.append(w.add("SURFACE_CURVE_SWEPT_FACE_SOLID", ft["name"], local, directrix, 0.0, float(total), ref))
+        name = f"{ft['sketch']}.face{k}"
+        plane = w.add("PLANE", name, w.a2p3(local["origin"], local["axis"], local["x"]))
+        bounds = [_boundary(w, f"{name}.loop{j}", _segments_2d(loop, sp), plane, j == 0)
+                  for j, loop in enumerate(fc["loops"])]
+        area = w.add("CURVE_BOUNDED_SURFACE", name, plane, bounds, False)
+        tools.append(w.add("SURFACE_CURVE_SWEPT_AREA_SOLID", ft["name"], area, directrix, 0.0, float(total), ref))
     return _union(w, ft["name"], tools), tools
 
 
@@ -1860,9 +1932,9 @@ def _read_tool(rd, r, face_sketch, bindings):
     walk(r)
     x = parts[0]
     if not (rd.isa(x, "extruded_face_solid") or rd.isa(x, "revolved_face_solid")
-            or rd.isa(x, "surface_curve_swept_face_solid")):
+            or rd.isa(x, "surface_curve_swept_face_solid") or rd.isa(x, "surface_curve_swept_area_solid")):
         return None
-    face = rd.get(x, "swept_face")
+    face = rd.get(x, "swept_area") if rd.isa(x, "swept_area_solid") else rd.get(x, "swept_face")
     ft = {"name": rd.name(x), "sketch": face_sketch.get(int(face))}
     if rd.isa(x, "extruded_face_solid"):
         ft["type"] = "extrude"
@@ -1912,8 +1984,10 @@ def _read_tool(rd, r, face_sketch, bindings):
         if ft["sketch"] is None:
             base = rd.name(face).rsplit(".face", 1)[0]
             ft["sketch"] = base if base in getattr(rd, "sketch_names", ()) else None
-        if ft["sketch"] is None:
+        if ft["sketch"] is None and rd.isa(face, "face_surface"):
             ft["face"] = rd.face(face)
+        elif ft["sketch"] is None:
+            rd.notes.append(f"{ft['name']}: the sketch of its swept area is not in the file")
         return ft
     if ft["sketch"] is None:
         ft["face"] = rd.face(face)
