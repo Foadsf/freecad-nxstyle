@@ -167,13 +167,21 @@ class Run:
         self.smoke.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
         QtWidgets.QApplication.processEvents()
         qwait(40)
-        alone = want is not None and self.preselected() == (self.sk, self.names[g])
+        # and with a solid's face on the curve, the click may take the face even when the curve is preselected
+        # (measured in the full self-test: Revolution.Face11), so only curves alone under the pointer are clicked
+        alone = want is not None and self.preselected() == (self.sk, self.names[g]) and \
+            all(r["pick"].leaf is self.sk for r in rows)
         if alone and not Gui.Control.activeDialog() and not clear:
             route = "row"                     # preselection adds to the selection (a plain click would replace it)
             sf.select_row(want, clear=False)
         elif alone:
             route = "click"
+            seen = len(self.ctl.trace)
             click(self.smoke, f, qt_point(f, coin))
+            qwait(150)
+            if not any("pick add" in t and f"'{self.names[g]}')" in t for t in self.ctl.trace[seen:]):
+                route = "click, not taken: quickpick"   # a user picks it from QuickPick then
+                sf.select_row(want, clear=False)
         elif want is not None:
             route = "quickpick"
             sf.select_row(want, clear=False)
