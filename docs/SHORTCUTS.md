@@ -39,7 +39,7 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Edit Section | <kbd>Ctrl</kbd>+<kbd>H</kbd> | `Part_SectionCut` | anywhere |  |
 | Toggle Full Screen | <kbd>Alt</kbd>+<kbd>Return</kbd> | `Std_MainFullscreen` | anywhere |  |
 | Extrude | <kbd>X</kbd> | `PartDesign_Pad` | anywhere |  |
-| Move Object | <kbd>Ctrl</kbd>+<kbd>T</kbd> | `Std_TransformManip` | anywhere |  |
+| Move Object | <kbd>Ctrl</kbd>+<kbd>T</kbd> | `NXStyle_MoveObject` | anywhere | Distance, Angle, Point to Point; Dynamic is FreeCAD's Transform dragger |
 | Profile | <kbd>Z</kbd> | `Sketcher_CreatePolyline` | sketch |  |
 | Rectangle | <kbd>R</kbd> | `Sketcher_CreateRectangle` | sketch |  |
 | Line | <kbd>L</kbd> | `Sketcher_CreateLine` | sketch |  |
