@@ -11,6 +11,10 @@
   AH  3.5.3 Impeller (a sketch, inches typed in mm): two points, an arc by centre about each (R1.5 at the
       origin, R0.5 at (11.75, 6)), two arcs by 3 points joining them, all tangent, the origin point Fixed,
       the four radii (1.5, 0.5, 18, 15)
+  AJ  3.6.1 Circular Base: a disc R60 extruded, four U slots sketched on its face, cut with Extrude Subtract
+  AK  3.6.2 Holder (a sketch, inches typed in mm): circles and their diameters, the bolt circle as a reference
+      curve, the outline trimmed with Quick Trim, one arm of the cross and one lug, each copied round the origin
+      with Rotate Curve; the 29 curves compared with the book's figure
 
 The sketch is drawn roughly, as the book says, and the constraints and dimensions bring it to size. The
 sizes are the book's final dimension figure (p. 43): width 130, height 190.94, the outer verticals 125, the
@@ -1415,3 +1419,676 @@ class MstCircularBaseTutorials:
 
     def aj_show(self):
         self.show("AJ_circular_base")
+
+
+# ================================================================== AK: Holder (exercise 3.6.2)
+# The book's figure (p. 50), inches: circles Ø0.75, Ø2.00 and Ø2.76 about the origin; the outline a Ø3.50
+# circle and a 5.50 x 3.50 rectangle to its right, cut by a 0.50 slot along the X axis; a cross 0.25 wide
+# between the Ø0.75 and Ø2.76 circles; three lugs on a Ø4.50 bolt circle 120° apart, each a hole Ø0.38 in an
+# R0.38 end, its sides tangent to it and 1.00 apart where they meet the Ø3.50 circle (the sides of the
+# lugs at 60° and 300° end on that circle too, inside the rectangle, as at 180°).
+AK_D = {"hole": 0.75 * IN, "inner": 2.00 * IN, "ring": 2.76 * IN, "outer": 3.50 * IN}
+AK_BOLT, AK_LEN, AK_SLOT, AK_CROSS = 4.50 * IN, 5.50 * IN, 0.50 * IN, 0.25 * IN
+AK_LUG_R, AK_LUG_HOLE, AK_LUG_W = 0.38 * IN, 0.38 * IN, 1.00 * IN
+AK_LUGS = (180.0, 300.0, 60.0)          # the first is drawn, the others are its Rotate Curve copies
+
+
+def ak_rot(p, deg):
+    import math
+    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+    return App.Vector(c * p[0] - s * p[1], s * p[0] + c * p[1], 0)
+
+
+def ak_lug(deg):
+    """One lug, its axis at deg: (side end, tangent point, tangent point, side end, centre); the first side is
+    the one at -w across the axis, as Profile draws it."""
+    import math
+    r, w = AK_D["outer"] / 2, AK_LUG_W / 2
+    a = math.sqrt(r * r - w * w)             # where the sides meet the Ø3.50 circle
+    cx = AK_BOLT / 2
+    t = math.atan2(w, a - cx) - math.acos(AK_LUG_R / math.hypot(a - cx, w))
+    tu, tv = cx + AK_LUG_R * math.cos(t), AK_LUG_R * math.sin(t)
+    return [ak_rot(p, deg) for p in ((a, -w), (tu, -tv), (tu, tv), (a, w), (cx, 0))]
+
+
+def ak_reference():
+    """The finished sketch: (kind, start, end, centre, radius); circles have no ends."""
+    import math
+    V = App.Vector
+    ref = [("circle", None, None, V(0, 0, 0), AK_D[k] / 2) for k in ("hole", "inner", "ring")]
+    r, h, L = AK_D["outer"] / 2, AK_SLOT / 2, AK_LEN
+    a = math.sqrt(r * r - h * h)
+    ref += [("arc", V(a, h, 0), V(a, -h, 0), V(0, 0, 0), r),
+            ("line", V(0, r, 0), V(L, r, 0), None, 0), ("line", V(L, r, 0), V(L, -r, 0), None, 0),
+            ("line", V(L, -r, 0), V(0, -r, 0), None, 0),
+            ("line", V(a, h, 0), V(L, h, 0), None, 0), ("line", V(a, -h, 0), V(L, -h, 0), None, 0)]
+    w = AK_CROSS / 2
+    b, c = math.sqrt((AK_D["hole"] / 2) ** 2 - w * w), math.sqrt((AK_D["ring"] / 2) ** 2 - w * w)
+    for k in range(4):
+        for s in (w, -w):
+            ref.append(("line", ak_rot((b, s), 90 * k), ak_rot((c, s), 90 * k), None, 0))
+    for deg in AK_LUGS:
+        p0, t0, t1, p1, cc = ak_lug(deg)
+        ref += [("line", p0, t0, None, 0), ("arc", t0, t1, cc, AK_LUG_R), ("line", t1, p1, None, 0),
+                ("circle", None, None, cc, AK_LUG_HOLE / 2)]
+    return ref
+
+
+class MstHolderTutorials:
+    """Mixin for tutorial.Replay: tutorial AK (the AG sketch helpers work on self._ag_sk)."""
+
+    def AK_STEPS(self):
+        return [self.p_modeling, self.ak_new, self.ak_sketch, self.ak_plane, self.ak_circles, self.ak_bolt_circle,
+                self.ak_outline, self.ak_slot, self.ak_trim, self.ak_arm, self.ak_arm_rotate, self.ak_lug_profile,
+                self.ak_lug_constraints, self.ak_lug_hole, self.ak_lug_rotate, self.ak_check, self.ak_finish,
+                self.ak_save, self.ak_fit, self.ak_show]
+
+    # ------------------------------------------------------------- helpers
+    def ak_frame(self, cx=1.4 * IN, cy=0.0, w=8.8 * IN, h=5.6 * IN):
+        """Frame a w x h window of the sketch (frame_sketch waits for the camera to stop moving)."""
+        v = self.nav().widget
+        aspect = v.height() / max(v.width(), 1)
+        self.frame_sketch(self._ag_sk, cx, cy, max(h, w * aspect))
+        QtWidgets.QApplication.processEvents()
+
+    def ak_shot(self, name):
+        """A picture of the whole holder (the sketch's own bounding box is stale while it is edited)."""
+        from .tutorial import qtest
+        self.ak_frame(1.4 * IN, 0, 9.4 * IN, 6.4 * IN)
+        qtest().qWait(400)                  # the 3D view redraws on a timer, after the camera has moved
+        self.shot(name)
+
+    def ak_away(self):
+        return self.screen_point(self._ag_sk, -2.8 * IN, -2.6 * IN)
+
+    def ak_end_tool(self):
+        """MB2 ends the tool; a second MB2 where FreeCAD's continuous mode restarted it."""
+        away = self.ak_away()
+        self.mb2_click(away)
+        if self.sketch_tool_running(away):
+            self.mb2_click(away)
+        App.ActiveDocument.recompute()
+
+    def ak_on(self, g, pos, target):
+        """Whether the end pos of g lies on target (a curve index, -1 the X axis, -2 the Y axis) by a constraint."""
+        return any(c.Type == "PointOnObject" and c.First == g and c.FirstPos == pos and c.Second == target
+                   for c in self._ag_sk.Constraints)
+
+    def ak_put_on(self, g, pos, target):
+        """Point on Curve where the click did not snap the end onto target; returns 1 if one was added."""
+        if self.ak_on(g, pos, target):
+            return 0
+        sub = {-1: "H_Axis", -2: "V_Axis"}.get(target, f"Edge{target + 1}")
+        d, _ = self.sk_constrain(self._ag_sk, "Point on Curve", [self.ag_vertex(g, pos), sub])
+        return d
+
+    def ak_red(self):
+        """FreeCAD's redundant and conflicting constraints (1-based, as its panel lists them), if any."""
+        sk = self._ag_sk
+        red, con = list(sk.RedundantConstraints), list(sk.ConflictingConstraints)
+        return (f"; redundant {red}" if red else "") + (f"; conflicting {con}" if con else "")
+
+    def ak_kind_entry(self, word):
+        """The Radius / Diameter drop-down entry for word ('radius' or 'diameter')."""
+        entries = self.dropdown_entries("Radius / Diameter", "Sketch")
+        other = "radius" if word == "diameter" else "diameter"
+        return next((e for e in entries if word in e.lower() and other not in e.lower()), None)
+
+    def ak_missing(self, ref, tol=1e-3):
+        """Reference curves with no sketch curve of the same kind, place and radius."""
+        sk = self._ag_sk
+        have = []
+        for g, geo in enumerate(sk.Geometry):
+            if sk.getConstruction(g):
+                continue
+            t = geo.TypeId
+            if "ArcOfCircle" in t:
+                have.append(("arc", sk.getPoint(g, 1), sk.getPoint(g, 2), geo.Center, geo.Radius))
+            elif "Circle" in t:
+                have.append(("circle", None, None, geo.Center, geo.Radius))
+            elif "Line" in t:
+                have.append(("line", sk.getPoint(g, 1), sk.getPoint(g, 2), None, 0))
+
+        def same(h, r):
+            if h[0] != r[0] or abs(h[4] - r[4]) > tol:
+                return False
+            if r[3] is not None and (h[3] - r[3]).Length > tol:
+                return False
+            if r[1] is None:
+                return True
+            return ((h[1] - r[1]).Length < tol and (h[2] - r[2]).Length < tol) or \
+                ((h[1] - r[2]).Length < tol and (h[2] - r[1]).Length < tol)
+        out = []
+        for r in ref:
+            if not any(same(h, r) for h in have):
+                where = r[3] if r[1] is None else r[1]
+                out.append(f"{r[0]} at ({where.x / IN:.3f}, {where.y / IN:.3f}) in")
+        return out, len(have)
+
+    def ak_ovp(self):
+        """FreeCAD's on-view fields in the 3D view (not the task panel)."""
+        from .qt import QtCore
+        view = self.nav().widget
+        area = QtCore.QRect(view.mapToGlobal(QtCore.QPoint(0, 0)), view.size())
+        dock = self.tasks_dock()
+        return [w for w in Gui.getMainWindow().findChildren(QtWidgets.QAbstractSpinBox) if w.isVisible()
+                and not dock.isAncestorOf(w) and area.contains(w.mapToGlobal(w.rect().center()))]
+
+    def ak_rotate(self, geos, copies, angle, what):
+        """Rotate Curve with copies (NX: Pattern Curve, circular): select the curves, the ribbon button, Copies
+        in the tool panel, the centre on the origin, then the angles typed into FreeCAD's on-view fields
+        (the start angle 0, then copies x angle). Returns (new curves, ribbon tab, typed)."""
+        import math
+        from .smoke import decode
+        from .tutorial import qtest
+        sk = self._ag_sk
+        n0 = len(sk.Geometry)
+        self.ak_frame()
+        Gui.Selection.clearSelection()
+        for g in geos:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, self.ag_edge(g))
+        QtWidgets.QApplication.processEvents()
+        b, where = self.click_ribbon("Rotate Curve", tab="Sketch")
+        qtest().qWait(300)
+        tool = self.nav().sketch_tool_active()
+        dock = self.tasks_dock()
+        panel = [f"{type(w).__name__} {w.objectName()}='{getattr(w, 'text', lambda: '')()}'"
+                 for w in dock.findChildren(QtWidgets.QWidget) if w.isVisible()
+                 and isinstance(w, (QtWidgets.QLabel, QtWidgets.QAbstractSpinBox, QtWidgets.QCheckBox))
+                 and len(str(getattr(w, 'text', lambda: '')())) < 60]
+        spin = next((w for w in dock.findChildren(QtWidgets.QAbstractSpinBox)
+                     if w.objectName() == "parameterOne" and w.isVisible()), None)
+        if spin is not None:
+            self.type_into(spin, copies)
+        self.mb1_click(self.screen_point(sk, 0, 0))
+        qtest().qWait(200)
+        # one angle field at a time: the start angle, then the angle the copies are spread over (FreeCAD's angle
+        # is the total: 3 copies over 270° are 90° apart). A typed value is locked; the click after it confirms it
+        r = 2.0 * IN
+        seen, typed = [], 0
+        for value in (0.0, angle * copies):
+            fields = [w for w in self.ak_ovp() if w.text().strip().endswith("°")]
+            seen.append([f"{type(w).__name__}:{w.text()}" for w in self.ak_ovp()])
+            if fields:
+                w = fields[0]
+                w.setFocus()
+                w.lineEdit().selectAll()
+                qtest().keyClicks(w.lineEdit(), self.typed_number(w, value))
+                qtest().keyClick(w.lineEdit(), *decode("Return"))
+                qtest().qWait(150)
+                typed += 1
+            if len(sk.Geometry) == n0 and self.nav().sketch_tool_active():
+                self.mb1_click(self.screen_point(sk, r * math.cos(math.radians(value)), r * math.sin(math.radians(value))))
+                qtest().qWait(200)
+        still = self.nav().sketch_tool_active()
+        if still:
+            self.ak_end_tool()
+        App.ActiveDocument.recompute()
+        new = list(range(n0, len(sk.Geometry)))
+        self.info[f"AK Rotate Curve {what}"] = {"tool": tool, "panel": panel[:30], "copies field": spin is not None,
+                                                "on-view fields": seen, "typed": typed,
+                                                "new curves": len(new), "tool open after": still}
+        return new, where, typed == 2
+
+    def ak_rotated_error(self, geos, new, angle):
+        """Largest distance of the copies from the originals rotated k x angle (ends either way round)."""
+        sk = self._ag_sk
+        n = len(geos)
+        err = 0.0
+        for k in range(len(new) // n):
+            for g, c in zip(geos, new[k * n:(k + 1) * n]):
+                ends = (3, 3) if self.ag_kind(g) not in ("line", "arc") else (1, 2)    # a circle: its centre
+                a, b = (ak_rot(sk.getPoint(g, p), angle * (k + 1)) for p in ends)
+                p, q = sk.getPoint(c, ends[0]), sk.getPoint(c, ends[1])
+                err = max(err, min(max((a - p).Length, (b - q).Length), max((a - q).Length, (b - p).Length)))
+        return err
+
+    # ------------------------------------------------------------- New, Sketch
+    def ak_new(self):
+        self.tutorial = "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def ak_sketch(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("A new part in inches (Holder)", "Ctrl+N, Model template", SAME if new and self.body() else FAIL,
+                  f"new document {sorted(new)}")
+        self.units_step()
+        Gui.Selection.clearSelection()
+        b, self._ak_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def ak_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.wait_for("ak: sketch in edit", lambda: self.edited_sketch() is not None)
+        sk = self.edited_sketch()
+        self.step("Sketch on the XC-YC plane, OK", f"ribbon '{self._ak_where} > Sketch', plane row + MB2",
+                  SAME if picked and sk is not None else FAIL, f"picked {picked}")
+        if sk is None:
+            raise RuntimeError("no sketch in edit; tutorial AK cannot continue")
+        self._ag_sk = sk
+        self._ag_reversed = set()
+        self.wait = 600
+
+    # ------------------------------------------------------------- circles
+    def ak_circles(self):
+        """Circle (O), four times about the origin: centre, then a point on the rim (lower right, clear of the
+        curves drawn later); then their diameters, biggest first."""
+        sk = self._ag_sk
+        self.ak_frame()
+        self.key("O")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        names = ("hole", "inner", "ring", "outer")
+        for name in names:
+            r = AK_D[name] / 2
+            self.mb1_click(self.screen_point(sk, 0, 0))
+            self.mb1_click(self.screen_point(sk, r * 0.7071, -r * 0.7071))
+        self.ak_end_tool()
+        circles = [g for g in range(len(sk.Geometry)) if "Circle" in sk.Geometry[g].TypeId]
+        if len(circles) != 4:
+            self._ak_c = {}
+            self.step("Circles Ø0.75, Ø2.00, Ø2.76 and Ø3.50 about the origin", "O key, MB1 at the origin and on the "
+                      "rim, 4 times, MB2", FAIL, f"{len(circles)} circles; tool {tool}")
+            return
+        self._ak_c = dict(zip(names, sorted(circles, key=lambda g: sk.Geometry[g].Radius)))
+        entry = self.ak_kind_entry("diameter")
+        made = []
+        for name in reversed(names):
+            d, where = self.sk_constrain(sk, "Radius / Diameter", [self.ag_edge(self._ak_c[name])], AK_D[name],
+                                         entry=entry)
+            made.append(f"Ø{AK_D[name] / IN:.2f}" + ("" if d == 1 and sk.Constraints[-1].Type == "Diameter"
+                                                    else " (not made)"))
+        dof, _, msg = self.sk_state(sk)
+        err = max(max(sk.Geometry[g].Center.Length, abs(2 * sk.Geometry[g].Radius - AK_D[n]))
+                  for n, g in self._ak_c.items())
+        ok = tool and "not made" not in "".join(made) and err < 1e-6 and dof == 0
+        self.step("Circles Ø0.75, Ø2.00, Ø2.76 and Ø3.50 about the origin", "O key, MB1 at the origin and on the "
+                  f"rim, 4 times, MB2; each circle + 'Radius / Diameter' drop-down > '{entry}', biggest first",
+                  SAME if ok else FAIL, f"{', '.join(made)}; largest error {err:.1e} mm (centres on the origin, "
+                  f"diameters); DoF {dof}")
+
+    def ak_bolt_circle(self):
+        """The Ø4.50 bolt circle, a reference curve (NX: Convert To/From Reference)."""
+        sk = self._ag_sk
+        r = AK_BOLT / 2
+        self.ak_frame()
+        n0 = len(sk.Geometry)
+        self.key("O")
+        QtWidgets.QApplication.processEvents()
+        self.mb1_click(self.screen_point(sk, 0, 0))
+        self.mb1_click(self.screen_point(sk, -r * 0.7071, -r * 0.7071))
+        self.ak_end_tool()
+        g = n0 if len(sk.Geometry) > n0 else None
+        self._ak_bolt = g
+        if g is None:
+            self.step("The Ø4.50 bolt circle, a reference curve", "O key, MB1 at the origin and on the rim, MB2", FAIL,
+                      "no circle made")
+            return
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, self.ag_edge(g))
+        QtWidgets.QApplication.processEvents()
+        b, where = self.click_ribbon("Convert To/From Reference", tab="Sketch")
+        QtWidgets.QApplication.processEvents()
+        App.ActiveDocument.recompute()
+        ref = bool(sk.getConstruction(g))
+        d, _ = self.sk_constrain(sk, "Radius / Diameter", [self.ag_edge(g)], AK_BOLT,
+                                 entry=self.ak_kind_entry("diameter"))
+        geo = sk.Geometry[g]
+        dof, _, msg = self.sk_state(sk)
+        ok = ref and d == 1 and geo.Center.Length < 1e-9 and abs(2 * geo.Radius - AK_BOLT) < 1e-6 and dof == 0
+        self.step("The Ø4.50 bolt circle, a reference curve", "O key, MB1 at the origin and on the rim, MB2; circle + "
+                  f"ribbon '{where} > Convert To/From Reference'; Diameter 4.50", SAME if ok else FAIL,
+                  f"reference {ref}; diameter {2 * geo.Radius / IN:.4f} in; DoF {dof}")
+
+    # ------------------------------------------------------------- the outline, the slot, Quick Trim
+    def ak_outline(self):
+        """Profile (Z): the rectangle's top, right and bottom sides, from the top of the Ø3.50 circle to its
+        bottom; the ends held on the circle and the Y axis (tangent, since the sides are horizontal), and the
+        length 5.50."""
+        sk = self._ag_sk
+        outer = self._ak_c.get("outer")
+        r, L = AK_D["outer"] / 2, AK_LEN
+        self.ak_frame()
+        n0 = len(sk.Geometry)
+        self.key("Z")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        for x, y in ((0, r), (L, r), (L, -r), (0, -r)):
+            self.mb1_click(self.screen_point(sk, x, y))
+        self.ak_end_tool()
+        geo = list(range(n0, len(sk.Geometry)))
+        kinds = [self.ag_kind(g) for g in geo]
+        if kinds != ["line"] * 3 or outer is None:
+            self._ak_rect = None
+            self.step("Profile: the rectangle's three sides from the top of the Ø3.50 circle", "Z key, 4 MB1 "
+                      "clicks, MB2", FAIL, f"curves {kinds}; tool {tool}")
+            return
+        top, right, bottom = geo
+        self._ak_rect = geo
+        hv = [any(c.Type == t and c.First == g for c in sk.Constraints)
+              for g, t in ((top, "Horizontal"), (right, "Vertical"), (bottom, "Horizontal"))]
+        # a click on the circle's top makes the side's end Tangent to it (on the circle, tangent there), which with
+        # the side Horizontal puts the end at the top: Point on Curve with the circle or the Y axis is redundant
+        tangent = {g for g in (top, bottom) if any(c.Type == "Tangent" and {c.First, c.Second} == {g, outer}
+                                                    for c in sk.Constraints)}
+        holds = [(g, p, t) for g, p in ((top, 1), (bottom, 2)) for t in (outer, -2) if g not in tangent]
+        snapped = sum(self.ak_on(g, p, t) for g, p, t in holds) + 2 * len(tangent)
+        added = sum(self.ak_put_on(g, p, t) for g, p, t in holds)
+        d, where = self.sk_constrain(sk, "Distance", [self.ag_vertex(top, 2), "V_Axis"], L)
+        dof, _, msg = self.sk_state(sk)
+        missing, _ = self.ak_missing(ak_reference()[4:7])
+        self.step("Profile: the rectangle's three sides from the top of the Ø3.50 circle to its bottom, 5.50 long",
+                  f"Z key, 4 MB1 clicks, MB2; the ends + circle or Y axis + 'Point on Curve'; corner + Y axis + "
+                  f"'{where} > Distance' 5.50",
+                  SAME if all(hv) and d == 1 and dof == 0 and not missing else FAIL,
+                  f"Horizontal/Vertical/Horizontal {hv}; {snapped} of 4 end holds made by the clicks "
+                  f"({len(tangent)} as Tangent to the circle), {added} added; DoF {dof}{self.ak_red()}; the sides "
+                  f"{'match' if not missing else f'differ: {missing}'}")
+
+    def ak_slot(self):
+        """Line (L), twice: the slot's sides from the Ø3.50 circle to the right side, 0.50 apart about the X axis."""
+        sk = self._ag_sk
+        outer, rect = self._ak_c.get("outer"), getattr(self, "_ak_rect", None)
+        if outer is None or rect is None:
+            self.step("Line: the 0.50 slot's two sides, from the circle to the right side", "-", FAIL, "no outline")
+            self._ak_slot = None
+            return
+        import math
+        r, h, L = AK_D["outer"] / 2, AK_SLOT / 2, AK_LEN
+        a = math.sqrt(r * r - h * h)
+        self.ak_frame()
+        n0 = len(sk.Geometry)
+        self.key("L")
+        QtWidgets.QApplication.processEvents()
+        for y in (h, -h):
+            self.mb1_click(self.screen_point(sk, a, y))
+            self.mb1_click(self.screen_point(sk, L, y))
+        self.ak_end_tool()
+        geo = [g for g in range(n0, len(sk.Geometry)) if self.ag_kind(g) == "line"]
+        if len(geo) != 2:
+            self._ak_slot = None
+            self.step("Line: the 0.50 slot's two sides, from the circle to the right side", "L key, 4 MB1 clicks, MB2",
+                      FAIL, f"{len(geo)} lines")
+            return
+        self._ak_slot = geo
+        upper, lower = geo
+        right = rect[1]
+        horiz = [any(c.Type == "Horizontal" and c.First == g for c in sk.Constraints) for g in geo]
+        for g in geo:
+            if not any(c.Type == "Horizontal" and c.First == g for c in sk.Constraints):
+                self.sk_constrain(sk, "Horizontal", [self.ag_edge(g)])
+        snapped = sum(self.ak_on(g, p, t) for g in geo for p, t in ((1, outer), (2, right)))
+        added = sum(self.ak_put_on(g, p, t) for g in geo for p, t in ((1, outer), (2, right)))
+        d1, where = self.sk_constrain(sk, "Distance", [self.ag_vertex(upper, 1), self.ag_edge(lower)], AK_SLOT)
+        d2, _ = self.sk_constrain(sk, "Distance", [self.ag_vertex(upper, 1), "H_Axis"], h)
+        dof, _, msg = self.sk_state(sk)
+        missing, _ = self.ak_missing(ak_reference()[7:9])
+        self.step("Line: the 0.50 slot's two sides, from the circle to the right side", "L key, 4 MB1 clicks, MB2; "
+                  f"'{where} > Distance' 0.50 between them and 0.25 from the X axis",
+                  SAME if all(horiz) and d1 + d2 == 2 and dof == 0 and not missing else FAIL,
+                  f"Horizontal as drawn {horiz}; {snapped} of 4 ends snapped to the circle or the side, {added} added; "
+                  f"DoF {dof}; the sides {'match' if not missing else f'differ: {missing}'}")
+
+    def ak_trim(self):
+        """Quick Trim (T): the Ø3.50 circle between the slot's sides."""
+        import math
+        sk = self._ag_sk
+        outer = self._ak_c.get("outer")
+        if outer is None or getattr(self, "_ak_slot", None) is None:
+            self.step("Quick Trim: the circle inside the slot", "-", FAIL, "no slot")
+            self._ak_outer = None
+            return
+        r = AK_D["outer"] / 2
+        self.ak_frame()
+        n0 = len(sk.Geometry)
+
+        def on_outer():
+            return [f"{c.Type} {c.First}/{c.FirstPos} {c.Second}/{c.SecondPos}" for c in sk.Constraints
+                    if outer in (c.First, c.Second)]
+        before = on_outer()
+        self.key("T")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        a = math.radians(4)                     # between the slot's sides, clear of the X axis
+        self.mb1_click(self.screen_point(sk, r * math.cos(a), r * math.sin(a)))
+        self.ak_end_tool()
+        arcs = [g for g in range(len(sk.Geometry)) if "ArcOfCircle" in sk.Geometry[g].TypeId
+                and abs(sk.Geometry[g].Radius - r) < 1e-6]
+        circle_left = any("Circle" in g.TypeId and "Arc" not in g.TypeId and abs(g.Radius - r) < 1e-6
+                          for g in sk.Geometry)
+        self._ak_outer = arcs[0] if len(arcs) == 1 else None
+        self.info["AK trim: the circle's constraints"] = {"before": before, "after": on_outer()}
+        # Profile holds each side's end by Point on Curve plus Tangent, a partly redundant pair with the side
+        # Horizontal; the trim sometimes drops one side's Tangent (3 of 4 runs), and that end would slide round the
+        # arc. Tangent again (FreeCAD folds the pair into one end-point tangency: the count does not change)
+        retangent = []
+        rect = getattr(self, "_ak_rect", None)
+
+        def tangent(g):
+            return any(c.Type == "Tangent" and {c.First, c.Second} == {g, self._ak_outer} for c in sk.Constraints)
+        if self._ak_outer is not None and rect:
+            for g in (rect[0], rect[2]):
+                if not tangent(g):
+                    self.sk_constrain(sk, "Tangent", [self.ag_edge(g), self.ag_edge(self._ak_outer)])
+                    retangent.append(f"{'top' if g == rect[0] else 'bottom'} side "
+                                     f"({'tangent' if tangent(g) else 'not made'})")
+        dof, _, msg = self.sk_state(sk)
+        missing, _ = self.ak_missing(ak_reference()[3:4])
+        held = 0
+        if self._ak_outer is not None:
+            g = self._ak_outer
+            held = sum(1 for s in self._ak_slot if any(
+                c.Type == "Coincident" and {(c.First, c.FirstPos), (c.Second, c.SecondPos)} & {(g, 1), (g, 2)}
+                and {(c.First, c.FirstPos), (c.Second, c.SecondPos)} & {(s, 1)} for c in sk.Constraints))
+        self.step("Quick Trim: the Ø3.50 circle between the slot's sides, MB2", "T key, MB1 on the circle inside the "
+                  "slot, MB2" + ("; Tangent again where the trim dropped it" if retangent else ""),
+                  (DIFFERS if retangent else SAME) if tool and self._ak_outer is not None and not circle_left
+                  and not missing and held == 2 and dof == 0 and "not made" not in "".join(retangent) else FAIL,
+                  f"{len(arcs)} arc R1.75, full circle left {circle_left}; its ends held to the slot's sides "
+                  f"{held} of 2; DoF {dof} ('{msg}'){self.ak_red()}; geometry {n0} -> {len(sk.Geometry)}"
+                  + (f"; FreeCAD's trim dropped a side's tangency, made Tangent again: {retangent}"
+                     if retangent else "") + (f"; differs: {missing}" if missing else ""))
+
+    # ------------------------------------------------------------- the cross
+    def ak_arm(self):
+        """Line (L), twice: one arm of the cross, from the Ø0.75 circle to the Ø2.76 circle, 0.25 wide about the
+        X axis."""
+        import math
+        sk = self._ag_sk
+        hole, ring = self._ak_c.get("hole"), self._ak_c.get("ring")
+        w = AK_CROSS / 2
+        b, c = math.sqrt((AK_D["hole"] / 2) ** 2 - w * w), math.sqrt((AK_D["ring"] / 2) ** 2 - w * w)
+        self.ak_frame(0.85 * IN, 0, 2.2 * IN, 1.6 * IN)
+        n0 = len(sk.Geometry)
+        self.key("L")
+        QtWidgets.QApplication.processEvents()
+        for y in (w, -w):
+            self.mb1_click(self.screen_point(sk, b, y))
+            self.mb1_click(self.screen_point(sk, c, y))
+        self.ak_end_tool()
+        geo = [g for g in range(n0, len(sk.Geometry)) if self.ag_kind(g) == "line"]
+        self._ak_arm = geo if len(geo) == 2 else None
+        if self._ak_arm is None or hole is None or ring is None:
+            self.step("Line: one arm of the cross, 0.25 wide, from the Ø0.75 circle to the Ø2.76 circle",
+                      "L key, 4 MB1 clicks, MB2", FAIL, f"{len(geo)} lines")
+            return
+        upper, lower = geo
+        for g in geo:
+            if not any(cc.Type == "Horizontal" and cc.First == g for cc in sk.Constraints):
+                self.sk_constrain(sk, "Horizontal", [self.ag_edge(g)])
+        snapped = sum(self.ak_on(g, p, t) for g in geo for p, t in ((1, hole), (2, ring)))
+        added = sum(self.ak_put_on(g, p, t) for g in geo for p, t in ((1, hole), (2, ring)))
+        d1, where = self.sk_constrain(sk, "Distance", [self.ag_vertex(upper, 1), self.ag_edge(lower)], AK_CROSS)
+        d2, _ = self.sk_constrain(sk, "Distance", [self.ag_vertex(upper, 1), "H_Axis"], w)
+        dof, _, msg = self.sk_state(sk)
+        missing, _ = self.ak_missing(ak_reference()[9:11])
+        self.step("Line: one arm of the cross, 0.25 wide, from the Ø0.75 circle to the Ø2.76 circle",
+                  f"L key, 4 MB1 clicks, MB2; '{where} > Distance' 0.25 between the lines and 0.125 from the X axis",
+                  SAME if d1 + d2 == 2 and dof == 0 and not missing else FAIL,
+                  f"{snapped} of 4 ends snapped to the circles, {added} added; DoF {dof}; the arm "
+                  f"{'matches' if not missing else f'differs: {missing}'}")
+        self.ak_shot("AK1_outline_and_arm.png")
+
+    def ak_arm_rotate(self):
+        arm = getattr(self, "_ak_arm", None)
+        if arm is None:
+            self.step("Rotate Curve: the arm, 3 copies 90° apart (NX: Pattern Curve, circular)", "-", FAIL, "no arm")
+            return
+        new, where, typed = self.ak_rotate(arm, 3, 90.0, "cross")
+        err = self.ak_rotated_error(arm, new, 90.0) if len(new) == 6 else None
+        dof, _, msg = self.sk_state(self._ag_sk)
+        self.step("Rotate Curve: the arm, 3 copies 90° apart, about the origin (NX: Pattern Curve, circular)",
+                  f"2 lines selected + ribbon '{where} > Rotate Curve', Copies 3, MB1 at the origin, 0° and 270° "
+                  + ("typed in the on-view fields" if typed else "clicked"),
+                  (SAME if typed else DIFFERS) if err is not None and err < 1e-3 else FAIL,
+                  f"{len(new)} copies made; largest error {err if err is None else f'{err:.1e}'} mm; DoF {dof}")
+
+    # ------------------------------------------------------------- the lugs
+    def ak_lug_profile(self):
+        """Profile (Z) for the lug at 180°: a side from the Ø3.50 circle, M three times for the tangent end
+        arc, the other side (a tangent line) back to the circle; MB2."""
+        from .tutorial import qtest
+        sk = self._ag_sk
+        p0, t0, t1, p1, cc = ak_lug(AK_LUGS[0])
+        self.ak_frame(cc.x + 0.4 * IN, 0, 2.4 * IN, 1.8 * IN)
+        n0 = len(sk.Geometry)
+        self.key("Z")
+        QtWidgets.QApplication.processEvents()
+        tool = self.nav().sketch_tool_active()
+        for i, p in enumerate((p0, t0, t1, p1)):
+            if i == 2:
+                for _ in range(self.AF_ARC_PRESSES):
+                    self.key("M")
+                    qtest().qWait(50)
+            self.mb1_click(self.screen_point(sk, p.x, p.y))
+        self.ak_end_tool()
+        geo = list(range(n0, len(sk.Geometry)))
+        kinds = [self.ag_kind(g) for g in geo]
+        self._ak_lug = geo if kinds == ["line", "arc", "line"] else None
+        tangents = sum(1 for c in sk.Constraints if c.Type == "Tangent" and {c.First, c.Second} <= set(geo))
+        self.step("Profile: the lug at 180°, a side, the tangent end arc, the other side", "Z key, 4 MB1 clicks "
+                  f"(M {self.AF_ARC_PRESSES}x before the arc's end), MB2",
+                  SAME if tool and self._ak_lug is not None and tangents == 2 else FAIL,
+                  f"curves {kinds}; tangent joints {tangents}")
+
+    def ak_lug_constraints(self):
+        """The end arc's centre on the bolt circle and the X axis, its radius 0.38, the sides' ends on the Ø3.50
+        circle, 1.00 apart, and the sides equal."""
+        sk = self._ag_sk
+        lug, outer, bolt = getattr(self, "_ak_lug", None), getattr(self, "_ak_outer", None), getattr(self, "_ak_bolt", None)
+        if lug is None or outer is None or bolt is None:
+            self.step("The lug: centre on the bolt circle and the X axis, R0.38, sides 1.00 apart and equal", "-",
+                      FAIL, "no lug, outer arc or bolt circle")
+            return
+        l1, arc, l2 = lug
+        a1, a2 = self.ag_vertex(arc, 3), self.ag_edge(arc)
+        made = []
+        for name, label, subs, value, entry in (
+                ("centre on the bolt circle", "Point on Curve", [a1, self.ag_edge(bolt)], None, None),
+                ("centre on the X axis", "Point on Curve", [a1, "H_Axis"], None, None),
+                ("R0.38", "Radius / Diameter", [a2], AK_LUG_R, self.ak_kind_entry("radius"))):
+            d, where = self.sk_constrain(sk, label, subs, value, entry=entry)
+            made.append(name + ("" if d == 1 else " (not made)"))
+        snapped = sum(self.ak_on(g, p, outer) for g, p in ((l1, 1), (l2, 2)))
+        added = sum(self.ak_put_on(g, p, outer) for g, p in ((l1, 1), (l2, 2)))
+        for x, y in ((l1, arc), (arc, l2)):
+            if not any(c.Type == "Tangent" and {c.First, c.Second} == {x, y} for c in sk.Constraints):
+                d, _ = self.sk_constrain(sk, "Tangent", [self.ag_edge(x), self.ag_edge(y)])
+                made.append("tangent added" + ("" if d == 1 else " (not made)"))
+        d, where = self.sk_constrain(sk, "Distance", [self.ag_vertex(l1, 1), self.ag_vertex(l2, 2)], AK_LUG_W)
+        made.append("1.00 between the sides' ends" + ("" if d == 1 else " (not made)"))
+        d, _ = self.sk_constrain(sk, "Equal", [self.ag_edge(l1), self.ag_edge(l2)])
+        made.append("sides Equal" + ("" if d == 1 else " (not made)"))
+        dof, _, msg = self.sk_state(sk)
+        ref = ak_reference()
+        missing, _ = self.ak_missing(ref[17:20])
+        self.step("The lug: centre on the bolt circle and the X axis, R0.38, the sides 1.00 apart and Equal",
+                  "centre + bolt circle / X axis + 'Point on Curve', arc + 'Radius / Diameter' R0.38, the ends + "
+                  f"'{where} > Distance' 1.00, the sides + 'Equal'",
+                  SAME if "not made" not in "".join(made) and not missing else FAIL,
+                  f"{'; '.join(made)}; {snapped} of 2 side ends snapped to the circle, {added} added; DoF {dof} "
+                  f"('{msg}'); the lug {'matches' if not missing else f'differs: {missing}'}")
+
+    def ak_lug_hole(self):
+        """Circle (O): the Ø0.38 hole about the end arc's centre."""
+        sk = self._ag_sk
+        lug = getattr(self, "_ak_lug", None)
+        if lug is None:
+            self.step("Circle: the Ø0.38 hole about the lug's centre", "-", FAIL, "no lug")
+            self._ak_hole = None
+            return
+        arc = lug[1]
+        c = sk.Geometry[arc].Center
+        r = AK_LUG_HOLE / 2
+        self.ak_frame(c.x + 0.4 * IN, 0, 2.4 * IN, 1.8 * IN)
+        n0 = len(sk.Geometry)
+        self.key("O")
+        QtWidgets.QApplication.processEvents()
+        self.mb1_click(self.screen_point(sk, c.x, c.y))
+        self.mb1_click(self.screen_point(sk, c.x - r * 0.7071, c.y + r * 0.7071))
+        self.ak_end_tool()
+        g = n0 if len(sk.Geometry) > n0 and "Circle" in sk.Geometry[n0].TypeId else None
+        self._ak_hole = g
+        if g is None:
+            self.step("Circle: the Ø0.38 hole about the lug's centre", "O key, MB1 on the centre and the rim, MB2",
+                      FAIL, "no circle made")
+            return
+        on = any(cc.Type == "Coincident" and {(cc.First, cc.FirstPos), (cc.Second, cc.SecondPos)} == {(g, 3), (arc, 3)}
+                 for cc in sk.Constraints)
+        if not on:
+            self.sk_constrain(sk, "Coincident", [self.ag_vertex(g, 3), self.ag_vertex(arc, 3)])
+        d, where = self.sk_constrain(sk, "Radius / Diameter", [self.ag_edge(g)], AK_LUG_HOLE,
+                                     entry=self.ak_kind_entry("diameter"))
+        geo = sk.Geometry[g]
+        dof, _, msg = self.sk_state(sk)
+        err = max((geo.Center - sk.Geometry[arc].Center).Length, abs(2 * geo.Radius - AK_LUG_HOLE))
+        self.step("Circle: the Ø0.38 hole about the lug's centre", "O key, MB1 on the arc's centre and on the rim, MB2; "
+                  "Diameter 0.38", (SAME if on else DIFFERS) if d == 1 and err < 1e-6 else FAIL,
+                  f"centre {'snapped to' if on else 'held by Coincident on'} the arc's centre; error {err:.1e} mm; "
+                  f"DoF {dof}")
+
+    def ak_lug_rotate(self):
+        lug, hole = getattr(self, "_ak_lug", None), getattr(self, "_ak_hole", None)
+        if lug is None or hole is None:
+            self.step("Rotate Curve: the lug and its hole, 2 copies 120° apart", "-", FAIL, "no lug")
+            return
+        geos = lug + [hole]
+        new, where, typed = self.ak_rotate(geos, 2, 120.0, "lugs")
+        err = self.ak_rotated_error(geos, new, 120.0) if len(new) == 8 else None
+        dof, _, msg = self.sk_state(self._ag_sk)
+        self.step("Rotate Curve: the lug and its hole, 2 copies 120° apart, about the origin (NX: Pattern Curve)",
+                  f"4 curves selected + ribbon '{where} > Rotate Curve', Copies 2, MB1 at the origin, 0° and 240° "
+                  + ("typed in the on-view fields" if typed else "clicked"),
+                  (SAME if typed else DIFFERS) if err is not None and err < 1e-3 else FAIL,
+                  f"{len(new)} copies made; largest error {err if err is None else f'{err:.1e}'} mm; DoF {dof}")
+
+    def ak_check(self):
+        sk = self._ag_sk
+        ref = ak_reference()
+        missing, n = self.ak_missing(ref)
+        dof, _, msg = self.sk_state(sk)
+        self.step(f"The sketch: {len(ref)} curves and the bolt circle", "compared with the book's figure",
+                  SAME if n == len(ref) and not missing else FAIL,
+                  f"{n} curves; {f'all {len(ref)} match the book' if not missing else f'missing {missing}'}; DoF {dof} "
+                  f"('{msg}'){self.ak_red()}")
+        self.ak_shot("AK2_holder_sketch.png")
+
+    def ak_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def ak_save(self):
+        left = self.edited_sketch() is None
+        self.step("Finish Sketch", "Ctrl+Q", SAME if left else FAIL, f"sketch edit ended {left}")
+        outcome, how, detail, path = self.save_ctrl_s("Holder.FCStd")
+        self.step("Save the file", how, outcome, detail)
+        self.wait = 300
+
+    def ak_fit(self):
+        self.fit()
+
+    def ak_show(self):
+        self.show("AK_holder")

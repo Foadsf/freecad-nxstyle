@@ -1,0 +1,76 @@
+= Tutorial AK: Holder
+:description: The 2D sketch of a holder: circles about the origin, an outline trimmed with Quick Trim, a cross and three lugs copied round the origin with Rotate Curve (NX 12 for Engineering Design, exercise 3.6.2).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 3.6.2. The book gives only the dimensioned figure; the steps here are ours. Chapter 4 models the holder in 3D from this sketch.
+You learn:: circles and their diameters, a reference curve, Quick Trim, a cross and lugs drawn once and copied with Rotate Curve (NX: Pattern Curve, circular), tangent arcs in Profile
+Sizes:: the book's, in inches, typed in millimetres. Circles Ø0.75, Ø2.00 and Ø2.76 about the origin. The outline is a Ø3.50 circle and a 5.50 × 3.50 rectangle to its right, opened by a 0.50 slot along the X axis. A cross 0.25 wide runs from the Ø0.75 circle to the Ø2.76 circle. Three lugs sit on a Ø4.50 bolt circle, 120° apart. Each lug is a Ø0.38 hole in an R0.38 end, and its sides are tangent to the end and 1.00 apart where they meet the Ø3.50 circle.
+
+The figure does not say where the sides of the lugs at 60° and 300° end. Here they end on the Ø3.50 circle, as at 180°, so all three lugs are the same.
+
+== Step by step
+
+=== 1. A new part and a sketch
+
+kbd:[Ctrl+N], then *Sketch* on the XC-YC plane and MB2.
+
+=== 2. The circles
+
+Press kbd:[O] for *Circle*. Click the origin, then a point on the rim; do this four times, for Ø0.75, Ø2.00, Ø2.76 and Ø3.50, and press MB2.
+Give the diameters, biggest first: pick each circle and choose *Radius / Diameter* drop-down > *Constrain diameter*.
+
+Draw the Ø4.50 bolt circle the same way. Select it and click *Convert To/From Reference*: it becomes a reference curve, drawn dashed.
+
+=== 3. The outline and the slot
+
+Press kbd:[Z] for *Profile*. Click the top of the Ø3.50 circle, then go round the rectangle: right 5.50, down 3.50, back left to the bottom of the circle, and press MB2.
+The ends snap to the circle, tangent to it.
+Give the length: pick the top right corner and the Y axis, then *Distance* 5.50.
+
+Press kbd:[L] for *Line* and draw the slot's two sides, from the Ø3.50 circle to the right side.
+Dimension them: *Distance* 0.50 between them, and 0.25 from the X axis for the upper one.
+
+Press kbd:[T] for *Quick Trim*, click the circle between the slot's sides and press MB2.
+If the Dialog panel then shows a degree of freedom, the trim has dropped one side's tangency: pick that side and the arc, then *Tangent*.
+
+=== 4. The cross
+
+Draw one arm with *Line*: two lines from the Ø0.75 circle to the Ø2.76 circle, 0.25 apart, the upper one 0.125 above the X axis.
+Select the two lines and click *Rotate Curve*. In the Dialog panel set *Copies* to 3. Click the origin as the centre, then type 0° and 270° in the fields beside the pointer.
+
+image::tutorial-AK-01-outline.png[The circles, the outline with its slot, and one arm of the cross]
+
+=== 5. The lugs
+
+Draw the lug at 180° with *Profile*:
+
+. start on the Ø3.50 circle, 0.5 below the X axis, and go out to the end;
+. press kbd:[M] three times for a tangent arc and go round the end;
+. go back to the circle, which FreeCAD draws as a tangent line.
+
+Then fix it:
+
+* the arc's centre on the bolt circle and on the X axis (*Point on Curve*);
+* the radius 0.38 (*Radius / Diameter* drop-down > *Constrain radius*);
+* *Distance* 1.00 between the two sides' ends on the circle, and the two sides *Equal*.
+
+Draw the Ø0.38 hole: kbd:[O], click the arc's centre and the rim, then give its diameter.
+Select the lug's three curves and the hole, click *Rotate Curve*, set *Copies* to 2, click the origin and type 0° and 240°.
+
+image::tutorial-AK-02-holder.png[The finished holder sketch]
+
+kbd:[Ctrl+Q], and save with kbd:[Ctrl+S].
+
+== The replay
+
+include::partial$generated/tutorial-AK.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each of the 29 curves is compared with the book's figure, rebuilt from its dimensions.
+
+== What differs from NX
+
+* FreeCAD's *Rotate Curve* takes the angle that the copies are spread over: 3 copies over 270° are 90° apart. NX's Pattern Curve takes the count and the angle between the copies.
+* The copies keep their own dimensions (the R0.38 and Ø0.38, the 1.00), but they are not tied to the original, so the sketch keeps degrees of freedom. NX's pattern stays associative.
+* FreeCAD's Profile holds each end of the rectangle to the circle with Point on Curve and Tangent. With the side horizontal, that pair is partly redundant, and Quick Trim sometimes drops one side's Tangent (3 of the last 4 replays). The replay then clicks *Tangent* again and reports the step as differing.

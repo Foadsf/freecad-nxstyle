@@ -62,6 +62,7 @@
 * xref:tutorials/ag.adoc[AG: Impeller Lower Casing]
 * xref:tutorials/ah.adoc[AH: Impeller]
 * xref:tutorials/aj.adoc[AJ: Circular Base]
+* xref:tutorials/ak.adoc[AK: Holder]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

@@ -4023,6 +4023,142 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Circular_base.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "A new part in inches (Holder)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed']"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Sketch on the XC-YC plane, OK",
+   "replay": "ribbon 'Home › Direct Sketch > Sketch', plane row + MB2",
+   "outcome": "same",
+   "detail": "picked XY-plane (Base plane)"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Circles Ø0.75, Ø2.00, Ø2.76 and Ø3.50 about the origin",
+   "replay": "O key, MB1 at the origin and on the rim, 4 times, MB2; each circle + 'Radius / Diameter' drop-down > 'Constrain diameter', biggest first",
+   "outcome": "same",
+   "detail": "Ø3.50, Ø2.76, Ø2.00, Ø0.75; largest error 1.4e-14 mm (centres on the origin, diameters); DoF 0"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "The Ø4.50 bolt circle, a reference curve",
+   "replay": "O key, MB1 at the origin and on the rim, MB2; circle + ribbon 'Sketch › Edit Curve > Convert To/From Reference'; Diameter 4.50",
+   "outcome": "same",
+   "detail": "reference True; diameter 4.5000 in; DoF 0"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Profile: the rectangle's three sides from the top of the Ø3.50 circle to its bottom, 5.50 long",
+   "replay": "Z key, 4 MB1 clicks, MB2; the ends + circle or Y axis + 'Point on Curve'; corner + Y axis + 'Sketch › Constraints > Distance' 5.50",
+   "outcome": "same",
+   "detail": "Horizontal/Vertical/Horizontal [True, True, True]; 4 of 4 end holds made by the clicks (2 as Tangent to the circle), 0 added; DoF 0; the sides match"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Line: the 0.50 slot's two sides, from the circle to the right side",
+   "replay": "L key, 4 MB1 clicks, MB2; 'Sketch › Constraints > Distance' 0.50 between them and 0.25 from the X axis",
+   "outcome": "same",
+   "detail": "Horizontal as drawn [True, True]; 4 of 4 ends snapped to the circle or the side, 0 added; DoF 0; the sides match"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Quick Trim: the Ø3.50 circle between the slot's sides, MB2",
+   "replay": "T key, MB1 on the circle inside the slot, MB2",
+   "outcome": "same",
+   "detail": "1 arc R1.75, full circle left False; its ends held to the slot's sides 2 of 2; DoF 0 ('Fully constrained'); geometry 10 -> 10"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Line: one arm of the cross, 0.25 wide, from the Ø0.75 circle to the Ø2.76 circle",
+   "replay": "L key, 4 MB1 clicks, MB2; 'Sketch › Constraints > Distance' 0.25 between the lines and 0.125 from the X axis",
+   "outcome": "same",
+   "detail": "4 of 4 ends snapped to the circles, 0 added; DoF 0; the arm matches"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Rotate Curve: the arm, 3 copies 90° apart, about the origin (NX: Pattern Curve, circular)",
+   "replay": "2 lines selected + ribbon 'Sketch › Edit Curve > Rotate Curve', Copies 3, MB1 at the origin, 0° and 270° typed in the on-view fields",
+   "outcome": "same",
+   "detail": "6 copies made; largest error 4.5e-07 mm; DoF 21"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Profile: the lug at 180°, a side, the tangent end arc, the other side",
+   "replay": "Z key, 4 MB1 clicks (M 3x before the arc's end), MB2",
+   "outcome": "same",
+   "detail": "curves ['line', 'arc', 'line']; tangent joints 2"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "The lug: centre on the bolt circle and the X axis, R0.38, the sides 1.00 apart and Equal",
+   "replay": "centre + bolt circle / X axis + 'Point on Curve', arc + 'Radius / Diameter' R0.38, the ends + 'Sketch › Constraints > Distance' 1.00, the sides + 'Equal'",
+   "outcome": "same",
+   "detail": "centre on the bolt circle; centre on the X axis; R0.38; 1.00 between the sides' ends; sides Equal; 1 of 2 side ends snapped to the circle, 1 added; DoF 21 ('Under-constrained: / 21 Degrees of Freedom'); the lug matches"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 13,
+   "nx": "Circle: the Ø0.38 hole about the lug's centre",
+   "replay": "O key, MB1 on the arc's centre and on the rim, MB2; Diameter 0.38",
+   "outcome": "same",
+   "detail": "centre snapped to the arc's centre; error 0.0e+00 mm; DoF 21"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Rotate Curve: the lug and its hole, 2 copies 120° apart, about the origin (NX: Pattern Curve)",
+   "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Rotate Curve', Copies 2, MB1 at the origin, 0° and 240° typed in the on-view fields",
+   "outcome": "same",
+   "detail": "8 copies made; largest error 3.6e-06 mm; DoF 29"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 15,
+   "nx": "The sketch: 29 curves and the bolt circle",
+   "replay": "compared with the book's figure",
+   "outcome": "same",
+   "detail": "29 curves; all 29 match the book; DoF 29 ('Under-constrained: / 29 Degrees of Freedom')"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Finish Sketch",
+   "replay": "Ctrl+Q",
+   "outcome": "same",
+   "detail": "sketch edit ended True"
+  },
+  {
+   "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Save the file",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Holder.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   }
  ],
  "info": {

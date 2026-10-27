@@ -34,11 +34,12 @@ from .tutorial_extrude import ExtrudeTutorials
 from .tutorial_inspection import InspectionTutorials
 from .tutorial_katydid import KatydidTutorials
 from .tutorial_lasercut import LaserCutTutorials
-from .tutorial_mst import MstCasingTutorials, MstCircularBaseTutorials, MstImpellerTutorials, MstTutorials
+from .tutorial_mst import (MstCasingTutorials, MstCircularBaseTutorials, MstHolderTutorials, MstImpellerTutorials,
+                           MstTutorials)
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
-ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ"
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
@@ -123,7 +124,7 @@ class SaveWatch:
 
 
 class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCutTutorials, ExtrudeTutorials,
-             MstTutorials, MstCasingTutorials, MstImpellerTutorials, MstCircularBaseTutorials):
+             MstTutorials, MstCasingTutorials, MstImpellerTutorials, MstCircularBaseTutorials, MstHolderTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -459,8 +460,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         X = list(getattr(self, "X_STEPS", lambda: [])())
         Y = list(getattr(self, "Y_STEPS", lambda: [])())
         Z = list(getattr(self, "Z_STEPS", lambda: [])())
-        AA, AB, AC, AD, AE, AF, AG, AH, AJ = (list(getattr(self, f"{k}_STEPS", lambda: [])())
-                                  for k in ("AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AJ"))
+        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK = (list(getattr(self, f"{k}_STEPS", lambda: [])())
+                                      for k in ("AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AJ", "AK"))
         wanted = [w.strip() for w in (os.environ.get("NXSTYLE_TUTORIALS") or ALL_TUTORIALS).upper().split(",")]
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
@@ -477,7 +478,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
         for key, steps in (("A", A), ("B", B), ("C", C), ("D", D), ("E", E), ("F", F), ("G", G), ("H", H),
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
                            ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z),
-                           ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD), ("AE", AE), ("AF", AF), ("AG", AG), ("AH", AH), ("AJ", AJ)):
+                           ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD), ("AE", AE), ("AF", AF), ("AG", AG), ("AH", AH), ("AJ", AJ),
+                           ("AK", AK)):
             if key in wanted:
                 yield from steps
 
