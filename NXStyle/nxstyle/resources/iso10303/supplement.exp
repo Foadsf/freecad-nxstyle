@@ -1,0 +1,290 @@
+(* SPDX-License-Identifier: LGPL-2.1-or-later
+
+   The declarations ISO 10303-42, -43, -55, -108, -111 and -112 refer to in parts that are not in the
+   reference set NXStyle's dictionary is built from: ISO 10303-41 (support resources, measures, units,
+   shape_representation), ISO 10303-50 (maths spaces and variables) and ISO 13584-20 (expressions).
+
+   Written for NXStyle from what those schemas are cited for; attribute lists follow the published
+   long forms as used in STEP application protocols. It is deliberately loose where the cited parts
+   were not available to check against: expression operands are generic_expression (ISO 10303-108
+   Cor.1 annex F multiplies a variational_parameter, which is no numeric_expression), and WHERE rules
+   are omitted. A file that fails only on these declarations should be checked against the real
+   ISO 10303-41/-50 and ISO 13584-20 schemas (express.py loads any EXPRESS given to it). *)
+
+SCHEMA support_resource_schema;
+TYPE identifier = STRING; END_TYPE;
+TYPE label = STRING; END_TYPE;
+TYPE text = STRING; END_TYPE;
+END_SCHEMA;
+
+SCHEMA measure_schema;
+TYPE length_measure = REAL; END_TYPE;
+TYPE non_negative_length_measure = length_measure; END_TYPE;
+TYPE positive_length_measure = non_negative_length_measure; END_TYPE;
+TYPE plane_angle_measure = REAL; END_TYPE;
+TYPE positive_plane_angle_measure = plane_angle_measure; END_TYPE;
+TYPE solid_angle_measure = REAL; END_TYPE;
+TYPE ratio_measure = REAL; END_TYPE;
+TYPE positive_ratio_measure = ratio_measure; END_TYPE;
+TYPE parameter_value = REAL; END_TYPE;
+TYPE count_measure = NUMBER; END_TYPE;
+TYPE area_measure = REAL; END_TYPE;
+TYPE volume_measure = REAL; END_TYPE;
+TYPE mass_measure = REAL; END_TYPE;
+TYPE descriptive_measure = STRING; END_TYPE;
+TYPE measure_value = SELECT (length_measure, plane_angle_measure, solid_angle_measure, ratio_measure,
+  parameter_value, count_measure, area_measure, volume_measure, mass_measure, positive_length_measure,
+  positive_plane_angle_measure, positive_ratio_measure, non_negative_length_measure, descriptive_measure);
+END_TYPE;
+TYPE si_prefix = ENUMERATION OF (exa, peta, tera, giga, mega, kilo, hecto, deca, deci, centi, milli,
+  micro, nano, pico, femto, atto);
+END_TYPE;
+TYPE si_unit_name = ENUMERATION OF (metre, gram, second, ampere, kelvin, mole, candela, radian,
+  steradian, hertz, newton, pascal, joule, watt, coulomb, volt, farad, ohm, siemens, weber, tesla,
+  henry, degree_celsius, lumen, lux, becquerel, gray, sievert);
+END_TYPE;
+TYPE unit = SELECT (named_unit, derived_unit); END_TYPE;
+ENTITY dimensional_exponents;
+  length_exponent : REAL;
+  mass_exponent : REAL;
+  time_exponent : REAL;
+  electric_current_exponent : REAL;
+  thermodynamic_temperature_exponent : REAL;
+  amount_of_substance_exponent : REAL;
+  luminous_intensity_exponent : REAL;
+END_ENTITY;
+ENTITY named_unit
+  SUPERTYPE OF ((ONEOF (si_unit, conversion_based_unit, context_dependent_unit)) ANDOR
+    (ONEOF (length_unit, mass_unit, plane_angle_unit, solid_angle_unit, ratio_unit)));
+  dimensions : dimensional_exponents;
+END_ENTITY;
+ENTITY si_unit SUBTYPE OF (named_unit);
+  prefix : OPTIONAL si_prefix;
+  name : si_unit_name;
+DERIVE
+  SELF\named_unit.dimensions : dimensional_exponents := ?;
+END_ENTITY;
+ENTITY conversion_based_unit SUBTYPE OF (named_unit);
+  name : label;
+  conversion_factor : measure_with_unit;
+END_ENTITY;
+ENTITY context_dependent_unit SUBTYPE OF (named_unit);
+  name : label;
+END_ENTITY;
+ENTITY length_unit SUBTYPE OF (named_unit); END_ENTITY;
+ENTITY mass_unit SUBTYPE OF (named_unit); END_ENTITY;
+ENTITY plane_angle_unit SUBTYPE OF (named_unit); END_ENTITY;
+ENTITY solid_angle_unit SUBTYPE OF (named_unit); END_ENTITY;
+ENTITY ratio_unit SUBTYPE OF (named_unit); END_ENTITY;
+ENTITY derived_unit_element;
+  unit : named_unit;
+  exponent : REAL;
+END_ENTITY;
+ENTITY derived_unit;
+  elements : SET [1:?] OF derived_unit_element;
+END_ENTITY;
+ENTITY measure_with_unit
+  SUPERTYPE OF (ONEOF (length_measure_with_unit, plane_angle_measure_with_unit,
+    solid_angle_measure_with_unit, ratio_measure_with_unit, mass_measure_with_unit));
+  value_component : measure_value;
+  unit_component : unit;
+END_ENTITY;
+ENTITY length_measure_with_unit SUBTYPE OF (measure_with_unit); END_ENTITY;
+ENTITY plane_angle_measure_with_unit SUBTYPE OF (measure_with_unit); END_ENTITY;
+ENTITY solid_angle_measure_with_unit SUBTYPE OF (measure_with_unit); END_ENTITY;
+ENTITY ratio_measure_with_unit SUBTYPE OF (measure_with_unit); END_ENTITY;
+ENTITY mass_measure_with_unit SUBTYPE OF (measure_with_unit); END_ENTITY;
+ENTITY global_unit_assigned_context SUBTYPE OF (representation_context);
+  units : SET [1:?] OF unit;
+END_ENTITY;
+END_SCHEMA;
+
+SCHEMA product_property_representation_schema;
+ENTITY shape_representation SUBTYPE OF (representation); END_ENTITY;
+ENTITY shape_representation_relationship SUBTYPE OF (representation_relationship); END_ENTITY;
+END_SCHEMA;
+
+SCHEMA mathematical_functions_schema;
+TYPE nonnegative_integer = INTEGER; END_TYPE;
+TYPE positive_integer = nonnegative_integer; END_TYPE;
+TYPE maths_number = NUMBER; END_TYPE;
+TYPE maths_real = REAL; END_TYPE;
+TYPE maths_integer = INTEGER; END_TYPE;
+TYPE maths_boolean = BOOLEAN; END_TYPE;
+TYPE maths_logical = LOGICAL; END_TYPE;
+TYPE maths_string = STRING; END_TYPE;
+TYPE maths_binary = BINARY; END_TYPE;
+TYPE open_closed = ENUMERATION OF (open, closed); END_TYPE;
+TYPE elementary_space_enumerators = ENUMERATION OF (es_numbers, es_complex_numbers, es_reals,
+  es_integers, es_logicals, es_booleans, es_strings, es_binarys, es_maths_spaces, es_maths_functions,
+  es_generics);
+END_TYPE;
+TYPE maths_simple_atom = SELECT (maths_number, maths_real, maths_integer, maths_logical,
+  maths_boolean, maths_string, maths_binary);
+END_TYPE;
+TYPE maths_enum_atom = SELECT (elementary_space_enumerators, open_closed); END_TYPE;
+TYPE maths_atom = SELECT (maths_simple_atom, maths_enum_atom); END_TYPE;
+TYPE maths_tuple = LIST [0:?] OF maths_value; END_TYPE;
+TYPE maths_value = SELECT (maths_atom, maths_tuple, generic_expression); END_TYPE;
+ENTITY maths_space
+  ABSTRACT SUPERTYPE OF (ONEOF (elementary_space, finite_integer_interval, integer_interval_from_min,
+    integer_interval_to_max, finite_real_interval, real_interval_from_min, real_interval_to_max,
+    finite_space))
+  SUBTYPE OF (generic_literal);
+END_ENTITY;
+ENTITY elementary_space SUBTYPE OF (maths_space);
+  space_id : elementary_space_enumerators;
+END_ENTITY;
+ENTITY finite_integer_interval SUBTYPE OF (maths_space);
+  min : INTEGER;
+  max : INTEGER;
+END_ENTITY;
+ENTITY integer_interval_from_min SUBTYPE OF (maths_space);
+  min : INTEGER;
+END_ENTITY;
+ENTITY integer_interval_to_max SUBTYPE OF (maths_space);
+  max : INTEGER;
+END_ENTITY;
+ENTITY finite_real_interval SUBTYPE OF (maths_space);
+  min : REAL;
+  min_closure : open_closed;
+  max : REAL;
+  max_closure : open_closed;
+END_ENTITY;
+ENTITY real_interval_from_min SUBTYPE OF (maths_space);
+  min : REAL;
+  min_closure : open_closed;
+END_ENTITY;
+ENTITY real_interval_to_max SUBTYPE OF (maths_space);
+  max : REAL;
+  max_closure : open_closed;
+END_ENTITY;
+ENTITY finite_space SUBTYPE OF (maths_space);
+  members : SET OF maths_value;
+END_ENTITY;
+ENTITY maths_variable SUBTYPE OF (generic_variable);
+  values_space : maths_space;
+  name : label;
+END_ENTITY;
+END_SCHEMA;
+
+SCHEMA iso13584_generic_expressions_schema;
+ENTITY generic_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (simple_generic_expression, unary_generic_expression,
+    binary_generic_expression, multiple_arity_generic_expression));
+END_ENTITY;
+ENTITY simple_generic_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (generic_literal, generic_variable))
+  SUBTYPE OF (generic_expression);
+END_ENTITY;
+ENTITY generic_literal ABSTRACT SUPERTYPE SUBTYPE OF (simple_generic_expression); END_ENTITY;
+ENTITY generic_variable ABSTRACT SUPERTYPE SUBTYPE OF (simple_generic_expression);
+INVERSE
+  interpretation : environment FOR syntactic_representation;
+END_ENTITY;
+ENTITY variable_semantics ABSTRACT SUPERTYPE; END_ENTITY;
+ENTITY environment;
+  syntactic_representation : generic_variable;
+  semantics : variable_semantics;
+END_ENTITY;
+ENTITY unary_generic_expression ABSTRACT SUPERTYPE SUBTYPE OF (generic_expression);
+  operand : generic_expression;
+END_ENTITY;
+ENTITY binary_generic_expression ABSTRACT SUPERTYPE SUBTYPE OF (generic_expression);
+  operands : LIST [2:2] OF generic_expression;
+END_ENTITY;
+ENTITY multiple_arity_generic_expression ABSTRACT SUPERTYPE SUBTYPE OF (generic_expression);
+  operands : LIST [2:?] OF generic_expression;
+END_ENTITY;
+END_SCHEMA;
+
+SCHEMA iso13584_expressions_schema;
+ENTITY expression
+  ABSTRACT SUPERTYPE OF (ONEOF (numeric_expression, boolean_expression))
+  SUBTYPE OF (generic_expression);
+END_ENTITY;
+ENTITY numeric_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (simple_numeric_expression, unary_numeric_expression,
+    binary_numeric_expression, multiple_arity_numeric_expression))
+  SUBTYPE OF (expression);
+END_ENTITY;
+ENTITY simple_numeric_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (literal_number))
+  SUBTYPE OF (numeric_expression, simple_generic_expression);
+END_ENTITY;
+ENTITY literal_number
+  ABSTRACT SUPERTYPE OF (ONEOF (int_literal, real_literal))
+  SUBTYPE OF (simple_numeric_expression, generic_literal);
+  the_value : NUMBER;
+END_ENTITY;
+ENTITY int_literal SUBTYPE OF (literal_number);
+  SELF\literal_number.the_value : INTEGER;
+END_ENTITY;
+ENTITY real_literal SUBTYPE OF (literal_number);
+  SELF\literal_number.the_value : REAL;
+END_ENTITY;
+ENTITY unary_numeric_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (unary_function_call))
+  SUBTYPE OF (numeric_expression, unary_generic_expression);
+END_ENTITY;
+ENTITY binary_numeric_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (minus_expression, div_expression, mod_expression, slash_expression,
+    power_expression, binary_function_call))
+  SUBTYPE OF (numeric_expression, binary_generic_expression);
+END_ENTITY;
+ENTITY multiple_arity_numeric_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (plus_expression, mult_expression, multiple_arity_function_call))
+  SUBTYPE OF (numeric_expression, multiple_arity_generic_expression);
+END_ENTITY;
+ENTITY plus_expression SUBTYPE OF (multiple_arity_numeric_expression); END_ENTITY;
+ENTITY mult_expression SUBTYPE OF (multiple_arity_numeric_expression); END_ENTITY;
+ENTITY minus_expression SUBTYPE OF (binary_numeric_expression); END_ENTITY;
+ENTITY div_expression SUBTYPE OF (binary_numeric_expression); END_ENTITY;
+ENTITY mod_expression SUBTYPE OF (binary_numeric_expression); END_ENTITY;
+ENTITY slash_expression SUBTYPE OF (binary_numeric_expression); END_ENTITY;
+ENTITY power_expression SUBTYPE OF (binary_numeric_expression); END_ENTITY;
+ENTITY unary_function_call
+  ABSTRACT SUPERTYPE OF (ONEOF (abs_function, minus_function, sin_function, cos_function,
+    tan_function, asin_function, acos_function, exp_function, log_function, log2_function,
+    log10_function, square_root_function))
+  SUBTYPE OF (unary_numeric_expression);
+END_ENTITY;
+ENTITY abs_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY minus_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY sin_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY cos_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY tan_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY asin_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY acos_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY exp_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY log_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY log2_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY log10_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY square_root_function SUBTYPE OF (unary_function_call); END_ENTITY;
+ENTITY binary_function_call
+  ABSTRACT SUPERTYPE OF (ONEOF (atan_function))
+  SUBTYPE OF (binary_numeric_expression);
+END_ENTITY;
+ENTITY atan_function SUBTYPE OF (binary_function_call); END_ENTITY;
+ENTITY multiple_arity_function_call
+  ABSTRACT SUPERTYPE OF (ONEOF (maximum_function, minimum_function))
+  SUBTYPE OF (multiple_arity_numeric_expression);
+END_ENTITY;
+ENTITY maximum_function SUBTYPE OF (multiple_arity_function_call); END_ENTITY;
+ENTITY minimum_function SUBTYPE OF (multiple_arity_function_call); END_ENTITY;
+ENTITY boolean_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (comparison_expression))
+  SUBTYPE OF (expression);
+END_ENTITY;
+ENTITY comparison_expression
+  ABSTRACT SUPERTYPE OF (ONEOF (comparison_equal, comparison_greater, comparison_greater_equal,
+    comparison_less, comparison_less_equal, comparison_not_equal))
+  SUBTYPE OF (boolean_expression, binary_generic_expression);
+END_ENTITY;
+ENTITY comparison_equal SUBTYPE OF (comparison_expression); END_ENTITY;
+ENTITY comparison_greater SUBTYPE OF (comparison_expression); END_ENTITY;
+ENTITY comparison_greater_equal SUBTYPE OF (comparison_expression); END_ENTITY;
+ENTITY comparison_less SUBTYPE OF (comparison_expression); END_ENTITY;
+ENTITY comparison_less_equal SUBTYPE OF (comparison_expression); END_ENTITY;
+ENTITY comparison_not_equal SUBTYPE OF (comparison_expression); END_ENTITY;
+END_SCHEMA;
