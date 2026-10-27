@@ -16,6 +16,7 @@
 * xref:sheet-metal.adoc[Sheet Metal]
 * xref:laser-cut.adoc[Laser Cut (LCInterlocking)]
 * xref:pmi.adoc[PMI and technical product documentation]
+* xref:parametric-step.adoc[Parametric STEP (ISO 10303-55, -108, -111)]
 * xref:tolerance-analysis.adoc[Tolerance analysis]
 * xref:inspection.adoc[Inspection: measured parts and gauges]
 * xref:pin-location.adoc[Pin location]

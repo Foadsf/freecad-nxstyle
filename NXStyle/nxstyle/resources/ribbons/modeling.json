@@ -189,6 +189,9 @@
       {"name": "Exchange", "items": [
         {"cmd": "NXStyle_PMIExportSTEP", "label": "STEP with PMI", "size": "large"},
         {"cmd": "NXStyle_PMIImportSTEP", "label": "Import STEP with PMI", "size": "large"},
+        {"cmd": "NXStyle_ExportParametricSTEP", "label": "STEP with Parameters", "size": "large"},
+        {"cmd": "NXStyle_ImportParametricSTEP", "label": "Import STEP with Parameters"},
+        {"cmd": "NXStyle_CheckSTEP", "label": "Check STEP"},
         {"cmd": "NXStyle_PublishPackage", "label": "Publish Release Package", "size": "large"}
       ]}
     ]},

@@ -17,7 +17,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `vendor/freecad-strata/` | Strata, as a git submodule.
 | `vendor/Katydid/` | Katydid, as a git submodule.
 | `tests/` | Launcher unit tests.
-| `tools/` | `gen_docs.py` (the generated parts of these docs), `tutorial_table.py`.
+| `tools/` | `gen_docs.py` (the generated parts of these docs), `tutorial_table.py`, `iso10303_dictionary.py` (the EXPRESS dictionary from the ISO parts).
 | `docs/` | This site's AsciiDoc sources (Antora), the replay results and the old Markdown notes.
 |===
 
@@ -57,6 +57,8 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `package.py`, `package_ui.py` | Release packages: manifest, checksums, zip, verify (no FreeCAD); Publish Release Package.
 | `pmi_views.py` | PMI model views: the standard views, their frames and camera orientation, the label layout in a view's plane (no FreeCAD); the view objects and Display in Views are in `pmi_ui.py`.
 | `ap242.py` | STEP AP242 with semantic PMI: the mapping onto OpenCASCADE's XCAF enumerations and back, the file checks and signed tolerances (no FreeCAD), the writer and the reader through pythonocc.
+| `p21.py`, `express.py`, `iso10303.py` | ISO 10303-21 files read and written; EXPRESS (ISO 10303-11) schemas read and STEP files checked against them; the bundled dictionary of Parts 42, 43, 55, 108, 111, 112, the rules of Parts 55, 108, 111 and the `python -m nxstyle.iso10303` command (no FreeCAD). xref:parametric-step.adoc[]
+| `parametric.py`, `parametric_fc.py`, `parametric_ui.py` | Parametric models to and from ISO 10303-55/108/111 entities (no FreeCAD); a FreeCAD document to and from that model, the dual-model export and the import; the three Exchange commands.
 | `drf.py` | Datum reference frames: the degrees of freedom datums arrest, in order, and the motions left free (no FreeCAD).
 | `sheetmetal.py`, `sheetmetal_ui.py` | Bend allowance, bend deduction and flat length (no FreeCAD); Sheet Metal Preferences and Flat Pattern on the bundled SheetMetal add-on.
 | `resources/ribbons/laser_cut.json` | Laser Cut: the bundled LCInterlocking add-on's commands under NX-style names.

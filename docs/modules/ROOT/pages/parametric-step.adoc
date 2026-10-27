@@ -1,0 +1,105 @@
+= Parametric STEP (ISO 10303-55, -108, -111)
+:description: STEP with the design intent: construction history, sketch constraints and parameters next to the B-rep, read back as an editable FreeCAD part; and a checker for STEP files against ISO 10303.
+
+A STEP file from FreeCAD, as from most CAD systems, holds the finished shape: faces, edges and surfaces (ISO 10303-42), with nothing about how it was made.
+Change a dimension in the receiving system and there is nothing to change: the history, the sketch constraints and the parameters stayed behind.
+
+ISO 10303 has parts for exactly that, and NX-Style writes and reads them:
+
+[cols="1,3",options="header"]
+|===
+| Part | What it carries
+| ISO 10303-21 | The file itself: header, data sections, instances (read and written in full, second edition)
+| ISO 10303-11 | EXPRESS, the language the schemas are written in: NX-Style reads the schemas and checks files against them
+| ISO 10303-42, -43 | Geometry, topology, solids, representations: the B-rep, and the profiles and picked edges of the history
+| ISO 10303-55 | The construction history: an ordered sequence of operations, picked edges and faces, and the dual model (history and B-rep in one file)
+| ISO 10303-108 (with Cor.1 and Cor.2) | Parameters, the expressions between them, geometric constraints, sketches
+| ISO 10303-111 | Feature operations on solids: blends, chamfers, shells, extrusions with trim conditions and draft
+| ISO 10303-112 | 2D sketch commands: in the checker's schemas (files that use them are checked); sketches are written with ISO 10303-108 instead, which keeps the constraints
+|===
+
+== On the ribbon
+
+Modeling › PMI tab › Exchange:
+
+[cols="1,3",options="header"]
+|===
+| Button | Does
+| *STEP with Parameters* | The selected Body (or Part solid, or sketch) as STEP AP242. OpenCASCADE writes the B-rep and the product structure, the file any CAD system opens; the history, sketches, constraints and spreadsheet parameters go into the same file. The Information window lists what went in, by part of ISO 10303, the result of the file check, and anything that could not be written.
+| *Import STEP with Parameters* | Rebuilds what such a file carries: a PartDesign Body (or Part CSG objects), its sketches with their constraints, a *Parameters* spreadsheet, and the expressions that tie them. When the file also has the B-rep, the rebuilt solid is compared with it. A file without parametric data comes in as its B-rep.
+| *Check STEP* | Any STEP file against ISO 10303-21 and the schemas of Parts 42, 43, 55, 108, 111 and 112 (below).
+|===
+
+== What is written
+
+[cols="1,2",options="header"]
+|===
+| FreeCAD | ISO 10303
+| Spreadsheet aliases (lengths, angles, numbers) | `UNBOUND_VARIATIONAL_PARAMETER` (108)
+| An expression on a feature property or a sketch constraint, using those aliases | A `BOUND_VARIATIONAL_PARAMETER` on the attribute it drives (`INSTANCE_ATTRIBUTE_REFERENCE`), and an `EQUAL_PARAMETER_CONSTRAINT` or a `FREE_FORM_ASSIGNMENT` with the expression in ISO 13584-20 terms (+ − × ÷ ^, sin … sqrt, min, max)
+| Sketch: lines, arcs, circles, points, construction geometry | `NEUTRAL_SKETCH_REPRESENTATION` in a `VARIATIONAL_REPRESENTATION`, placed by `REPOSITIONED_NEUTRAL_SKETCH`; each closed profile a `FACE_SURFACE` in a `POSITIONED_SKETCH` (108 clause 8)
+| Coincident, Point on Object | `INCIDENCE_GEOMETRIC_CONSTRAINT`
+| Horizontal, Vertical, Parallel, Perpendicular, Tangent | `PARALLEL_` (to the sketch axes), `PERPENDICULAR_`, `TANGENT_GEOMETRIC_CONSTRAINT`
+| Equal | `CURVE_LENGTH_` (lines) or `RADIUS_GEOMETRIC_CONSTRAINT` (circles, arcs)
+| Distance, Horizontal/Vertical Distance | `CLGC_WITH_DIMENSION` (a line's length), `PDGC_WITH_DIMENSION` (to a point, a line, or an auxiliary line through the anchor point)
+| Radius, Diameter, Angle | `RGC_WITH_DIMENSION`, `AGC_WITH_DIMENSION`
+| Symmetric (about a line), Block | `SYMMETRY_`, `FIXED_ELEMENT_GEOMETRIC_CONSTRAINT`
+| Pad, Pocket (length, two sides, symmetric, through all, taper) | `EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS` (`_WITH_DRAFT_ANGLE`) (111), united or subtracted by `BOOLEAN_RESULT` (42)
+| Revolution, Groove | `REVOLVED_FACE_SOLID` (`_WITH_TRIM_CONDITIONS`)
+| Fillet, Chamfer | `USER_SELECTED_SHAPE_ELEMENTS` (55) with the picked edges, then `SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND`, `SOLID_WITH_SINGLE_OFFSET_` / `DOUBLE_OFFSET_` / `ANGLE_BASED_CHAMFER`
+| Thickness | `SHELLED_SOLID` with the removed faces
+| Linear and polar pattern of one feature | A nested sequence of `SOLID_REPLICA` operations
+| Additive and subtractive primitives; Part Box, Cylinder, Cone, Sphere, Torus; Cut, Fuse, Common | `BLOCK`, `RIGHT_CIRCULAR_CYLINDER`, `RIGHT_CIRCULAR_CONE`, `SPHERE`, `TORUS`, `BOOLEAN_RESULT`
+| The whole history | `PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE` in a `PROCEDURAL_SHAPE_REPRESENTATION`, tied to the B-rep by `EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP` (55)
+|===
+
+The history stops at the first feature none of these parts can represent: Hole, Mirrored, Draft, Loft, Pipe, Helix, up-to-face extents, a pattern of several features.
+The report names it; the B-rep still carries the whole part.
+Sketches come back placed where they were, not attached to faces or planes.
+Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55's user-selected elements are for.
+
+The round trip is tested in FreeCAD 1.1.4 (`tests/fc_parametric_step.py`): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution, and a Part CSG tree.
+Exported, checked (no errors), imported into a new document: the rebuilt solids equal the originals exactly, and still do after the same parameter change in both.
+
+== Check STEP
+
+[source,bash]
+----
+python -m nxstyle.iso10303 check part.stp
+python -m nxstyle.iso10303 entities part.stp
+python -m nxstyle.iso10303 attributes PDGC_WITH_DIMENSION
+----
+
+Run from the `NXStyle` folder; no FreeCAD needed.
+`check` reads the file (a Part 21 syntax error stops it with the place) and reports:
+
+* the header rules: the three header entities in order, the implementation level, the time stamp, the schema names, the data sections;
+* for every instance of an entity in the loaded schemas: unknown or abstract entities, missing or extra attributes, `$` for an attribute that is not optional, `*` where nothing is derived (and its absence where a subtype re-derives the attribute), values of the wrong type down to enumeration values, SELECT alternatives, aggregate bounds and duplicates, references to missing instances or to instances of the wrong entity, complex instances that lack a supertype record, break a ONEOF or leave an abstract supertype without a subtype;
+* the WHERE rules that give parametric data its meaning: parameter names and their bindings (108 4.4), attribute references that name a real SCHEMA.ENTITY.ATTRIBUTE of the instance they point at, assignments and relations whose elements are (or are not) in their expression (5.4), variational representations and their current results (6.3), suppressed operations, sequence elements and the dual model (55).
+
+Other WHERE rules are listed in the schemas but not evaluated, and entities of other parts (an application protocol's product structure, PMI) are counted, not checked.
+`--exp file.exp` adds more EXPRESS, for example the long form of AP242 from the ISO SC4 site, and then those are checked too.
+
+== Where ISO 10303 contradicts itself
+
+Writing data that every rule accepts turned up places where the parts cannot all be met at once.
+NX-Style's choice in each case, and what the checker says about it:
+
+* ISO 10303-108 6.3.4 (WR4) wants the variational wrapper of a sketch to have the sketch's types, but `NEUTRAL_SKETCH_REPRESENTATION` only admits points and curves as items (8.4.9), so it could hold no constraint. The wrapper is a plain shape representation; the checker warns that WR4 is not met.
+* ISO 10303-55 5.4.4 and 5.4.5 require a solid sequence to be a `SOLID_MODEL` and its elements to be geometric items, which `USER_SELECTED_SHAPE_ELEMENTS` is not; Part 55's own example (annex E) writes both as simple instances. NX-Style writes complex instances that meet the rules.
+* A procedural representation may only hold sequences (55 4.3.3), so parameters of the history wrap a shape representation that holds the sequence.
+* ISO 10303-108 Cor.1 annex F writes the current value of an unbound parameter untyped (`3.0`), where ISO 10303-21 10.1.8 asks for a typed SELECT value; NX-Style follows annex F and the checker warns.
+* The examples of Cor.1 annex F have slips: `#550` names itself as its value space (for `#540`), `#410` uses `#360` (for `#400`), and `UNBOUND_PARAMETER_SEMANTICS` is the pre-corrigendum name of `UNBOUND_VARIATIONAL_PARAMETER_SEMANTICS`. Cor.2 rewrites WR1 of `neutral_sketch_representation` to demand three-dimensional items, against the two dimensions of 8.4.9.
+
+== The schemas
+
+`NXStyle/nxstyle/resources/iso10303/dictionary.json` holds the schemas' structure (entities, supertypes, attributes and their types, short names), built by `tools/iso10303_dictionary.py` from the parts themselves:
+
+[source,bash]
+----
+python tools/iso10303_dictionary.py --part 42=part42.pdf --part 43=part43.pdf --part 55=part55.pdf \
+    --part 108=part108.pdf --cor 108=cor1.pdf --cor 108=cor2.pdf --part 111=part111.pdf --part 112=part112.pdf
+----
+
+It takes the EXPRESS from between the `\*)` and `(*` lines the parts print around it, applies Cor.1 (the renaming of `model_parameter` to `variational_parameter`, the replaced entities) and Cor.2, and adds `supplement.exp`: the declarations of ISO 10303-41, ISO 10303-50 and ISO 13584-20 the parts use (units, measures, maths spaces, expressions), written from what they are cited for, since those parts were not among the sources.
+The parts' text is not in this repository.
