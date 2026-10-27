@@ -28,6 +28,9 @@ This page lists the differences found by working through the xref:tutorials/inde
 * xref:modeling.adoc#sections[Selected sections] can use curves from one sketch; multiple sketches and solid edges are not supported.
 * xref:modeling.adoc#primitives[Block, Cylinder, Cone and Sphere] have NX-style dialogs and all four Booleans, including Intersect.
   Their supported creation methods and editing behavior are listed in the modeling guide.
+* xref:modeling.adoc#thread[Thread] Detailed is a PartDesign Subtractive Helix of the basic thread profile, so it is real geometry and takes seconds to recompute.
+  Symbolic is a feature that records the thread without NX's dashed display.
+  The thread starts at an end of the cylinder; the tables are ISO coarse and UNC only, single-start and straight.
 * Hole drills at circle centres in a sketch; NX places hole points directly and adds their location dimensions.
 * At Angle datum planes turn about the face's own axes; NX lets you pick the hinge axis.
 * Datum CSYS with nothing selected asks whether to continue; a Body already has its own origin.
