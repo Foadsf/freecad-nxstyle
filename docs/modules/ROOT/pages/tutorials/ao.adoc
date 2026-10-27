@@ -2,7 +2,7 @@
 :description: The casing sketch of tutorial AG made solid: its wall revolved 180° about XC from curves picked one by one, its edge extruded 0.5 along -ZC and mirrored, and its flange revolved (NX 12 for Engineering Design, 4.4).
 
 [horizontal]
-Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.4 (Swept Features). It continues the casing sketch of section 3.5.2, xref:tutorials/ag.adoc[tutorial AG].
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.4 (Swept Features). It continues the casing sketch of section 3.5.2, xref:tutorials/ag.adoc[tutorial AG]; xref:tutorials/ax.adoc[tutorial AX] turns it into the upper casing.
 You learn:: the Curve Rule (Single Curve), Revolve with Specify Vector, Specify Point and the angle limits, Extrude of picked curves as a body of its own, QuickPick for curves that lie on a solid, Mirror Feature
 Sizes:: the book's, in inches, typed in millimetres. The wall and the flange revolved about XC through (0, 0, 0) from 0 to 180°. The edge extruded 0.5 (12.7 mm) along -ZC.
 

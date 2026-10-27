@@ -1218,7 +1218,7 @@ class MstFastenerTutorials:
         missing = [k for k, w in enumerate(want) if not any((c - w).Length < 1e-6 for c in corners)]
         return f"R key (tool {tool}), {', '.join(how)}, MB2", len(lines), missing
 
-    def fs_extrude(self, sk, length, boolean, taper=None):
+    def fs_extrude(self, sk, length, boolean, taper=None, reversed_=False):
         """Extrude started from the ribbon, the sketch picked in the graphics window by one of its lines (Curve
         Rule Inferred Curves: one pick is the whole sketch), Boolean, length (and taper) set, OK. Returns (how,
         OK available)."""
@@ -1238,6 +1238,16 @@ class MstFastenerTutorials:
             self.info.setdefault("extrude panel widgets", []).append(self.task_widgets())
             name = self.set_quantity("taperEdit", taper) or self.set_quantity("taper", taper)
             tapered = f", '{name}' = {taper:g}°"
+        if reversed_:
+            from .tutorial import qtest
+            rev = self._field(QtWidgets.QCheckBox, "checkBoxReversed")
+            if rev is not None and not rev.isChecked():
+                opt = QtWidgets.QStyleOptionButton()
+                rev.initStyleOption(opt)
+                at = rev.style().subElementRect(QtWidgets.QStyle.SE_CheckBoxIndicator, opt, rev).center()
+                qtest().mouseClick(rev, Qt.LeftButton, Qt.NoModifier, at)
+                QtWidgets.QApplication.processEvents()
+            tapered += f", Reversed clicked ({rev.isChecked() if rev is not None else 'not found'})"
         ok = self.ao_ok()
         return (f"a side picked ({route}; Curve Rule Inferred Curves), dialog opened {opened}; Boolean "
                 f"'{picked}', '{field}' = {length:g} mm{tapered}; OK"), ok
@@ -2333,3 +2343,1013 @@ class MstImpellerSolidTutorials:
 
     def au_show(self):
         self.show("AU_impeller")
+
+
+# ================================================================== AX: Impeller Upper Casing (exercise 4.10.3)
+# The book (pp. 101-102): the upper casing has the lower casing's dimensions (4.4, tutorial AO) and a manhole "such
+# that impeller blades can be seen and a hand can fit inside". Here the lower casing is saved as the upper one and
+# its features turned to the other side of the split plane with Edit Parameters: the wall and the flange revolved
+# 0 to -180°, the edge extruded along +ZC (its mirror follows). The manhole is ours: a square tube 5 x 5 in, walls 0.5,
+# its top 3 in above the casing (z = 18), over the middle of the wall's straight part (Line 1), and a 4 x 4 opening
+# through the wall.
+# The tube ends in the middle of the wall (z = 14.75; the wall is R14.5 to R15 there): ending on its inner face
+# (3.5 down) left a tangent contact that the Unite could not make
+AX_TUBE, AX_OPEN, AX_TOP, AX_DOWN = 5.0, 4.0, 18.0, 3.25
+
+
+class MstUpperCasingTutorials:
+    """Mixin for tutorial.Replay: tutorial AX (it starts from tutorial AO's lower casing)."""
+
+    def AX_STEPS(self):
+        return [self.p_modeling, self.ax_open, self.ax_wall, self.ax_wall_ok, self.ax_flange, self.ax_flange_ok,
+                self.ax_edge, self.ax_edge_ok, self.ax_plane, self.ax_plane_ok, self.ax_sketch, self.ax_squares,
+                self.ax_finish, self.ax_tube, self.ax_tube_section, self.ax_opening, self.ax_opening_section,
+                self.ax_check, self.ax_fit, self.ax_show]
+
+    def ax_stages(self):
+        """The upper casing as the book's curves make it (Part API, mm)."""
+        import Part
+        sk = self._ao_sk
+
+        def face(refs):
+            return Part.Face(Part.Wire(Part.__sortEdges__([sk.Geometry[self._ao_map[r]].toShape() for r in refs])))
+        o, x = App.Vector(0, 0, 0), App.Vector(1, 0, 0)
+        s = {"wall": face(AO_WALL).revolve(o, x, -180)}
+        s["flange"] = s["wall"].fuse(face(AO_FLANGE).revolve(o, x, -180)).removeSplitter()
+        lip = face(AO_LIP).extrude(App.Vector(0, 0, AO_LIP_DEPTH))
+        s["edges"] = Part.makeCompound([lip, lip.mirror(o, App.Vector(0, 1, 0))])
+        line1 = sk.Geometry[self._ao_map[0]]
+        cx = (line1.StartPoint.x + line1.EndPoint.x) / 2
+        self._ax_cx = cx
+
+        def square(side, z0, h):
+            return Part.makeBox(side * IN, side * IN, h * IN, App.Vector(cx - side * IN / 2, -side * IN / 2, z0 * IN))
+        tube = square(AX_TUBE, AX_TOP - AX_DOWN, AX_DOWN).cut(square(AX_OPEN, AX_TOP - AX_DOWN, AX_DOWN))
+        s["tube"] = s["flange"].fuse(tube).removeSplitter()
+        s["final"] = s["tube"].cut(square(AX_OPEN, AX_TOP - 5, 5)).removeSplitter()
+        return s
+
+    def ax_compare(self, shape, stage, label, how):
+        from . import geomcheck
+        try:
+            ok, detail = geomcheck.compare(shape, self._ax[stage])
+        except Exception as e:                # a null result from the feature (or the reference): say which
+            ok, detail = False, (f"no comparison ({e}): the part's shape is null {shape is None or shape.isNull()}, "
+                                 f"the reference's {self._ax[stage].isNull()}; tip {self.ao_bodies()[0].Tip.Name} "
+                                 f"{self.ao_bodies()[0].Tip.getStatusString()}")
+        self.step(label, how, SAME if ok else FAIL, detail)
+        return ok
+
+    def ax_open(self):
+        import os
+        from .tutorial import OUT
+        self.tutorial = "AX: Impeller Upper Casing (NX 12 for Engineering Design, exercise 4.10.3; book in inches, " \
+                        "typed in mm)"
+        path = os.path.join(OUT, "Impeller_lower_casing.FCStd")
+        for name, d in list(App.listDocuments().items()):
+            if os.path.normcase(d.FileName or "") == os.path.normcase(path):
+                App.closeDocument(name)
+        QtWidgets.QApplication.processEvents()
+        doc = App.openDocument(path) if os.path.exists(path) else None
+        sk = next((o for o in doc.Objects if o.TypeId == "Sketcher::SketchObject"), None) if doc else None
+        revs = [o for o in doc.Objects if o.TypeId == "PartDesign::Revolution"] if doc else []
+        ok = sk is not None and len(revs) == 2
+        self._ao_sk = sk
+        self._ao_map = self.ao_map(sk) if sk is not None else {}
+        self._ao_names = self.ao_edge_names(sk) if sk is not None else {}
+        if ok:
+            self._ax = self.ax_stages()
+        outcome, how, detail, _path = self.save_ctrl_s("Impeller_upper_casing.FCStd") if ok else (FAIL, "-", "", None)
+        self.step("Open the lower casing and save it as Impeller_upper_casing", f"File > Open (by script); {how}",
+                  outcome if ok else FAIL, f"tutorial AO's part, its wall and flange revolved and its edges; {detail}"
+                  if ok else f"no lower casing at {path}: tutorial AO saves it")
+        if not ok:
+            raise RuntimeError("no lower casing; tutorial AX cannot continue")
+        self.key("Ctrl+F")
+        self.key("Home")
+        self.wait = 1200
+
+    def ax_edit(self, feature):
+        body = next(b for b in self.ao_bodies() if feature in b.Group)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, body.Name, f"{feature.Name}.")
+        b, self._ax_where = self.click_ribbon("Edit Parameters")
+        self.wait = 1500
+
+    def ax_revolutions(self):
+        return [o for o in App.ActiveDocument.Objects if o.TypeId == "PartDesign::Revolution"]
+
+    def ax_turn(self, label, stage, shape):
+        from . import controller
+        ok = self.wait_for("the Revolve box in edit", lambda: self.ao_ctl().session is not None
+                           and self.ao_ctl().session.stage == "parameterize"
+                           and controller._alive(self.ao_ctl().session.box), timeout_ms=6000)
+        self.set_quantity("nxLimitStart", 0)
+        self.set_quantity("nxLimitEnd", -180)
+        s = self.ao_ctl().session
+        limits = tuple(s.limits) if s is not None and s.limits else None
+        pressed = self.ao_ok()
+        App.ActiveDocument.recompute()
+        self.ax_compare(shape(), stage, label, f"the Revolve selected (Part Navigator) + ribbon '{self._ax_where} > "
+                        f"Edit Parameters' (box open {ok}), Start 0 and End -180 typed (limits {limits}), OK "
+                        f"{'clicked' if pressed else 'unavailable'}")
+
+    def ax_wall(self):
+        self.ax_edit(self.ax_revolutions()[0])
+
+    def ax_wall_ok(self):
+        self.ax_turn("Edit Parameters of the wall's Revolve: End -180, above the split plane", "wall",
+                     lambda: self.ax_revolutions()[0].Shape)
+        self.wait = 400
+
+    def ax_flange(self):
+        self.ax_edit(self.ax_revolutions()[1])
+
+    def ax_flange_ok(self):
+        self.ax_turn("Edit Parameters of the flange's Revolve: End -180", "flange", lambda: self.ao_bodies()[0].Shape)
+        self.wait = 400
+
+    def ax_edge(self):
+        pad = next(o for o in App.ActiveDocument.Objects if o.TypeId == "PartDesign::Pad")
+        self._ax_pad = pad
+        self.ax_edit(pad)
+
+    def ax_edge_ok(self):
+        from .tutorial import qtest
+        self.wait_for("the Extrude box in edit", lambda: self.ao_ctl().session is not None
+                      and self.ao_ctl().session.stage == "parameterize", timeout_ms=6000)
+        rev = self._field(QtWidgets.QCheckBox, "checkBoxReversed")
+        was = rev.isChecked() if rev is not None else None
+        if rev is not None and rev.isChecked():
+            opt = QtWidgets.QStyleOptionButton()
+            rev.initStyleOption(opt)
+            at = rev.style().subElementRect(QtWidgets.QStyle.SE_CheckBoxIndicator, opt, rev).center()
+            qtest().mouseClick(rev, Qt.LeftButton, Qt.NoModifier, at)
+            QtWidgets.QApplication.processEvents()
+        now = rev.isChecked() if rev is not None else None
+        pressed = self.ao_ok()
+        App.ActiveDocument.recompute()
+        body = next(b for b in self.ao_bodies() if self._ax_pad in b.Group)
+        self.ax_compare(body.Shape, "edges", "Edit Parameters of the edge's Extrude: along +ZC; its mirror follows",
+                        f"the edge's Extrude selected + ribbon '{self._ax_where} > Edit Parameters', Reversed "
+                        f"{was} -> {now} (clicked), OK {'clicked' if pressed else 'unavailable'}")
+        self.wait = 400
+
+    # ------------------------------------------------------------- the manhole
+    def ax_plane(self):
+        body = self.ao_bodies()[0]
+        Gui.ActiveDocument.ActiveView.setActiveObject("pdbody", body)
+        Gui.Selection.clearSelection()
+        xy = next(f for f in body.Origin.OriginFeatures if f.Role == "XY_Plane")
+        Gui.Selection.addSelection(App.ActiveDocument.Name, body.Name, f"{body.Origin.Name}.{xy.Name}.")
+        self._ax_planes = self.fs_names("PartDesign::Plane")
+        where = self.click_dropdown("Datum", "Datum Plane")
+        self._ax_where = where
+        self.wait = 1200
+
+    def ax_plane_ok(self):
+        self.wait_dialog("ax_plane_ok")
+        new = self.fs_new_feature("PartDesign::Plane", self._ax_planes)
+        w = self._field(QtWidgets.QAbstractSpinBox, "attachmentoffsetz")
+        self.info["AX datum plane before"] = {
+            "support": str(getattr(new, "AttachmentSupport", None)), "mode": getattr(new, "MapMode", None),
+            "field enabled": w.isEnabled() if w is not None else None,
+            "selection": [(s.ObjectName, list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx("", 0)]}
+        name = self.set_quantity("attachmentoffsetz", AX_TOP * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        plane = self.fs_new_feature("PartDesign::Plane", self._ax_planes)
+        z = plane.Placement.Base.z if plane is not None else None
+        self._ax_plane = plane
+        self.step("Datum Plane 18 above the XC-YC plane (the manhole's top)", f"the XY plane selected (Part "
+                  f"Navigator) + ribbon '{self._ax_where} > Datum > Datum Plane', '{name}' = 457.2 mm, MB2 = OK",
+                  SAME if z is not None and abs(z - AX_TOP * IN) < 1e-6 else FAIL,
+                  f"plane at z = {z} mm" if z is not None else "no datum plane")
+        self.wait = 400
+
+    def ax_sketch(self):
+        body = self.ao_bodies()[0]
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, body.Name, f"{self._ax_plane.Name}.")
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def ax_squares(self):
+        self.wait_for("ax: sketch in edit", lambda: self.edited_sketch() is not None)
+        sk = self.edited_sketch()
+        if sk is None:
+            self.step("Sketch the manhole on the datum plane", f"ribbon '{self._fs_where} > Sketch'", FAIL,
+                      "no sketch in edit")
+            raise RuntimeError("no sketch; tutorial AX cannot continue")
+        self._ax_sk = sk
+        cx = self._ax_cx
+        hows, missing = [], []
+        for side in (AX_TUBE, AX_OPEN):
+            h = side * IN / 2
+            how, n, miss = self.fs_rectangle(sk, (cx - h, -h), (cx + h, h))
+            hows.append(how)
+            missing += miss
+        lines = [g for g in range(len(sk.Geometry)) if "Line" in sk.Geometry[g].TypeId and not sk.getConstruction(g)]
+        self.step("Sketch the manhole: two squares, 5 x 5 and 4 x 4, over the wall's straight part",
+                  f"the datum plane + ribbon '{self._fs_where} > Sketch'; {hows[0]}; then {hows[1]}",
+                  SAME if len(lines) == 8 and not missing else FAIL,
+                  f"{len(lines)} lines, corners {'as planned' if not missing else f'missing {missing}'}; centred at "
+                  f"x = {cx:.2f} mm, the middle of Line 1 (the book leaves the manhole's size to the reader)")
+        self.wait = 300
+
+    def ax_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def ax_tube(self):
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def ax_tube_section(self):
+        from .tutorial import qtest
+        how, ok = self.fs_extrude(self._ax_sk, AX_DOWN * IN, "Unite", reversed_=True)
+        self.ax_compare(self.ao_bodies()[0].Shape, "tube", "Extrude both squares 3.25 down into the casing, Unite",
+                        f"ribbon '{self._fs_where} > Extrude', {how} {'clicked' if ok else 'unavailable'}")
+        qtest().qWait(200)
+        self.wait = 400
+
+    def ax_opening(self):
+        # FreeCAD hides a sketch once an Extrude uses it, and a hidden curve cannot be picked: show it again
+        # (the sketch selected in the Part Navigator, NX's Show, Ctrl+Shift+K)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self._ax_sk.Name)
+        self.key("Ctrl+Shift+K")
+        QtWidgets.QApplication.processEvents()
+        how = "Ctrl+Shift+K"
+        if not self._ax_sk.ViewObject.Visibility:
+            self.click_ribbon("Show", tab="View")
+            QtWidgets.QApplication.processEvents()
+            how = "Ctrl+Shift+K did nothing; View > Show"
+        self._ax_shown = f"{how}: {self._ax_sk.ViewObject.Visibility}"
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Extrude (Subtract)")
+        self.wait = 1500
+
+    def ax_opening_section(self):
+        from . import controller
+        names = self.ao_edge_names(self._ax_sk)
+        rule = self.ao_rule("Single Curve")
+        h = AX_OPEN * IN / 2
+        sk = self._ax_sk
+
+        def on_inner(p):
+            return abs(max(abs(p.x - self._ax_cx), abs(p.y)) - h) < 1e-6
+        inner = [g for g, geo in enumerate(sk.Geometry) if "Line" in geo.TypeId and not sk.getConstruction(g)
+                 and on_inner(sk.getPoint(g, 1)) and on_inner(sk.getPoint(g, 2))]
+        routes = [self.curve_pick(self._ax_sk, g, names[g]) for g in inner]
+        self.wait_for("the Extrude (Subtract) dialog", lambda: self.ao_ctl().session is not None
+                      and self.ao_ctl().session.stage == "parameterize" and controller._alive(self.ao_ctl().session.box)
+                      and len(self.ao_ctl().session.edges or []) == 4, timeout_ms=6000)
+        self.set_combo("nxBoolean", "Subtract")
+        field = self.set_quantity("lengthEdit", 5 * IN)
+        ok = self.ao_ok()
+        self.ao_rule("Inferred Curves")
+        self.ax_compare(self.ao_bodies()[0].Shape, "final", "Extrude (Subtract) the inner square through the wall",
+                        f"the sketch shown again ({self._ax_shown}); ribbon '{self._fs_where} > Extrude "
+                        f"(Subtract)', Curve Rule '{rule}', the 4 inner lines "
+                        f"picked ({', '.join(routes)}), '{field}' = 127 mm, OK {'clicked' if ok else 'unavailable'}")
+        self.wait = 400
+
+    def ax_check(self):
+        from . import geomcheck
+        ok, detail = geomcheck.compare(self.ao_bodies()[0].Shape, self._ax["final"])
+        self.step("The upper casing with its manhole", "compared with the book's curves and the manhole by the "
+                  "Part API", SAME if ok else FAIL, detail)
+        # the datum plane and the manhole's sketch, hidden again (both selected, Ctrl+B: NX's Hide)
+        Gui.Selection.clearSelection()
+        for o in (self._ax_plane, self._ax_sk):
+            Gui.Selection.addSelection(App.ActiveDocument.Name, o.Name)
+        from .tutorial import qtest
+        qtest().qWait(1500)       # a key pressed at once after the selection did nothing (the action was not enabled)
+        self.key("Ctrl+B")
+        QtWidgets.QApplication.processEvents()
+        self.info["AX hidden by Ctrl+B"] = [not o.ViewObject.Visibility for o in (self._ax_plane, self._ax_sk)]
+        Gui.Selection.clearSelection()
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_upper_casing.FCStd")
+        self.step("Save the part", how, outcome, detail)
+        self.wait = 300
+
+    def ax_fit(self):
+        self.fit()
+
+    def ax_show(self):
+        self.show("AX_impeller_upper_casing")
+
+
+# ================================================================== AY: Die Cavity (exercise 4.10.4)
+# The book (pp. 102-103), mm: a Block 150 x 100 x 40 at (-75, -50, -80); a Block 100 x 80 x 40 united on top of it,
+# centred: (-50, -40, -40). A sketch (on XZ; its figure, p. 102): a section above the top block, from x = -50 to 50,
+# 30 high (p20), closed below by a spline through (-50, 0), (-25, 1) (p18, p16), (25, -8) (p19, p17) and (50, 0); a
+# line 60 below the first block's top (p23) as the axis. Revolve (Subtract) about it, Start -45, End 45. A Block 70 x
+# 50 x 30 subtracted for the cavity; 4 Cylinders Ø20 x 15 at its inner corners, united (the book writes "20 inches"
+# in this mm part: 20 mm here). Edge Blends "R10 on the outer edges, R5 on the inner": here R10 on the top block's
+# four vertical outer edges and R5 on the cylinders' top edges (the book's pictures, p. 103).
+AY_B1 = ((-75, -50, -80), (150, 100, 40))
+AY_B2 = ((-50, -40, -40), (100, 80, 40))
+AY_PROFILE = [(50, 0), (50, 30), (-50, 30), (-50, 0)]          # the three lines, then the spline back to (50, 0)
+AY_SPLINE = [(-50, 0), (-25, 1), (25, -8), (50, 0)]
+AY_AXIS_Z = -100
+AY_CAVITY = ((-35, -25, -30), (70, 50, 30))
+AY_POSTS = [(x, y, -30) for x in (-35, 35) for y in (-25, 25)]
+AY_POST = (20, 15)
+AY_R_OUT, AY_R_IN = 10, 5
+
+
+class MstDieCavityTutorials:
+    """Mixin for tutorial.Replay: tutorial AY."""
+
+    def AY_STEPS(self):
+        return [self.p_modeling, self.ay_new, self.ay_save, self.ay_block1, self.ay_block2, self.ay_sketch,
+                self.ay_plane, self.ay_curves, self.ay_finish, self.ay_revolve, self.ay_revolve_section,
+                self.ay_revolve_ok, self.ay_cavity, self.ay_posts, self.ay_outer, self.ay_outer_dialog,
+                self.ay_inner, self.ay_inner_dialog, self.ay_check, self.ay_fit, self.ay_show]
+
+    # ------------------------------------------------------------- helpers
+    def fs_points(self, sk, key, pts):
+        """A sketch tool started with key, each point typed in the fields beside the pointer (X, then Y, Enter
+        after each); MB2 ends it. Returns the points typed and those clicked instead."""
+        from . import sketch_ui
+        view = self.nav().widget
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+        span = max(max(xs) - min(xs), max(ys) - min(ys), 1.0)
+        self.frame_sketch(sk, (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2, span * 1.8)
+        self.key(key)
+        QtWidgets.QApplication.processEvents()
+        typed, clicked = 0, 0
+        from .tutorial import qtest
+        prev = None
+        for x, y in pts:
+            if prev is None:
+                near = self.screen_point(sk, x + span * 0.03, y + span * 0.04)
+                self.send(QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+                qtest().qWait(150)
+                fields = sketch_ui.xy_fields(sk, view, near)
+                pairs = [(fields, (x, y))] if fields else []
+            else:
+                # from the second point on a tool may offer the length and the angle from the last point instead of
+                # X and Y: with the pointer on the point, each value goes to the field showing the nearest number
+                at = self.screen_point(sk, x, y)
+                self.send(QtCore.QEvent.MouseMove, at, Qt.NoButton, Qt.NoButton)
+                qtest().qWait(150)
+                shown_w = sketch_ui.on_view_fields(view)[:2]
+                shown = [sketch_ui.field_value(w) for w in shown_w]
+                polar = (math.hypot(x - prev[0], y - prev[1]), math.degrees(math.atan2(y - prev[1], x - prev[0])))
+                best = None
+                for pair in ((x, y), polar):
+                    for order in ((0, 1), (1, 0)):
+                        if len(shown) == 2:
+                            err = sum(abs(shown[order[k]] - pair[k]) for k in range(2))
+                            if best is None or err < best[0]:
+                                best = (err, order, pair)
+                pairs = [((shown_w[best[1][0]], shown_w[best[1][1]]), best[2])] if best else []
+                self.info.setdefault("point fields", []).append({"shown": shown, "typed": best[2] if best else None})
+            if pairs:
+                (fields, values), = pairs
+                for w, v in zip(fields, values):
+                    self.fs_type(w, v)
+                typed += 1
+            else:
+                self.mb1_click(self.screen_point(sk, x, y))
+                clicked += 1
+            prev = (x, y)
+            qtest().qWait(100)
+        self.mb2_click(self.screen_point(sk, min(xs) - span * 0.4, max(ys) + span * 0.4))
+        App.ActiveDocument.recompute()
+        return typed, clicked
+
+    def ay_stages(self, sk=None):
+        import Part
+        z = App.Vector(0, 0, 1)
+        s = {"b1": Part.makeBox(*AY_B1[1], App.Vector(*AY_B1[0]))}
+        s["b2"] = s["b1"].fuse(Part.makeBox(*AY_B2[1], App.Vector(*AY_B2[0]))).removeSplitter()
+        if sk is None:
+            return s
+        prof = [sk.Geometry[g].toShape() for g in self._ay_profile]
+        face = Part.Face(Part.Wire(Part.__sortEdges__(prof)))
+        face = face.transformGeometry(sk.getGlobalPlacement().toMatrix())
+        axis_p, axis_d = App.Vector(0, 0, AY_AXIS_Z), App.Vector(1, 0, 0)
+        face.rotate(axis_p, axis_d, -45)
+        cut = face.revolve(axis_p, axis_d, 90)
+        s["revolve"] = s["b2"].cut(cut).removeSplitter()
+        s["cavity"] = s["revolve"].cut(Part.makeBox(*AY_CAVITY[1], App.Vector(*AY_CAVITY[0]))).removeSplitter()
+        posts = s["cavity"]
+        for k, p in enumerate(AY_POSTS):
+            posts = posts.fuse(Part.makeCylinder(AY_POST[0] / 2, AY_POST[1], App.Vector(*p), z)).removeSplitter()
+            s[f"post{k + 1}"] = posts
+        s["outer"] = posts.makeFillet(AY_R_OUT, self.ay_outer_edges(posts))
+        s["inner"] = s["outer"].makeFillet(AY_R_IN, self.ay_inner_edges(s["outer"]))
+        return s
+
+    @staticmethod
+    def ay_outer_edges(shape):
+        """The top block's four vertical outer edges (at x = ±50, y = ±40)."""
+        out = []
+        for e in shape.Edges:
+            b = e.BoundBox
+            if b.XLength < 1e-6 and b.YLength < 1e-6 and b.ZLength > 1e-6 and abs(abs(b.XMin) - 50) < 1e-6 \
+                    and abs(abs(b.YMin) - 40) < 1e-6:
+                out.append(e)
+        return out
+
+    @staticmethod
+    def ay_inner_edges(shape):
+        """The cylinders' top circles (z = -15, R10, about the cavity's corners): the arcs of them left in the
+        cavity."""
+        out = []
+        for e in shape.Edges:
+            try:
+                c = e.Curve
+                if type(c).__name__ == "Circle" and abs(c.Radius - AY_POST[0] / 2) < 1e-6 and \
+                        abs(c.Center.z - (AY_POSTS[0][2] + AY_POST[1])) < 1e-6:
+                    out.append(e)
+            except Exception:
+                continue
+        return out
+
+    def ay_compare(self, stage, label, how):
+        from . import geomcheck
+        body = self.body()
+        try:
+            ok, detail = geomcheck.compare(body.Shape if body is not None else None, self._ay[stage])
+        except Exception as e:
+            ok, detail = False, f"no comparison: {e}"
+        self.step(label, how, SAME if ok else FAIL, detail)
+        return ok
+
+    def ay_primitive(self, command, kind, dims, boolean, label, typed, stage, axis="ZC"):
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon(command)
+        qtest().qWait(900)
+
+        def check():
+            from . import geomcheck
+            try:
+                return geomcheck.compare(self.body().Shape, self._ay[stage])
+            except Exception as e:
+                return False, f"no comparison: {e}"
+        names = ", ".join(f"{n} {v:g}" for n, v in dims)
+        self.ap_dialog(command, kind, list(dims), boolean, label, f"{names} typed", 0, typed=typed, axis=axis,
+                       check=check)
+
+    # ------------------------------------------------------------- the blocks
+    def ay_new(self):
+        self.tutorial = "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)"
+        self._ay = self.ay_stages()
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def ay_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file, units mm (Die_cavity)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}; NX-Style parts are metric")
+        outcome, how, detail, path = self.save_ctrl_s("Die_cavity.FCStd")
+        self.step("Save it as Die_cavity", how, outcome, detail)
+        self.wait = 300
+
+    def ay_block1(self):
+        (p, d) = AY_B1
+        self.ay_primitive("Block", "Origin and Edge Lengths", (("length", d[0]), ("width", d[1]), ("height", d[2])),
+                          "None", "Block 150 x 100 x 40 at (-75, -50, -80)", p, "b1")
+        self.key("Ctrl+F")
+        self.key("Home")
+        self.wait = 1200
+
+    def ay_block2(self):
+        (p, d) = AY_B2
+        self.ay_primitive("Block", "Origin and Edge Lengths", (("length", d[0]), ("width", d[1]), ("height", d[2])),
+                          "Unite", "Block 100 x 80 x 40 on top, centred, Unite", p, "b2")
+        self.wait = 400
+
+    # ------------------------------------------------------------- the sketch
+    def ay_sketch(self):
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def ay_plane(self):
+        picked = self.pick_in_feature_list("XZ")
+        self.mb2_click()
+        self.wait_for("ay: sketch in edit", lambda: self.edited_sketch() is not None)
+        self._ay_sk = self.edited_sketch()
+        if self._ay_sk is None:
+            self.step("Sketch on the XC-ZC plane", f"ribbon '{self._fs_where} > Sketch'", FAIL,
+                      f"no sketch in edit (plane row {picked})")
+            raise RuntimeError("no sketch; tutorial AY cannot continue")
+        self._ay_plane = picked
+        self.wait = 800
+
+    def ay_curves(self):
+        sk = self._ay_sk
+        g0 = len(sk.Geometry)
+        t1, c1 = self.fs_points(sk, "Z", AY_PROFILE)                 # Profile: the three lines
+        g1 = len(sk.Geometry)
+        t2, c2 = self.fs_points(sk, "S", AY_SPLINE)                  # Studio Spline through the four points
+        g2 = len(sk.Geometry)
+        t3, c3 = self.fs_points(sk, "L", [(-75, AY_AXIS_Z), (75, AY_AXIS_Z)])   # the axis line
+        g3 = len(sk.Geometry)
+        self._ay_profile = [g for g in range(g0, g2) if "Point" not in sk.Geometry[g].TypeId
+                            and not sk.getConstruction(g)]
+        axis = [g for g in range(g2, g3) if "Line" in sk.Geometry[g].TypeId]
+        self._ay_axis = axis[0] if axis else None
+        splines = [g for g in range(g1, g2) if "BSpline" in sk.Geometry[g].TypeId]
+        through = []
+        if splines:
+            c = sk.Geometry[splines[0]].toShape()
+            import Part
+            through = [round(c.distToShape(Part.Vertex(App.Vector(x, y, 0)))[0], 6) for x, y in AY_SPLINE]
+        closed = False
+        try:
+            import Part
+            closed = Part.Wire(Part.__sortEdges__([sk.Geometry[g].toShape() for g in self._ay_profile])).isClosed()
+        except Exception:
+            pass
+        ok = len(splines) == 1 and through and max(through) < 1e-6 and closed and self._ay_axis is not None
+        self.step("Sketch: the section (three lines and the spline through four points) and the axis line",
+                  f"ribbon '{self._fs_where} > Sketch' on '{self._ay_plane}'; Z (Profile) {t1} points typed, S "
+                  f"(Studio Spline) {t2} typed, L (Line) {t3} typed (clicked: {c1 + c2 + c3}); MB2 after each",
+                  SAME if ok else FAIL,
+                  f"{len(splines)} spline, its distance from the four points {through} mm; the section closed "
+                  f"{closed}; the axis line at z = {AY_AXIS_Z} mm {self._ay_axis is not None}. The book's reference "
+                  "lines (the blocks' outlines) are not drawn: they only help place the curves")
+        self._ay = self.ay_stages(sk)
+        self.wait = 300
+
+    def ay_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    # ------------------------------------------------------------- Revolve (Subtract)
+    def ay_revolve(self):
+        Gui.Selection.clearSelection()
+        self.key("Ctrl+Alt+F")                               # the front view: the sketch plane faces the viewer
+        self.key("Ctrl+F")
+        b, self._ay_where = self.click_ribbon("Revolve (Subtract)")
+        self.wait = 1500
+
+    def ay_revolve_section(self):
+        from .tutorial import qtest
+        sk = self._ay_sk
+        names = self.ao_edge_names(sk)
+        rule = self.ao_rule("Single Curve")
+        routes = [self.curve_pick(sk, g, names[g]) for g in self._ay_profile]
+        up = self.ao_opened(len(self._ay_profile))
+        pick = self._field(QtWidgets.QToolButton, "nxPickAxisLine")
+        if pick is not None and not pick.isChecked():
+            qtest().mouseClick(pick, Qt.LeftButton)
+            QtWidgets.QApplication.processEvents()
+        route = self.curve_pick(sk, self._ay_axis, names[self._ay_axis])
+        qtest().qWait(500)
+        s = self.ao_ctl().session
+        axis = dict(s.axis) if s is not None else None
+        self.set_quantity("nxLimitStart", -45)
+        self.set_quantity("nxLimitEnd", 45)
+        s = self.ao_ctl().session
+        limits = tuple(s.limits) if s is not None and s.limits else None
+        want_axis = f"line:{names[self._ay_axis]}"
+        self.step("Revolve (Subtract): the section's curves, the axis line, Start -45, End 45",
+                  f"ribbon '{self._ay_where} > Revolve (Subtract)', Curve Rule '{rule}', the {len(routes)} curves "
+                  f"picked ({', '.join(sorted(set(routes)))}); 'Line…' + the axis line ({route}); Start and End typed",
+                  SAME if up and axis and axis.get("vector") == want_axis and limits == (-45.0, 45.0) else FAIL,
+                  f"section of {len(s.edges or []) if s else 0} curves; axis {axis}; limits {limits}")
+        self.wait = 300
+
+    def ay_revolve_ok(self):
+        ok = self.ao_ok()
+        self.ao_rule("Inferred Curves")
+        self.ay_compare("revolve", "OK: the top block's surface cut to the spline, curved across",
+                        f"OK {'clicked' if ok else 'unavailable'}")
+        self.key("Home")
+        self.key("Ctrl+F")
+        self.wait = 1000
+
+    # ------------------------------------------------------------- the cavity, the posts, the blends
+    def ay_cavity(self):
+        (p, d) = AY_CAVITY
+        self.ay_primitive("Block", "Origin and Edge Lengths", (("length", d[0]), ("width", d[1]), ("height", d[2])),
+                          "Subtract", "Block 70 x 50 x 30 subtracted: the cavity", p, "cavity")
+        self.wait = 400
+
+    def ay_posts(self):
+        for k, p in enumerate(AY_POSTS):
+            self.ay_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", AY_POST[0]),
+                                                                         ("height", AY_POST[1])), "Unite",
+                              f"Cylinder Ø20 x 15 at the cavity's corner ({p[0]:g}, {p[1]:g}), Unite", p,
+                              f"post{k + 1}")
+        self.wait = 400
+
+    def ay_blend(self, edges_of):
+        tip = self.body().Tip
+        want = edges_of(tip.Shape)
+        subs = [f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, 1) if any(e.isSame(w) for w in want)]
+        self.select_subs(tip, subs)
+        self._ay_edges = subs
+        b, self._ay_where = self.click_ribbon("Edge Blend")
+        self.wait = 1500
+
+    def ay_blend_dialog(self, radius, label, stage):
+        self.wait_dialog("ay_blend_dialog")
+        field = self.set_quantity("radius", radius)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        self.ay_compare(stage, label, f"{len(self._ay_edges)} edges selected + ribbon '{self._ay_where} > Edge "
+                        f"Blend', '{field}' = {radius} mm, MB2 = OK")
+        self.wait = 400
+
+    def ay_outer(self):
+        self.ay_blend(self.ay_outer_edges)
+
+    def ay_outer_dialog(self):
+        self.ay_blend_dialog(AY_R_OUT, "Edge Blend R10: the outer edges (the top block's corners)", "outer")
+
+    def ay_inner(self):
+        self.ay_blend(self.ay_inner_edges)
+
+    def ay_inner_dialog(self):
+        self.ay_blend_dialog(AY_R_IN, "Edge Blend R5: the inner edges (the corner posts' tops)", "inner")
+
+    def ay_check(self):
+        self.ay_compare("inner", "The die cavity", "compared with the book's dimensions built by the Part API")
+        outcome, how, detail, path = self.save_ctrl_s("Die_cavity.FCStd")
+        self.step("Save the part", how, outcome, detail)
+        self.wait = 300
+
+    def ay_fit(self):
+        self.fit()
+
+    def ay_show(self):
+        self.show("AY_die_cavity")
+
+
+# ================================================================== AV: Rocker Arm (exercise 4.10.1)
+# The book (p. 100) gives the rocker arm only as a drawing, inches; its views are small and rotated, and this is
+# their reading. The pivot at the origin: a boss Ø1.00 x 1.00 along ZC, Ø0.38 through with a 0.75 x 82° countersink.
+# A bar 0.31 wide (XC) from the pivot up to 2.50, 0.75 thick (ZC). The arm, 0.38 thick: a band between R1.50 and
+# R2.50 about the pivot from 90° to 180°, its end rounded R0.50; a slot 0.50 wide on R2.00 from 105° (75° from the
+# horizontal) to 180°, its ends R0.25. A boss Ø1.00 along XC on top of the bar (its centre in line with the top
+# surface, 2.50 up), from 0.12 behind the bar to its front face, Ø0.44 through with a Ø0.75 x 0.25 counterbore.
+AV_ARM_T, AV_BAR = 0.38, (0.31, 2.50, 0.75)
+AV_R_IN, AV_R_OUT, AV_R_SLOT, AV_SLOT_W, AV_SLOT_A0 = 1.50, 2.50, 2.00, 0.50, 105.0
+AV_HUB = (1.00, 1.00)
+AV_TOP = ((-0.12, 2.50, AV_BAR[2] / 2), 1.00, 0.12 + AV_BAR[0])   # start, diameter, length along XC
+AV_PIVOT_HOLE, AV_CSINK = 0.38, (0.75, 82.0)
+AV_TOP_HOLE, AV_CBORE = 0.44, (0.75, 0.25)
+
+
+def av_arm_curves():
+    """The arm's two loops as (kind, centre, radius, start°, end°) arcs (anticlockwise) and ('line', p, q)."""
+    rm = (AV_R_IN + AV_R_OUT) / 2
+    a0 = math.radians(AV_SLOT_A0)
+    w = AV_SLOT_W / 2
+    cap = (AV_R_SLOT * math.cos(a0), AV_R_SLOT * math.sin(a0))
+    outline = [("arc", (0, 0), AV_R_OUT, 90, 180), ("arc", (-rm, 0.0), (AV_R_OUT - AV_R_IN) / 2, 180, 360),
+               ("arc", (0, 0), AV_R_IN, 90, 180), ("line", (0, AV_R_IN), (0, AV_R_OUT))]
+    slot = [("arc", (0, 0), AV_R_SLOT + w, AV_SLOT_A0, 180), ("arc", (-AV_R_SLOT, 0), w, 180, 360),
+            ("arc", (0, 0), AV_R_SLOT - w, AV_SLOT_A0, 180),
+            ("arc", cap, w, AV_SLOT_A0 - 180, AV_SLOT_A0)]
+    return outline, slot
+
+
+def av_face(curves):
+    import Part
+    edges = []
+    for c in curves:
+        if c[0] == "line":
+            edges.append(Part.LineSegment(App.Vector(c[1][0] * IN, c[1][1] * IN, 0),
+                                          App.Vector(c[2][0] * IN, c[2][1] * IN, 0)).toShape())
+        else:
+            _k, ctr, r, a0, a1 = c
+            circ = Part.Circle(App.Vector(ctr[0] * IN, ctr[1] * IN, 0), App.Vector(0, 0, 1), r * IN)
+            edges.append(Part.ArcOfCircle(circ, math.radians(a0), math.radians(a1)).toShape())
+    return Part.Wire(Part.__sortEdges__(edges))
+
+
+def av_stages():
+    import Part
+    outline, slot = av_arm_curves()
+    arm = Part.Face([av_face(outline), av_face(slot)], "Part::FaceMakerBullseye").extrude(
+        App.Vector(0, 0, AV_ARM_T * IN))
+    s = {"arm": arm}
+    s["bar"] = arm.fuse(Part.makeBox(*[c * IN for c in AV_BAR])).removeSplitter()
+    s["hub"] = s["bar"].fuse(Part.makeCylinder(AV_HUB[0] / 2 * IN, AV_HUB[1] * IN)).removeSplitter()
+    (p, d, length) = AV_TOP
+    s["top"] = s["hub"].fuse(Part.makeCylinder(d / 2 * IN, length * IN, _v(p), App.Vector(1, 0, 0))).removeSplitter()
+    # the pivot hole with its countersink (from the boss's top face, z = 1.00)
+    r = AV_PIVOT_HOLE / 2 * IN
+    cs_r = AV_CSINK[0] / 2 * IN
+    cs_h = (cs_r - r) / math.tan(math.radians(AV_CSINK[1] / 2))
+    pivot = Part.makeCylinder(r, AV_HUB[1] * IN).fuse(
+        Part.makeCone(r, cs_r, cs_h, App.Vector(0, 0, AV_HUB[1] * IN - cs_h)))
+    s["pivot hole"] = s["top"].cut(pivot).removeSplitter()
+    # the top hole with its counterbore (from the boss's back face, x = -0.12)
+    x = App.Vector(1, 0, 0)
+    top_hole = Part.makeCylinder(AV_TOP_HOLE / 2 * IN, length * IN, _v(p), x).fuse(
+        Part.makeCylinder(AV_CBORE[0] / 2 * IN, AV_CBORE[1] * IN, _v(p), x))
+    s["final"] = s["pivot hole"].cut(top_hole).removeSplitter()
+    return s
+
+
+class MstRockerArmTutorials:
+    """Mixin for tutorial.Replay: tutorial AV."""
+
+    def AV_STEPS(self):
+        return [self.p_modeling, self.av_new, self.av_save, self.av_plane, self.av_arm, self.av_finish,
+                self.av_extrude, self.av_extrude_section, self.av_bar, self.av_hub, self.av_top, self.av_pivot,
+                self.av_pivot_point, self.av_pivot_finish, self.av_pivot_dialog, self.av_top_hole,
+                self.av_top_hole_point, self.av_top_hole_finish, self.av_top_hole_dialog, self.av_check, self.av_fit,
+                self.av_show]
+
+    # ------------------------------------------------------------- helpers
+    def fs_arc(self, sk, c, r, a0, a1):
+        """Arc by centre (A): the centre typed in the fields beside the pointer, then the start (its radius and
+        angle as the fields offer them), then the end (the sweep). Clicks where no field shows. Returns how."""
+        from . import sketch_ui
+        from .tutorial import qtest
+        view = self.nav().widget
+        at = lambda deg, rr=r: (c[0] + rr * math.cos(math.radians(deg)),   # noqa: E731
+                                c[1] + rr * math.sin(math.radians(deg)))
+        self.key("A")
+        QtWidgets.QApplication.processEvents()
+        how = []
+        near = self.screen_point(sk, c[0] + r * 0.2, c[1] + r * 0.3)
+        self.send(QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(150)
+        fields = sketch_ui.xy_fields(sk, view, near)
+        if fields:
+            for w, v in zip(fields, c):
+                self.fs_type(w, v)
+            how.append("centre typed")
+        else:
+            self.mb1_click(self.screen_point(sk, *c))
+            how.append("centre clicked")
+        start = self.screen_point(sk, *at(a0))
+        self.send(QtCore.QEvent.MouseMove, start, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(150)
+        second = sketch_ui.on_view_fields(view)[:2]
+        shown = [sketch_ui.field_value(w) for w in second]
+        self.info.setdefault("arc start fields", []).append(shown)
+        if len(second) == 2:
+            length = min(second, key=lambda w: abs(sketch_ui.field_value(w) - r))
+            angle = next(w for w in second if w is not length)
+            self.fs_type(length, r)
+            self.fs_type(angle, a0)
+            how.append("start typed")
+        else:
+            self.mb1_click(start)
+            how.append("start clicked")
+        for k in range(1, 9):
+            self.send(QtCore.QEvent.MouseMove, self.screen_point(sk, *at(a0 + (a1 - a0) * k / 9)), Qt.NoButton,
+                      Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+        end = self.screen_point(sk, *at(a1))
+        self.send(QtCore.QEvent.MouseMove, end, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(150)
+        third = sketch_ui.on_view_fields(view)
+        self.info.setdefault("arc end fields", []).append([sketch_ui.field_value(w) for w in third])
+        n0 = len(sk.Geometry)
+        if third:
+            sweep = min(third, key=lambda w: abs(sketch_ui.field_value(w) - (a1 - a0)))
+            self.fs_type(sweep, a1 - a0)
+            how.append("sweep typed")
+        if len(sk.Geometry) == n0 and not third:
+            self.mb1_click(end)
+            how.append("end clicked")
+        self.mb2_click(self.screen_point(sk, -3.5 * IN, 3.5 * IN))
+        made = []
+        for g in range(n0, len(sk.Geometry)):
+            geo = sk.Geometry[g]
+            if "Arc" in geo.TypeId:
+                made.append((round(geo.Center.x, 3), round(geo.Center.y, 3), round(geo.Radius, 3),
+                             round(math.degrees(geo.FirstParameter), 2), round(math.degrees(geo.LastParameter), 2)))
+        self.info.setdefault("arcs made", []).append({"want": (round(c[0], 3), round(c[1], 3), round(r, 3), a0, a1),
+                                                      "made": made, "new": len(sk.Geometry) - n0})
+        return ", ".join(how)
+
+    def av_body_shape(self):
+        b = self.body()
+        return b.Shape if b is not None else None
+
+    def av_compare(self, stage, label, how):
+        from . import geomcheck
+        try:
+            ok, detail = geomcheck.compare(self.av_body_shape(), self._av[stage])
+        except Exception as e:
+            ok, detail = False, f"no comparison: {e}"
+        self.step(label, how, SAME if ok else FAIL, detail)
+        return ok
+
+    def av_primitive(self, command, kind, dims, label, typed, stage, axis="ZC"):
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon(command)
+        qtest().qWait(900)
+
+        def check():
+            from . import geomcheck
+            try:
+                return geomcheck.compare(self.av_body_shape(), self._av[stage])
+            except Exception as e:
+                return False, f"no comparison: {e}"
+        names = ", ".join(f"{n} {v:g}" for n, v in dims)
+        self.ap_dialog(command, kind, [(n, v * IN) for n, v in dims], "Unite", label, f"{names} (in) typed in mm",
+                       0, typed=tuple(c * IN for c in typed), axis=axis, check=check)
+
+    # ------------------------------------------------------------- the arm
+    def av_new(self):
+        self.tutorial = "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)"
+        self._av = av_stages()
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def av_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file (Rocker_arm)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}")
+        self.units_step()
+        outcome, how, detail, path = self.save_ctrl_s("Rocker_arm.FCStd")
+        self.step("Save it as Rocker_arm", how, outcome, detail)
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def av_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.wait_for("av: sketch in edit", lambda: self.edited_sketch() is not None)
+        self._av_sk = self.edited_sketch()
+        if self._av_sk is None:
+            self.step("Sketch the arm on the XC-YC plane", f"ribbon '{self._fs_where} > Sketch'", FAIL, "no sketch")
+            raise RuntimeError("no sketch; tutorial AV cannot continue")
+        self._av_plane = picked
+        self.wait = 800
+
+    def av_arm(self):
+        import Part
+        sk = self._av_sk
+        self.frame_sketch(sk, -1.25 * IN, 1.25 * IN, 4 * IN)
+        outline, slot = av_arm_curves()
+        hows = []
+        for c in outline + slot:
+            if c[0] == "line":
+                t, k = self.fs_points(sk, "L", [(c[1][0] * IN, c[1][1] * IN), (c[2][0] * IN, c[2][1] * IN)])
+                hows.append(f"line {t} typed")
+                self.frame_sketch(sk, -1.25 * IN, 1.25 * IN, 4 * IN)
+            else:
+                _k, ctr, r, a0, a1 = c
+                hows.append(self.fs_arc(sk, (ctr[0] * IN, ctr[1] * IN), r * IN, a0, a1))
+        App.ActiveDocument.recompute()
+        try:
+            want = Part.Face([av_face(outline), av_face(slot)], "Part::FaceMakerBullseye")
+            # the curves themselves (the sketch's shape is rebuilt when the sketch is finished)
+            edges = [g.toShape() for i, g in enumerate(sk.Geometry) if "Point" not in g.TypeId
+                     and not sk.getConstruction(i)]
+            ends = [v.Point for e in edges for v in e.Vertexes]
+            gap = max(min((p - q).Length for j, q in enumerate(ends) if j != i) for i, p in enumerate(ends))
+            wires = [Part.Wire(g) for g in Part.sortEdges(edges)]
+            closed = len(wires) == 2 and all(w.isClosed() for w in wires)
+            area = Part.makeFace(wires, "Part::FaceMakerBullseye").Area if closed else 0.0
+            ok = closed and abs(area - want.Area) < 1e-6 * want.Area
+            self.info["AV arm largest end gap mm"] = gap
+        except Exception as e:
+            closed, area, ok, want = False, 0.0, False, None
+            self.info["AV arm check"] = str(e)
+        self.info["AV arm curves"] = hows
+        self.step("Sketch the arm: the band R1.50 to R2.50 from 90° to 180° with its R0.50 end, and the slot on R2.00 "
+                  "from 105° (75°) to 180°", f"ribbon '{self._fs_where} > Sketch' on '{self._av_plane}'; arcs (A) "
+                  "and a line (L), every point typed in the fields beside the pointer",
+                  SAME if ok else FAIL, f"{len(sk.Shape.Edges)} curves in {len(sk.Shape.Wires)} loops, closed "
+                  f"{closed}; area {area:.1f} mm², the drawing's {want.Area if want else 0:.1f}; how: "
+                  f"{'; '.join(sorted(set(hows)))}")
+        self.wait = 300
+
+    def av_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def av_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("Ctrl+F")
+        self.key("Home")
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def av_extrude_section(self):
+        how, ok = self.fs_extrude(self._av_sk, AV_ARM_T * IN, "None")
+        self.av_compare("arm", "Extrude the arm 0.38 along ZC", f"ribbon '{self._fs_where} > Extrude', {how} "
+                        f"{'clicked' if ok else 'unavailable'}")
+        self.wait = 400
+
+    # ------------------------------------------------------------- the bar and the bosses
+    def av_bar(self):
+        self.av_primitive("Block", "Origin and Edge Lengths", (("length", AV_BAR[0]), ("width", AV_BAR[1]),
+                                                               ("height", AV_BAR[2])),
+                          "Block 0.31 x 2.50 x 0.75 at the pivot: the bar, Unite", (0, 0, 0), "bar")
+        self.wait = 400
+
+    def av_hub(self):
+        self.av_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", AV_HUB[0]), ("height", AV_HUB[1])),
+                          "Cylinder Ø1.00 x 1.00 along ZC at the pivot, Unite", (0, 0, 0), "hub")
+        self.wait = 400
+
+    def av_top(self):
+        (p, d, length) = AV_TOP
+        self.av_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", d), ("height", length)),
+                          "Cylinder Ø1.00 along XC on top of the bar, from 0.12 behind it, Unite", p, "top", axis="XC")
+        self.key("Ctrl+F")
+        self.wait = 800
+
+    # ------------------------------------------------------------- the holes
+    def av_hole_start(self, test):
+        tip = self.body().Tip
+        face = self.face_of(tip, test)
+        self.select_sub(tip, face)
+        self._av_face = face
+        b, self._av_where = self.click_ribbon("Hole")
+        self.wait = 1500
+
+    def av_hole_point(self, global_p, label):
+        sk = self.edited_sketch()
+        if sk is None:
+            self.step(label, f"{self._av_face} + ribbon '{self._av_where} > Hole'", FAIL, "no hole sketch")
+            raise RuntimeError("no hole sketch; tutorial AV cannot continue")
+        local = sk.getGlobalPlacement().inverse().multVec(App.Vector(*global_p))
+        self.frame_sketch(sk, local.x, local.y, 3 * IN)
+        b, where = self.click_ribbon("Point", tab="Sketch")
+        typed, clicked = self.an_type_point(sk, (local.x, local.y))
+        self.mb2_click(self.screen_point(sk, local.x - 1.5 * IN, local.y + 1.5 * IN))
+        App.ActiveDocument.recompute()
+        pts = [sk.getGlobalPlacement().multVec(sk.getPoint(g, 1)) for g, geo in enumerate(sk.Geometry)
+               if "Point" in geo.TypeId]
+        on = any((q - App.Vector(*global_p)).Length < 1e-6 for q in pts)
+        self.step(label, f"{self._av_face} selected + ribbon '{self._av_where} > Hole'; ribbon '{where} > Point', "
+                  f"the point {'typed' if typed and not clicked else 'clicked'} in the sketch on the face",
+                  SAME if on else FAIL, f"{len(pts)} point(s); at the centre {on}")
+        self.wait = 300
+
+    def av_hole_dialog(self, diameter, cut, cut_values, label, stage):
+        self.wait_dialog("av_hole_dialog")
+        self.info.setdefault("AV hole widgets", []).append(self.task_widgets())
+        dia = self.set_quantity("Diameter", diameter * IN)
+        depth = self.set_combo("DepthType", "Through all")
+        kind = self.set_combo("HoleCutType", cut)
+        cut_fields = []
+        for name, v in cut_values:
+            cut_fields.append(f"'{self.set_quantity(name, v)}' = {v:g}")
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        self.av_compare(stage, label, f"'{dia}' = {diameter * IN:g} mm, Depth '{depth}', '{kind}', "
+                        f"{', '.join(cut_fields)}, MB2 = OK")
+        self.wait = 400
+
+    def av_pivot(self):
+        self.av_hole_start(lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-9
+                           and abs(f.CenterOfMass.z - AV_HUB[1] * IN) < 1e-6)
+
+    def av_pivot_point(self):
+        self.av_hole_point((0, 0, AV_HUB[1] * IN), "Hole on the pivot boss's top face, at its centre")
+
+    def av_pivot_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def av_pivot_dialog(self):
+        self.av_hole_dialog(AV_PIVOT_HOLE, "Countersink", (("HoleCutDiameter", AV_CSINK[0] * IN),
+                                                          ("HoleCutCountersinkAngle", AV_CSINK[1])),
+                            "Hole Ø0.38 through, countersink 0.75 x 82°", "pivot hole")
+
+    def av_top_hole(self):
+        (p, _d, _l) = AV_TOP
+        self.av_hole_start(lambda f: abs(f.normalAt(0, 0).x + 1) < 1e-9 and abs(f.CenterOfMass.x - p[0] * IN) < 1e-6)
+
+    def av_top_hole_point(self):
+        (p, _d, _l) = AV_TOP
+        self.av_hole_point(tuple(c * IN for c in p), "Hole on the top boss's back face, at its centre")
+
+    def av_top_hole_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1800
+
+    def av_top_hole_dialog(self):
+        self.av_hole_dialog(AV_TOP_HOLE, "Counterbore", (("HoleCutDiameter", AV_CBORE[0] * IN),
+                                                        ("HoleCutDepth", AV_CBORE[1] * IN)),
+                            "Hole Ø0.44 through, counterbore Ø0.75 x 0.25", "final")
+
+    def av_check(self):
+        self.av_compare("final", "The rocker arm", "compared with the drawing's dimensions built by the Part API")
+        outcome, how, detail, path = self.save_ctrl_s("Rocker_arm.FCStd")
+        self.step("Save the part", how, outcome, detail)
+        self.wait = 300
+
+    def av_fit(self):
+        self.fit()
+
+    def av_show(self):
+        self.show("AV_rocker_arm")
