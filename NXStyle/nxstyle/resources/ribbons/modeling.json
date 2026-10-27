@@ -34,7 +34,10 @@
           {"cmd": "PartDesign_Point", "label": "Point"},
           {"cmd": "PartDesign_CoordinateSystem", "label": "Datum CSYS"}
         ]},
-        {"cmd": "PartDesign_CompPrimitiveAdditive", "label": "Block / Cylinder"},
+        {"cmd": "NXStyle_Block", "label": "Block"},
+        {"cmd": "NXStyle_Cylinder", "label": "Cylinder"},
+        {"cmd": "NXStyle_Cone", "label": "Cone"},
+        {"cmd": "NXStyle_Sphere", "label": "Sphere"},
         {"cmd": "PartDesign_AdditiveLoft", "label": "Through Curves"},
         {"cmd": "PartDesign_AdditivePipe", "label": "Sweep along Guide"},
         {"cmd": "PartDesign_AdditiveHelix", "label": "Helix Feature"},
