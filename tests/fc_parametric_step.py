@@ -21,7 +21,7 @@ import FreeCAD as App  # noqa: E402
 import Part  # noqa: E402
 import Sketcher  # noqa: E402
 
-from nxstyle import iso10303, p21, parametric_fc  # noqa: E402
+from nxstyle import iso10303, p21, parametric, parametric_fc  # noqa: E402
 
 OUT = os.environ.get("NXSTYLE_OUT") or tempfile.mkdtemp()
 if os.path.exists(os.path.join(OUT, "results.txt")):
@@ -236,11 +236,43 @@ check(body.Shape.isValid() and body.Shape.Volume > 0, "plate builds")
 # not Length or Thick: in FreeCAD 1.1.4 its own topological naming loses the filleted edge when the pad grows
 # (the original document breaks as well), which is not what this test is about
 roundtrip("plate", doc, body, sh, [("HoleR", "4 mm"), ("Width", "60 mm")])
+def part112_and_curves():
+    """A Part 112 sketch from another system rebuilt as a FreeCAD sketch; ellipse and spline geometry; the
+    plate's sketches written as Part 112 commands too and found to match."""
+    sys.path.insert(0, HERE)
+    import test_iso10303
+    path = os.path.join(OUT, "part112.step")
+    p21.write(test_iso10303.part112_file(), path)
+    doc = App.newDocument("Part112")
+    made, text = parametric_fc.import_file(path, doc)
+    print(text)
+    sk = [o for o in doc.Objects if o.TypeId == "Sketcher::SketchObject"]
+    ok = len(sk) == 1 and len(sk[0].Geometry) == 19 and sk[0].Shape.isValid()
+    check(ok, f"part112: a Part 112 sketch becomes a FreeCAD sketch ({len(sk[0].Geometry) if sk else 0} curves)")
+    model = {"name": "Curves", "parameters": [], "features": [], "sketches": [
+        {"name": "Curves", "placement": {"origin": [0, 0, 0], "axis": [0, 0, 1], "x": [1, 0, 0]}, "constraints": [],
+         "geometry": [{"type": "ellipse", "c": [0, 0], "major": [20, 0], "r2": 8},
+                      {"type": "spline", "points": [[0, 0], [10, 5], [20, -5], [30, 0]], "closed": False}]}]}
+    doc2 = App.newDocument("Curves")
+    parametric_fc.model_to_document(model, doc2)
+    s2 = [o for o in doc2.Objects if o.TypeId == "Sketcher::SketchObject"][0]
+    kinds = sorted(type(g).__name__ for g in s2.Geometry)
+    check(kinds == ["BSplineCurve", "Ellipse"] and abs(s2.Geometry[0].MajorRadius - 20) < 1e-9,
+          f"ellipse and spline geometry built: {kinds}")
+    doc3, body, _ = plate()
+    path = os.path.join(OUT, "plate112.step")
+    report = parametric_fc.export(body, path, sketch_commands=True)
+    _, notes = parametric.from_step(p21.read(path))
+    check("Base: its ISO 10303-112 commands make 4 of its 4 curves" in notes and "0 error(s)" in report,
+          f"plate: sketches also written as Part 112 commands, which reproduce them: {notes}")
+
+
 doc, body, sh = cup()
 check(body.Shape.isValid() and body.Shape.Volume > 0, "cup builds")
 roundtrip("cup", doc, body, sh, [("Wall", "3 mm")])
 doc, fuse, sh = csg()
 roundtrip("csg", doc, fuse, sh, [("CylR", "3 mm")])
+part112_and_curves()
 print(f"{len(failures)} failure(s); files in {OUT}")
 if failures:
     sys.exit(1)

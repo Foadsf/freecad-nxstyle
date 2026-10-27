@@ -34,11 +34,11 @@ image::tutorial-AL-01-export.png[What went into the STEP file, by part of ISO 10
 === 3. Check STEP
 
 *PMI › Check STEP*, the same file, OK.
-It reads the file as ISO 10303-21 and checks every instance against the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112: 0 errors.
+It reads the file as ISO 10303-21, names its application protocol (AP242), checks every instance against the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112, and lists the product structure (here one part): 0 errors.
 
 The warnings are not mistakes in the file.
 Each untyped parameter value is written the way ISO 10303-108 Cor.1 writes it, where ISO 10303-21 asks for a typed one, and two rules of ISO 10303-108 contradict each other for every constrained sketch (see xref:parametric-step.adoc#_where_iso_10303_contradicts_itself[Where ISO 10303 contradicts itself]).
-The notes count the entities of the application protocol (the product structure) that the checker does not check.
+The notes count the entities of the application protocol itself (the product structure, the B-rep shape representation): tick *Download the AP's schema if it is missing* and they are checked against AP242's own long form too, with the same result, no error (see xref:parametric-step.adoc#_application_protocols[Application protocols]).
 
 image::tutorial-AL-02-check.png[Check STEP: no errors, the warnings and what they mean]
 
