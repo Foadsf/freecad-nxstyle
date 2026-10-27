@@ -18,6 +18,8 @@ The commands are on the *PLM* tab, in the *Manufacturing* group:
 | *Manufacturing Connection* | The Carbon server and the API key.
 |===
 
+xref:tutorials/an.adoc[Tutorial AN] goes through it with tutorial V's guide bush.
+
 == Setting it up
 
 You need a Carbon to connect to, and an API key from it.
@@ -58,9 +60,9 @@ A part that has no release is not sent: manufacturing builds released revisions.
 | NX-Style | Carbon
 
 | Part number, revision (Strata release) | An item of type Part, with that part number as its *Part ID* and that revision. A part number Carbon does not know yet is created; a new revision of one it knows is created from the revision below (*Create revision*), with its method copied.
-| Release description | The item's name
+| The part's name (its first release's description) and the release's description | The item's name and description (a later release's description says what changed, so it is not the name)
 | STEP AP242 of the release | The item's CAD model (Carbon renders its 3D view and thumbnail from it)
-| Native `.FCStd`, drawing PDFs, `pmi/` tables, stack-ups, mass properties, the manifest | The item's documents (*Files*), named after their path in the package
+| Native `.FCStd`, drawing PDFs, `pmi/` tables, stack-ups, mass properties, the manifest | The item's documents (*Files*), named after their path in the package; the manifest after the release (`<part number>_<revision>_manifest_<commit>.json`)
 | Assembly components (links to other documents) | The lines of the assembly's make method: each component with its own part number and revision (from its document's release, or its NX attributes), the quantities of the same part added up, link arrays counted; a component with no revision known takes the one Carbon has (the active one)
 | Sub-assemblies | Items with a make method of their own, filled the same way
 | Components Carbon does not know | Created as parts: *Make* when they have components, otherwise the `new_part` defaults (Make, Make to Order, tracked as Inventory, unit EA)
@@ -72,7 +74,7 @@ A part that has no release is not sent: manufacturing builds released revisions.
 * *It deletes nothing.* BOM lines and characteristics someone added in Carbon by hand stay; the review lists them as kept.
 * *It never edits a released make method.* When the assembly's method in Carbon is *Active* and the BOM differs, a new *Draft* version of the method takes the change, the way Carbon's own CAD integrations do. The Active version stays live until manufacturing activates the Draft.
 * *A new revision starts inactive.* Revision B of a part Carbon builds at revision A is created inactive: the shop floor keeps building A until manufacturing releases B in Carbon (activating the item, or with a change notice).
-* *It sends nothing twice.* Publishing the same release again writes only what changed; a model or document with the same name and size is not uploaded again. A second publish of an unchanged release writes nothing.
+* *It sends nothing twice.* The release's manifest goes to Carbon last, named after the release's Strata commit (`PLT-100_B_manifest_3f2a9c1d4e5b.json`). Once Carbon has it, the release is in Carbon: publishing it again uploads nothing, although a package made again differs in time stamps (FreeCAD writes them into the FCStd, the STEP and the PDFs). Without a release, a model or document with the same name and size is not uploaded again, and a changed one is.
 
 == Manufacturing Status
 

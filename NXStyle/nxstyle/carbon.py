@@ -253,14 +253,21 @@ def plan_rows(folder):
 
 
 def step_bom(folder, manifest):
-    """The product structure of the package's STEP (iso10303.bom), or None for a single part."""
+    """The product structure of the package's STEP (iso10303.bom), or None for a single part. FreeCAD's STEP
+    writer wraps a lone solid in a product of its own (the document holding its Body): one component, once,
+    with none below it, is that wrapper, not an assembly."""
     from . import iso10303, p21
     step = next((e["path"] for e in manifest["files"] if e["role"].startswith("model (STEP)")), None)
     if step is None:
         return None
     b = iso10303.bom(p21.read(os.path.join(folder, *step.split("/"))))
     roots = [r for r in b["roots"] if r["children"]]
-    return roots[0] if len(roots) == 1 else None
+    if len(roots) != 1:
+        return None
+    kids = roots[0]["children"]
+    if len(kids) == 1 and kids[0]["quantity"] == 1 and not kids[0]["children"]:
+        return None
+    return roots[0]
 
 
 # ------------------------------------------------------------------ mapping NX-Style onto Carbon
@@ -330,6 +337,7 @@ class Publisher:
         self.actions = []                     # [{"what", "op"}]: written, or to be written
         self.notes = []                       # what was kept or left alone, and why
         self._items = {}
+        self._files = {}
 
     # writes go through here
     def write(self, op, args, what):
@@ -390,11 +398,23 @@ class Publisher:
         return item
 
     # ---- files
-    def attach_model(self, item, path):
+    def files_of(self, item):
+        """{name: size} of the item's documents in Carbon."""
+        if self.planned(item["id"]):
+            return {}
+        if item["id"] not in self._files:
+            rows = (self.c.call("items.getItemFiles", {"itemId": item["id"]}) or {}).get("results") or []
+            self._files[item["id"]] = {f.get("name"): (f.get("metadata") or {}).get("size") for f in rows}
+        return self._files[item["id"]]
+
+    def attach_model(self, item, path, marker=None):
+        """The STEP as the item's CAD model. Not sent again when the item has a model of that name and size,
+        or of that name when the release marker (the release's manifest, sent last) shows this release is
+        in Carbon: a package made again from the same release differs only in time stamps."""
         name, size = os.path.basename(path), os.path.getsize(path)
         if not self.planned(item["id"]) and item.get("modelUploadId"):
             part = self.c.call("items.getPart", {"itemId": item["id"]}) or {}
-            if part.get("modelName") == name and part.get("modelSize") == size:
+            if part.get("modelName") == name and (part.get("modelSize") == size or marker in self.files_of(item)):
                 self.notes.append(f"CAD model {name}: already the item's model")
                 return
         if self.dry_run:
@@ -407,15 +427,14 @@ class Publisher:
         self.write("items.insertModelUpload", {"modelId": up["modelId"], "path": up["path"], "name": name,
                                                "size": size, "itemId": item["id"]}, f"CAD model {name} ({size} bytes)")
 
-    def attach_documents(self, item, files):
-        """files: [(name in Carbon, local path)]. A document with the same name and size is not sent again."""
-        have = {}
-        if not self.planned(item["id"]):
-            for f in (self.c.call("items.getItemFiles", {"itemId": item["id"]}) or {}).get("results") or []:
-                have[f.get("name")] = (f.get("metadata") or {}).get("size")
+    def attach_documents(self, item, files, marker=None):
+        """files: [(name in Carbon, local path)], the release marker last. A document with the same name and
+        size is not sent again, nor one with the same name once the marker shows this release is in Carbon."""
+        have = self.files_of(item)
+        released = marker is not None and marker in have
         for name, path in files:
             size = os.path.getsize(path)
-            if have.get(name) == size:
+            if have.get(name) == size or (released and name in have):
                 self.notes.append(f"document {name}: in Carbon already")
                 continue
             self.actions.append({"what": f"document {name} ({size} bytes)", "op": "items.createItemDocumentUploadUrl"})
@@ -549,29 +568,34 @@ class Publisher:
 
 
 def publish(client, folder, bom=None, dry_run=False, defaults=None, allow_unreleased=False,
-            parts=("model", "documents", "bom", "inspection")):
+            parts=("model", "documents", "bom", "inspection"), name=None):
     """A release package into Carbon. bom: the assembly tree (see Publisher.push_bom; None reads the package
-    STEP's product structure). Returns {"item", "actions", "notes", "dry_run"}."""
+    STEP's product structure). name: the part's name for a new item (default: the release's description,
+    which for a later revision says what changed). Returns {"item", "actions", "notes", "dry_run"}."""
     m = read_package(folder)
     meta = m["package"]
     if not allow_unreleased and meta.get("state") != "Released":
         raise CarbonError(f"{meta.get('part_number')} rev {meta.get('revision')} is {meta.get('state') or 'not released'}: "
                           "only a released part goes to manufacturing (allow_unreleased to send it anyway)")
     identity = {"part_number": meta["part_number"], "revision": meta.get("revision") or "0",
-                "description": meta.get("description") or ""}
+                "description": meta.get("description") or "", "name": name or ""}
     p = Publisher(client, defaults, dry_run)
     item = p.ensure_item(identity)
     files = [(e["path"], os.path.join(folder, *e["path"].split("/"))) for e in m["files"]]
+    from . import package
+    # the manifest, named after the release's commit when Strata gave one: its presence in Carbon says that
+    # this release was published (it is sent last), so a package made again from it is not sent twice
+    commit = (meta.get("commit") or "")[:12]
+    marker = (f"{package.safe_name(identity['part_number'])}_{package.safe_name(identity['revision'])}_manifest"
+              f"{'_' + commit if commit else ''}.json")
     if "model" in parts:
         step = next((path for rel, path in files if rel.lower().endswith((".step", ".stp"))), None)
         if step:
-            p.attach_model(item, step)
+            p.attach_model(item, step, marker if commit else None)
     if "documents" in parts:
         docs = [(rel.replace("/", "_"), path) for rel, path in files if not rel.lower().endswith((".step", ".stp"))]
-        from . import package
-        docs.append((f"{package.safe_name(identity['part_number'])}_{package.safe_name(identity['revision'])}_manifest.json",
-                     os.path.join(folder, package.MANIFEST)))
-        p.attach_documents(item, docs)
+        docs.append((marker, os.path.join(folder, package.MANIFEST)))
+        p.attach_documents(item, docs, marker if commit else None)
     if "bom" in parts:
         tree = bom if bom is not None else step_bom(folder, m)
         if tree:

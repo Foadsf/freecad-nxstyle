@@ -43,6 +43,8 @@ Publish revision B, and revision A again.
 Revision A's package, made after the change, still documents Ø16 H7 (16.000 to 16.018): a package is made from what was released, never from the working copy.
 Revision B's documents F7 (16.016 to 16.034).
 
+xref:tutorials/an.adoc[Tutorial AN] hands revision B to manufacturing, in Carbon.
+
 == The replay
 
 include::partial$generated/tutorial-V.adoc[]

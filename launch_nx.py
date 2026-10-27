@@ -719,7 +719,9 @@ def main(argv: list[str] | None = None) -> int:
                          "AC title block and revision block from the release (runs T and V first), "
                          "AD a laser-cut tray with tabs and slots, AE one Extrude through the command controller: "
                          "None (new body), Unite, Subtract, edit, cancel, undo, reopen, "
-                         "AF Arbor Press Base: a sketch constrained to size, extruded, AG Impeller Lower Casing: a sketch built with Move Curve copies, AH Impeller: tangent arcs by centre and by 3 points, AJ Circular Base: a disc with four slots, AK Holder: a sketch with Quick Trim and Rotate Curve copies)")
+                         "AF Arbor Press Base: a sketch constrained to size, extruded, AG Impeller Lower Casing: a sketch built with Move Curve copies, AH Impeller: tangent arcs by centre and by 3 points, AJ Circular Base: a disc with four slots, AK Holder: a sketch with Quick Trim and Rotate Curve copies, "
+                         "AL design intent through STEP, AM receiving STEP, "
+                         "AN release to manufacturing in Carbon (runs T and V first))")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "

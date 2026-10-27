@@ -280,8 +280,12 @@ class PublishPanel:
                         source_document=os.path.basename(self.doc.FileName or self.doc.Label))
         folder, _, _ = package_ui.publish(self.doc, os.path.join(tmp, "package"), meta,
                                           {"step", "native", "pdf", "pmi", "analysis"}, released, make_zip=False)
+        # the part's name is what its first release was described as; a later release's says what changed
+        first = [x for x in self.releases if x.part_number == meta["part_number"]]
+        self._name = (first[0].description if first else "") or meta.get("description") or ""
         asm = assembly_of(self.doc)
-        bom = dict(bom_tree(asm), id=meta["part_number"]) if asm is not None else None
+        # a part has no BOM: an empty one, so the STEP's product structure is not read either
+        bom = dict(bom_tree(asm), id=meta["part_number"]) if asm is not None else {"children": []}
         self._built = (key, folder, bom, tmp)
         return folder, bom
 
@@ -292,7 +296,7 @@ class PublishPanel:
             c = client()
             folder, bom = self._package()
             r = carbon.publish(c, folder, bom=bom, dry_run=dry_run, defaults=settings().get("new_part"),
-                               allow_unreleased=self.allow_unreleased, parts=parts)
+                               allow_unreleased=self.allow_unreleased, parts=parts, name=getattr(self, "_name", ""))
             return r, carbon.publish_text(r)
         finally:
             QtWidgets.QApplication.restoreOverrideCursor()

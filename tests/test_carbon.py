@@ -36,13 +36,13 @@ def step_assembly():
     return STEP.format("".join(rows))
 
 
-def make_package(root, pn="PLT-100", rev="B", state="Released", step=None, plan=True):
+def make_package(root, pn="PLT-100", rev="B", state="Released", step=None, plan=True, commit="", native=b"PK native"):
     folder = os.path.join(root, f"{pn}_{rev}")
     os.makedirs(os.path.join(folder, "model"), exist_ok=True)
     with open(os.path.join(folder, "model", f"{pn}_{rev}.step"), "w", encoding="latin-1") as f:
         f.write(step or STEP.format("#1=PRODUCT('PLT-100','Plate','',());"))
     with open(os.path.join(folder, "model", f"{pn}_{rev}.FCStd"), "wb") as f:
-        f.write(b"PK native")
+        f.write(native)
     if plan:
         os.makedirs(os.path.join(folder, "pmi"), exist_ok=True)
         anns = [{"id": "Bore", "kind": "dimension", "dim_type": "diameter", "nominal": 10.0, "fit": "H7",
@@ -55,7 +55,10 @@ def make_package(root, pn="PLT-100", rev="B", state="Released", step=None, plan=
             rows, ["number", "requirement", "kind", "segment", "nominal", "lower", "upper", "tolerance_from",
                    "upper_at_departure", "uncertainty", "tur", "accept_lower", "accept_upper", "datums", "feature",
                    "method", "note"]))
-    package.write_manifest(folder, {"part_number": pn, "revision": rev, "state": state, "description": "Guide plate"})
+    meta = {"part_number": pn, "revision": rev, "state": state, "description": "Guide plate"}
+    if commit:
+        meta["commit"] = commit
+    package.write_manifest(folder, meta)
     return folder
 
 
@@ -209,6 +212,12 @@ class Publish(unittest.TestCase):
         up = next(b for p, b in self.co.uploads if p.endswith(".step"))
         self.assertEqual(len(up), step["bytes"])
 
+    def test_the_item_takes_the_part_name_not_the_change(self):
+        folder = make_package(self.tmp.name)
+        carbon.publish(self.c, folder, name="Guide bush")
+        item = next(iter(self.co.items.values()))
+        self.assertEqual((item["name"], item["description"]), ("Guide bush", "Guide plate"))
+
     def test_publishing_again_writes_nothing(self):
         folder = make_package(self.tmp.name)
         carbon.publish(self.c, folder)
@@ -217,6 +226,22 @@ class Publish(unittest.TestCase):
         self.assertEqual(r["actions"], [])
         self.assertEqual(len(self.srv.writes()), before)
         self.assertIn("Nothing to write", carbon.publish_text(r))
+
+    def test_the_same_release_made_again_is_not_sent_twice(self):
+        """A package made again from the same Strata release differs in time stamps (FreeCAD's PDF, FCStd and
+        STEP writers); the release's commit, in the manifest's name, says it is the same release."""
+        carbon.publish(self.c, make_package(self.tmp.name, commit="3f2a9c1d4e5b6a7f"))
+        names = {p.rsplit("/", 1)[1] for p in self.co.storage}
+        self.assertIn("PLT-100_B_manifest_3f2a9c1d4e5b.json", names)
+        before = len(self.co.uploads)
+        r = carbon.publish(self.c, make_package(self.tmp.name, commit="3f2a9c1d4e5b6a7f", native=b"PK native, saved again"))
+        self.assertEqual((r["actions"], len(self.co.uploads)), ([], before))
+        # without a release (allow_unreleased), a changed file is a change: it is sent
+        carbon.publish(self.c, make_package(self.tmp.name, pn="DRAFT-1", state="In work"), allow_unreleased=True)
+        r = carbon.publish(self.c, make_package(self.tmp.name, pn="DRAFT-1", state="In work", native=b"PK changed"),
+                           allow_unreleased=True)
+        self.assertEqual([a["what"].split(" (")[0] for a in r["actions"]],
+                         ["document model_DRAFT-1_B.FCStd", "document DRAFT-1_B_manifest.json"])
 
     def test_review_writes_nothing_and_lists_the_same_writes(self):
         folder = make_package(self.tmp.name, step=step_assembly())
@@ -259,6 +284,20 @@ class Publish(unittest.TestCase):
         self.assertEqual(self.lines(by_pn["ASM"]["id"])[1], {"SUB": 2})
         self.assertEqual(self.lines(by_pn["SUB"]["id"])[1], {"BOLT": 3})
         self.assertEqual(by_pn["SUB"]["replenishmentSystem"], "Make")    # it has components
+
+    def test_a_single_part_step_is_not_an_assembly(self):
+        """FreeCAD writes a lone body as a product inside its document's product: no BOM, no part 'Body'."""
+        rows = ["#1=PRODUCT('GuideBush','GuideBush','',());", "#2=PRODUCT('Body','Body','',());",
+                "#11=PRODUCT_DEFINITION_FORMATION('','',#1);", "#12=PRODUCT_DEFINITION_FORMATION('','',#2);",
+                "#21=PRODUCT_DEFINITION('design','',#11,#9);", "#22=PRODUCT_DEFINITION('design','',#12,#9);",
+                "#9=PRODUCT_DEFINITION_CONTEXT('','','');", "#31=NEXT_ASSEMBLY_USAGE_OCCURRENCE('1','','',#21,#22,$);"]
+        folder = make_package(self.tmp.name, step=STEP.format("".join(rows)), plan=False)
+        carbon.publish(self.c, folder)
+        self.assertEqual([i["readableId"] for i in self.co.items.values()], ["PLT-100"])
+        self.assertEqual(self.co.lines, {})
+        self.assertIsNotNone(carbon.step_bom(make_package(self.tmp.name, pn="ASM", rev="A", step=step_assembly(),
+                                                          plan=False), json.load(open(os.path.join(
+                                                              self.tmp.name, "ASM_A", "manifest.json")))))
 
     def test_bom_change_on_an_active_method_goes_to_a_new_draft(self):
         folder = make_package(self.tmp.name, pn="ASM", rev="A", step=step_assembly(), plan=False)
