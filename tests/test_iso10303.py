@@ -775,6 +775,12 @@ class ExpressRules(unittest.TestCase):
         self.assertEqual(r.violated, 0)
         self.assertIn("circle.wr1", r.unevaluated)
 
+    def test_inverse_cardinality(self):
+        d = express.Dictionary.from_text(TINY.replace("owners : SET [0:?] OF holder", "owners : SET [1:?] OF holder"))
+        f = self.file(["#1=CIRCLE('c',5.);", "#2=CIRCLE('d',5.);", "#3=HOLDER((#1),0,(),.ROUND.);"])
+        errors = [i for i in express_eval.rules(f, d).issues if i.level == "error" and "inverse" in i.message]
+        self.assertEqual([i.id for i in errors], [2])                       # #2 is in no holder
+
     def test_complex_constructor_and_group(self):
         ev = express_eval.Evaluator(self.file([]), self.d())
         s = express_eval._Scope()

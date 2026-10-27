@@ -318,23 +318,33 @@ class _Writer:
         return self.add("AXIS1_PLACEMENT", "", self.point(origin), self.direction(axis))
 
     def contexts(self):
+        """The 3D context (unless a merged B-rep brings one); the 2D one is made when a sketch needs it, since
+        a context no representation uses breaks representation_context's inverse (43, SET [1:?])."""
+        self._units = None
         if self.ctx3 is None:
             mm = self.cx(("LENGTH_UNIT", []), ("NAMED_UNIT", [D]), ("SI_UNIT", [E("MILLI"), E("METRE")]))
             rad = self.cx(("NAMED_UNIT", [D]), ("PLANE_ANGLE_UNIT", []), ("SI_UNIT", [U, E("RADIAN")]))
             sr = self.cx(("NAMED_UNIT", [D]), ("SI_UNIT", [U, E("STERADIAN")]), ("SOLID_ANGLE_UNIT", []))
             unc = self.add("UNCERTAINTY_MEASURE_WITH_UNIT", T("LENGTH_MEASURE", 1e-7), mm, "distance_accuracy_value",
                            "confusion accuracy")
-            for dim in (3, 2):
-                c = self.cx(("GEOMETRIC_REPRESENTATION_CONTEXT", [dim]),
-                            ("GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT", [[unc]]),
-                            ("GLOBAL_UNIT_ASSIGNED_CONTEXT", [[mm, rad, sr]]),
-                            ("REPRESENTATION_CONTEXT", [f"{dim}D", "NXStyle"]))
-                if dim == 3:
-                    self.ctx3 = c
-                else:
-                    self.ctx2 = c
-        elif self.ctx2 is None:
-            self.ctx2 = self.add("GEOMETRIC_REPRESENTATION_CONTEXT", "2D", "sketch", 2)
+            self._units = ([unc], [mm, rad, sr])
+            self.ctx3 = self._context(3)
+
+    def _context(self, dim):
+        unc, units = self._units
+        return self.cx(("GEOMETRIC_REPRESENTATION_CONTEXT", [dim]), ("GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT", [unc]),
+                       ("GLOBAL_UNIT_ASSIGNED_CONTEXT", [units]), ("REPRESENTATION_CONTEXT", [f"{dim}D", "NXStyle"]))
+
+    @property
+    def ctx2(self):
+        if self._ctx2 is None:
+            self._ctx2 = self._context(2) if self._units else \
+                self.add("GEOMETRIC_REPRESENTATION_CONTEXT", "2D", "sketch", 2)
+        return self._ctx2
+
+    @ctx2.setter
+    def ctx2(self, value):
+        self._ctx2 = value
 
     def entity(self, leaves, values, dictionary=None):
         """An instance of the given leaf entities with every supertype record (external mapping when there is
@@ -1136,6 +1146,13 @@ def to_step(model, f=None, brep=None, sketch_commands=False):
                      name=model.get("name", "model"), preprocessor=TOOL, system="FreeCAD")
     w = _Writer(f, ctx3=brep[1] if brep else None)
     w.contexts()
+    if new:
+        # what AP242 asks of every file (rule ap242_application_protocol_definition_required); a merged
+        # B-rep brings its own. The PRODUCT_CONTEXT gives the context the element its inverse needs (41).
+        ac = w.add("APPLICATION_CONTEXT", "managed model based 3d engineering")
+        w.add("APPLICATION_PROTOCOL_DEFINITION", "international standard",
+              "ap242_managed_model_based_3d_engineering_mim_lf", 2020, ac)
+        w.add("PRODUCT_CONTEXT", "", ac, "mechanical")
     params = {p["name"]: p for p in model.get("parameters", [])}
     sketches, sk_refs = {}, []
     for sk in model.get("sketches", []):

@@ -8,6 +8,7 @@ rules(file, dictionary) evaluates, on every instance of a parsed Part 21 file:
   inside aggregates and typed parameters (8.3.2);
 * aggregate bounds given by an expression, as in LIST [1:segments] (8.2);
 * the uniqueness rules (UNIQUE) of each entity over the population (9.2.2.1);
+* the cardinalities of INVERSE attributes: exactly one user, or the bounds of the SET or BAG (9.2.1.3);
 * the global rules (RULE ... FOR) over the extents of their entities (9.6).
 
 Expressions are evaluated as clause 12 says, with the schemas' FUNCTIONs and CONSTANTs and the built-in
@@ -1658,6 +1659,7 @@ def rules(f, d, part=None):
                                 why = f" (not explained: {err})"
                         res.issues.append(express.Issue(level, raw.id, f"{n} {w['label'].upper()} is violated"
                                                                        f"{where(n)}{why}"))
+            _inverse_bounds(ev, res, i, raw.id, where)
             _type_rules(ev, res, i, raw.id, type_cache, where)
         _unique_rules(ev, res, where)
         _global_rules(ev, res, where)
@@ -1775,6 +1777,29 @@ def _decide(ev, res, rule, expr, scope):
         res.violated += 1
         return False
     return True
+
+
+def _inverse_bounds(ev, res, i, iid, where):
+    """INVERSE cardinalities (9.2.1.3): exactly one user for a single inverse, the bounds of SET or BAG."""
+    for n in i.names:
+        for inv in ev.d.entities[n]["inverse"]:
+            rule = f"{n}.{inv['name']} (inverse)"
+            ev.steps = 0
+            try:
+                v = ev.inverse(i, inv)
+            except EvalError as err:
+                res.not_evaluated(rule, str(err))
+                continue
+            res.evaluated += 1
+            k = (0 if v is None else 1) if inv["agg"] is None else len(v)
+            lo = 1 if inv["agg"] is None else (inv["lo"] if isinstance(inv["lo"], int) else 0)
+            hi = 1 if inv["agg"] is None else (inv["hi"] if isinstance(inv["hi"], int) else None)
+            if k < lo or (hi is not None and k > hi):
+                res.violated += 1
+                want = "exactly 1" if inv["agg"] is None else f"{lo} to {hi if hi is not None else '?'}"
+                res.issues.append(express.Issue(
+                    "error", iid, f"{n}.{inv['name']}: used by {k} {inv['entity']} through {inv['for']}, the "
+                                  f"inverse wants {want}{where(n)}"))
 
 
 def _type_rules(ev, res, i, iid, cache, where):
