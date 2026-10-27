@@ -167,6 +167,18 @@ class Express(unittest.TestCase):
         f.add_complex([("B_SPLINE", []), ("BOUNDED", [])])
         self.assertEqual(f[1].names, ["BOUNDED", "B_SPLINE"])
 
+    def test_resource_parts_in_the_dictionary(self):
+        # ISO 10303-41, ISO 10303-50 and ISO 13584-20 come from the parts themselves, not from a stand-in
+        d = iso10303.dictionary()
+        for name, schema in (("product_definition", "product_definition_schema"),
+                             ("maths_real_variable", "mathematical_functions_schema"),
+                             ("real_numeric_variable", "iso13584_expressions_schema"),
+                             ("si_unit", "measure_schema")):
+            self.assertEqual(d.entities[name]["schema"], schema)
+        ops = d.attributes("plus_expression")[0]["type"]
+        self.assertEqual(ops["of"], {"named": "numeric_expression"})       # ISO 13584-20 narrows the operands
+        self.assertIn("maths_real", d.select_items("maths_value")[1])
+
     def test_bundled_dictionary(self):
         d = iso10303.dictionary()
         # ISO 10303-108 Cor.1 annex F.1.1 writes BOUND_VARIATIONAL_PARAMETER('P1', #520, 'P1', 'C5 RADIUS', *)
@@ -194,10 +206,9 @@ class Parametric(unittest.TestCase):
         errors = [i for i in issues if i.level == "error"]
         self.assertEqual(errors, [])
         warnings = [i for i in issues if i.level == "warning"]
-        # untyped current values of unbound parameters (as ISO 10303-108 Cor.1 annex F writes them), and the
-        # conflict between 108 6.3.4 WR4 and 8.4.9 for each sketch
-        self.assertTrue(all("SELECT maths_value" in w.message or "WR4 not met" in w.message for w in warnings),
-                        warnings)
+        # only the conflict between 108 6.3.4 WR4 and 8.4.9, once per sketch: parameter values are typed
+        # (MATHS_REAL, ISO 10303-50) and parameters are real variables usable in ISO 13584-20 expressions
+        self.assertTrue(all("WR4 not met" in w.message for w in warnings), warnings)
         self.assertEqual(sum("WR4" in w.message for w in warnings), 2)
         inv = iso10303.inventory(f)
         for std in ("ISO 10303-42", "ISO 10303-43", "ISO 10303-55", "ISO 10303-108", "ISO 10303-111",
@@ -240,7 +251,7 @@ class Parametric(unittest.TestCase):
         seq = f.by_name("PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE")[0]
         seq.records = [r for r in seq.records if r.name != "SOLID_MODEL"]
         bp = f.by_name("BOUND_VARIATIONAL_PARAMETER")[0]
-        bp.records[0].params[2] = "renamed"
+        bp.record("MATHS_VARIABLE").params[1] = "renamed"
         iar = f.by_name("INSTANCE_ATTRIBUTE_REFERENCE")[0]
         iar.records[0].params[0] = "GEOMETRY_SCHEMA.CIRCLE.WIDTH"
         msgs = " ".join(i.message for i in iso10303.rules(f))

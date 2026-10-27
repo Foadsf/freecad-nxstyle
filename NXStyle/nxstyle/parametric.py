@@ -15,7 +15,7 @@ a FreeCAD document from:
 
 to_step(model) writes it as ISO 10303 entities; from_step(file) reads it back:
 
-  ISO 10303-108 (with Cor.1 and Cor.2)
+  ISO 10303-108 (with Cor.1 and Cor.2), ISO 10303-50, ISO 13584-20
     a sketch          NEUTRAL_SKETCH_REPRESENTATION (2D, its current result) inside a
                       VARIATIONAL_REPRESENTATION that adds the constraints and parameters
                       (VARIATIONAL_CURRENT_REPRESENTATION_RELATIONSHIP, 6.3.4); lines and arcs are
@@ -57,6 +57,10 @@ Where Parts 55 and 108 contradict each other the choice is recorded here:
     (108, 6.3.4 WR4), but NEUTRAL_SKETCH_REPRESENTATION only admits points and curves as items (8.4.9),
     so a wrapper of that type could not hold a single constraint. The wrapper of a sketch is a
     SHAPE_REPRESENTATION + VARIATIONAL_REPRESENTATION; iso10303.rules() reports the WR4 gap as a warning.
+  * Cor.1 annex F writes a parameter's current value untyped and uses plain parameters as operands of
+    PLUS_EXPRESSION and its kind; ISO 10303-50 makes the value a SELECT of defined types (so MATHS_REAL(3.),
+    ISO 10303-21 10.1.8) and ISO 13584-20 narrows the operands to numeric_expression. Parameters are
+    therefore written as complex instances that are also MATHS_REAL_VARIABLE (Part 50), with typed values.
   * angles in AGC_WITH_DIMENSION are 0-90 degrees and distances unsigned (108, 7.4.19); the sign and
     the branch are taken from the current geometry when reading (108, 5.2.3).
 """
@@ -233,6 +237,22 @@ class _Writer:
         elif self.ctx2 is None:
             self.ctx2 = self.add("GEOMETRIC_REPRESENTATION_CONTEXT", "2D", "sketch", 2)
 
+    def entity(self, leaves, values, dictionary=None):
+        """An instance of the given leaf entities with every supertype record (external mapping when there is
+        more than one leaf). values: {"entity.attribute": value}; derived attributes are written "*"."""
+        from . import iso10303
+        d = dictionary or iso10303.dictionary()
+        within = d.complex_closure(set(leaves))
+        if len(leaves) == 1:
+            n = leaves[0]
+            params = [D if a["derived"] else values.get(f"{a['owner']}.{a['name']}", U) for a in d.attributes(n)]
+            return self.add(n.upper(), *params)
+        recs = []
+        for n in within:
+            params = [D if a["derived"] else values.get(f"{n}.{a['name']}", U) for a in d.attributes(n, within=within)]
+            recs.append((n.upper(), params))
+        return self.cx(*recs)
+
     def space(self):
         if self.reals is None:
             self.reals = self.add("ELEMENTARY_SPACE", E("ES_REALS"))
@@ -314,7 +334,12 @@ class _Params:
             p = self.params[name]
             desc = (f"[{p['unit']}] " if p.get("unit") else "") + (p.get("description") or "")
             v = math.radians(p["value"]) if p.get("unit") == "deg" else float(p["value"])
-            ref = self.w.add("UNBOUND_VARIATIONAL_PARAMETER", name, self.w.space(), name, desc or U, v)
+            # a real variable (ISO 10303-50 maths_real_variable), so that ISO 13584-20 numeric expressions may use
+            # it; its value typed, as a SELECT of defined types is written (ISO 10303-21 10.1.8)
+            ref = self.w.entity(["unbound_variational_parameter", "maths_real_variable"], {
+                "representation_item.name": name, "maths_variable.values_space": self.w.space(),
+                "maths_variable.name": name, "variational_parameter.parameter_description": desc or U,
+                "variational_parameter.parameter_current_value": T("MATHS_REAL", v)})
             sem = self.w.add("UNBOUND_VARIATIONAL_PARAMETER_SEMANTICS")
             self.w.add("UNBOUND_PARAMETER_ENVIRONMENT", ref, sem)
             self.unbound[name] = ref
@@ -345,7 +370,8 @@ class _Params:
         w = self.w
         if not expr_vars(expr):
             return []
-        bp = w.add("BOUND_VARIATIONAL_PARAMETER", name, w.space(), name, U, D)
+        bp = w.entity(["bound_variational_parameter", "maths_real_variable"], {
+            "representation_item.name": name, "maths_variable.values_space": w.space(), "maths_variable.name": name})
         iar = w.add("INSTANCE_ATTRIBUTE_REFERENCE", attribute, owner)
         w.add("BOUND_PARAMETER_ENVIRONMENT", bp, iar)
         if expr[0] == "var":

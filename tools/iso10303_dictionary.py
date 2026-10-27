@@ -36,7 +36,7 @@ NOISE = re.compile(
     r"©|°ISO|\bc\s+ISO|ISO \d{4,5}-\d+(:\d{4})?(/Cor\.\d:\d{4})?\(E\)|All rights reserved|Copyright International|"
     r"^Standardization\b|Organization for$|Provided by IHS|Reproduced by IHS|No reproduction or networking|Not for Resale|Licensee=|"
     r"^\s*(\d+|[ivx]+|c|⃝ISO|ISO)\s*$")
-WATERMARK = re.compile(r"--`[`,\-]*-")
+WATERMARK = re.compile(r"(?<!\S)[`,\-]*`[`,\-]*(?!\S)")   # IHS watermark runs; EXPRESS never uses "`"
 CAPTION = re.compile(r"^(Figure|Table|NOTE|EXAMPLE)\b")      # figures printed inside a specification
 RENAMES_108 = [("unbound_model_parameter_semantics", "unbound_variational_parameter_semantics"),
                ("unbound_model_parameter", "unbound_variational_parameter"),
@@ -100,6 +100,13 @@ def fix_interfaces(text):
     return re.sub(r"((?:USE|REFERENCE)\s+FROM\s+\w+\s*(?:--[^\n]*\n\s*)?)(\([^)]*\))", fix, text, flags=re.I)
 
 
+def only_schemas(text):
+    """The SCHEMA ... END_SCHEMA spans of a part's EXPRESS: an informative annex may print declarations outside
+    any schema (ISO 13584-20 annex examples), which are not part of it."""
+    spans = re.findall(r"^SCHEMA\s+\w+\s*;.*?^END_SCHEMA\s*;", text, re.M | re.S | re.I)
+    return "\n".join(spans) if spans else text
+
+
 def short_names(text):
     """Annex A: 'entity name   SHORT' rows -> {SHORT: entity_name}."""
     out = {}
@@ -139,7 +146,8 @@ def apply_corrigendum(base, cor):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--part", action="append", default=[], help="NUMBER=path (PDF or pdftotext output)")
+    ap.add_argument("--part", action="append", default=[], help="NUMBER=path (PDF or pdftotext output); a part of "
+                    "ISO 10303 by its number (42), another standard by its full number (13584-20)")
     ap.add_argument("--cor", action="append", default=[], help="NUMBER=path of a technical corrigendum")
     ap.add_argument("--exp", action="append", default=[], help="additional EXPRESS file")
     ap.add_argument("--out", default=os.path.join(RES, "dictionary.json"))
@@ -150,7 +158,7 @@ def main(argv=None):
     for spec in a.part:
         num, path = spec.split("=", 1)
         t = text_of(path)
-        texts[num] = fix_interfaces("\n".join(express_blocks(t)))
+        texts[num] = only_schemas(fix_interfaces("\n".join(express_blocks(t))))
         shorts.update(short_names(t))
         if num == "108":
             for old, new in RENAMES_108:
@@ -162,7 +170,10 @@ def main(argv=None):
     if "108" in texts:                               # Cor.1: non_negative_length_measure moved to Part 41
         texts["108"] = re.sub(r"^TYPE non_negative_length_measure\b.*?END_TYPE;", "", texts["108"],
                               flags=re.M | re.S)
-    sources = [(f"ISO 10303-{n}", t) for n, t in sorted(texts.items(), key=lambda x: int(x[0]))]
+    def label(n):                                    # "42" is a part of ISO 10303; "13584-20" names its standard
+        return f"ISO {n}" if "-" in n else f"ISO 10303-{n}"
+    order = lambda n: (1, n) if "-" in n else (0, f"{int(n):06d}")   # noqa: E731
+    sources = [(label(n), t) for n, t in sorted(texts.items(), key=lambda x: order(x[0]))]
     with open(os.path.join(RES, "supplement.exp"), encoding="utf-8") as f:
         sources.append(("supplement.exp", f.read()))
     for p in a.exp:
