@@ -117,6 +117,8 @@ What the APs' long forms contain, counted entity by entity (the PMI column: ten 
 Everything *STEP with Parameters* writes for Parts 55, 108 and 111 is in AP242, and its files check without an error against AP242's own schema.
 Part 112 is in none of them.
 
+xref:tutorials/am.adoc[Tutorial AM] checks a supplier's assembly against AP242's schema, reads its parts list, and rebuilds a sketch sent as Part 112 commands.
+
 *bom* (and *Check STEP*) reads the product structure: products, their definitions and the next-assembly-usage occurrences, as the assembly tree with quantities and the parts list with the totals.
 
 Lengths and plane angles are read in the file's units (millimetres, metres, inches, radians, degrees: SI and conversion-based units); numbers inside expressions are taken as they are.

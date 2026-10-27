@@ -1,0 +1,70 @@
+= Tutorial AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch
+:description: A supplier's assembly checked against AP242's own schema with its parts list read from the file, and a supplier's sketch sent as ISO 10303-112 commands rebuilt into a FreeCAD sketch and extruded.
+
+[horizontal]
+Standards:: ISO 10303-21, ISO 10303-242 (AP242: its long-form schema and its product structure), ISO 10303-112 (2D sketch commands), ISO 10303-55 (the command sequence)
+You learn:: Check STEP with the application protocol's own schema, reading a parts list from a STEP file, Import STEP with Parameters for a Part 112 sketch
+Sizes:: A fixture: a plate 120 × 80 × 10, two brackets, four bolts; a bracket profile 60 × 40 with two R5 rounds, a Ø16 bore and four Ø4 holes on a 13 mm radius
+Background:: xref:parametric-step.adoc#_application_protocols[Application protocols], xref:tutorials/al.adoc[Tutorial AL]
+
+xref:tutorials/al.adoc[Tutorial AL] sends a part out and brings it back.
+This one is the receiving end: two files arrive from a supplier, and you want to know what they are, whether they are valid, what parts they hold, and to work with the sketch that came as commands.
+
+== Step by step
+
+=== 1. The supplier's assembly
+
+The fixture is assembled and exported by script with FreeCAD's own STEP export, as the supplier's system would send it: an AP242 file with a plate, two brackets (the second a link to the first) and four bolts (links to one bolt).
+
+=== 2. Check STEP against AP242's own schema
+
+*PMI › Check STEP*, the file, tick *Download the AP's schema if it is missing*, OK.
+
+The report names the application protocol, AP242 _Managed model-based 3D engineering_.
+The first time, it downloads AP242's long-form schema from standards.iso.org (2407 entities) into the schema cache; after that it uses the cached copy.
+Every instance is checked against it, so the product structure and the B-rep shape representation are checked too: 0 errors.
+
+The product structure is the bill of materials as the file holds it: the fixture with one plate, two brackets and four bolts, and the parts list with the totals.
+
+image::tutorial-AM-01-check.png[Check STEP: AP242 named and its schema downloaded, no errors, the product structure and parts list]
+
+=== 3. The supplier's sketch, as ISO 10303-112 commands
+
+The second file is a bracket profile written by a system that sends sketches as Part 112 modelling commands rather than as finished curves.
+Here it is written by script, eight commands in an ISO 10303-55 sequence:
+
+* `CREATE_RECTANGLE` from three points;
+* two `CREATE_FILLET` R5 at the right-hand corners, each with its two sides picked with `USER_SELECTED_SHAPE_ELEMENTS` and trimmed;
+* `CREATE_CIRCLE_CENTRE_POINT` for the Ø16 bore and for a Ø4 hole;
+* `CREATE_PATTERN_CIRCULAR` for three more holes round the bore, 90° apart.
+
+*PMI › Check STEP* on this file: 0 errors against ISO 10303-112's schema.
+
+=== 4. In: Import STEP with Parameters
+
+kbd:[Ctrl+N], *PMI › Import STEP with Parameters*, the file, OK.
+
+The commands are run in order into one sketch: four lines (trimmed by the rounds), two arcs and five circles, every wire closed.
+Part 112 does not say where a sketch lies, so it comes in on XY.
+
+image::tutorial-AM-02-import.png[The import report: an ISO 10303-112 sketch of 11 curves]
+
+=== 5. The bracket
+
+Extrude the sketch by 8 mm.
+The volume is 17103.54 mm³: 60 × 40, less two R5 corners, the Ø16 bore and four Ø4 holes, times 8, to the last digit.
+
+image::tutorial-AM-03-bracket.png[The bracket extruded from the received profile]
+
+== The replay
+
+include::partial$generated/tutorial-AM.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX has no STEP checker; its parts list comes from the Assembly Navigator after import.
+* NX reads a STEP file's sketch as curves. ISO 10303-112 commands are evaluated here, so the sketch keeps how it was made: the rounds trim their sides and the pattern copies its hole.
+* The cache keeps one schema per name: fetching AP242 again, or adding another AP242 edition, replaces it.
+* The supplier's files are written by script; the bracket is extruded by script.
