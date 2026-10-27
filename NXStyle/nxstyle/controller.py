@@ -454,14 +454,14 @@ class RevolveAdapter(SectionAdapter):
 
     # ------------------------------------------------------------ the box
     def rows(self, box, form, s):
-        box.vector = QtWidgets.QComboBox()
+        box.vector = QtWidgets.QComboBox(box)
         box.vector.setObjectName("nxSpecifyVector")
         box.vector.setToolTip("Specify Vector: the direction of the axis; with Specify Point it is the axis")
         for key, label, _a, _r in core.VECTORS:
             box.vector.addItem(label, key)
         for key, label, _sub in core.SKETCH_AXES:
             box.vector.addItem(label, key)
-        box.pick_line = QtWidgets.QToolButton()
+        box.pick_line = QtWidgets.QToolButton(box)
         box.pick_line.setObjectName("nxPickAxisLine")
         box.pick_line.setText("Line…")
         box.pick_line.setCheckable(True)
@@ -473,7 +473,7 @@ class RevolveAdapter(SectionAdapter):
         box.point = []
         prow = QtWidgets.QHBoxLayout()
         for c in "XYZ":
-            sb = QtWidgets.QDoubleSpinBox()
+            sb = QtWidgets.QDoubleSpinBox(box)
             sb.setObjectName(f"nxPoint{c}")
             sb.setRange(-1e7, 1e7)
             sb.setDecimals(6)
@@ -483,7 +483,7 @@ class RevolveAdapter(SectionAdapter):
             box.point.append(sb)
             prow.addWidget(sb)
         form.addRow("Specify Point", prow)
-        box.start, box.end = QtWidgets.QDoubleSpinBox(), QtWidgets.QDoubleSpinBox()
+        box.start, box.end = QtWidgets.QDoubleSpinBox(box), QtWidgets.QDoubleSpinBox(box)
         for sb, name, tip in ((box.start, "nxLimitStart", "Start angle"), (box.end, "nxLimitEnd", "End angle")):
             sb.setObjectName(name)
             sb.setRange(-360.0, 360.0)
@@ -492,9 +492,9 @@ class RevolveAdapter(SectionAdapter):
             sb.setKeyboardTracking(False)
             sb.setToolTip(f"{tip}, degrees about the axis (right hand rule)")
         lrow = QtWidgets.QHBoxLayout()
-        lrow.addWidget(QtWidgets.QLabel("Start"))
+        lrow.addWidget(QtWidgets.QLabel("Start", box))
         lrow.addWidget(box.start, 1)
-        lrow.addWidget(QtWidgets.QLabel("End"))
+        lrow.addWidget(QtWidgets.QLabel("End", box))
         lrow.addWidget(box.end, 1)
         form.addRow("Limits", lrow)
         ctl = box.ctl
