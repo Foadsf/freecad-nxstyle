@@ -126,7 +126,7 @@ The curves can be picked before the command, or after it starts.
 With nothing selected the command asks for a sketch plane, as before; pick a sketch curve instead, and FreeCAD's plane pick closes and the dialog opens with that curve.
 Every further pick adds to the section, and Ctrl+MB1 on a picked curve takes it out.
 A plain click on a picked curve changes nothing: FreeCAD would select the whole sketch there, and only *Inferred Curves* takes the whole sketch.
-The section's curves stay selected, so they show which they are, and the command box counts them (*Select Curve (10)*).
+The section's curves stay selected, so they show which they are, and the command box counts them (*Select Curve (10)*); its tooltip names them.
 Where a solid's face or edge lies on a curve, hold MB1 for QuickPick and choose the sketch's curve.
 
 The feature's Profile is those curves only, so one sketch can hold several loops that share curves or overlap, as the impeller casing of tutorial AG does.
