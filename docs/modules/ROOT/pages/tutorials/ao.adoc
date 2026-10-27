@@ -1,0 +1,78 @@
+= Tutorial AO: Release to manufacturing: the guide bush into Carbon
+:description: The guide bush released in tutorial V sent to Carbon (ERP, MES and quality): the connection, a review before anything is written, the publish, and the shop's stock and a non-conformance read back.
+
+[horizontal]
+Source:: The hand-over from engineering to manufacturing: a released revision becomes the item manufacturing builds, with its model, drawings and inspection plan; the shop's results come back to engineering
+You learn:: PLM › Manufacturing Connection, Publish to Manufacturing with Review, Manufacturing Status
+Needs:: xref:tutorials/v.adoc[Tutorial V] first, which needs xref:tutorials/t.adoc[Tutorial T] (the replay runs both), and a Carbon to connect to (xref:manufacturing.adoc#_setting_it_up[setting it up])
+Background:: xref:manufacturing.adoc[Manufacturing with Carbon], xref:release-package.adoc[Release packages]
+
+Tutorial V released the guide bush twice: BUSH-100 rev A, then rev B after the engineering change that opened the bore from H7 to F7, with rev A made obsolete.
+Manufacturing now builds rev B.
+Its manufacturing system is https://github.com/crbnos/carbon[Carbon]: items and revisions, bills of materials, stock, jobs, inspection and non-conformances.
+
+== Step by step
+
+=== 1. Connect to Carbon
+
+*PLM › Manufacturing Connection*.
+Type the server (for Carbon Cloud `https://app.carbon.ms`) and the API key from Carbon's *Settings › API Keys*, then *Test Connection*: it names the company the key belongs to.
+*Save*.
+
+The server goes into `nxstyle.json`; the key goes into a file of its own, `carbon.key`, readable only by you.
+
+image::tutorial-AO-01-connection.png[Manufacturing Connection: server, key, and the company Test Connection found]
+
+=== 2. Review what Carbon would get
+
+*PLM › Publish to Manufacturing*.
+The dialog lists the part's releases and picks the newest *Released* one: BUSH-100 rev B.
+Rev A is obsolete and is not offered as the default.
+
+*Review* makes rev B's release package (the part as released, not the working copy, checked against its manifest) and lists what Carbon would get, without writing anything:
+
+* the part BUSH-100 at revision B;
+* the STEP AP242 with its PMI as the item's CAD model;
+* the native file, the drawing as PDF, the PMI tables, the stack-up, the mass properties and the manifest as the item's documents;
+* an inspection plan with one characteristic for each row of the PMI inspection plan.
+
+image::tutorial-AO-02-review.png[Publish to Manufacturing: release BUSH-100 rev B and the review of what Carbon would get]
+
+=== 3. Publish
+
+OK (or MB2).
+The Information window lists what was written.
+
+In Carbon the bush is now item BUSH-100 _Guide bush_ (the name of its first release; rev B's description, _ECO-001: bore F7_, becomes the item's description) at revision B, its 3D model is the release's STEP, and its inspection plan holds the characteristics with their limits: the bore Ø16 F7 is nominal 16 with +0.034 and −(−0.016), that is 16.016 to 16.034 mm, as in tutorial V's package.
+
+image::tutorial-AO-03-published.png[What Publish to Manufacturing wrote into Carbon]
+
+=== 4. Publish again
+
+*Publish to Manufacturing*, OK, a second time: nothing is written.
+Carbon has the part, its model, its documents and its characteristics, and the release's manifest, named after rev B's Strata commit, says this release is there already: the package is made again (its files carry new time stamps), but none of it is sent twice.
+
+=== 5. What manufacturing reports back
+
+The shop builds 25 bushes on a job: 23 are good, 2 are rejected for a bore below 16.016 mm, and quality opens a non-conformance.
+That happens in Carbon, on its shop-floor and quality side.
+
+*PLM › Manufacturing Status* reads it back for the open part: the revision Carbon builds, the stock (23 on hand, 2 rejected), the inspection plan and the open non-conformance.
+
+image::tutorial-AO-04-status.png[Manufacturing Status: revision, stock and the open non-conformance]
+
+== The replay
+
+The replay's Carbon is the stand-in server of the unit tests (`tests/carbon_fake.py`): it runs on the same computer, answers over HTTP, and refuses any request that Carbon's published API schemas refuse.
+The dialogs, the requests and the checks are the same as with a real Carbon; the shop's stock and non-conformance (step 5) are written into the stand-in by script.
+
+include::partial$generated/tutorial-AO.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+== What differs from NX
+
+* NX hands a part to manufacturing through Teamcenter and Siemens' own manufacturing systems; here it goes from Strata's release to Carbon, an open-source ERP, MES and QMS, over Carbon's API.
+* Publish to Manufacturing sends the release package, so Carbon gets the same verified files a supplier gets.
+* A later revision is created in Carbon inactive, and a released make method is never edited: manufacturing decides when a new revision goes live (xref:manufacturing.adoc#_what_it_never_does[what it never does]).
+* The replay's Carbon is a stand-in: see xref:manufacturing.adoc#_what_is_tested[what is tested].

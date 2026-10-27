@@ -18,7 +18,7 @@ The commands are on the *PLM* tab, in the *Manufacturing* group:
 | *Manufacturing Connection* | The Carbon server and the API key.
 |===
 
-xref:tutorials/an.adoc[Tutorial AN] goes through it with tutorial V's guide bush.
+xref:tutorials/ao.adoc[Tutorial AO] goes through it with tutorial V's guide bush.
 
 == Setting it up
 

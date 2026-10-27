@@ -24,7 +24,6 @@
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
 * xref:release-package.adoc[Release packages]
-* xref:manufacturing.adoc[Manufacturing (Carbon)]
 * xref:settings.adoc[Settings]
 
 .Tutorials
@@ -67,7 +66,8 @@
 * xref:tutorials/ak.adoc[AK: Holder]
 * xref:tutorials/al.adoc[AL: Design intent through STEP]
 * xref:tutorials/am.adoc[AM: Receiving STEP: AP, BOM, Part 112 sketch]
-* xref:tutorials/an.adoc[AN: Release to manufacturing (Carbon)]
+* xref:tutorials/an.adoc[AN: Arbor Press Plate]
+* xref:tutorials/ao.adoc[AO: Release to manufacturing (Carbon)]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

@@ -4265,7 +4265,119 @@
    "detail": "22.9% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Create a new file (Arborpress_plate)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed']"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Block: Origin and Edge Lengths, Point Dialog at (0, 0, 0), Length 65, Width 85, Height 20, OK",
+   "replay": "ribbon 'Home › Feature > Block', Type 'Origin and Edge Lengths', XC/YC/ZC 0 and the lengths typed (1651, 2159, 508 mm), OK",
+   "outcome": "same",
+   "detail": "Boolean None; block 1651.0 x 2159.0 x 508.0 mm from (0, 0, 0); one undo step ['Block']. The Point Dialog's XC, YC, ZC are fields in the Block dialog (NX opens it as its own window)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Fit (Ctrl+F), Orient View > Trimetric",
+   "replay": "Ctrl+F, Home (NX's Trimetric key)",
+   "outcome": "same",
+   "detail": "view direction (-0.4096, 0.7094, -0.5736) (trimetric 1.000000); all eight corners of the block in the window True"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Save the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_plate.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Datum Plane (Inferred): the top face of the block",
+   "replay": "top face (Face6) selected + ribbon 'Home > Datum > Datum Plane'",
+   "outcome": "same",
+   "detail": "the plane is attached to the face; FreeCAD's attachment dialog opens with it"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Offset Distance 15, OK",
+   "replay": "'attachmentOffsetZ' = 381 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "datum plane at z = 889.00 mm (top face 508 + 381), normal (0.0, 0.0, 1.0)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Datum Axis: the two points on the block",
+   "replay": "Vertex6 and Vertex1 selected + ribbon 'Home > Datum > Datum Axis'",
+   "outcome": "same",
+   "detail": "FreeCAD infers Through Two Points from the two vertices, as NX's Inferred does"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "OK: the Datum Axis is the diagonal",
+   "replay": "MB2 = OK",
+   "outcome": "same",
+   "detail": "mode TwoPointLine; direction (-0.9558, 0.0, 0.2941) along the diagonal of the front face (65 x 20); through the first point within 6e-14 mm"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Hole: General Hole, Position > Sketch on the top face",
+   "replay": "top face selected + ribbon 'Home › Feature > Hole'",
+   "outcome": "same",
+   "detail": "the Hole starts a sketch on the face, and Finish Sketch carries on into the Hole dialog, as NX's Sketch Section in the Position group"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Point Dialog: the six points of the table, each OK",
+   "replay": "ribbon 'Sketch › Curve > Point', XC and YC typed in the on-view fields for each point, MB2",
+   "outcome": "same",
+   "detail": "6 points; all at the table coordinates; sketch on the top face (z = 508.0 mm)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Simple Hole: Diameter 8, Depth 25, Tip Angle 118°, Boolean Subtract, OK",
+   "replay": "dialog open True; 'Diameter' = 203.2 mm, 'Dimension', 'Depth' = 635 mm, 'DrillPointAngle' = 118°, MB2 = OK",
+   "outcome": "same",
+   "detail": "volume 1711926130.6 mm^3, expected 1711926130.6; 1 solid(s); the plate is 20 thick, so the holes go through it; values as typed True; FreeCAD's Hole always subtracts from its body"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 13,
+   "nx": "The plate: the block with its six holes",
+   "replay": "compared with the book's dimensions",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 12 faces (12 in the reference)"
+  },
+  {
+   "tutorial": "AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Save the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_plate.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 1,
    "nx": "The guide bush, released in tutorial V as BUSH-100 rev B (rev A obsolete); a Carbon to send it to",
    "replay": "the replay's Carbon: the stand-in server of the unit tests, on this computer",
@@ -4273,7 +4385,7 @@
    "detail": "releases [('BUSH-100', 'A', 'Obsolete'), ('BUSH-100', 'B', 'Released')]; server http://127.0.0.1:<port>. A user connects to Carbon Cloud (app.carbon.ms) or their own Carbon instead"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 2,
    "nx": "Manufacturing Connection: server and API key, Test Connection, Save",
    "replay": "ribbon 'PLM › Manufacturing > Manufacturing Connection', server and key typed, 'Test Connection', 'Save'",
@@ -4281,7 +4393,7 @@
    "detail": "'Connected to http://127.0.0.1:<port>: Test Precision BV.'; the server goes into nxstyle.json, the key into carbon.key (mode 0o600), never into nxstyle.json"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 3,
    "nx": "Publish to Manufacturing: the newest Released revision, Review",
    "replay": "ribbon 'PLM › Manufacturing > Publish to Manufacturing', release 'BUSH-100 rev B (Released)', 'Review'",
@@ -4289,7 +4401,7 @@
    "detail": "nothing written yet (0 writes); the review lists part BUSH-100 rev B (Make); CAD model BUSH-100_B.step (12623 bytes); document analysis_ToleranceStackup.csv (653 bytes); document analysis_ToleranceStackup.txt (1509 bytes); document analysis_mass_properties.csv (160 bytes); document drawings_Page.pdf (26661 bytes); document model_BUSH-100_B.FCStd (45581 bytes); document pmi_checks.txt (142 bytes); document pmi_inspection_plan.csv (927 bytes); document pmi_pmi.json (3374 bytes); document BUSH-100_B_manifest_54a69680814d.json (3419 bytes); inspection plan 'BUSH-100 rev B inspection plan (NX-Style PMI)'; inspection plan: 6 characteristics added,"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 4,
    "nx": "OK: Carbon gets the release",
    "replay": "MB2 = OK",
@@ -4297,7 +4409,7 @@
    "detail": "13 writes: part BUSH-100 rev B (Make); CAD model BUSH-100_B.step (12623 bytes); document analysis_ToleranceStackup.csv (653 bytes); document analysis_ToleranceStackup.txt (1509 bytes); document analysis_mass_properties.csv (160 bytes); document drawings_Page.pdf (26661 bytes); document model_BUSH-100_B.FCStd (45581 bytes); document pmi_checks.txt (142 bytes); document pmi_inspection_plan.csv (927 bytes); document pmi_pmi.json (3374 bytes); document BUSH-100_B_manifest_54a69680814d.json (3419 bytes); inspection plan 'BUSH-100 rev B inspection plan (NX-Style PMI)'; inspection plan: 6 characteristics added, 0 changed"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 5,
    "nx": "In Carbon: the part at rev B, its CAD model, documents and inspection plan",
    "replay": "what the replay's Carbon holds",
@@ -4305,7 +4417,7 @@
    "detail": "item BUSH-100 rev B (active); CAD model BUSH-100_B.step; documents ['BUSH-100_B_manifest_54a69680814d.json', 'analysis_ToleranceStackup.csv', 'analysis_ToleranceStackup.txt', 'analysis_mass_properties.csv', 'drawings_Page.pdf', 'model_BUSH-100_B.FCStd', 'pmi_checks.txt', 'pmi_inspection_plan.csv', 'pmi_pmi.json']; 6 characteristics for 6 plan rows; the bore Ø16 F7 as nominal 16 +0.034 -(-0.016) mm, i.e. 16.016 to 16.034; requests outside Carbon's published schemas: 0"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 6,
    "nx": "Publish the same release again",
    "replay": "ribbon 'PLM › Manufacturing > Publish to Manufacturing', MB2 = OK",
@@ -4313,7 +4425,7 @@
    "detail": "0 writes []: Carbon already has the part, its model, its 9 documents and its characteristics, so nothing is sent twice"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 7,
    "nx": "The shop builds it: 25 on a job, 23 good, 2 rejected for an undersize bore (a non-conformance)",
    "replay": "written into the replay's Carbon by script, as the shop floor and quality would in Carbon",
@@ -4321,7 +4433,7 @@
    "detail": "in a real Carbon this comes from jobs, receipts and inspections on the MES and QMS side"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 8,
    "nx": "Manufacturing Status: revision, stock and the open non-conformance",
    "replay": "ribbon 'PLM › Manufacturing > Manufacturing Status'",
@@ -4329,7 +4441,7 @@
    "detail": "BUSH-100 rev B: Guide bush | active, Design; Make, Make to Order, tracked as Inventory | revisions in Carbon: B | stock at Main Shop: 23 EA on hand, 0 on hold, 2 rejected; 25 on production orders, 0 on purchase orders | inspection plans: BUSH-100 (6 characteristics) | open issues: 1 | NCR-0001 Bore below 16.016 (F7) (In Progress)"
   },
   {
-   "tutorial": "AN: Release to manufacturing: the guide bush into Carbon",
+   "tutorial": "AO: Release to manufacturing: the guide bush into Carbon",
    "n": 9,
    "nx": "Every request the replay sent matches Carbon's published API",
    "replay": "checked by the replay's Carbon",
