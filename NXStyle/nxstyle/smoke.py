@@ -158,6 +158,7 @@ class Smoke:
         yield self.s_selection, 300
         yield self.s_extrude_key, 1500
         yield self.s_extrude_key_check, 300
+        yield self.s_section, 300
         yield self.s_primitives, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
@@ -2211,6 +2212,12 @@ class Smoke:
         both orders, curve chains and the Part Navigator's marks (smoke_selection.py)."""
         from . import smoke_selection
         smoke_selection.run(self)
+
+    def s_section(self):
+        """Extrude and Revolve on picked curves of the impeller casing sketch: the wall revolved, the edge extruded
+        -Z, the flange revolved, then Cancel (smoke_section.py)."""
+        from . import smoke_section
+        smoke_section.run(self)
 
     def s_primitives(self):
         """Block, Cylinder, Cone and Sphere from their ribbon buttons: typed values, the vector, a point snapped at

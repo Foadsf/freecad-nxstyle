@@ -1,7 +1,7 @@
 <header class="header">
   <nav class="navbar">
     <div class="navbar-brand">
-      <a class="navbar-item nx-brand" href="{{{siteRootPath}}}/index.html">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="{{{siteRootPath}}}/index.html">
         <img class="site-logo" src="{{{uiRootPath}}}/img/logo.svg" alt="" width="30" height="30">
         <span class="nx-title">{{site.title}}</span>
         <span class="nx-title-short" aria-hidden="true">NX-Style</span>
@@ -9,7 +9,7 @@
       {{#if env.SITE_SEARCH_PROVIDER}}
       <div class="navbar-item search hide-for-print">
         <div id="search-field" class="field">
-          <input id="search-input" type="text" placeholder="Search the documentation"{{#if page.home}} autofocus{{/if}}>
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
         </div>
       </div>
       {{/if}}
@@ -24,7 +24,7 @@
         <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/installation.html">Install</a>
         <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/quick-start.html">Quick start</a>
         <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/tutorials/index.html">Tutorials</a>
-        <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/keyboard-shortcuts.html">Shortcuts</a>
+        <a class="navbar-item" href="{{{siteRootPath}}}/nxstyle/whats-new.html">What's new</a>
         <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
       </div>
     </div>

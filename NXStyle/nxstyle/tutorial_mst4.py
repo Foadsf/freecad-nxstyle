@@ -6,6 +6,9 @@ sizes are typed in millimetres.
   AN  4.2.1, 4.3, 4.5.1 Arbor Press Plate: Block 65 x 85 x 20 at the origin (NX's Block dialog, Origin and Edge
       Lengths), Fit and Trimetric, a Datum Plane 15 above the top face, a Datum Axis through two corners, six simple
       holes Ø8 drilled 25 deep from points typed on the top face (Hole, Simple, Tip Angle 118°).
+  AP  4.2.2 Impeller Shaft: Cylinder Ø4 x 18 on ZC at the origin, Isometric, a Cone 4 -> 6 x 10 at the centre of
+      the cylinder's top edge (Point type Arc/Ellipse/Sphere Center, a click on the edge), Unite, and a Cylinder
+      Ø6 x 20 at the centre of the cone's top edge, Unite.
 """
 
 import math
@@ -308,3 +311,187 @@ class MstPlateTutorials:
 
     def an_show(self):
         self.show("AN_arborpress_plate")
+
+
+# ================================================================== AP: Impeller Shaft (4.2.2)
+# The book (pp. 57-60), inches: a Cylinder (Axis, Diameter, and Height) on ZC from (0, 0, 0), Ø4 x 18; a Cone
+# (Diameters and Height) on ZC from the centre of the cylinder's top edge (0, 0, 18), base Ø4, top Ø6, height 10,
+# united; a Cylinder on ZC from the centre of the cone's top edge (0, 0, 28), Ø6 x 20, united.
+AP_CYL1 = (4 * IN, 18 * IN)
+AP_CONE = (4 * IN, 6 * IN, 10 * IN)
+AP_CYL2 = (6 * IN, 20 * IN)
+AP_Z_CONE = AP_CYL1[1]
+AP_Z_CYL2 = AP_CYL1[1] + AP_CONE[2]
+
+
+def ap_reference():
+    """The shaft as the book dimensions it: cylinder, frustum and cylinder on one axis."""
+    import Part
+    z = App.Vector(0, 0, 1)
+    lower = Part.makeCylinder(AP_CYL1[0] / 2, AP_CYL1[1])
+    cone = Part.makeCone(AP_CONE[0] / 2, AP_CONE[1] / 2, AP_CONE[2], App.Vector(0, 0, AP_Z_CONE), z)
+    upper = Part.makeCylinder(AP_CYL2[0] / 2, AP_CYL2[1], App.Vector(0, 0, AP_Z_CYL2), z)
+    return lower.fuse([cone, upper]).removeSplitter()
+
+
+def ap_volume():
+    r1, r2, h = AP_CONE[0] / 2, AP_CONE[1] / 2, AP_CONE[2]
+    return (math.pi * (AP_CYL1[0] / 2) ** 2 * AP_CYL1[1] + math.pi * h / 3 * (r1 * r1 + r1 * r2 + r2 * r2)
+            + math.pi * (AP_CYL2[0] / 2) ** 2 * AP_CYL2[1])
+
+
+class MstShaftTutorials:
+    """Mixin for tutorial.Replay: tutorial AP."""
+
+    def AP_STEPS(self):
+        return [self.p_modeling, self.ap_new, self.ap_save, self.ap_cylinder, self.ap_view, self.ap_cone,
+                self.ap_cone_dialog, self.ap_cone_view, self.ap_cylinder2, self.ap_check, self.ap_fit, self.ap_show]
+
+    # ------------------------------------------------------------- helpers
+    def ap_screen(self, p):
+        """A model point (mm) -> widget pixel position."""
+        from .qt import QtCore
+        sx, sy = self.view().getPointOnViewport(App.Vector(*p))
+        w = self.nav().widget
+        dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
+        return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
+
+    def ap_rim(self, z, r):
+        """The point of the circle (centre on ZC at height z, radius r) nearest the viewer: on the edge's outline."""
+        d = self.view().getViewDirection()
+        u = App.Vector(-d.x, -d.y, 0)
+        u = u.normalize() if u.Length > 1e-9 else App.Vector(1, 0, 0)
+        return (r * u.x, r * u.y, z)
+
+    def ap_pick_center(self, p, z, r):
+        """Specify Point with Arc/Ellipse/Sphere Center: MB1 on the circular edge (centre (0, 0, z), radius r).
+        Returns (point type, the point in XC/YC/ZC, the step's status, the pick in the window)."""
+        from .smoke_primitives import choose
+        from .tutorial import qtest
+        p.activate("origin")
+        kind = choose(p, "originPointType", "Arc/Ellipse/Sphere Center")
+        rim = self.ap_rim(z, r)
+        at = self.ap_screen(rim)
+        self.mb1_click(at)
+        qtest().qWait(400)
+        return kind, p.steps["origin"].point(), p.steps["origin"].status.text(), (at.x(), at.y())
+
+    def ap_dialog(self, command, kind, dims, boolean, label, how_extra, want, center=None):
+        """Fill the Cylinder or Cone dialog the way the book does, press OK, and check the body's volume."""
+        from . import primitive_ui
+        from .smoke_primitives import choose, field, ok
+        p = primitive_ui.current()
+        if p is None:
+            self.step(label, f"ribbon '{command}'", FAIL, f"the {command} dialog did not open")
+            raise RuntimeError(f"no {command} dialog; tutorial AP cannot continue")
+        typ = choose(p, "nxType", kind)
+        vector = choose(p, "nxVector", "ZC")
+        if center is None:
+            pick = None
+            choose(p, "originPointType", "Inferred Point")
+            for name in ("originXC", "originYC", "originZC"):
+                self.type_into(field(p, name), 0)
+            got = p.steps["origin"].point()
+        else:
+            ptype, got, status, at = self.ap_pick_center(p, *center)
+            pick = f"'{ptype}', MB1 on the edge at pixel {at}: {status}"
+        for name, v in dims:
+            self.type_into(field(p, name), v)
+        mode = choose(p, "nxBoolean", boolean)
+        target = p.steps["body"].chosen()
+        pressed = ok()
+        where = (0, 0, 0) if center is None else (0, 0, center[0])
+        at_point = got is not None and all(abs(a - b) < 1e-6 for a, b in zip(got, where))
+        undo = App.ActiveDocument.UndoNames[:1]
+        how = (f"ribbon '{self._ap_where}', Type '{typ}', Specify Vector '{vector}', "
+               + (pick if pick else "XC/YC/ZC 0 typed") + f", {how_extra}, Boolean '{mode}', OK")
+        if not (pressed and at_point and undo == [command]):
+            self.step(label, how, FAIL, f"OK pressed {pressed}; point {got}, wanted {where}; target {target}; "
+                      f"undo {App.ActiveDocument.UndoNames[:2]}")
+            return False
+        return self.check_volume(label, how, want, f"; origin {tuple(round(c, 6) for c in got)}; one undo step "
+                                 f"{undo}" + (f"; united with {target}" if boolean == "Unite" else ""))
+
+    # ------------------------------------------------------------- New, Save, the first cylinder
+    def ap_new(self):
+        self.tutorial = "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def ap_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file (Impeller_shaft)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}")
+        self.units_step()
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_shaft.FCStd")
+        self.step("Save it as Impeller_shaft", how, outcome, detail)
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        self.wait = 800
+
+    def ap_cylinder(self):
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AP_CYL1[0]), ("height", AP_CYL1[1])),
+                       "None", "Cylinder: Axis, Diameter, and Height; ZC Axis; Point Dialog (0, 0, 0); Diameter 4, "
+                       "Height 18; OK", "Diameter 101.6 and Height 457.2 typed",
+                       math.pi * (AP_CYL1[0] / 2) ** 2 * AP_CYL1[1])
+        self.wait = 400
+
+    def ap_view(self):
+        self.key("Ctrl+F")
+        self.key("End")
+        self.wait = 1500
+
+    # ------------------------------------------------------------- the cone, the second cylinder
+    def ap_cone(self):
+        from . import pmi_views
+        d = self.view().getViewDirection()
+        want = pmi_views.STANDARD["Isometric"][0]
+        along = d.x * want[0] + d.y * want[1] + d.z * want[2]
+        self.step("MB3 > Orient View > Isometric", "Ctrl+F (Fit, to see the cylinder whole), End (NX's Isometric key)",
+                  SAME if along > 1 - 1e-6 else FAIL,
+                  f"view direction {tuple(round(c, 4) for c in d)} (isometric {along:.6f})")
+        self.shot("AP1_cylinder.png")
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cone")
+        self.wait = 800
+
+    def ap_cone_dialog(self):
+        r1, r2, h = AP_CONE[0] / 2, AP_CONE[1] / 2, AP_CONE[2]
+        want = math.pi * (AP_CYL1[0] / 2) ** 2 * AP_CYL1[1] + math.pi * h / 3 * (r1 * r1 + r1 * r2 + r2 * r2)
+        self.ap_dialog("Cone", "Diameters and Height",
+                       (("baseDiameter", AP_CONE[0]), ("topDiameter", AP_CONE[1]), ("height", AP_CONE[2])), "Unite",
+                       "Cone: Diameters and Height; ZC Axis; Point Constructor, Arc/Ellipse/Sphere Center on the "
+                       "cylinder's top edge; Base Diameter 4, Top Diameter 6, Height 10; Unite with the cylinder; OK",
+                       "Base 101.6, Top 152.4, Height 254 typed", want, center=(AP_Z_CONE, AP_CYL1[0] / 2))
+        self.key("Ctrl+F")
+        self.wait = 1500
+
+    def ap_cone_view(self):
+        self.shot("AP2_cone.png")
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        self.wait = 1000
+
+    def ap_cylinder2(self):
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AP_CYL2[0]), ("height", AP_CYL2[1])),
+                       "Unite", "Cylinder: ZC Axis; Arc/Ellipse/Sphere Center on the cone's top edge; Diameter 6, "
+                       "Height 20; Unite; OK", "Diameter 152.4 and Height 508 typed", ap_volume(),
+                       center=(AP_Z_CYL2, AP_CONE[1] / 2))
+        self.wait = 400
+
+    def ap_check(self):
+        from . import geomcheck
+        body = self.body()
+        ok, detail = geomcheck.compare(body.Shape if body is not None else None, ap_reference())
+        self.step("The shaft: cylinder, cone and cylinder in one solid", "compared with the book's dimensions",
+                  SAME if ok else FAIL, detail)
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_shaft.FCStd")
+        self.step("Save the model", how, outcome, detail)
+        self.wait = 300
+
+    def ap_fit(self):
+        self.fit()
+
+    def ap_show(self):
+        self.show("AP_impeller_shaft")

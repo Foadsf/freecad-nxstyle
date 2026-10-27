@@ -22,7 +22,7 @@ from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
 from .ribbon import (CommandButton, Ribbon, command_action, command_actions, expand_tabs, known_commands,
                      provide_actions, resolve, spec_commands, spec_groups, sub_actions)
-from .selection_filter import ScopeFilter, TypeFilter
+from .selection_filter import CurveRule, ScopeFilter, TypeFilter
 
 OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
 GLOBAL_TOOLBARS = {"File", "Edit", "Clipboard", "Workbench", "Macro", "View", "Individual views",
@@ -514,6 +514,8 @@ class Shell(QtCore.QObject):
         tb.addWidget(self.type_filter)
         self.scope_filter = ScopeFilter(tb)
         tb.addWidget(self.scope_filter)
+        self.curve_rule = CurveRule(tb)
+        tb.addWidget(self.curve_rule)
         tb.addSeparator()
         known = known_commands()
         for name, label in BORDER_TOOLS:

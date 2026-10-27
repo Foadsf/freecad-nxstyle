@@ -649,8 +649,8 @@ class EditParameters:
 
     def GetResources(self):
         return {"MenuText": "Edit Parameters",
-                "ToolTip": "Reopen the selected feature's dialog; an Extrude opens in the NX command panel, a "
-                           "Block, Cylinder, Cone or Sphere in its NX dialog",
+                "ToolTip": "Reopen the selected feature's dialog; an Extrude or a Revolve opens in the NX command "
+                           "panel, a Block, Cylinder, Cone or Sphere in its NX dialog",
                 "Pixmap": _pixmap("Std_Edit", "Std_DlgParameter")}
 
     def IsActive(self):
@@ -709,16 +709,18 @@ def register(apps):
         "NXStyle_MeasureBodies": MeasureBodies(),
         "NXStyle_TouchMode": TouchMode(),
         "NXStyle_Extrude": ControlledFeature("Extrude", None, "Extrude",
-                                             "Extrude a sketch: Boolean None (a new body), Unite or Subtract; with nothing selected, "
-                                             "sketch first (NX: X)", "PartDesign_Pad"),
+                                             "Extrude a section (a sketch, or curves picked with the Curve Rule): Boolean "
+                                             "None (a new body), Unite or Subtract; with nothing selected, sketch first "
+                                             "or pick curves (NX: X)", "PartDesign_Pad"),
         "NXStyle_ExtrudeSubtract": ControlledFeature("Extrude", "subtract", "Extrude (Subtract)",
                                                      "Extrude a sketch with Boolean Subtract", "PartDesign_Pocket"),
         "NXStyle_EditParameters": EditParameters(),
-        "NXStyle_Revolve": SketchFirstFeature("PartDesign_Revolution", "Revolve",
-                                              "Revolve a sketch; with nothing selected, sketch first",
-                                              "PartDesign_Revolution"),
-        "NXStyle_RevolveSubtract": SketchFirstFeature("PartDesign_Groove", "Revolve (Subtract)",
-                                                      "Revolve a sketch and subtract it", "PartDesign_Groove"),
+        "NXStyle_Revolve": ControlledFeature("Revolve", None, "Revolve",
+                                             "Revolve a section (a sketch, or curves picked with the Curve Rule) about "
+                                             "an axis: Boolean None, Unite or Subtract; with nothing selected, sketch "
+                                             "first or pick curves", "PartDesign_Revolution"),
+        "NXStyle_RevolveSubtract": ControlledFeature("Revolve", "subtract", "Revolve (Subtract)",
+                                                     "Revolve a section with Boolean Subtract", "PartDesign_Groove"),
         "NXStyle_Hole": SketchFirstFeature("PartDesign_Hole", "Hole",
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
