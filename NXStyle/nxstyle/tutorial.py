@@ -110,6 +110,18 @@ class ModalWatcher(QtCore.QObject):
             w.close()
 
 
+class SaveWatch:
+    """Document observer: which documents FreeCAD saved, to which file, and whether it was the one watched."""
+
+    def __init__(self, path):
+        self.path = os.path.normcase(os.path.abspath(path))
+        self.seen = []
+
+    def slotFinishSaveDocument(self, doc, filename):
+        mine = os.path.normcase(os.path.abspath(filename)) == self.path
+        self.seen.append(f"{doc.Name} -> {'this file' if mine else filename}")
+
+
 class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCutTutorials, ExtrudeTutorials,
              MstTutorials, MstCasingTutorials, MstImpellerTutorials, MstCircularBaseTutorials):
     def __init__(self, shell):
@@ -735,30 +747,67 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, LaserCut
                   f"{frac:.1%} of the view shows the part (an occupancy check: something is drawn; the shape "
                   "itself is checked by its geometry)")
 
+    @staticmethod
+    def saved_comment(path):
+        """The Comment stored in an .FCStd on disk, or None when the file cannot be read."""
+        import xml.etree.ElementTree as ET
+        import zipfile
+        try:
+            with zipfile.ZipFile(path) as z:
+                root = ET.fromstring(z.read("Document.xml"))
+        except Exception:
+            return None
+        for prop in root.findall("./Properties/Property"):     # the document's own, not its objects'
+            if prop.get("name") == "Comment":
+                s = prop.find("String")
+                return s.get("value") if s is not None else None
+        return None
+
     def save_ctrl_s(self, name):
         """Save the way the book does, with Ctrl+S. A new part's first save opens the operating system's
-        file dialog, which the replay cannot drive, so the file name is given once by script; then the part
-        is changed and Ctrl+S is pressed, and the file on disk must be rewritten and the part left unmodified.
-        Returns (outcome, how, detail): FAIL when Ctrl+S did not save, whatever the scripted save did."""
+        file dialog, which the replay cannot drive, so the file name is given once by script; then the part's
+        Comment is set to a marker unique to this save and Ctrl+S is pressed. Ctrl+S has saved when the file
+        on disk holds the marker and the part is left unmodified. The file's time is no witness: FreeCAD
+        writes a temporary file and renames it over the old one, and in the replays the new file came back
+        with the replaced file's last-write time in 4 of 10 saves, the change in it.
+        Returns (outcome, how, detail, path): FAIL when Ctrl+S did not save, whatever the scripted save did."""
+        import uuid
         doc = App.ActiveDocument
         path = os.path.join(OUT, name)
         doc.saveAs(path)
-        before = os.path.getmtime(path)
-        time.sleep(1.1)                                     # mtime resolution on some file systems
-        doc.Comment = f"saved with Ctrl+S by the replay {time.strftime('%H:%M:%S')}"
+        st0 = os.stat(path)
+        time.sleep(1.1)                     # so the recorded file times show whether the time moved
+        marker = f"saved with Ctrl+S by the replay {uuid.uuid4().hex[:12]}"
+        doc.Comment = marker
         gdoc = Gui.getDocument(doc.Name)
         modified = getattr(gdoc, "Modified", True)
-        self.key("Ctrl+S")
-        QtWidgets.QApplication.processEvents()
-        self.wait_for("Ctrl+S: file rewritten", lambda: os.path.getmtime(path) > before, timeout_ms=10000)
-        after = os.path.getmtime(path)
-        saved = after > before and not getattr(gdoc, "Modified", False)
+        on_disk_before = self.saved_comment(path)
+        saves = SaveWatch(path)
+        App.addDocumentObserver(saves)
+        try:
+            self.key("Ctrl+S")
+            QtWidgets.QApplication.processEvents()
+            self.wait_for("Ctrl+S: the file holds the change", lambda: self.saved_comment(path) == marker,
+                          timeout_ms=10000)
+        finally:
+            App.removeDocumentObserver(saves)
+        on_disk = self.saved_comment(path)
+        st1 = os.stat(path)
+        still = getattr(gdoc, "Modified", "?")
+        self.info[f"save {name}"] = {
+            "modified before the key": modified, "saves seen": saves.seen,
+            "file time moved ms": (st1.st_mtime_ns - st0.st_mtime_ns) // 10 ** 6,
+            "size before, after": [st0.st_size, st1.st_size],
+            "Ctrl+S owners": sorted(Gui.Command.listByShortcut("Ctrl+S")),
+            "focus": type(QtWidgets.QApplication.focusWidget()).__name__}
+        saved = on_disk_before != marker and on_disk == marker and still is False
         how = ("file name given once by script (the system file dialog is not driven); a change, then the "
                "Ctrl+S key")
-        detail = (f"{name} rewritten by Ctrl+S ({after - before:.1f} s later), part unmodified afterwards "
+        detail = (f"{name} rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards "
                   f"(modified before the key: {modified}); FreeCAD format, not .prt" if saved else
-                  f"Ctrl+S did not save: file time unchanged {after <= before}, still modified "
-                  f"{getattr(gdoc, 'Modified', '?')}")
+                  f"Ctrl+S did not save: the change {'is' if on_disk == marker else 'is not'} in the file "
+                  f"(it {'was' if on_disk_before == marker else 'was not'} before the key), still modified "
+                  f"{still}; FreeCAD saves seen during the key: {saves.seen or 'none'}")
         return (SAME if saved else FAIL), how, detail, path
 
     def a_save(self):
