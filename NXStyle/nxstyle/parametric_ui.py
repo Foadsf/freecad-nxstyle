@@ -92,10 +92,15 @@ class ExportPanel(_FilePanel):
                          "and in the same file its construction history (ISO 10303-55), Part 111 features, sketches "
                          "with their constraints and the spreadsheet parameters with the expressions that use them "
                          "(ISO 10303-108). The report lists what could not be written.")
+        self.commands = QtWidgets.QCheckBox("Also write each sketch as ISO 10303-112 commands")
+        self.commands.setObjectName("sketchCommands")
+        self.commands.setToolTip("For a receiver that reads Part 112. No AP242 edition includes Part 112, so a "
+                                 "strict AP242 reader will not know these entities")
+        self.form.layout().addRow(self.commands)
 
     def run(self, path):
         from . import parametric_fc
-        return parametric_fc.export(self.obj, path)
+        return parametric_fc.export(self.obj, path, sketch_commands=self.commands.isChecked())
 
 
 class ImportPanel(_FilePanel):
@@ -123,18 +128,35 @@ class CheckPanel(_FilePanel):
     def __init__(self):
         super().__init__("", "Reads the file as ISO 10303-21 and checks every instance against the EXPRESS schemas of "
                              "ISO 10303-42, -43, -55, -108, -111 and -112, and the WHERE rules that give parametric "
-                             "data its meaning. Entities of other parts (an application protocol's product "
-                             "structure, PMI) are counted, not checked.")
+                             "data its meaning; an application protocol's own entities (product structure, PMI, "
+                             "presentation) against the AP's long form when it is in the schema cache. Lists the "
+                             "product structure (BOM).")
+        self.fetch = QtWidgets.QCheckBox("Download the AP's schema if it is missing (AP203, AP214, AP242)")
+        self.fetch.setObjectName("fetchSchema")
+        self.fetch.setToolTip("AP242 from standards.iso.org, AP203 and AP214 from the STEPcode project; kept in "
+                              "the schema cache, not downloaded again")
+        self.form.layout().addRow(self.fetch)
 
     def run(self, path):
         from . import express, iso10303, p21
         f = p21.read(path)
+        fetched = []
+        if self.fetch.isChecked():
+            for i in iso10303.identify(f):
+                key = (i["ap"] or "") + ("E2" if i["edition"] == "edition 2" else "")
+                if key in iso10303.FETCH and i["schema"] not in iso10303.cached_schemas():
+                    fetched += iso10303.fetch_schema(key)
         issues = iso10303.check(f)
         s = express.summary(issues)
-        lines = [path, f"{len(f)} instances, schema {', '.join(f.schemas)}",
+        aps = [f"{i['ap']} {i['title']} ({i['edition']})" for i in iso10303.identify(f) if i["ap"]]
+        lines = [path, f"{len(f)} instances; " + ("; ".join(aps) or f"schema {', '.join(f.schemas)}"),
                  f"{s['error']} error(s), {s['warning']} warning(s), {s['info']} note(s)", ""]
+        lines += [f"schema {n} downloaded: {k} entities" for n, k, _ in fetched]
         for std, ents in sorted(iso10303.inventory(f).items()):
             lines.append(f"{std}: {sum(ents.values())}")
+        b = iso10303.bom(f)
+        if b["roots"]:
+            lines += ["", "Product structure:", iso10303.bom_text(b)]
         lines.append("")
         lines += [repr(i) for i in issues[:300]]
         return "\n".join(lines)

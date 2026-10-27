@@ -4182,7 +4182,7 @@
    "nx": "Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112",
    "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "0 error(s), 6 warning(s), 12 note(s); the warnings name the places where ISO 10303-108 contradicts itself. NX has no such check"
+   "detail": "0 error(s), 6 warning(s), 13 note(s); the warnings name the places where ISO 10303-108 contradicts itself. NX has no such check"
   },
   {
    "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",

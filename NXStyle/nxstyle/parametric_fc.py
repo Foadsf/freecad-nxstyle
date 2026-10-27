@@ -658,8 +658,9 @@ def model_from_object(obj):
 
 
 # ------------------------------------------------------------------ export
-def export(obj, path, brep=True):
-    """Write obj (a Body, Part CSG object or sketch) as STEP AP242 with its parametric model.
+def export(obj, path, brep=True, sketch_commands=False):
+    """Write obj (a Body, Part CSG object or sketch) as STEP AP242 with its parametric model; with
+    sketch_commands, each sketch also as ISO 10303-112 commands (outside AP242's schema).
     Returns a report text."""
     model, notes = model_from_object(obj)
     if brep and hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids:
@@ -672,9 +673,9 @@ def export(obj, path, brep=True):
             f = p21.read(tmp.name)
         finally:
             os.unlink(tmp.name)
-        f, more = parametric.merge(f, model)
+        f, more = parametric.merge(f, model, sketch_commands=sketch_commands)
     else:
-        f, more = parametric.to_step(model)
+        f, more = parametric.to_step(model, sketch_commands=sketch_commands)
     notes += more
     p21.write(f, path)
     issues = iso10303.check(path)
@@ -684,7 +685,8 @@ def export(obj, path, brep=True):
              f"{len(model['features'])} feature(s) in the history"]
     for std in sorted(inv):
         lines.append(f"  {std}: {sum(inv[std].values())} instances")
-    lines.append(f"Check against ISO 10303 (Parts 21, 42, 43, 55, 108, 111): {len(errors)} error(s)")
+    lines.append(f"Check against ISO 10303 (Parts 21, 42, 43, 55, 108, 111{', 112' if sketch_commands else ''}): "
+                 f"{len(errors)} error(s)")
     lines += ["  " + repr(i) for i in errors[:20]]
     if notes:
         lines += ["", "Not written:"] + ["  " + n for n in notes]
@@ -723,6 +725,14 @@ def make_sketch(container, doc, sk, notes, sheet):
             geo = Part.ArcOfCircle(Part.Circle(App.Vector(*g["c"], 0), Z, g["r"]), a1, a2)
         elif t == "point":
             geo = Part.Point(App.Vector(*g["p"], 0))
+        elif t == "ellipse":
+            c, m = App.Vector(*g["c"], 0), App.Vector(*g["major"], 0)
+            minor = App.Vector(-m.y, m.x, 0).normalize() * g["r2"]
+            # Part.Ellipse(S1, S2, centre) wants the end of the major axis first
+            geo = Part.Ellipse(c + m, c + minor, c) if m.Length >= g["r2"] else Part.Ellipse(c + minor, c + m, c)
+        elif t == "spline":
+            geo = Part.BSplineCurve()
+            geo.interpolate([App.Vector(*q, 0) for q in g["points"]], PeriodicFlag=bool(g.get("closed")))
         else:
             geo = Part.Point(App.Vector(0, 0, 0))      # keeps the indices of the constraints right
             notes.append(f"{sk['name']}: geometry of type {t} replaced by a point")

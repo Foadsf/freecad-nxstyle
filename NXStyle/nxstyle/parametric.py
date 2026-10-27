@@ -690,12 +690,14 @@ def _transform(w, tr, name):
                  w.direction(cols[1]), w.point(tr["translation"]), 1.0, w.direction(cols[2]))
 
 
-def to_step(model, f=None, brep=None):
+def to_step(model, f=None, brep=None, sketch_commands=False):
     """Write a model into a p21.File (a new one unless f is given).
 
     brep: (representation ref, context ref) of an explicit B-rep already in f that the procedural model
     describes; the 3D items then use that context, and EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP
-    ties the two. Returns (file, notes).
+    ties the two. sketch_commands also writes each sketch as ISO 10303-112 commands, paired with its
+    explicit form; no AP242 edition includes Part 112, so this is for exchanges that agree on it.
+    Returns (file, notes).
     """
     new = f is None
     if new:
@@ -709,6 +711,11 @@ def to_step(model, f=None, brep=None):
         sketches[sk["name"]] = _write_sketch(w, sk, params)
         sk_refs.append(sketches[sk["name"]]["repositioned"])
         sk_refs += [ps for _f, ps in sketches[sk["name"]]["faces"]]
+        if sketch_commands:
+            from . import procedural_sketch
+            if procedural_sketch.write(w, sk, w.ctx2, explicit=sketches[sk["name"]]["current"]) is not None:
+                w.notes.append(f"{sk['name']}: also written as ISO 10303-112 commands, which AP242's schema "
+                               "does not include")
 
     solids, tools, elements = {}, {}, []
     bindings = []                                   # (feature, attribute name, owner ref, expr)
@@ -842,6 +849,54 @@ class _Reader:
         self.d = iso10303.dictionary()
         self.m = iso10303._Model(f, self.d)
         self.notes = []
+        self.L = self.A = 1.0                       # file units -> mm and radians
+
+    PREFIX = {"EXA": 1e18, "PETA": 1e15, "TERA": 1e12, "GIGA": 1e9, "MEGA": 1e6, "KILO": 1e3, "HECTO": 1e2,
+              "DECA": 1e1, "DECI": 1e-1, "CENTI": 1e-2, "MILLI": 1e-3, "MICRO": 1e-6, "NANO": 1e-9,
+              "PICO": 1e-12, "FEMTO": 1e-15, "ATTO": 1e-18}
+
+    def unit_factor(self, u, depth=0):
+        """('length' | 'angle' | None, factor to mm or radians) of a unit instance."""
+        inst = self.inst(u)
+        if inst is None or depth > 5:
+            return None, 1.0
+        names = inst.names
+        kind = "length" if "LENGTH_UNIT" in names else "angle" if "PLANE_ANGLE_UNIT" in names else None
+        si = inst.record("SI_UNIT")
+        if si is not None:
+            pre = self.PREFIX.get(str(si.params[0]), 1.0) if isinstance(si.params[0], p21.Enum) else 1.0
+            base = {"METRE": 1000.0, "RADIAN": 1.0}.get(str(si.params[1]), 1.0)
+            return kind, pre * base
+        cb = inst.record("CONVERSION_BASED_UNIT")
+        if cb is not None and isinstance(cb.params[1], p21.Ref):
+            m = self.inst(cb.params[1])
+            rec = m.records[0] if not m.complex else m.record("MEASURE_WITH_UNIT")
+            if rec is not None and len(rec.params) >= 2:
+                v = rec.params[0].value if isinstance(rec.params[0], p21.Typed) else rec.params[0]
+                k2, f2 = self.unit_factor(rec.params[1], depth + 1)
+                return kind or k2, float(v) * f2
+        return kind, 1.0
+
+    def use_units(self, ctx):
+        """Take the length and plane angle units of a representation context."""
+        inst = self.inst(ctx)
+        rec = inst.record("GLOBAL_UNIT_ASSIGNED_CONTEXT") if inst is not None else None
+        if rec is None or not rec.params:
+            return
+        for u in rec.params[0]:
+            kind, fac = self.unit_factor(u)
+            if kind == "length":
+                self.L = fac
+            elif kind == "angle":
+                self.A = fac
+        if (self.L, self.A) != (1.0, 1.0):
+            self.notes.append(f"file units: 1 length unit = {self.L:g} mm, 1 angle unit = {self.A:g} rad")
+
+    def ln(self, r, a):
+        return float(self.get(r, a)) * self.L
+
+    def an(self, r, a):
+        return float(self.get(r, a)) * self.A
 
     def inst(self, r):
         return self.f.get(r)
@@ -856,7 +911,7 @@ class _Reader:
         return self.get(r, "representation_item.name") or ""
 
     def coords(self, r):
-        return [float(c) for c in self.get(r, "coordinates")]
+        return [float(c) * self.L for c in self.get(r, "coordinates")]
 
     def dir(self, r):
         return [float(c) for c in self.get(r, "direction_ratios")]
@@ -887,11 +942,11 @@ class _Reader:
         if self.isa(r, "circle"):
             pl = self.a2p3(self.get(r, "position"))
             return {"type": "circle", "center": pl["origin"], "axis": pl["axis"], "x": pl["x"],
-                    "r": float(self.get(r, "radius"))}
+                    "r": self.ln(r, "radius")}
         if self.isa(r, "ellipse"):
             pl = self.a2p3(self.get(r, "position"))
             return {"type": "ellipse", "center": pl["origin"], "axis": pl["axis"], "x": pl["x"],
-                    "r1": float(self.get(r, "semi_axis_1")), "r2": float(self.get(r, "semi_axis_2"))}
+                    "r1": self.ln(r, "semi_axis_1"), "r2": self.ln(r, "semi_axis_2")}
         if self.isa(r, "b_spline_curve_with_knots"):
             return {"type": "bspline", "degree": self.get(r, "degree"),
                     "poles": [self.coords(p) for p in self.get(r, "control_points_list")],
@@ -905,13 +960,13 @@ class _Reader:
         if self.isa(r, "plane"):
             s["type"] = "plane"
         elif self.isa(r, "cylindrical_surface"):
-            s.update(type="cylinder", r=float(self.get(r, "radius")))
+            s.update(type="cylinder", r=self.ln(r, "radius"))
         elif self.isa(r, "conical_surface"):
-            s.update(type="cone", r=float(self.get(r, "radius")), semi_angle=float(self.get(r, "semi_angle")))
+            s.update(type="cone", r=self.ln(r, "radius"), semi_angle=self.an(r, "semi_angle"))
         elif self.isa(r, "spherical_surface"):
-            s.update(type="sphere", r=float(self.get(r, "radius")))
+            s.update(type="sphere", r=self.ln(r, "radius"))
         elif self.isa(r, "toroidal_surface"):
-            s.update(type="torus", R=float(self.get(r, "major_radius")), r=float(self.get(r, "minor_radius")))
+            s.update(type="torus", R=self.ln(r, "major_radius"), r=self.ln(r, "minor_radius"))
         else:
             raise StepError(f"#{int(r)}: surface {self.inst(r).name} is not read")
         return s
@@ -945,7 +1000,7 @@ def _read_sketch(rd, var, cur, rep):
     pts = {}
 
     def pt2(r):
-        return [float(c) for c in rd.get(r, "coordinates")][:2]
+        return [float(c) * rd.L for c in rd.get(r, "coordinates")][:2]
 
     for it in items:
         if rd.isa(it, "variational_representation_item") and not rd.isa(it, "trimmed_curve"):
@@ -962,14 +1017,14 @@ def _read_sketch(rd, var, cur, rep):
                 lookup[int(basis)] = (len(geo), 0)
             else:
                 c = rd.get(rd.get(basis, "position"), "location")
-                g = {"type": "arc", "c": pt2(c), "r": float(rd.get(basis, "radius")), "p1": pt2(t1),
+                g = {"type": "arc", "c": pt2(c), "r": rd.ln(basis, "radius"), "p1": pt2(t1),
                      "p2": pt2(t2)}
                 lookup[int(basis)] = (len(geo), 0)
                 pts[int(c)] = (len(geo), 3)
             pts[int(t1)], pts[int(t2)] = (len(geo), 1), (len(geo), 2)
         elif rd.isa(it, "circle"):
             c = rd.get(rd.get(it, "position"), "location")
-            g = {"type": "circle", "c": pt2(c), "r": float(rd.get(it, "radius"))}
+            g = {"type": "circle", "c": pt2(c), "r": rd.ln(it, "radius")}
             lookup[int(it)] = (len(geo), 0)
             pts[int(c)] = (len(geo), 3)
         elif rd.isa(it, "cartesian_point"):
@@ -1040,12 +1095,12 @@ def _read_sketch(rd, var, cur, rep):
         elif rd.isa(it, "tangent_geometric_constraint"):
             c.update(type="Tangent", first=as_curve(consd[0]), second=as_curve(refs[0]))
         elif rd.isa(it, "clgc_with_dimension"):
-            c.update(type="Distance", first=as_curve(consd[0]), value=float(rd.get(it, "length_value")))
+            c.update(type="Distance", first=as_curve(consd[0]), value=rd.ln(it, "length_value"))
         elif rd.isa(it, "curve_length_geometric_constraint") or rd.isa(it, "radius_geometric_constraint") \
                 and not rd.isa(it, "rgc_with_dimension"):
             c.update(type="Equal", first=as_curve(consd[0]), second=as_curve(consd[1]))
         elif rd.isa(it, "pdgc_with_dimension"):
-            v = float(rd.get(it, "distance_value"))
+            v = rd.ln(it, "distance_value")
             pa = as_point(consd[0])
             ref = refs[0]
             if kind in ("DistanceX", "DistanceY"):
@@ -1068,13 +1123,13 @@ def _read_sketch(rd, var, cur, rep):
                 else:
                     c.update(type="Distance", first=pa[0], first_pos=pa[1], second=as_curve(ref), value=v)
         elif rd.isa(it, "rgc_with_dimension"):
-            v = float(rd.get(it, "radius_value"))
+            v = rd.ln(it, "radius_value")
             diameter = kind == "Diameter"
             c.update(type="Diameter" if diameter else "Radius", first=as_curve(consd[0]),
                      value=2 * v if diameter else v)
         elif rd.isa(it, "agc_with_dimension"):
             a, b = as_curve(consd[0]), as_curve(refs[0])
-            v = float(rd.get(it, "angle_value"))
+            v = rd.an(it, "angle_value")
             ang = _current_angle(geo, a, b, v)
             if b == -1:
                 c.update(type="Angle", first=a, value=ang)
@@ -1144,7 +1199,11 @@ def _read_expr(rd, r, params):
 
 def from_step(f):
     """A p21.File -> (list of models, notes). One model per PROCEDURAL_SHAPE_REPRESENTATION."""
+    from . import procedural_sketch
     rd = _Reader(f)
+    reps = rd.m.all_of("procedural_shape_representation") or rd.m.all_of("neutral_sketch_representation")
+    if reps:
+        rd.use_units(rd.get(reps[0], "context_of_items"))
     params, bindings = {}, {}
     for p in rd.m.all_of("unbound_variational_parameter"):
         name = rd.get(p, "representation_item.name")
@@ -1153,6 +1212,7 @@ def from_step(f):
         if text.startswith("[") and "]" in text:
             unit, text = text[1:text.index("]")], text[text.index("]") + 1:].strip()
         v = float(rd.value(rd.get(p, "parameter_current_value")))
+        v = v * rd.L if unit == "mm" else v * rd.A if unit == "deg" else v
         params[name] = {"name": name, "value": math.degrees(v) if unit == "deg" else v, "unit": unit,
                         "description": text}
     for env in rd.m.all_of("bound_parameter_environment"):
@@ -1167,7 +1227,7 @@ def from_step(f):
         if expr is not None:
             bindings.setdefault(int(owner), []).append((attr, expr))
 
-    sketches, by_rep = [], {}
+    sketches, by_rep, by_current = [], {}, {}
     for rel in rd.m.all_of("variational_current_representation_relationship"):
         var, cur = rd.get(rel, "rep_1"), rd.get(rel, "rep_2")
         if not rd.isa(cur, "neutral_sketch_representation"):
@@ -1185,6 +1245,7 @@ def from_step(f):
         for c in sk["constraints"]:
             c.pop("ref", None)
         sketches.append(sk)
+        by_current[int(cur)] = sk
         if rep is not None:
             by_rep[rep] = sk["name"]
     face_sketch = {}
@@ -1192,8 +1253,38 @@ def from_step(f):
         rep, ps = rd.get(rel, "relating_representation_item"), rd.get(rel, "related_representation_item")
         face_sketch[int(rd.get(ps, "sketch_basis"))] = by_rep.get(int(rep))
 
+    # ISO 10303-112 sketches: evaluated; checked against the explicit sketch they are paired with, if any
+    command_reps = set()
+    explicit_of = {int(rd.get(r, "rep_1")): rd.get(r, "rep_2")
+                   for r in rd.m.all_of("explicit_procedural_shape_representation_relationship")}
+    for proc in rd.m.all_of("procedural_shape_representation"):
+        seqs = rd.get(proc, "items") or []
+        if not seqs or not all(procedural_sketch.is_command_sequence(rd, q) for q in seqs):
+            continue
+        command_reps.add(proc.id)
+        geo, more = [], []
+        for q in seqs:
+            g, n = procedural_sketch.evaluate(rd, q, rd.L, rd.A)
+            geo += g
+            more += n
+        rd.notes += more
+        pair = by_current.get(int(explicit_of.get(proc.id, 0)))
+        name = rd.get(proc, "name") or "Sketch"
+        if pair is not None:
+            want = [x for x in pair["geometry"] if x["type"] != "point"]
+            hit = sum(1 for x in want if any(_same_geo(x, y) for y in geo))
+            rd.notes.append(f"{pair['name']}: its ISO 10303-112 commands make {hit} of its {len(want)} curves")
+        else:
+            sketches.append({"name": name[:-9] if name.endswith(" commands") else name,
+                             "placement": {"origin": [0, 0, 0], "axis": [0, 0, 1], "x": [1, 0, 0]},
+                             "geometry": geo, "constraints": [], "from": "ISO 10303-112"})
+            rd.notes.append(f"{name}: an ISO 10303-112 sketch of {len(geo)} curves, placed on XY (Part 112 does "
+                            "not position a sketch)")
+
     models = []
     for proc in rd.m.all_of("procedural_shape_representation"):
+        if proc.id in command_reps:
+            continue
         seqs = rd.get(proc, "items")
         model = {"name": rd.get(proc, "name"), "parameters": list(params.values()), "sketches": sketches,
                  "features": []}
@@ -1205,6 +1296,22 @@ def from_step(f):
         models.append({"name": "sketches", "parameters": list(params.values()), "sketches": sketches,
                        "features": []})
     return models, rd.notes
+
+
+def _same_geo(a, b, tol=1e-6):
+    """Two model sketch elements with the same geometry (a line either way round)."""
+    if a["type"] != b["type"]:
+        return False
+
+    def close(p, q):
+        return all(abs(x - y) <= tol for x, y in zip(p, q))
+    if a["type"] == "line":
+        return (close(a["p1"], b["p1"]) and close(a["p2"], b["p2"])) or \
+            (close(a["p1"], b["p2"]) and close(a["p2"], b["p1"]))
+    if a["type"] in ("circle", "arc"):
+        same = close(a["c"], b["c"]) and abs(a["r"] - b["r"]) <= tol
+        return same and (a["type"] == "circle" or (close(a["p1"], b["p1"]) and close(a["p2"], b["p2"])))
+    return close(a.get("p", []), b.get("p", []))
 
 
 def _feature_bindings(rd, r, kind, bindings, ft):
@@ -1235,22 +1342,22 @@ def _read_tool(rd, r, face_sketch, bindings):
         ft["type"] = "extrude"
         ft["direction"] = rd.dir(rd.get(x, "extruded_direction"))
         if rd.isa(x, "extruded_face_solid_with_trim_conditions"):
-            ft["first"] = rd.value(rd.get(x, "first_trim_condition"))
-            ft["second"] = rd.value(rd.get(x, "second_trim_condition"))
+            ft["first"] = rd.value(rd.get(x, "first_trim_condition")) * rd.L
+            ft["second"] = rd.value(rd.get(x, "second_trim_condition")) * rd.L
             ft["intent"] = [str(rd.get(x, "first_trim_intent")).lower(), str(rd.get(x, "second_trim_intent")).lower()]
             if rd.isa(x, "extruded_face_solid_with_draft_angle"):
-                ft["taper"] = float(rd.get(x, "draft_angle"))
+                ft["taper"] = rd.an(x, "draft_angle")
         else:
-            ft["first"], ft["second"] = float(rd.get(x, "depth")), 0.0
+            ft["first"], ft["second"] = rd.ln(x, "depth"), 0.0
         kind = "extrude"
     elif rd.isa(x, "revolved_face_solid"):
         ft["type"] = "revolve"
         ft["axis"] = rd.a1p(rd.get(x, "axis"))
         if rd.isa(x, "revolved_face_solid_with_trim_conditions"):
-            ft["angle"] = rd.value(rd.get(x, "first_trim_condition"))
-            ft["second"] = rd.value(rd.get(x, "second_trim_condition"))
+            ft["angle"] = rd.value(rd.get(x, "first_trim_condition")) * rd.A
+            ft["second"] = rd.value(rd.get(x, "second_trim_condition")) * rd.A
         else:
-            ft["angle"] = float(rd.get(x, "angle"))
+            ft["angle"] = rd.an(x, "angle")
         kind = "revolve"
     else:
         return None
@@ -1264,22 +1371,22 @@ def _read_primitive(rd, r, bindings):
     n = rd.name(r)
     if rd.isa(r, "block"):
         ft = {"type": "box", "name": n, "placement": rd.a2p3(rd.get(r, "position")),
-              "x": float(rd.get(r, "x")), "y": float(rd.get(r, "y")), "z": float(rd.get(r, "z"))}
+              "x": rd.ln(r, "x"), "y": rd.ln(r, "y"), "z": rd.ln(r, "z")}
     elif rd.isa(r, "right_circular_cylinder"):
         a = rd.a1p(rd.get(r, "position"))
         ft = {"type": "cylinder", "name": n, "placement": _axis_placement(a),
-              "height": float(rd.get(r, "height")), "radius": float(rd.get(r, "radius"))}
+              "height": rd.ln(r, "height"), "radius": rd.ln(r, "radius")}
     elif rd.isa(r, "right_circular_cone"):
         a = rd.a1p(rd.get(r, "position"))
-        ft = {"type": "cone", "name": n, "placement": _axis_placement(a), "height": float(rd.get(r, "height")),
-              "radius": float(rd.get(r, "radius")), "semi_angle": float(rd.get(r, "semi_angle"))}
+        ft = {"type": "cone", "name": n, "placement": _axis_placement(a), "height": rd.ln(r, "height"),
+              "radius": rd.ln(r, "radius"), "semi_angle": rd.an(r, "semi_angle")}
     elif rd.isa(r, "sphere"):
-        ft = {"type": "sphere", "name": n, "radius": float(rd.get(r, "radius")),
+        ft = {"type": "sphere", "name": n, "radius": rd.ln(r, "radius"),
               "placement": {"origin": rd.coords(rd.get(r, "centre")), "axis": [0, 0, 1], "x": [1, 0, 0]}}
     elif rd.isa(r, "torus"):
         a = rd.a1p(rd.get(r, "position"))
         ft = {"type": "torus", "name": n, "placement": _axis_placement(a),
-              "major": float(rd.get(r, "major_radius")), "minor": float(rd.get(r, "minor_radius"))}
+              "major": rd.ln(r, "major_radius"), "minor": rd.ln(r, "minor_radius")}
     else:
         return None
     _feature_bindings(rd, r, ft["type"], bindings, ft)
@@ -1355,16 +1462,16 @@ def _read_sequence(rd, seq, model, names, face_sketch, bindings):
             edges = [rd.edge(e) for e in rd.get(el, "blended_edges")]
             ft = {"name": rd.name(el), "edges": edges, "base": solid_name(rd.get(el, "base_solid"))}
             if rd.isa(el, "solid_with_constant_radius_edge_blend"):
-                ft.update(type="fillet", radius=float(rd.get(el, "radius")))
+                ft.update(type="fillet", radius=rd.ln(el, "radius"))
                 _feature_bindings(rd, el, "fillet", bindings, ft)
             elif rd.isa(el, "solid_with_double_offset_chamfer"):
-                ft.update(type="chamfer", kind="double", d1=float(rd.get(el, "left_offset_distance")),
-                          d2=float(rd.get(el, "right_offset_distance")))
+                ft.update(type="chamfer", kind="double", d1=rd.ln(el, "left_offset_distance"),
+                          d2=rd.ln(el, "right_offset_distance"))
             elif rd.isa(el, "solid_with_angle_based_chamfer"):
-                ft.update(type="chamfer", kind="angle", d1=float(rd.get(el, "offset_distance")),
-                          angle=float(rd.get(el, "offset_angle")), left=rd.get(el, "left_offset") == "T")
+                ft.update(type="chamfer", kind="angle", d1=rd.ln(el, "offset_distance"),
+                          angle=rd.an(el, "offset_angle"), left=rd.get(el, "left_offset") == "T")
             elif rd.isa(el, "solid_with_single_offset_chamfer"):
-                ft.update(type="chamfer", kind="single", d1=float(rd.get(el, "offset_distance")))
+                ft.update(type="chamfer", kind="single", d1=rd.ln(el, "offset_distance"))
                 _feature_bindings(rd, el, "chamfer", bindings, ft)
             else:
                 rd.notes.append(f"#{el.id if hasattr(el, 'id') else int(el)}: blend type not read")
@@ -1372,7 +1479,7 @@ def _read_sequence(rd, seq, model, names, face_sketch, bindings):
             add(ft, el)
             continue
         if rd.isa(el, "shelled_solid"):
-            ft = {"type": "shell", "name": rd.name(el), "thickness": float(rd.get(el, "thickness")),
+            ft = {"type": "shell", "name": rd.name(el), "thickness": rd.ln(el, "thickness"),
                   "faces": [rd.face(x) for x in rd.get(el, "deleted_face_set")],
                   "base": solid_name(rd.get(el, "base_solid"))}
             _feature_bindings(rd, el, "shell", bindings, ft)
@@ -1401,7 +1508,7 @@ def brep_representation(f):
     return best
 
 
-def merge(brep_file, model):
+def merge(brep_file, model, sketch_commands=False):
     """Append a model's procedural and parametric data to a STEP file holding its explicit B-rep (the
     dual model of ISO 10303-55). FILE_SCHEMA is set to AP242, whose schema includes Parts 55, 108 and
     111. Returns (file, notes)."""
@@ -1409,7 +1516,7 @@ def merge(brep_file, model):
     br = brep_representation(f)
     if br is None:
         raise StepError("the B-rep file has no solid shape representation")
-    _, notes = to_step(model, f, brep=br)
+    _, notes = to_step(model, f, brep=br, sketch_commands=sketch_commands)
     fs = f.header_record("FILE_SCHEMA")
     if fs and not any(s.startswith("AP242") for s in fs.params[0]):
         notes.append(f"FILE_SCHEMA was {fs.params[0]}; set to AP242 (the schema that holds Parts 55, 108, 111)")

@@ -9,7 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "NXStyle"))
 
-from nxstyle import express, iso10303, p21, parametric  # noqa: E402
+from nxstyle import express, iso10303, p21, parametric, procedural_sketch  # noqa: E402
 
 
 def rect_face(x0, y0, x1, y1, z=0.0):
@@ -152,6 +152,21 @@ class Express(unittest.TestCase):
         self.assertIn(6, ids)                      # name must be *
         self.assertIn(7, ids)                      # ONEOF (a, b)
 
+    def test_complex_record_order(self):
+        # ISO 10303-21 5.2: upper-case names in the basic alphabet's order, where "_" comes after the letters
+        d = express.Dictionary.from_text("""SCHEMA s; ENTITY b_spline SUBTYPE OF (bounded); END_ENTITY;
+            ENTITY bounded; END_ENTITY; END_SCHEMA;""")
+        head = "ISO-10303-21;HEADER;FILE_DESCRIPTION((''),'2;1');FILE_NAME('','2026-01-01T00:00',(''),(''),'','','');" \
+               "FILE_SCHEMA(('S'));ENDSEC;DATA;"
+        ok = p21.loads(head + "#1=(BOUNDED()B_SPLINE());ENDSEC;END-ISO-10303-21;")
+        bad = p21.loads(head + "#1=(B_SPLINE()BOUNDED());ENDSEC;END-ISO-10303-21;")
+        order = "partial records of a complex instance must be in name order (10.2.5.3)"
+        self.assertNotIn(order, [i.message for i in express.check(ok, d)])
+        self.assertIn(order, [i.message for i in express.check(bad, d)])
+        f = p21.File(("S",))
+        f.add_complex([("B_SPLINE", []), ("BOUNDED", [])])
+        self.assertEqual(f[1].names, ["BOUNDED", "B_SPLINE"])
+
     def test_bundled_dictionary(self):
         d = iso10303.dictionary()
         # ISO 10303-108 Cor.1 annex F.1.1 writes BOUND_VARIATIONAL_PARAMETER('P1', #520, 'P1', 'C5 RADIUS', *)
@@ -251,6 +266,156 @@ class Parametric(unittest.TestCase):
         self.assertEqual([ft["type"] for ft in m["features"]], ["box", "cylinder", "boolean"])
         self.assertEqual(m["features"][2]["first"], "Box")
         self.assertEqual(m["features"][1]["expressions"], {"radius": ["var", "R"]})
+
+
+def part112_file():
+    """A Part 112 sketch: rectangle 40 x 20 with a trimmed R3 fillet in its bottom right corner, a hexagon,
+    two arcs, a circle copied 10 to the right, that copy in a circular pattern, and a tangent line."""
+    f = p21.File(("PROCEDURAL_SKETCH_SCHEMA",), name="part112")
+    P = lambda x, y: f.add("CARTESIAN_POINT", "", [float(x), float(y)])    # noqa: E731
+    E = p21.Enum
+    ctx = f.add("GEOMETRIC_REPRESENTATION_CONTEXT", "2D", "", 2)
+    o, a, b = P(0, 0), P(40, 0), P(40, 20)
+    cmds = [f.add("CREATE_RECTANGLE", "rect", o, a, b),
+            f.add("CREATE_POLYGON", "hex", 6.0, P(60, 10), P(70, 10), E("INSCRIBED"), 10.0),
+            f.add("CREATE_CIRCULAR_ARC_3_POINTS", "a3", P(10, 30), P(20, 40), P(30, 30)),
+            f.add("CREATE_CIRCULAR_ARC_START_END_RADIUS", "ser", P(0, 50), P(10, 50), 5.0, E("CCW"))]
+
+    def tline(p, q):
+        d = f.add("DIRECTION", "", [1.0 if p[0] != q[0] else 0.0, 1.0 if p[1] != q[1] else 0.0])
+        ln = f.add("LINE", "", P(*p), f.add("VECTOR", "", d, 1.0))
+        return f.add("TRIMMED_CURVE", "", ln, [P(*p)], [P(*q)], True, E("CARTESIAN"))
+    bottom, right = tline((0, 0), (40, 0)), tline((40, 0), (40, 20))
+    # the selection as a geometric item (ISO 10303-55 5.4.4 WR1); Part 112's 4.2.2 example writes it simple
+    sel = f.add_complex([("GEOMETRIC_REPRESENTATION_ITEM", []), ("REPRESENTATION_ITEM", [""]),
+                         ("USER_SELECTED_ELEMENTS", [[bottom, right]]), ("USER_SELECTED_SHAPE_ELEMENTS", [])])
+    cmds += [sel,
+             f.add("CREATE_FILLET", "f", bottom, False, right, False, 3.0, True, P(39, 1))]
+    cmds.append(f.add("CREATE_CIRCLE_CENTRE_POINT", "c", P(100, 0), 4.0))
+    circle = f.add("CIRCLE", "", f.add("AXIS2_PLACEMENT_2D", "", P(100, 0), f.add("DIRECTION", "", [1.0, 0.0])), 4.0)
+    sel = f.add("GEOMETRIC_CURVE_SET", "", [circle])
+    cmds.append(f.add("SKETCH_TRANSFORM_TRANSLATE", "t", sel, True, 10.0, 0.0))
+    copy = f.add("CIRCLE", "", f.add("AXIS2_PLACEMENT_2D", "", P(110, 0), f.add("DIRECTION", "", [1.0, 0.0])), 4.0)
+    cmds.append(f.add("CREATE_PATTERN_CIRCULAR", "pc", [copy], f.add("GEOMETRIC_CURVE_SET", "", [copy]), 3,
+                      math.pi / 2, P(100, 0), True, P(110, 0)))
+    near = f.add("NEAR_POINT_RELATIONSHIP", "", p21.UNSET, circle, P(100, 4))
+    cmds.append(f.add("CREATE_LINE_SEGMENT_POINT_TANGENT", "tan", P(100, 20), circle, near))
+    seq = f.add("PROCEDURAL_SHAPE_REPRESENTATION_SEQUENCE", "sketch", cmds, [], "Part 112 test")
+    f.add("PROCEDURAL_SHAPE_REPRESENTATION", "Part112 commands", [seq], ctx)
+    return p21.loads(p21.dumps(f))
+
+
+class Part112(unittest.TestCase):
+    def test_circle_through_three_points(self):
+        c, r = procedural_sketch.circle_3((10, 30), (20, 40), (30, 30))
+        self.assertEqual((round(c[0], 9), round(c[1], 9), round(r, 9)), (20.0, 30.0, 10.0))
+        with self.assertRaises(ValueError):
+            procedural_sketch.circle_3((0, 0), (1, 1), (2, 2))
+
+    def test_file_is_valid(self):
+        errors = [i for i in iso10303.check(part112_file()) if i.level == "error"]
+        self.assertEqual(errors, [])
+
+    def test_evaluation(self):
+        models, notes = parametric.from_step(part112_file())
+        sk = models[0]["sketches"][0]
+        g = sk["geometry"]
+        self.assertEqual(sk["name"], "Part112")
+        # rectangle 4, hexagon 6, two arcs, the fillet, the circle, its copy, 3 pattern copies, the tangent line
+        self.assertEqual(len(g), 19)
+        near = lambda p, q: all(abs(x - y) < 1e-9 for x, y in zip(p, q))   # noqa: E731
+        lines = [x for x in g if x["type"] == "line"]
+        # the rectangle, its bottom and right sides trimmed by the fillet
+        self.assertTrue(any(near(x["p1"], [0, 0]) and near(x["p2"], [37, 0]) for x in lines), lines[:4])
+        self.assertTrue(any(near(x["p1"], [40, 3]) and near(x["p2"], [40, 20]) for x in lines))
+        fil = [x for x in g if x["type"] == "arc" and abs(x["r"] - 3) < 1e-9][0]
+        self.assertTrue(near(fil["c"], [37, 3]))
+        self.assertEqual({tuple(fil["p1"]), tuple(fil["p2"])}, {(37.0, 0.0), (40.0, 3.0)})
+        hexa = [x for x in lines if all(abs(math.dist(x[k], (60, 10)) - 10) < 1e-9 for k in ("p1", "p2"))]
+        self.assertEqual(len(hexa), 6)
+        a3 = [x for x in g if x["type"] == "arc" and abs(x["r"] - 10) < 1e-9][0]
+        self.assertTrue(near(a3["c"], [20, 30]) and near(a3["p1"], [30, 30]) and near(a3["p2"], [10, 30]))
+        ser = [x for x in g if x["type"] == "arc" and abs(x["r"] - 5) < 1e-9][0]
+        self.assertTrue(near(ser["c"], [5, 50]))
+        circles = sorted(tuple(round(v, 9) for v in x["c"]) for x in g if x["type"] == "circle")
+        self.assertEqual(circles, [(90.0, 0.0), (100.0, -10.0), (100.0, 0.0), (100.0, 10.0), (110.0, 0.0)])
+        tan = [x for x in lines if near(x["p1"], [100, 20])][0]
+        self.assertAlmostEqual(math.dist(tan["p1"], tan["p2"]), math.sqrt(20 ** 2 - 4 ** 2))
+        self.assertFalse([n for n in notes if "not evaluated" in n or "matches nothing" in n], notes)
+
+    def test_written_commands_reproduce_the_sketch(self):
+        model = copy.deepcopy(PLATE)
+        model["sketches"][1]["geometry"].append({"type": "arc", "c": [0, 0], "r": 5, "p1": [5, 0], "p2": [0, 5]})
+        f, notes = parametric.to_step(model, sketch_commands=True)
+        f = p21.loads(p21.dumps(f))
+        self.assertIn("CREATE_LINE_SEGMENT_2_POINTS", {i.name for i in f})
+        self.assertEqual([i for i in iso10303.check(f) if i.level == "error"], [])
+        _, rnotes = parametric.from_step(f)
+        self.assertIn("Base: its ISO 10303-112 commands make 5 of its 5 curves", rnotes)   # with its centreline
+        self.assertIn("Hole: its ISO 10303-112 commands make 2 of its 2 curves", rnotes)
+
+
+class Units(unittest.TestCase):
+    def test_inch_and_degree(self):
+        f = p21.File(("AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF",))
+        mm = f.add_complex([("LENGTH_UNIT", []), ("NAMED_UNIT", [p21.DERIVED]), ("SI_UNIT", [p21.Enum("MILLI"),
+                                                                                           p21.Enum("METRE")])])
+        inch = f.add_complex([("CONVERSION_BASED_UNIT", ["INCH", f.add("LENGTH_MEASURE_WITH_UNIT",
+                                                                        p21.Typed("LENGTH_MEASURE", 25.4), mm)]),
+                              ("LENGTH_UNIT", []), ("NAMED_UNIT", [p21.DERIVED])])
+        rad = f.add_complex([("NAMED_UNIT", [p21.DERIVED]), ("PLANE_ANGLE_UNIT", []), ("SI_UNIT", [p21.UNSET,
+                                                                                                p21.Enum("RADIAN")])])
+        deg = f.add_complex([("CONVERSION_BASED_UNIT", ["DEGREE", f.add("PLANE_ANGLE_MEASURE_WITH_UNIT",
+                                                                         p21.Typed("PLANE_ANGLE_MEASURE",
+                                                                                   math.pi / 180), rad)]),
+                             ("NAMED_UNIT", [p21.DERIVED]), ("PLANE_ANGLE_UNIT", [])])
+        ctx = f.add_complex([("GEOMETRIC_REPRESENTATION_CONTEXT", [3]), ("GLOBAL_UNIT_ASSIGNED_CONTEXT", [[inch, deg]]),
+                             ("REPRESENTATION_CONTEXT", ["", ""])])
+        rd = parametric._Reader(p21.loads(p21.dumps(f)))
+        rd.use_units(ctx)
+        self.assertAlmostEqual(rd.L, 25.4)
+        self.assertAlmostEqual(rd.A, math.pi / 180)
+
+
+class ApplicationProtocols(unittest.TestCase):
+    HEAD = "ISO-10303-21;HEADER;FILE_DESCRIPTION((''),'2;1');FILE_NAME('','2026-01-01T00:00',(''),(''),'','','');"
+
+    def test_identify(self):
+        f = p21.loads(self.HEAD + "FILE_SCHEMA(('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF. {1 0 10303 442 1 1 4 }'))"
+                                  ";ENDSEC;DATA;ENDSEC;END-ISO-10303-21;")
+        i = iso10303.identify(f)[0]
+        self.assertEqual((i["ap"], i["edition"]), ("AP242", "object identifier version 1"))
+        f = p21.loads(self.HEAD + "FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));ENDSEC;DATA;ENDSEC;END-ISO-10303-21;")
+        self.assertEqual(iso10303.identify(f)[0]["ap"], "AP203")
+
+    def test_bom(self):
+        rows = ["#1=PRODUCT('ASM','Assembly','',());", "#2=PRODUCT('BOLT','Bolt','',());",
+                "#3=PRODUCT('SUB','Sub','',());", "#11=PRODUCT_DEFINITION_FORMATION('','',#1);",
+                "#12=PRODUCT_DEFINITION_FORMATION('','',#2);", "#13=PRODUCT_DEFINITION_FORMATION('','',#3);",
+                "#21=PRODUCT_DEFINITION('design','',#11,#9);", "#22=PRODUCT_DEFINITION('design','',#12,#9);",
+                "#23=PRODUCT_DEFINITION('design','',#13,#9);",
+                "#31=NEXT_ASSEMBLY_USAGE_OCCURRENCE('1','','',#21,#23,$);",
+                "#32=NEXT_ASSEMBLY_USAGE_OCCURRENCE('2','','',#21,#23,$);",
+                "#33=NEXT_ASSEMBLY_USAGE_OCCURRENCE('3','','',#23,#22,$);",
+                "#34=NEXT_ASSEMBLY_USAGE_OCCURRENCE('4','','',#23,#22,$);",
+                "#35=NEXT_ASSEMBLY_USAGE_OCCURRENCE('5','','',#23,#22,$);", "#9=PRODUCT_DEFINITION_CONTEXT('','','');"]
+        f = p21.loads(self.HEAD + "FILE_SCHEMA(('AUTOMOTIVE_DESIGN'));ENDSEC;DATA;" + "".join(rows) +
+                      "ENDSEC;END-ISO-10303-21;")
+        b = iso10303.bom(f)
+        self.assertEqual(len(b["roots"]), 1)
+        self.assertEqual(b["roots"][0]["children"][0]["quantity"], 2)
+        self.assertEqual(b["parts"], [{"id": "BOLT", "name": "Bolt", "quantity": 6}])
+
+    def test_long_form_schema(self):
+        # an AP long form is one schema with every entity in it; the parser takes its algorithms and rules
+        text = """SCHEMA tiny_ap_mim_lf; TYPE label = STRING; END_TYPE;
+        ENTITY product; id : label; name : label; END_ENTITY;
+        FUNCTION f(a : GENERIC : g) : GENERIC : g; LOCAL x : INTEGER := 0; END_LOCAL;
+          REPEAT i := 1 TO 3; IF i > 1 THEN x := x + i; END_IF; END_REPEAT; RETURN (a); END_FUNCTION;
+        RULE r FOR (product); WHERE WR1: SIZEOF(product) >= 0; END_RULE;
+        SUBTYPE_CONSTRAINT sc FOR product; END_SUBTYPE_CONSTRAINT; END_SCHEMA;"""
+        d = express.Dictionary.from_text(text)
+        self.assertEqual([a["name"] for a in d.attributes("product")], ["id", "name"])
 
 
 if __name__ == "__main__":
