@@ -31,7 +31,7 @@ Press kbd:[L] for *Line* and draw the slot's two sides, from the Ø3.50 circle t
 Dimension them: *Distance* 0.50 between them, and 0.25 from the X axis for the upper one.
 
 Press kbd:[T] for *Quick Trim*, click the circle between the slot's sides and press MB2.
-If the Dialog panel then shows a degree of freedom, the trim has dropped one side's tangency: pick that side and the arc, then *Tangent*.
+The sides stay tangent to what is left of the circle.
 
 === 4. The cross
 
@@ -73,4 +73,5 @@ Each of the 29 curves is compared with the book's figure, rebuilt from its dimen
 
 * FreeCAD's *Rotate Curve* takes the angle that the copies are spread over: 3 copies over 270° are 90° apart. NX's Pattern Curve takes the count and the angle between the copies.
 * The copies keep their own dimensions (the R0.38 and Ø0.38, the 1.00), but they are not tied to the original, so the sketch keeps degrees of freedom. NX's pattern stays associative.
-* FreeCAD's Profile holds each end of the rectangle to the circle with Point on Curve and Tangent. With the side horizontal, that pair is partly redundant, and Quick Trim sometimes drops one side's Tangent (3 of the last 4 replays). The replay then clicks *Tangent* again and reports the step as differing.
+* FreeCAD's Profile holds each end of the rectangle to the circle with two constraints: Point on Curve for the click, and Tangent because the side leaves the circle along its tangent. With the side horizontal, that pair is partly redundant: FreeCAD does not flag it, and its solver leaves the end up to 0.0001 mm from the point of contact. NX-Style leaves this pair as FreeCAD makes it: holding the end by one end-point Tangent instead would not keep the trim from dropping it (next point).
+* FreeCAD's Quick Trim keeps a tangency on the trimmed circle only when OCC finds the line and the arc intersecting. A side that touches the circle at its very end, held as Profile holds it or by an end-point Tangent, is found or not by the sign of a rounding error, and FreeCAD dropped one side's Tangent in 3 of 4 replays. NX-Style puts back each tangency the trim dropped where the line still touches the arc, as part of the same trim (one Undo takes it back); the replay reports how many it put back.

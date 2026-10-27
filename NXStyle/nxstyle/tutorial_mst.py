@@ -1849,6 +1849,8 @@ class MstHolderTutorials:
             return [f"{c.Type} {c.First}/{c.FirstPos} {c.Second}/{c.SecondPos}" for c in sk.Constraints
                     if outer in (c.First, c.Second)]
         before = on_outer()
+        from . import sketch_ui
+        sketch_ui.trim_guard.last = None
         self.key("T")
         QtWidgets.QApplication.processEvents()
         tool = self.nav().sketch_tool_active()
@@ -1860,10 +1862,14 @@ class MstHolderTutorials:
         circle_left = any("Circle" in g.TypeId and "Arc" not in g.TypeId and abs(g.Radius - r) < 1e-6
                           for g in sk.Geometry)
         self._ak_outer = arcs[0] if len(arcs) == 1 else None
-        self.info["AK trim: the circle's constraints"] = {"before": before, "after": on_outer()}
-        # Profile holds each side's end by Point on Curve plus Tangent, a partly redundant pair with the side
-        # Horizontal; the trim sometimes drops one side's Tangent (3 of 4 runs), and that end would slide round the
-        # arc. Tangent again (FreeCAD folds the pair into one end-point tangency: the count does not change)
+        guard = sketch_ui.trim_guard.last or {}
+        kept = guard.get("put back") or []
+        self.info["AK trim: the circle's constraints"] = {"before": before, "after": on_outer(),
+                                                          "NX-Style put back": kept}
+        # Profile holds each side's end by Point on Curve plus Tangent. FreeCAD's trim keeps that Tangent only when
+        # the end lies a rounding error inside the contact (it dropped one in 3 of 4 runs); NX-Style's Quick Trim
+        # puts it back (sketch_ui.TrimGuard). Should one still be missing, Tangent again so the end cannot slide
+        # round the arc (FreeCAD folds the pair into one end-point tangency), and the step says so
         retangent = []
         rect = getattr(self, "_ak_rect", None)
 
@@ -1888,9 +1894,10 @@ class MstHolderTutorials:
                   (DIFFERS if retangent else SAME) if tool and self._ak_outer is not None and not circle_left
                   and not missing and held == 2 and dof == 0 and "not made" not in "".join(retangent) else FAIL,
                   f"{len(arcs)} arc R1.75, full circle left {circle_left}; its ends held to the slot's sides "
-                  f"{held} of 2; DoF {dof} ('{msg}'){self.ak_red()}; geometry {n0} -> {len(sk.Geometry)}"
-                  + (f"; FreeCAD's trim dropped a side's tangency, made Tangent again: {retangent}"
-                     if retangent else "") + (f"; differs: {missing}" if missing else ""))
+                  f"{held} of 2; DoF {dof} ('{msg}'){self.ak_red()}; geometry {n0} -> {len(sk.Geometry)}; "
+                  f"{len(kept)} tangenc{'y' if len(kept) == 1 else 'ies'} FreeCAD's trim dropped put back by "
+                  "NX-Style" + (f"; a side's tangency still missing, made Tangent again: {retangent}"
+                                if retangent else "") + (f"; differs: {missing}" if missing else ""))
 
     # ------------------------------------------------------------- the cross
     def ak_arm(self):

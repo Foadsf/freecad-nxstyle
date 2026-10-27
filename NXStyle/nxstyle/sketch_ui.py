@@ -8,6 +8,8 @@ horizontal (or vertical, or parallel by constraint) one end is enough.
 
 Geometric Constraints: NX opens one dialog for all geometric constraints; here C opens NX's gallery as a
 menu, and the choice runs FreeCAD's tool on the current selection (or starts it to pick, as FreeCAD does).
+
+Quick Trim: FreeCAD's trim tool, with the tangencies FreeCAD's trim drops put back (TrimGuard).
 """
 
 import FreeCAD as App
@@ -318,6 +320,87 @@ def install_context_menu():
     if _menu is None and hasattr(Gui, "addWorkbenchManipulator"):
         _menu = SketchMenu()
         Gui.addWorkbenchManipulator(_menu)
+
+
+# ------------------------------------------------------------------ Quick Trim keeps tangencies (NX: T)
+TRIM = "Trim edge"          # the transaction FreeCAD's trim tool opens for each trim
+
+
+def constraint_rows(sk):
+    return [(c.Type, c.First, c.FirstPos, c.Second, c.SecondPos, c.Third) for c in sk.Constraints]
+
+
+def touches(sk, other, pos, piece, tol=1e-6):
+    """Whether curve `other` (its point `pos`, when pos) touches curve `piece`. FreeCAD asks OCC's extrema for
+    an intersection, which miss a contact at the very end of a line; the distance between the shapes does not."""
+    import Part
+    if pos:
+        target = Part.Vertex(sk.getPoint(other, pos))
+    else:
+        target = (sk.Geometry[other] if other >= 0 else sk.ExternalGeo[-other - 1]).toShape()
+    return sk.Geometry[piece].toShape().distToShape(target)[0] < tol
+
+
+class TrimGuard:
+    """Puts back the Tangent and Perpendicular constraints FreeCAD's trim drops (see sketch_core.trim_losses):
+    NX's Quick Trim keeps a line tangent to what is left of the arc. The constraints before the trim are read
+    when FreeCAD opens its transaction; after it commits, each lost one goes on the piece the other curve still
+    touches. Like FreeCAD's own solve after the trim, this adds no undo step: one Undo takes back the trim."""
+
+    def __init__(self):
+        self.pending = None
+        self.enabled = True
+        self.last = None             # what the last trim lost and got back, for tests and the tutorials
+
+    def slotOpenTransaction(self, doc, name):
+        sk = edited_sketch() if self.enabled and name == TRIM else None
+        if sk is not None and sk.Document == doc:
+            self.pending = (sk, constraint_rows(sk), [g.Tag for g in sk.Geometry])
+
+    def slotAbortTransaction(self, doc):
+        self.pending = None
+
+    def slotCommitTransaction(self, doc):
+        snap, self.pending = self.pending, None
+        if snap is not None and snap[0].Document == doc:
+            from .qt import QtCore
+            QtCore.QTimer.singleShot(0, lambda: self.restore(*snap))   # after FreeCAD's tool is done with it
+
+    def restore(self, sk, before, tags):
+        import Sketcher
+        try:
+            now = [g.Tag for g in sk.Geometry]
+        except Exception:                    # the sketch is gone
+            return
+        old, index = set(tags), {t: i for i, t in enumerate(now)}
+        gone = [i for i, t in enumerate(tags) if t not in index]
+        if len(gone) != 1:                   # not one curve trimmed: leave it to FreeCAD
+            return
+        pieces = [i for i, t in enumerate(now) if t not in old]
+        renumber = {i: index.get(t) for i, t in enumerate(tags)}
+        lost = core.trim_losses(before, constraint_rows(sk), gone[0], pieces, renumber)
+        back = []
+        for kind, other, pos in lost:
+            piece = next((p for p in pieces if touches(sk, other, pos, p)), None)
+            if piece is not None:
+                sk.addConstraint(Sketcher.Constraint(*core.moved_constraint(kind, other, pos, piece)))
+                back.append((kind, other, pos, piece))
+        self.last = {"lost": lost, "put back": back}
+        if back:
+            sk.solve()
+            App.Console.PrintLog(f"NX-Style Quick Trim: {len(back)} constraint(s) FreeCAD's trim dropped put back: "
+                                 f"{back}\n")
+
+
+trim_guard = TrimGuard()
+_trim_watched = False
+
+
+def install_trim_guard():
+    global _trim_watched
+    if not _trim_watched:
+        App.addDocumentObserver(trim_guard)
+        _trim_watched = True
 
 
 COMMANDS = {

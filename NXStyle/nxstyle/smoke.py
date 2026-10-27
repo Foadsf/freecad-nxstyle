@@ -128,6 +128,9 @@ class Smoke:
         yield self.s_sketch_arc, 600              # FreeCAD refreshes the command states on a timer
         yield self.s_sketch_radius, 400
         yield self.s_sketch_radius_check, 100
+        # last in the sketch: after Quick Trim (MB2 ended it), picks of sketch points were refused in the checks
+        # after it (Point on Curve), with NX-Style's trim guard off too; not yet explained
+        yield self.s_sketch_trim, 300
         yield self.s_sketch_leave, 1200
         yield self.s_sketch_left, 100
         yield self.s_drafting, 2500
@@ -782,6 +785,125 @@ class Smoke:
                    f"started {started}, ended {ended}, {len(sk.Geometry) - g0} lines")
         sk.deleteAllGeometry()
         App.ActiveDocument.recompute()
+
+    def s_sketch_trim(self):
+        """Quick Trim (T) keeps a line tangent where it ends on the trimmed circle. Tutorial AK's outline, smaller:
+        a circle with a side held as Profile holds it (end on the circle plus Tangent) and one held as Tangent
+        holds it (the end tangent there), trimmed between two lines. FreeCAD's trim alone drops such tangencies by
+        a rounding error's sign (the control, NX-Style's guard off); with the guard, all stay, one Undo."""
+        import math
+        import Part
+        import Sketcher
+        from pivy import coin
+        from . import sketch_ui
+        from .tutorial import qtest, settle_view
+        name = "Quick Trim keeps the sides tangent to the trimmed circle; one Undo takes the trim back"
+        sk = sketch_ui.edited_sketch()
+        if sk is None:
+            self.check(name, False, "no sketch in edit")
+            return
+        doc, V = sk.Document, App.Vector
+        r, length, h = 20.0, 60.0, 3.0
+        view, f = self.view(), self.nav()
+        w = f.widget
+        settle_view(view)
+        cam = view.getCameraNode()
+        d = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
+        g = sk.getGlobalPlacement().multVec(V(20, 0, 0))
+        cam.position.setValue(coin.SbVec3f(g.x, g.y, g.z) - d * cam.focalDistance.getValue())
+        if hasattr(cam, "height"):
+            cam.height.setValue(110)
+        QtWidgets.QApplication.processEvents()
+        dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
+
+        def at(x, y):
+            sx, sy = view.getPointOnViewport(sk.getGlobalPlacement().multVec(V(x, y, 0)))
+            return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
+
+        def click(p, button=Qt.LeftButton):
+            self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            self.send(f, QtCore.QEvent.MouseButtonPress, p, button, button)
+            self.send(f, QtCore.QEvent.MouseButtonRelease, p, button, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+
+        def running(p):
+            self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            return f.sketch_tool_active()
+
+        def outline():
+            """Curves 0 circle, 1 top, 2 right, 3 bottom, 4 and 5 the slot; the ends start right of the contact."""
+            sk.deleteAllGeometry()
+            c = sk.addGeometry(Part.Circle(V(0, 0, 0), V(0, 0, 1), r + 0.3), False)
+            top = sk.addGeometry(Part.LineSegment(V(0.3, r + 0.2, 0), V(length, r, 0)), False)
+            right = sk.addGeometry(Part.LineSegment(V(length, r, 0), V(length, -r, 0)), False)
+            bot = sk.addGeometry(Part.LineSegment(V(length, -r, 0), V(0.3, -r - 0.2, 0)), False)
+            a = math.sqrt(r * r - h * h)
+            slot = [sk.addGeometry(Part.LineSegment(V(a, y, 0), V(length, y, 0)), False) for y in (h, -h)]
+            k = [("Coincident", c, 3, -1, 1), ("Diameter", c, 2 * r), ("Coincident", top, 2, right, 1),
+                 ("Coincident", right, 2, bot, 1), ("Horizontal", top), ("Vertical", right), ("Horizontal", bot),
+                 ("PointOnObject", top, 1, c), ("Tangent", top, c),        # as Profile's clicks hold it
+                 ("Tangent", bot, 2, c),                                   # as Tangent folds that pair
+                 ("DistanceX", -1, 1, top, 2, length)]
+            for s, y in zip(slot, (h, -h)):
+                k += [("Horizontal", s), ("PointOnObject", s, 1, c), ("PointOnObject", s, 2, right),
+                      ("DistanceY", -1, 1, s, 1, y)]
+            for args in k:
+                sk.addConstraint(Sketcher.Constraint(*args))
+            doc.recompute()
+            return c, top, bot
+
+        def tangent(g):
+            return any(k.Type == "Tangent" and g in (k.First, k.Second) for k in sk.Constraints)
+
+        def trim(guarded):
+            sketch_ui.trim_guard.enabled = guarded
+            sketch_ui.trim_guard.last = None
+            c, top, bot = outline()
+            n0 = len(sk.Constraints)
+            w.setFocus()
+            qtest().keyClick(w, Qt.Key_T)
+            QtWidgets.QApplication.processEvents()
+            a = math.radians(4)
+            click(at(r * math.cos(a), r * math.sin(a)))
+            qtest().qWait(100)                      # the guard runs once FreeCAD's tool has committed
+            away = at(-15, 30)
+            click(away, Qt.MiddleButton)
+            ended = not running(away)
+            for _ in range(3):                      # leave no tool running for the next checks
+                if not running(away):
+                    break
+                qtest().keyClick(w, Qt.Key_Escape)
+                QtWidgets.QApplication.processEvents()
+            Gui.Selection.clearSelection()
+            arcs = [i for i, x in enumerate(sk.Geometry) if "ArcOfCircle" in x.TypeId]
+            solved = sk.solve() == 0 and not list(getattr(sk, "MalformedConstraints", []))
+            return {"arcs": len(arcs), "top": tangent(top), "bottom": tangent(bot), "n0": n0, "ended": ended,
+                    "dof": getattr(sk, "DoF", None), "solved": solved, "guard": sketch_ui.trim_guard.last}
+
+        try:
+            control = trim(False)
+            got = trim(True)
+            after = len(sk.Constraints)
+            doc.undo()
+            undone = (len(sk.Constraints), any("ArcOfCircle" in x.TypeId for x in sk.Geometry))
+            doc.redo()
+            redone = (len(sk.Constraints), tangent(1), tangent(3))
+        finally:
+            sketch_ui.trim_guard.enabled = True
+            sk.deleteAllGeometry()
+            doc.recompute()
+        dropped = (not control["top"]) + (not control["bottom"])
+        self.info["Quick Trim, FreeCAD alone (control)"] = control
+        self.info["Quick Trim, NX-Style"] = got
+        ok = got["arcs"] == 1 and got["top"] and got["bottom"] and got["solved"] and str(got["dof"]) == "0" \
+            and undone == (got["n0"], False) and redone == (after, True, True)
+        self.check(name, ok, f"NX-Style: MB2 ended the tool {got['ended']} (control {control['ended']}); tangent top "
+                   f"{got['top']}, bottom {got['bottom']}, DoF {got['dof']}, put back "
+                   f"{(got['guard'] or {}).get('put back')}; undo {undone} (constraints, arc left), redo {redone}; "
+                   f"control, FreeCAD alone: {dropped} of 2 tangencies dropped"
+                   + ("" if dropped else " (the control did not reach the defect: FreeCAD may have fixed its trim)"))
 
     def s_sketch_constraints(self):
         """Point on Curve, Collinear and NX's Geometric Constraints gallery (C), run from the Sketch tab."""
