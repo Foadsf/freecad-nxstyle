@@ -65,6 +65,7 @@
 * xref:tutorials/aj.adoc[AJ: Circular Base]
 * xref:tutorials/ak.adoc[AK: Holder]
 * xref:tutorials/al.adoc[AL: Design intent through STEP]
+* xref:tutorials/am.adoc[AM: Receiving STEP: AP, BOM, Part 112 sketch]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]
