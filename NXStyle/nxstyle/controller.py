@@ -177,7 +177,7 @@ class Session:
         self.adapter = adapter
         self.requested = requested
         self.edit = feature is not None
-        self.stage = "select"            # select -> parameterize -> committed | cancelled | failed
+        self.stage = "select"            # select -> build -> parameterize -> committed | cancelled | failed
         self.doc = feature.Document if feature is not None else App.ActiveDocument
         self.sketch = self.sketch_body = self.body = None
         self.has_body = self.has_solid = False
@@ -487,6 +487,11 @@ class Controller:
 
     def _build(self, plan):
         s = self.session
+        # The backend's recompute runs the event loop (FreeCAD's progress bar), so the poll can fire before the
+        # panel opens. In 'select' it read the section handed over as missing (measured: tutorial AJ's Subtract
+        # ended 'cancelled ... no section' in 4 of 6 runs, and the build then opened a panel for the ended command);
+        # in 'parameterize' it would read the panel as closed.
+        s.stage = "build"
         s.undo_names = list(s.doc.UndoNames)     # the sketch made inside the command has its own undo steps
         App.setActiveTransaction(s.adapter.name, True)
         try:

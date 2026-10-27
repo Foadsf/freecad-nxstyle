@@ -3614,7 +3614,7 @@
    "nx": "Save (Ctrl+S)",
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
-   "detail": "ExtrudeAE.FCStd rewritten by Ctrl+S (1.1 s later), part unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+   "detail": "ExtrudeAE.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "AE: One Extrude, every way (command controller acceptance)",
@@ -3670,7 +3670,7 @@
    "nx": "Equal Length: the two slanted lines, then the two long vertical lines",
    "replay": "two lines + ribbon 'Sketch › Constraints > Equal', twice",
    "outcome": "same",
-   "detail": "slanted 66.89 / 66.89, verticals 124.63 / 124.63 mm; DoF 13"
+   "detail": "slanted 67.07 / 67.07, verticals 124.45 / 124.45 mm; DoF 13"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3678,7 +3678,7 @@
    "nx": "Collinear, then Equal Length: the two bottom lines",
    "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
    "outcome": "same",
-   "detail": "the bottom lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 38.38 / 38.38 mm; DoF 11"
+   "detail": "the bottom lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 38.77 / 38.77 mm; DoF 11"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3686,7 +3686,7 @@
    "nx": "Tangent: the arc and each vertical line at its ends (only where it is missing)",
    "replay": "arc + line + ribbon 'Tangent' where missing",
    "outcome": "same",
-   "detail": "already tangent from Profile: ['Edge2']; added [('Edge4', 0)]; arc radius 21.379 mm about (0.000, 0.000); DoF 10"
+   "detail": "already tangent from Profile: ['Edge2']; added [('Edge4', 0)]; arc radius 21.670 mm about (0.000, 0.000); DoF 10"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3702,7 +3702,7 @@
    "nx": "Collinear, then Equal: the two short lines at the top",
    "replay": "two lines + ribbon 'Sketch › Constraints > Collinear'; two lines + 'Equal'",
    "outcome": "same",
-   "detail": "the top lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 18.03 / 18.03 mm; DoF 8; the notch's two sides are then equal too (the book's last Equal is implied)"
+   "detail": "the top lines 0.0000 mm apart (Collinear added 1 point-on-curve constraint, solver 0), lengths 16.06 / 16.06 mm; DoF 8; the notch's two sides are then equal too (the book's last Equal is implied)"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -3726,7 +3726,7 @@
    "nx": "Select the sketch, Extrude (X): Z direction, 60 mm, Boolean None",
    "replay": "sketch selected + X; 'lengthEdit' = 60 mm, MB2 = OK",
    "outcome": "same",
-   "detail": "Boolean 'None' (None (a new body): ready (OK or MB2 commits one undo step)); section Sketch; same solid as the reference: 0 mm³ differ, box within 0 mm, 16 faces (16 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
+   "detail": "Boolean 'None' (None (a new body): ready (OK or MB2 commits one undo step)); section Sketch; same solid as the reference: 0 mm³ differ, box within 5.7e-14 mm, 16 faces (16 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
   },
   {
    "tutorial": "AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)",
@@ -4006,7 +4006,7 @@
    "nx": "Each semicircle's centre on its axis, its radius, and its distance from the middle",
    "replay": "centre + axis + 'Coincident', arc + 'Radius / Diameter', centre + origin + 'Distance', per slot",
    "outcome": "differs",
-   "detail": "12 of 12 constraints; semicircles within 6.2e-21 mm; DoF 4 (the outer ends stay free outside the disc); added by hand: top: Vertical on a side (1); right: Horizontal on a side (1); bottom: Vertical on a side (1); left: Horizontal on a side (1)"
+   "detail": "12 of 12 constraints; semicircles within 4.4e-21 mm; DoF 4 (the outer ends stay free outside the disc); added by hand: top: Vertical on a side (1); right: Horizontal on a side (1); bottom: Vertical on a side (1); left: Horizontal on a side (1)"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",

@@ -2180,6 +2180,37 @@ class Smoke:
             ctl.cancel()
             qwait(500)
             self.check("Extrude runs again after a failed start", again and not ctl.busy(), state())
+
+            # a build that lets the event loop run, as FreeCAD's recompute does through its progress bar: the
+            # controller's poll fires meanwhile and must not end the command as having no section (tutorial AJ
+            # step 7 ended 'cancelled ... no section' about one run in five)
+            slow_build = a.build
+
+            def slow(s, plan):
+                qwait(450)                               # three poll intervals
+                return slow_build(s, plan)
+
+            pick_sketch()
+            ended = len(ctl.history)
+            a.build = slow
+            try:
+                self.press("X")
+                built = opened()
+            finally:
+                del a.build
+            raced = state()
+            raced["ended meanwhile"] = ctl.history[ended:]
+            self.check("Extrude whose build lets the event loop run: the poll does not end it, the panel opens",
+                       built and not raced["ended meanwhile"], raced)
+            if ctl.busy():
+                ctl.cancel()
+                qwait(500)
+            elif Gui.Control.activeDialog():             # the race: a panel left open by an ended command
+                if App.getActiveTransaction():
+                    App.closeActiveTransaction(True)
+                Gui.getDocument(doc.Name).resetEdit()
+                Gui.Control.closeDialog()
+                qwait(300)
         finally:
             if ctl.busy():
                 ctl.cancel()
