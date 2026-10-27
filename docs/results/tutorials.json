@@ -3966,7 +3966,7 @@
    "nx": "A new part (mm)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed1']"
+   "detail": "new document ['Unnamed']"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",
@@ -3989,8 +3989,8 @@
    "n": 4,
    "nx": "Finish Sketch, Extrude 20 (the book gives no thickness), Boolean None",
    "replay": "Ctrl+Q; 'lengthEdit' = 20 mm, MB2 = OK",
-   "outcome": "FAILED",
-   "detail": "Boolean 'None'; NOT the reference solid: 0 mm³ extra, 0 mm³ missing, box off by 0.085 mm; controller: committed new_body, undo step 'Extrude', 1 step(s) added"
+   "outcome": "same",
+   "detail": "Boolean 'None'; same solid as the reference: 0 mm³ differ, box within 0 mm, 3 faces (3 in the reference); controller: committed new_body, undo step 'Extrude', 1 step(s) added"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",
@@ -4005,16 +4005,16 @@
    "n": 6,
    "nx": "Each semicircle's centre on its axis, its radius, and its distance from the middle",
    "replay": "centre + axis + 'Coincident', arc + 'Radius / Diameter', centre + origin + 'Distance', per slot",
-   "outcome": "FAILED",
-   "detail": "12 of 12 constraints; semicircles within 5.0e-03 mm; DoF 4 (the outer ends stay free outside the disc); added by hand: top: Vertical on a side (1); right: Horizontal on a side (1); bottom: Vertical on a side (1); left: Horizontal on a side (1)"
+   "outcome": "differs",
+   "detail": "12 of 12 constraints; semicircles within 6.2e-21 mm; DoF 4 (the outer ends stay free outside the disc); added by hand: top: Vertical on a side (1); right: Horizontal on a side (1); bottom: Vertical on a side (1); left: Horizontal on a side (1)"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",
    "n": 7,
    "nx": "Finish Sketch, Extrude the four slots through, Boolean Subtract",
    "replay": "Ctrl+Q; Boolean 'Subtract', 'lengthEdit' = 20 mm, MB2 = OK",
-   "outcome": "FAILED",
-   "detail": "Boolean 'Subtract'; NOT the reference solid: 0 mm³ extra, 8.1 mm³ missing, box off by 7.74e-13 mm; controller: committed subtract, undo step 'Extrude', 1 step(s) added"
+   "outcome": "same",
+   "detail": "Boolean 'Subtract'; same solid as the reference: 0 mm³ differ, box within 3.6e-13 mm, 18 faces (18 in the reference); controller: committed subtract, undo step 'Extrude', 1 step(s) added"
   },
   {
    "tutorial": "AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)",
