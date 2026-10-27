@@ -100,6 +100,13 @@ def _tasks_dock():
     return Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
 
 
+def _plane_pick_open():
+    """FreeCAD's 'select a plane for the sketch' panel (PartDesign_NewSketch with nothing selected) is open."""
+    dock = _tasks_dock()
+    w = dock.findChild(QtWidgets.QWidget, "PartDesignGui__TaskFeaturePick") if dock is not None else None
+    return w is not None and w.isVisible()
+
+
 def _sketch_in_edit():
     try:
         vp = Gui.ActiveDocument.getInEdit() if Gui.ActiveDocument else None
@@ -632,13 +639,61 @@ class Session:
 STYLE = {"error": "color: #B00020;", "warning": "color: #8A5A00;", "ok": "color: #0B6E79;"}
 
 
+class SectionLine(QtWidgets.QWidget):
+    """NX's Section collector in the command box: '✔ Select Curve (10)' (the curves in its tooltip), the Curve Rule,
+    and the latest refused pick."""
+
+    def __init__(self, collector, parent):
+        super().__init__(parent)
+        self.collector = collector
+        self.setObjectName("nxSectionCurves")
+        lay = QtWidgets.QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        row = QtWidgets.QHBoxLayout()
+        self.status = QtWidgets.QLabel(self)
+        self.status.setObjectName("nxSectionCount")
+        self.rule = QtWidgets.QComboBox(self)
+        self.rule.setObjectName("nxCurveRule")
+        self.rule.setToolTip("Curve Rule (as on the Selection bar): what one pick adds to the section")
+        for label, key in selection_core.SECTION_RULES:
+            self.rule.addItem(label, key)
+        row.addWidget(self.status, 1)
+        row.addWidget(self.rule)
+        lay.addLayout(row)
+        self.message = QtWidgets.QLabel(self)
+        self.message.setObjectName("nxSectionMessage")
+        self.message.setWordWrap(True)
+        self.message.setStyleSheet("color: #C62828;")
+        lay.addWidget(self.message)
+        self.refresh()
+
+    def set_rule(self, key):
+        i = self.rule.findData(key)
+        if i >= 0 and i != self.rule.currentIndex():
+            self.rule.setCurrentIndex(i)
+
+    def refresh(self):
+        c = self.collector
+        mark = "✔" if c.valid else "✱"
+        text = f"{mark} {c.status()}"
+        if self.status.text() != text:
+            self.status.setText(text)
+            self.status.setStyleSheet("color: #1B7F3A;" if c.valid else "color: #C62828;")
+        tip = "\n".join(p.label for p in c.items) or c.problem()
+        if self.status.toolTip() != tip:
+            self.status.setToolTip(tip)
+        refused = f"Refused {c.rejected[-1][0]}: {c.rejected[-1][1]}" if c.rejected else ""
+        if self.message.text() != refused:
+            self.message.setText(refused)
+        self.message.setVisible(bool(refused))
+
+
 class CommandBox(QtWidgets.QGroupBox):
     """NX's command dialog header: section, body, Boolean, the adapter's rows, what is not supported, and the
     error state."""
 
     def __init__(self, ctl, s):
         super().__init__(s.adapter.name)
-        from .collector_ui import CollectorWidget
         self.ctl = ctl
         self.setObjectName("NXCommandBox")
         form = QtWidgets.QFormLayout(self)
@@ -646,9 +701,10 @@ class CommandBox(QtWidgets.QGroupBox):
         self.section.setObjectName("nxSection")
         self.collector = selection_core.Collector("Select Curve", ["curve", "sketch"], minimum=1,
                                                   command=s.adapter.name)
-        self.curves = CollectorWidget(self.collector, rules=selection_core.SECTION_RULES)
-        self.curves.setObjectName("nxSectionCurves")
-        self.curves.rule.setToolTip("Curve Rule (as on the Selection bar): what one pick adds to the section")
+        # The Section collector is a line, not collector_ui.CollectorWidget: with that widget in the box, typed values
+        # in FreeCAD's panel below were lost (measured in tutorial A: the main window was no longer active when the
+        # length was typed; without the widget it was). The curves are in the line's tooltip.
+        self.curves = SectionLine(self.collector, self)
         self.curves.rule.activated.connect(
             lambda i: selection_filter.manager().set_curve_rule(self.curves.rule.itemData(i)))
         self.body = QtWidgets.QLabel()
@@ -1042,11 +1098,13 @@ class Controller:
         if s is None or not s.picks:
             return
         if s.stage == "select":
-            what, sketch, element = s.picks[0]
-            if what != "add":
-                s.picks.pop(0)
+            what, sketch, element = s.picks.pop(0)
+            from . import commands
+            # only while FreeCAD asks for the plane: once the command's own sketch exists, finishing it selects
+            # that sketch (measured in tutorial AE), and the sketch-first path carries on with it
+            if what != "add" or commands.pending_feature["sketch"] is not None or not _plane_pick_open():
+                s.picks.clear()
                 return
-            s.picks.pop(0)
             self._switch_to_section(s, sketch, expand(sketch, element, selection_filter.manager().curve_rule))
             return
         if s.stage != "parameterize" or s.swapping or not _alive(s.box):

@@ -2204,7 +2204,6 @@ class Smoke:
         from . import smoke_section
         smoke_section.run(self)
 
-
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""
         from .tutorial import qtest
