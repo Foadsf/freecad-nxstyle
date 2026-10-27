@@ -149,8 +149,9 @@ class CheckPanel(_FilePanel):
         issues = iso10303.check(f)
         s = express.summary(issues)
         aps = [f"{i['ap']} {i['title']} ({i['edition']})" for i in iso10303.identify(f) if i["ap"]]
+        rules = next((i.message for i in issues if i.level == "info" and i.message.startswith("rules:")), "")
         lines = [path, f"{len(f)} instances; " + ("; ".join(aps) or f"schema {', '.join(f.schemas)}"),
-                 f"{s['error']} error(s), {s['warning']} warning(s), {s['info']} note(s)", ""]
+                 f"{s['error']} error(s), {s['warning']} warning(s), {s['info']} note(s)", rules, ""]
         lines += [f"schema {n} downloaded: {k} entities" for n, k, _ in fetched]
         for std, ents in sorted(iso10303.inventory(f).items()):
             lines.append(f"{std}: {sum(ents.values())}")
@@ -158,7 +159,8 @@ class CheckPanel(_FilePanel):
         if b["roots"]:
             lines += ["", "Product structure:", iso10303.bom_text(b)]
         lines.append("")
-        lines += [repr(i) for i in issues[:300]]
+        order = {"error": 0, "warning": 1, "info": 2}                 # errors first, then warnings, then notes
+        lines += [repr(i) for i in sorted(issues, key=lambda i: order[i.level])[:300]]
         return "\n".join(lines)
 
 

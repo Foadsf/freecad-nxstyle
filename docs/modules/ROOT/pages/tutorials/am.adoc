@@ -22,11 +22,15 @@ The fixture is assembled and exported by script with FreeCAD's own STEP export, 
 
 The report names the application protocol, AP242 _Managed model-based 3D engineering_.
 The first time, it downloads AP242's long-form schema from standards.iso.org (2407 entities) into the schema cache; after that it uses the cached copy.
-Every instance is checked against it, so the product structure and the B-rep shape representation are checked too: 0 errors.
+Every instance is checked against it, so the product structure and the B-rep shape representation are checked too, and every rule of the schema is evaluated, its global rules included.
+
+One error comes back, and it is real: the file names its protocol `'ap242_managed_model_based_3d_engineering'` in `APPLICATION_PROTOCOL_DEFINITION`, as FreeCAD's STEP export (OpenCASCADE) writes it, but every AP242 long form from edition 2 on requires `'ap242_managed_model_based_3d_engineering_mim_lf'` (rule `ap242_application_protocol_definition_required`).
+Any system that reads the file still gets the geometry and the structure; a strict validator would reject it.
+*STEP with Parameters* corrects the name in the files it writes.
 
 The product structure is the bill of materials as the file holds it: the fixture with one plate, two brackets and four bolts, and the parts list with the totals.
 
-image::tutorial-AM-01-check.png[Check STEP: AP242 named and its schema downloaded, no errors, the product structure and parts list]
+image::tutorial-AM-01-check.png[Check STEP: AP242 named and its schema downloaded, one error (the protocol name), the product structure and parts list]
 
 === 3. The supplier's sketch, as ISO 10303-112 commands
 

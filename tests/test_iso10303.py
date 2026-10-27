@@ -9,7 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "NXStyle"))
 
-from nxstyle import express, iso10303, p21, parametric, procedural_sketch  # noqa: E402
+from nxstyle import express, express_eval, iso10303, p21, parametric, procedural_sketch  # noqa: E402
 
 
 def rect_face(x0, y0, x1, y1, z=0.0):
@@ -167,6 +167,18 @@ class Express(unittest.TestCase):
         f.add_complex([("B_SPLINE", []), ("BOUNDED", [])])
         self.assertEqual(f[1].names, ["BOUNDED", "B_SPLINE"])
 
+    def test_resource_parts_in_the_dictionary(self):
+        # ISO 10303-41, ISO 10303-50 and ISO 13584-20 come from the parts themselves, not from a stand-in
+        d = iso10303.dictionary()
+        for name, schema in (("product_definition", "product_definition_schema"),
+                             ("maths_real_variable", "mathematical_functions_schema"),
+                             ("real_numeric_variable", "iso13584_expressions_schema"),
+                             ("si_unit", "measure_schema")):
+            self.assertEqual(d.entities[name]["schema"], schema)
+        ops = d.attributes("plus_expression")[0]["type"]
+        self.assertEqual(ops["of"], {"named": "numeric_expression"})       # ISO 13584-20 narrows the operands
+        self.assertIn("maths_real", d.select_items("maths_value")[1])
+
     def test_bundled_dictionary(self):
         d = iso10303.dictionary()
         # ISO 10303-108 Cor.1 annex F.1.1 writes BOUND_VARIATIONAL_PARAMETER('P1', #520, 'P1', 'C5 RADIUS', *)
@@ -194,11 +206,14 @@ class Parametric(unittest.TestCase):
         errors = [i for i in issues if i.level == "error"]
         self.assertEqual(errors, [])
         warnings = [i for i in issues if i.level == "warning"]
-        # untyped current values of unbound parameters (as ISO 10303-108 Cor.1 annex F writes them), and the
-        # conflict between 108 6.3.4 WR4 and 8.4.9 for each sketch
-        self.assertTrue(all("SELECT maths_value" in w.message or "WR4 not met" in w.message for w in warnings),
-                        warnings)
+        # every warning is a documented contradiction of the standards: 6.3.4 WR4's prose against 8.4.9 (once
+        # per sketch), Cor.2's neutral_sketch_representation WR1 against its clause, and
+        # variational_representation WR2 against the dual model (express_eval.KNOWN)
+        known = ("WR4 as stated in prose", "contradicts the clause", "cannot be met here")
+        self.assertTrue(all(any(k in w.message for k in known) for w in warnings), warnings)
         self.assertEqual(sum("WR4" in w.message for w in warnings), 2)
+        # every rule of the schemas was decided: the file has no B-rep from an AP the bundled schemas lack
+        self.assertTrue(any(i.message.endswith(", 0 not evaluated") for i in issues if i.level == "info"))
         inv = iso10303.inventory(f)
         for std in ("ISO 10303-42", "ISO 10303-43", "ISO 10303-55", "ISO 10303-108", "ISO 10303-111",
                     "ISO 13584-20"):
@@ -240,10 +255,10 @@ class Parametric(unittest.TestCase):
         seq = f.by_name("PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE")[0]
         seq.records = [r for r in seq.records if r.name != "SOLID_MODEL"]
         bp = f.by_name("BOUND_VARIATIONAL_PARAMETER")[0]
-        bp.records[0].params[2] = "renamed"
+        bp.records[0].params[2] = "renamed"                  # maths_variable.name (a simple instance)
         iar = f.by_name("INSTANCE_ATTRIBUTE_REFERENCE")[0]
         iar.records[0].params[0] = "GEOMETRY_SCHEMA.CIRCLE.WIDTH"
-        msgs = " ".join(i.message for i in iso10303.rules(f))
+        msgs = " ".join(i.message for i in iso10303.check(f) if i.level == "error")
         self.assertIn("procedural_solid_representation_sequence WR1", msgs)
         self.assertIn("variational_parameter WR2", msgs)
         self.assertIn("instance_attribute_reference", msgs)
@@ -266,6 +281,246 @@ class Parametric(unittest.TestCase):
         self.assertEqual([ft["type"] for ft in m["features"]], ["box", "cylinder", "boolean"])
         self.assertEqual(m["features"][2]["first"], "Box")
         self.assertEqual(m["features"][1]["expressions"], {"radius": ["var", "R"]})
+
+
+def poly_face(pts, normal):
+    """A planar face through the points (in order), its plane normal given."""
+    edges = []
+    for a, b in zip(pts, pts[1:] + pts[:1]):
+        edges.append({"curve": {"type": "line", "origin": list(a), "dir": [b[i] - a[i] for i in range(3)]},
+                      "p1": list(a), "p2": list(b)})
+    x = [pts[1][i] - pts[0][i] for i in range(3)]
+    n = math.sqrt(sum(c * c for c in x))
+    return {"surface": {"type": "plane", "origin": list(pts[0]), "axis": list(normal), "x": [c / n for c in x]},
+            "loops": [edges]}
+
+
+def box_brep_text(x0, y0, z0, x1, y1, z1):
+    """Part 21 text of a box as a MANIFOLD_SOLID_BREP (what OpenCASCADE writes for a hybrid step)."""
+    f = p21.File(("AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF",))
+    w = parametric._Writer(f)
+    c = [(x, y, z) for z in (z0, z1) for y in (y0, y1) for x in (x0, x1)]
+    quads = [((0, 2, 3, 1), (0, 0, -1)), ((4, 5, 7, 6), (0, 0, 1)), ((0, 1, 5, 4), (0, -1, 0)),
+             ((2, 6, 7, 3), (0, 1, 0)), ((0, 4, 6, 2), (-1, 0, 0)), ((1, 3, 7, 5), (1, 0, 0))]
+    faces = [w.face(poly_face([c[i] for i in q], nrm)) for q, nrm in quads]
+    f.add("MANIFOLD_SOLID_BREP", "box", f.add("CLOSED_SHELL", "", faces))
+    return p21.dumps(f)
+
+
+def line_edge(a, b):
+    return {"curve": {"type": "line", "origin": list(a), "dir": [b[i] - a[i] for i in range(3)]}, "p1": list(a),
+            "p2": list(b)}
+
+
+def base_model():
+    m = copy.deepcopy(PLATE)
+    m["features"] = m["features"][:1]
+    m["sketches"] = [copy.deepcopy(PLATE["sketches"][0])]
+    return m
+
+
+def boss_sketch(name, cx, cy, r, z):
+    return {"name": name, "placement": {"origin": [0, 0, z], "axis": [0, 0, 1], "x": [1, 0, 0]},
+            "faces": [circle_face(cx, cy, r, z)], "geometry": [{"type": "circle", "c": [cx, cy], "r": r}],
+            "constraints": [{"type": "Radius", "first": 0, "value": r}]}
+
+
+class HistoryGaps(unittest.TestCase):
+    """Holes, mirrors, patterns of several features, up-to extents, sweeps, hybrid steps and attachments."""
+
+    def written(self, model):
+        f, notes = parametric.to_step(copy.deepcopy(model))
+        f = p21.loads(p21.dumps(f))
+        errors = [i for i in iso10303.check(f) if i.level == "error"]
+        self.assertEqual(errors, [])
+        models, rnotes = parametric.from_step(f)
+        return f, models[0], notes + rnotes
+
+    def test_holes(self):
+        m = base_model()
+        m["features"] += [
+            {"type": "hole", "name": "Hole", "positions": [[10, 10, 10], [30, 10, 10]], "axis": [0, 0, 1],
+             "x": [1, 0, 0], "radii": [2.0], "depths": [6.0], "bottom": "flat", "fillet_radius": 0.0},
+            {"type": "hole", "name": "Counterbore", "positions": [[10, 25, 10]], "axis": [0, 0, 1], "x": [1, 0, 0],
+             "radii": [3.5, 2.0], "depths": [3.0, 5.0], "bottom": "conical", "semi_apex": math.radians(59),
+             "tip_radius": 0.0},
+            {"type": "hole", "name": "Countersink", "positions": [[10, 40, 10], [30, 40, 10]], "axis": [0, 0, 1],
+             "x": [1, 0, 0], "radii": [2.0], "depths": [10.0], "through": True, "exit_depths": [10.0, 10.0],
+             "transitions": [{"number": 1, "apex": math.radians(90), "radius": 3.5}],
+             "exit_faces": [[rect_face(0, 0, 80, 50, 0)], [rect_face(0, 0, 80, 50, 0)]]}]
+        f, got, _ = self.written(m)
+        self.assertEqual(len(f.by_name("SOLID_WITH_FLAT_BOTTOM_ROUND_HOLE")), 2)
+        self.assertEqual(len(f.by_name("SOLID_WITH_CONICAL_BOTTOM_ROUND_HOLE")), 1)
+        through = f.by_name("SOLID_WITH_THROUGH_DEPRESSION")
+        self.assertEqual(len(through), 2)
+        self.assertTrue(all("SOLID_WITH_STEPPED_ROUND_HOLE_AND_CONICAL_TRANSITIONS" in i.names for i in through))
+        feats = {ft["name"]: ft for ft in got["features"]}
+        self.assertEqual([ft["type"] for ft in got["features"]], ["extrude", "hole", "hole", "hole"])
+        h = feats["Hole"]
+        self.assertEqual((h["positions"], h["radii"], h["depths"], h["bottom"]),
+                         ([[10.0, 10.0, 10.0], [30.0, 10.0, 10.0]], [2.0], [6.0], "flat"))
+        self.assertEqual(h["axis"], [0.0, 0.0, 1.0])            # out of the hole entrance (111, 4.4.22)
+        cb = feats["Counterbore"]
+        self.assertEqual((cb["radii"], cb["depths"], cb["bottom"]), ([3.5, 2.0], [3.0, 5.0], "conical"))
+        self.assertAlmostEqual(cb["semi_apex"], math.radians(59))
+        cs = feats["Countersink"]
+        self.assertTrue(cs["through"])
+        self.assertEqual(cs["transitions"][0]["number"], 1)
+        self.assertAlmostEqual(cs["transitions"][0]["apex"], math.pi / 2)
+        self.assertEqual(cs["exit_depths"], [10.0, 10.0])
+        self.assertEqual(len(cs["exit_faces"]), 2)
+
+    def test_mirror_and_patterns_of_several(self):
+        m = base_model()
+        m["sketches"] += [boss_sketch("BossSketch", 10, 10, 3, 10), boss_sketch("PocketSketch", 25, 12, 2, 10)]
+        mirror = {"matrix": [[1, 0, 0], [0, -1, 0], [0, 0, 1]], "translation": [0, 50, 0]}
+        lin = [{"matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]], "translation": [0, 7.0 * k, 0]} for k in (1, 2)]
+        rot = parametric._compose({"matrix": [[0, -1, 0], [1, 0, 0], [0, 0, 1]], "translation": [0, 0, 0]},
+                                  parametric.IDENTITY)
+        m["features"] += [
+            {"type": "extrude", "name": "Boss", "sketch": "BossSketch", "direction": [0, 0, 1], "first": 4.0,
+             "second": 0.0, "op": "union"},
+            {"type": "extrude", "name": "Pocket", "sketch": "PocketSketch", "direction": [0, 0, -1], "first": 5.0,
+             "second": 0.0, "op": "difference"},
+            {"type": "pattern", "name": "Mirrored", "sources": ["Boss", "Pocket"], "kind": "mirror",
+             "transforms": [mirror]},
+            {"type": "pattern", "name": "LinearPattern", "sources": ["Boss", "Pocket"], "kind": "linear",
+             "transforms": lin},
+            {"type": "pattern", "name": "MultiTransform", "sources": ["Boss"], "kind": "multi",
+             "steps": [{"name": "Step1", "kind": "linear", "transforms": lin[:1]},
+                       {"name": "Step2", "kind": "polar", "transforms": [rot]}]}]
+        f, got, _ = self.written(m)
+        feats = {ft["name"]: ft for ft in got["features"]}
+        mi = feats["Mirrored"]
+        self.assertEqual((mi["kind"], mi["sources"]), ("mirror", ["Boss", "Pocket"]))
+        self.assertLess(parametric._det(mi["transforms"][0]["matrix"]), 0)       # left-handed axes
+        self.assertEqual(mi["transforms"][0]["translation"], [0.0, 50.0, 0.0])
+        self.assertEqual(len(f.by_name("SOLID_REPLICA")), 2 + 4 + 3)
+        lp = feats["LinearPattern"]
+        self.assertEqual((lp["kind"], lp["sources"], [t["translation"] for t in lp["transforms"]]),
+                         ("linear", ["Boss", "Pocket"], [[0.0, 7.0, 0.0], [0.0, 14.0, 0.0]]))
+        mt = feats["MultiTransform"]
+        self.assertEqual((mt["kind"], [st["kind"] for st in mt["steps"]]), ("multi", ["linear", "polar"]))
+        self.assertEqual(len(mt["transforms"]), 3)                           # 2 x 2 placements, less the original
+        self.assertEqual(mt["steps"][1]["transforms"][0]["matrix"], [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0],
+                                                                    [0.0, 0.0, 1.0]])
+
+    def test_up_to(self):
+        m = base_model()
+        top = rect_face(0, 0, 80, 50, 10)
+        m["sketches"] += [boss_sketch("Riser", 20, 20, 4, -5), boss_sketch("Post", 60, 20, 3, -5),
+                          boss_sketch("Drill", 40, 20, 2, 10)]
+        m["features"] += [
+            {"type": "extrude", "name": "PadToFace", "sketch": "Riser", "direction": [0, 0, 1], "first": 15.0,
+             "second": 0.0, "intent": ["unspecified", "blind"], "op": "union", "up_to": {"face": top, "offset": 0.0}},
+            {"type": "extrude", "name": "PadOffset", "sketch": "Post", "direction": [0, 0, 1], "first": 20.0,
+             "second": 0.0, "intent": ["unspecified", "blind"], "op": "union", "up_to": {"face": top, "offset": 5.0}},
+            {"type": "extrude", "name": "PadShort", "sketch": "Post", "direction": [0, 0, 1], "first": 12.0,
+             "second": 0.0, "intent": ["unspecified", "blind"], "op": "union", "up_to": {"face": top, "offset": -3.0}},
+            {"type": "extrude", "name": "PocketToFirst", "sketch": "Drill", "direction": [0, 0, -1], "first": 10.0,
+             "second": 0.0, "intent": ["up_to_next", "blind"], "op": "difference",
+             "up_to": {"face": rect_face(0, 0, 80, 50, 0), "offset": 0.0}},
+            {"type": "revolve", "name": "RevolveToFace", "sketch": "Drill", "op": "union", "angle": 1.0, "second": 0.0,
+             "axis": {"origin": [0, 20, 10], "dir": [1, 0, 0]}, "up_to": {"face": top}}]
+        f, got, _ = self.written(m)
+        feats = {ft["name"]: ft for ft in got["features"]}
+        self.assertEqual(feats["PadToFace"]["intent"][0], "unspecified")
+        self.assertEqual(feats["PadToFace"]["up_to"]["offset"], 0.0)
+        self.assertEqual(feats["PadToFace"]["up_to"]["face"]["surface"]["origin"], [0.0, 0.0, 10.0])
+        self.assertEqual((feats["PadOffset"]["intent"][0], feats["PadOffset"]["up_to"]["offset"]), ("offset", 5.0))
+        self.assertEqual(feats["PadShort"]["up_to"]["offset"], -3.0)   # the side, from the depth
+        self.assertEqual(feats["PocketToFirst"]["intent"][0], "up_to_next")
+        self.assertIn("up_to", feats["RevolveToFace"])
+        recs = [r for i in f.by_name("EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS") for r in i.records]
+        self.assertTrue(any(isinstance(r.params[4], p21.Ref) and r.params[6] == "OFFSET" and r.params[8] == 5.0
+                            for r in recs))
+
+    def test_pipe(self):
+        m = base_model()
+        prof = boss_sketch("PipeProfile", 30, 20, 2, 10)
+        path = {"name": "Path", "placement": {"origin": [0, 20, 0], "axis": [0, -1, 0], "x": [1, 0, 0]},
+                "faces": [], "constraints": [],
+                "geometry": [{"type": "line", "p1": [30, 10], "p2": [30, 20]}]}
+        arc = {"curve": {"type": "circle", "center": [40, 20, 20], "axis": [0, 1, 0], "x": [1, 0, 0], "r": 10.0},
+               "p1": [30, 20, 20], "p2": [40, 20, 30]}
+        m["sketches"] += [prof, path]
+        m["features"].append({"type": "pipe", "name": "Pipe", "sketch": "PipeProfile", "path": "Path",
+                              "path_edges": [line_edge([30, 20, 10], [30, 20, 20]), arc], "normal": [0, -1, 0],
+                              "plane": path["placement"], "op": "union"})
+        f, got, _ = self.written(m)
+        sweep = f.by_name("SURFACE_CURVE_SWEPT_AREA_SOLID")         # in AP242, unlike the _FACE_ form
+        self.assertEqual(len(sweep), 1)
+        self.assertEqual(f.by_name("SURFACE_CURVE_SWEPT_FACE_SOLID"), [])
+        total = sweep[0].params[4]
+        self.assertAlmostEqual(total, 10 + math.pi / 2 * 1.0)   # the line's length plus the arc's angle (42, 4.4.41)
+        ft = got["features"][1]
+        self.assertEqual((ft["type"], ft["sketch"], ft["path"], ft["op"]), ("pipe", "PipeProfile", "Path", "union"))
+        self.assertEqual(ft["normal"], [0.0, -1.0, 0.0])
+        self.assertEqual(ft["path_edges"][1]["p2"], [40.0, 20.0, 30.0])
+        # the swept area lies in z = 0 of the sweep's frame (42, 6.4.39 IP1); its plane is the sketch's plane
+        # moved there, so the pcurves are the sketch's own curves: a circle of radius 2 about (30, 20), in halves
+        rd = parametric._Reader(f)
+        area = sweep[0].params[1]
+        plane = rd.a2p3(rd.get(rd.get(area, "basis_surface"), "position"))
+        self.assertAlmostEqual(plane["origin"][2], 0.0)
+        self.assertAlmostEqual(abs(plane["axis"][2]), 1.0)
+        self.assertEqual(len(f.by_name("OUTER_BOUNDARY_CURVE")), 1)
+        self.assertEqual(len(f.by_name("BOUNDED_PCURVE")), 2)
+        arcs = [i for i in f.by_name("CIRCLE") if len(f.get(f.get(i.params[1]).params[1]).params[1]) == 2
+                and abs(i.params[2] - 2.0) < 1e-12]
+        centres = {tuple(f.get(f.get(c.params[1]).params[1]).params[1]) for c in arcs}
+        self.assertIn((30.0, 20.0), centres)
+
+    def test_hybrid_steps(self):
+        m = base_model()
+        m["sketches"] += [boss_sketch("Loft1", 40, 20, 5, 10), boss_sketch("Loft2", 40, 20, 3, 20)]
+        side = poly_face([(80, 0, 0), (80, 50, 0), (80, 50, 10), (80, 0, 10)], (1, 0, 0))
+        m["features"] += [
+            {"type": "explicit", "name": "Draft", "kind": "Draft", "op": None, "brep": box_brep_text(0, 0, 0, 79, 50, 10),
+             "faces": [side], "neutral": {"plane": XY, "name": "XY_Plane"},
+             "params": {"angle": math.radians(4), "reversed": False}},
+            {"type": "fillet", "name": "Fillet", "radius": 1.0,
+             "edges": [{"curve": {"type": "line", "origin": [0, 0, 0], "dir": [0, 0, 1]}, "p1": [0, 0, 0],
+                        "p2": [0, 0, 10]}]},
+            {"type": "explicit", "name": "Loft", "kind": "AdditiveLoft", "op": "union",
+             "brep": box_brep_text(35, 15, 10, 45, 25, 20), "profile": "Loft1", "sections": ["Loft2"],
+             "params": {"ruled": True, "closed": False}},
+            {"type": "pattern", "name": "LoftCopy", "sources": ["Loft"], "kind": "linear",
+             "transforms": [{"matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]], "translation": [20, 0, 0]}]}]
+        f, got, notes = self.written(m)
+        self.assertEqual(len(f.by_name("MANIFOLD_SOLID_BREP")), 2)
+        feats = {ft["name"]: ft for ft in got["features"]}
+        self.assertEqual([ft["type"] for ft in got["features"]], ["extrude", "explicit", "fillet", "explicit", "pattern"])
+        dr = feats["Draft"]
+        self.assertEqual((dr["kind"], dr["op"], dr["neutral"]["name"]), ("Draft", None, "XY_Plane"))
+        self.assertAlmostEqual(dr["params"]["angle"], math.radians(4))
+        self.assertIs(dr["params"]["reversed"], False)
+        self.assertEqual(dr["faces"][0]["surface"]["axis"], [1.0, 0.0, 0.0])
+        self.assertEqual(feats["Fillet"]["base"], "Draft")
+        lo = feats["Loft"]
+        self.assertEqual((lo["kind"], lo["op"], lo["profile"], lo["sections"]), ("AdditiveLoft", "union", "Loft1",
+                                                                                  ["Loft2"]))
+        self.assertEqual(feats["LoftCopy"]["sources"], ["Loft"])
+        self.assertTrue(any("hybrid" in n for n in notes))
+
+    def test_attachments(self):
+        m = base_model()
+        m["sketches"][0]["attachment"] = {"mode": "FlatFace", "plane": XY, "name": "XY_Plane"}
+        on_top = boss_sketch("OnTop", 20, 20, 3, 10)
+        on_top["attachment"] = {"mode": "FlatFace", "face": rect_face(0, 0, 80, 50, 10),
+                                "plane": {"origin": [0, 0, 10], "axis": [0, 0, 1], "x": [1, 0, 0]}}
+        above = boss_sketch("Above", 50, 20, 3, 13)
+        above["attachment"] = dict(on_top["attachment"], offset=3.0)
+        m["sketches"] += [on_top, above]
+        f, got, _ = self.written(m)
+        att = [i for i in f.by_name("INCIDENCE_GEOMETRIC_CONSTRAINT") if i.params[0].endswith(".attachment")]
+        self.assertEqual(len(att), 2)
+        sks = {sk["name"]: sk for sk in got["sketches"]}
+        self.assertEqual((sks["Base"]["attachment"]["name"], sks["Base"]["attachment"]["offset"]), ("XY_Plane", 0.0))
+        self.assertNotIn("face", sks["Base"]["attachment"])
+        self.assertEqual(sks["OnTop"]["attachment"]["face"]["surface"]["origin"], [0.0, 0.0, 10.0])
+        self.assertEqual(sks["Above"]["attachment"]["offset"], 3.0)
+        self.assertEqual(len(f.by_name("SDGC_WITH_DIMENSION")), 1)
 
 
 def part112_file():
@@ -298,7 +553,10 @@ def part112_file():
     copy = f.add("CIRCLE", "", f.add("AXIS2_PLACEMENT_2D", "", P(110, 0), f.add("DIRECTION", "", [1.0, 0.0])), 4.0)
     cmds.append(f.add("CREATE_PATTERN_CIRCULAR", "pc", [copy], f.add("GEOMETRIC_CURVE_SET", "", [copy]), 3,
                       math.pi / 2, P(100, 0), True, P(110, 0)))
-    near = f.add("NEAR_POINT_RELATIONSHIP", "", p21.UNSET, circle, P(100, 4))
+    near_point = P(100, 4)
+    # a near point is a hint, not geometry; a representation in the sketch's context founds it (43 WR1)
+    f.add("REPRESENTATION", "near points", [near_point], ctx)
+    near = f.add("NEAR_POINT_RELATIONSHIP", "", p21.UNSET, circle, near_point)
     cmds.append(f.add("CREATE_LINE_SEGMENT_POINT_TANGENT", "tan", P(100, 20), circle, near))
     seq = f.add("PROCEDURAL_SHAPE_REPRESENTATION_SEQUENCE", "sketch", cmds, [], "Part 112 test")
     f.add("PROCEDURAL_SHAPE_REPRESENTATION", "Part112 commands", [seq], ctx)
@@ -416,6 +674,121 @@ class ApplicationProtocols(unittest.TestCase):
         SUBTYPE_CONSTRAINT sc FOR product; END_SUBTYPE_CONSTRAINT; END_SCHEMA;"""
         d = express.Dictionary.from_text(text)
         self.assertEqual([a["name"] for a in d.attributes("product")], ["id", "name"])
+
+
+TINY = """SCHEMA tiny;
+TYPE pos = REAL; WHERE WR1: SELF > 0.0; END_TYPE;
+TYPE shape_select = SELECT (circle, square); END_TYPE;
+TYPE kind = ENUMERATION OF (round, flat); END_TYPE;
+ENTITY item ABSTRACT SUPERTYPE OF (ONEOF (circle, square)); name : STRING; END_ENTITY;
+ENTITY circle SUBTYPE OF (item); r : pos;
+  DERIVE d : REAL := 2.0 * r;
+  INVERSE owners : SET [0:?] OF holder FOR members;
+  WHERE WR1: d < 100.0; END_ENTITY;
+ENTITY square SUBTYPE OF (item); side : pos; UNIQUE UR1: SELF\\item.name; END_ENTITY;
+ENTITY holder; members : SET [1:?] OF shape_select; n : INTEGER; sizes : LIST [1:n] OF pos; k : kind;
+  WHERE WR1: SIZEOF(QUERY(m <* members | 'TINY.CIRCLE' IN TYPEOF(m))) >= 1;
+        WR2: 'TINY.SHAPE_SELECT' IN TYPEOF(members[1]);
+        WR3: count_round(members) = SIZEOF(QUERY(m <* members | 'TINY.CIRCLE' IN TYPEOF(m)));
+        WR4: (k = round) OR (k = flat);
+        WR5: NOT EXISTS(unknown_function(SELF)) OR TRUE; END_ENTITY;
+FUNCTION count_round (s : SET OF shape_select) : INTEGER;
+  LOCAL c : INTEGER := 0; seen : SET OF shape_select := []; END_LOCAL;
+  REPEAT i := 1 TO HIINDEX(s);
+    IF 'TINY.CIRCLE' IN TYPEOF(s[i]) THEN c := c + 1; seen := seen + s[i] + s[i]; END_IF;
+  END_REPEAT;
+  IF SIZEOF(seen) <> c THEN RETURN (-1); END_IF;
+  RETURN (c);
+END_FUNCTION;
+RULE one_holder FOR (holder); WHERE WR1: SIZEOF(holder) <= 1; END_RULE;
+END_SCHEMA;"""
+
+
+class ExpressRules(unittest.TestCase):
+    """express_eval: the interpreter, and each kind of rule with a violation and a control."""
+    HEAD = "ISO-10303-21;HEADER;FILE_DESCRIPTION((''),'2;1');FILE_NAME('','2026-01-01T00:00',(''),(''),'','','');" \
+           "FILE_SCHEMA(('TINY'));ENDSEC;DATA;"
+
+    def d(self):
+        return express.Dictionary.from_text(TINY)
+
+    def ev(self, text, rows=()):
+        f = p21.loads(self.HEAD + "".join(rows) + "ENDSEC;END-ISO-10303-21;")
+        e = express_eval.Evaluator(f, self.d())
+        return e.eval(express_eval.parse_expr(text),
+                      express_eval._Scope())
+
+    def test_expressions(self):
+        U = express_eval.UNKNOWN
+        cases = {"1 + 2 * 3": 7, "7 DIV 2": 3, "7 MOD 3": 1, "2 ** 3": 8, "10 / 4": 2.5, "-ABS(-2.5)": -2.5,
+                 "? + 1": None, "? = 1": U, "? AND FALSE": False, "? OR TRUE": True, "NOT UNKNOWN": U,
+                 "TRUE XOR FALSE": True, "SIZEOF([1, 2, 2] + [3])": 4, "SIZEOF([1, 2] * [2, 3])": 1,
+                 "2 IN [1, 2]": True, "[1, 2] <= [1, 2, 3]": True, "SIZEOF(QUERY(x <* [1, 5, 9] | x > 2))": 2,
+                 "{1 <= 2 < 3}": True, "{1 <= 3 < 3}": False, "HIINDEX([4, 5, 6])": 3, "NVL(?, 4)": 4,
+                 "EXISTS(?)": False, "ODD(3)": True, "SQRT(16.0)": 4.0, "[7, 8, 9][2]": 8, "[7][5]": None}
+        for text, want in cases.items():
+            self.assertEqual(self.ev(text), want, text)
+        self.assertEqual(self.ev("'AB' + 'C'"), "ABC")
+        self.assertEqual(self.ev("'ABC'[2]"), "B")
+        self.assertIs(self.ev("'A12' LIKE '@##'"), True)
+        self.assertIs(self.ev("VALUE('2.5') = 2.5"), True)
+        self.assertEqual(sorted(self.ev("TYPEOF(3)")), ["INTEGER", "NUMBER", "REAL"])
+
+    def file(self, rows):
+        return p21.loads(self.HEAD + "".join(rows) + "ENDSEC;END-ISO-10303-21;")
+
+    def test_rules_hold(self):
+        rows = ["#1=CIRCLE('c',5.);", "#2=SQUARE('s',2.);", "#3=HOLDER((#1,#2),2,(1.,2.),.ROUND.);"]
+        r = express_eval.rules(self.file(rows), self.d())
+        self.assertEqual([i for i in r.issues if i.level == "error"], [])
+        self.assertEqual(r.violated, 0)
+        # the derived attribute, the inverse, the SELECT in TYPEOF, the function (a SET drops the duplicate)
+        ev = express_eval.Evaluator(self.file(rows), self.d())
+        c, h = ev.inst(1), ev.inst(3)
+        self.assertEqual(ev.attribute(c, "d"), 10.0)
+        self.assertEqual([x.pid for x in ev.attribute(c, "owners")], [3])
+        self.assertIn("TINY.SHAPE_SELECT", ev.typeof(c))
+        self.assertEqual(ev.eval(express_eval.parse_expr("COUNT_ROUND(MEMBERS)"), express_eval._Scope(self_=h,
+                                                                                                         entity="holder")), 1)
+        # the function the schema does not declare: reported, not guessed
+        self.assertIn("holder.wr5", r.unevaluated)
+
+    def test_rules_violated(self):
+        rows = ["#1=CIRCLE('c',60.);", "#2=CIRCLE('n',-1.);", "#3=SQUARE('s',2.);", "#4=SQUARE('s',3.);",
+                "#5=HOLDER((#3),1,(1.,2.),.ROUND.);", "#6=HOLDER((#1),1,(1.),.FLAT.);"]
+        msgs = [f"#{i.id} {i.message}" for i in express_eval.rules(self.file(rows), self.d()).issues
+                if i.level == "error"]
+        text = "\n".join(msgs)
+        self.assertIn("#1 circle WR1 is violated", text)                        # derived d = 120
+        self.assertIn("#2 circle.r: the value -1. breaks pos WR1", text)        # a defined type's rule
+        self.assertIn("#4 square UR1", text)                                    # UNIQUE over the population
+        self.assertIn("#5 holder WR1 is violated", text)                        # no circle among the members
+        self.assertIn("#5 holder.sizes has 2 element(s); its upper bound n is 1", text)
+        self.assertIn("global rule one_holder WR1", text)
+        self.assertNotIn("#6 holder", text)
+
+    def test_unknown_entities_leave_rules_undecided(self):
+        # an instance of an entity the schemas do not define may use #1: USEDIN-based rules are not decided
+        d = express.Dictionary.from_text(TINY.replace("WR1: d < 100.0;", "WR1: SIZEOF(USEDIN(SELF, '')) > 0;"))
+        f = self.file(["#1=CIRCLE('c',5.);", "#2=SOMETHING_ELSE(#1);"])
+        r = express_eval.rules(f, d)
+        self.assertEqual(r.violated, 0)
+        self.assertIn("circle.wr1", r.unevaluated)
+
+    def test_inverse_cardinality(self):
+        d = express.Dictionary.from_text(TINY.replace("owners : SET [0:?] OF holder", "owners : SET [1:?] OF holder"))
+        f = self.file(["#1=CIRCLE('c',5.);", "#2=CIRCLE('d',5.);", "#3=HOLDER((#1),0,(),.ROUND.);"])
+        errors = [i for i in express_eval.rules(f, d).issues if i.level == "error" and "inverse" in i.message]
+        self.assertEqual([i.id for i in errors], [2])                       # #2 is in no holder
+
+    def test_complex_constructor_and_group(self):
+        ev = express_eval.Evaluator(self.file([]), self.d())
+        s = express_eval._Scope()
+        v = ev.eval(express_eval.parse_expr("CIRCLE(4.0) || ITEM('x')"), s)
+        self.assertEqual(v.names, frozenset({"circle", "item"}))
+        s.vars["V"] = v
+        self.assertEqual(ev.eval(express_eval.parse_expr("V\\ITEM.NAME"), s), "x")
+        self.assertEqual(ev.eval(express_eval.parse_expr("V.D"), s), 8.0)
 
 
 if __name__ == "__main__":

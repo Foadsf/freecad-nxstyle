@@ -173,7 +173,7 @@ class ExchangeTutorials:
         ok = typed and line.startswith("0 error(s)")
         self.step("Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 "
                   "and 112", f"ribbon '{where} > Check STEP', file name typed, MB2 = OK", DIFFERS if ok else FAIL,
-                  f"{line}; the warnings name the places where ISO 10303-108 contradicts itself. NX has no such "
+                  f"{line}; the warnings name the places where the standards contradict themselves. NX has no such "
                   "check")
         self.p_shot_info("AL_check.png")
         self.p_close_info()
@@ -305,12 +305,17 @@ class ExchangeTutorials:
         line = next((ln for ln in text.splitlines() if "error(s)" in ln), "")
         bom = text.split("Product structure:")[-1] if "Product structure:" in text else ""
         own = "long form in the schema cache" in text
-        ok = typed and ticked and line.startswith("0 error(s)") and "AP242" in text and own \
+        rules = next((ln.strip() for ln in text.splitlines() if "rules:" in ln), "")
+        # the one error is FreeCAD's (OpenCASCADE's): APPLICATION_PROTOCOL_DEFINITION names the AP without the
+        # "_mim_lf" every AP242 long form requires (rule ap242_application_protocol_definition_required)
+        apd = "ap242_application_protocol_definition_required" in text
+        ok = typed and ticked and line.startswith("1 error(s)") and apd and "AP242" in text and own \
             and "4 x Bolt" in bom and "2 x Bracket" in bom
-        self.step("Check STEP with 'Download the AP's schema': the application protocol named, every entity checked "
-                  "against AP242's own long form, the product structure listed",
+        self.step("Check STEP with 'Download the AP's schema': the application protocol named, every entity and every "
+                  "rule checked against AP242's own long form, the product structure listed",
                   f"ribbon '{where} > Check STEP', file name typed, the box ticked, MB2 = OK", DIFFERS if ok else FAIL,
-                  f"{line}; checked against AP242's long form: {own}; parts list: "
+                  f"{line} (the protocol name FreeCAD writes: {apd}); {rules}; checked against AP242's long form: "
+                  f"{own}; parts list: "
                   + "; ".join(ln.strip() for ln in bom.splitlines() if " x " in ln and ln.startswith("  "))
                   + ". NX has no STEP checker; its BOM comes from the assembly navigator")
         self.p_shot_info("AM_check.png")

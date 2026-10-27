@@ -4174,7 +4174,7 @@
    "nx": "PMI > STEP with Parameters: the part, its history, its sketches with their constraints and its parameters in one STEP AP242 file",
    "replay": "Plate selected, ribbon 'PMI › Exchange > STEP with Parameters', file name typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "instances by part: ISO 10303-42 442, ISO 10303-55 10, ISO 10303-108 74, ISO 10303-111 3; nothing left out. NX's STEP export writes the B-rep (and PMI); the history, the sketch constraints and the expressions stay in the .prt"
+   "detail": "instances by part: ISO 10303-42 448, ISO 10303-55 10, ISO 10303-108 85, ISO 10303-111 3; nothing left out. NX's STEP export writes the B-rep (and PMI); the history, the sketch constraints and the expressions stay in the .prt"
   },
   {
    "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
@@ -4182,7 +4182,7 @@
    "nx": "Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112",
    "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "0 error(s), 6 warning(s), 13 note(s); the warnings name the places where ISO 10303-108 contradicts itself. NX has no such check"
+   "detail": "0 error(s), 7 warning(s), 8 note(s); the warnings name the places where the standards contradict themselves. NX has no such check"
   },
   {
    "tutorial": "AL: Design intent through STEP (ISO 10303-55, -108, -111)",
@@ -4219,10 +4219,10 @@
   {
    "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
    "n": 2,
-   "nx": "Check STEP with 'Download the AP's schema': the application protocol named, every entity checked against AP242's own long form, the product structure listed",
+   "nx": "Check STEP with 'Download the AP's schema': the application protocol named, every entity and every rule checked against AP242's own long form, the product structure listed",
    "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, the box ticked, MB2 = OK",
    "outcome": "differs",
-   "detail": "0 error(s), 0 warning(s), 1 note(s); checked against AP242's long form: True; parts list: 1 x BasePlate; 2 x Bracket; 4 x Bolt; 1 x BasePlate; 4 x Bolt; 2 x Bracket. NX has no STEP checker; its BOM comes from the assembly navigator"
+   "detail": "1 error(s), 0 warning(s), 2 note(s) (the protocol name FreeCAD writes: True); rules: 1715 evaluated, 1 violated, 0 not evaluated; checked against AP242's long form: True; parts list: 1 x BasePlate; 2 x Bracket; 4 x Bolt; 1 x BasePlate; 4 x Bolt; 2 x Bracket. NX has no STEP checker; its BOM comes from the assembly navigator"
   },
   {
    "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
@@ -4238,7 +4238,7 @@
    "nx": "Check STEP on the sketch file: the Part 112 commands against ISO 10303-112's schema",
    "replay": "ribbon 'PMI › Exchange > Check STEP', file name typed, MB2 = OK",
    "outcome": "differs",
-   "detail": "0 error(s), 0 warning(s), 0 note(s); ISO 10303-112: 6 instances of ISO 10303-112 entities"
+   "detail": "0 error(s), 0 warning(s), 1 note(s); ISO 10303-112: 6 instances of ISO 10303-112 entities"
   },
   {
    "tutorial": "AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch",
