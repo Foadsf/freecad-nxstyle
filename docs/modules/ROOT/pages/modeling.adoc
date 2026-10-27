@@ -295,6 +295,71 @@ The book's hexagonal screw (NX 12 for Engineering Design, 4.7.1) threads its 0.2
 * Fine pitch and UNF tables: type the values, and the callout reads *Custom*.
 * NX's dashed display of a symbolic thread: the SymbolicThread feature shows the cylinder as it is.
 
+== Move Object [[move-object]]
+
+*Move Object* (kbd:[Ctrl+T], or *Move Object* on the MB3 radial menu; NX: *Edit › Move Object*) moves bodies and objects, or copies of them.
+What is selected when it starts becomes its *Objects*; with nothing selected, click the objects in the graphics window or the Part Navigator (a second click on one takes it out again).
+
+* A click on a solid takes its Body, as NX selects a body. The move goes inside the Body, which keeps its *Placement*: free primitives, sketches and datums move by their Placement, a sketch or datum attached to the Body's origin planes by its *Attachment Offset*, and everything built on them follows.
+  This is because FreeCAD 1.1's *Unite / Subtract* (PartDesign Boolean) ignores the target Body's Placement: a Body moved by its Placement and then cut into would be cut where it was.
+  A Body whose features refer to its origin directly (a Revolve about the origin's Z axis, a Mirror on the XY plane) is moved by its Placement instead, and the dialog warns that a later Unite / Subtract into it would not see the move.
+* A Part object outside a Body (a Part primitive, an imported solid) moves by its Placement.
+* In an assembly, a click on a component takes its link, and the link moves.
+* A sketch or a datum picked as itself moves alone. An attached one moves through its *Attachment Offset*, so it stays attached.
+
+=== Motion
+
+[cols="1,3",options="header"]
+|===
+| Motion | What you specify
+
+| *Distance*
+| *Specify Vector* (XC, YC, ZC, −XC, −YC, −ZC; *Reverse Direction*) and the *Distance*.
+
+| *Angle*
+| *Specify Vector* as the axis, *Specify Axis Point* (typed, or picked and snapped by its Point type), and the *Angle*; positive turns right-handed about the vector.
+
+| *Point to Point*
+| *Specify From Point* and *Specify To Point*, typed or picked. The objects move by the difference.
+
+| *Dynamic*
+| OK hands the object to FreeCAD's *Transform* dragger (FreeCAD's `Std_TransformManip`): drag its arrows and rings, or type in its panel. One object at a time.
+|===
+
+=== Result
+
+* *Move Original* moves the objects.
+* *Copy Original* leaves them where they are and makes *Number of Copies* copies: copy 1 moved once, copy 2 twice, and so on (four copies at 90° go round once).
+* *Distance/Angle Divisions* divides the motion: 100 mm with 4 divisions moves 25 mm.
+
+A copy is not associative, as NX's copy is by default:
+
+* A Body's copy is a new PartDesign Body whose Base Feature is a static copy of the solid, already moved (a hidden Part feature, *<body> solid*). It is a body like any other: the primitives' Booleans and Combine can take it as a target, and new features build on it. Editing the original leaves the copy as it is.
+* A Part object's copy is a static Part feature with its shape (Part's Simple Copy).
+* A link's copy is another link to the same object, so a copied component is still the same part.
+* Sketches and datums are moved only; *Copy Original* on them is refused with the reason.
+
+The Body copy was chosen over PartDesign's *Clone* and a *SubShapeBinder*: both keep the copy tied to the original, which NX's default copy is not, and a Clone follows every later change of the original body.
+
+=== OK, Apply, Cancel
+
+* The graphics window shows the result while the dialog is open: the objects are where OK will leave them, and the copies are there.
+* *OK* (or MB2) adds one undo step, *Move Object*; one Undo puts everything back and removes the copies.
+* *Apply* commits the move and keeps the dialog open with the same objects: the next Apply (or OK) moves them again, or makes more copies.
+* *Cancel* or kbd:[Esc] leaves nothing changed.
+* An error leaves *OK* unavailable: no objects, no copies, *Copy Original* on a sketch or datum, or *Dynamic* with several objects.
+  A Distance or Angle of 0 is allowed with a warning that nothing moves.
+* The dialog remembers the motion, vector, distance, angle and result for the next time.
+
+The book's arbor press L-bar (NX 12 for Engineering Design, 4.7.3) moves its second block 200 in along ZC, and 4.6.9 moves a cylinder 5 in along XC; the self-test replays both by kbd:[Ctrl+T] and checks the placement, the bounding box, the one undo step and Undo, and then cuts a slot into the moved block with *Unite / Subtract*, checking the volume against the Part API.
+
+=== Not supported yet
+
+* The other motions: *Distance between Points*, *Radial Distance*, *Align Axis to Vector*, *CSYS to CSYS*, *Delta XYZ*, *Rotate by Three Points* (use Distance, Angle or Point to Point).
+* A vector from a picked face or edge: choose one of the six axes.
+* *Associative* (a Move Object feature), *Move Parents*, *Create Trace Lines*, and the Layer options.
+* A Body or Part object whose Placement is set by an expression is refused: change the expression.
+
 == Datums
 
 *Feature › Datum* has Datum Plane, Datum Axis, Point and Datum CSYS.

@@ -67,6 +67,7 @@ It ends with the count of checks passed, failed and skipped (171 checks on FreeC
 ** the 10 lip curves preselected, then kbd:[X], Boolean None, 0.5 in Reversed: a new Body whose binder holds only those curves, extruded along −Z;
 ** the 4-curve flange, three sides with one Connected Curves pick and one Single Curve pick, revolved and united with the wall;
 ** kbd:[Esc] in a Revolve about a vector through (0, 10, 0) and in an Extrude of picked curves leaves the objects and the undo list as they were;
+* Move Object by kbd:[Ctrl+T] at once after the selection: the book's L-bar block (4.7.3) lifted 200 in along ZC with its placement, bounding box, one undo step and Undo checked, and the same move along YC failing the ZC position check; the 4.6.9 cylinder clicked in the graphics window and moved 5 in along XC; Copy Original making two body copies at +1 and +2 steps, removed again by one Undo; Angle with Apply, then Point to Point; Cancel and kbd:[Esc] leaving the body and the undo list as they were; Distance 0 warning that nothing moves;
 * the curve rules on a rectangle sketch (Connected takes 4 sides, Tangent stops at the corners); the Part Navigator marks the active body, a suppressed feature and a failed one;
 * a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block;
 * broken references are reported, not papered over:
@@ -79,6 +80,7 @@ It ends with the count of checks passed, failed and skipped (171 checks on FreeC
 
 A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.
 It writes `out/smoke.json` and screenshots.
+While developing, `NXSTYLE_SMOKE_ONLY=s_move,s_thread` (step names from `smoke.py`'s plan) runs only those steps after Strata's start; a full run is still the check.
 
 === Window sizes and display scaling [[window-matrix]]
 

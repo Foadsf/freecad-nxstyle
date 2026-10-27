@@ -43,6 +43,11 @@ class Smoke:
         self.checks = []
         self.info = {}
         self.steps = list(self.plan())
+        only = [s for s in os.environ.get("NXSTYLE_SMOKE_ONLY", "").split(",") if s]
+        if only:                         # a developer's quick run: Strata's wait, then only the named steps
+            self.steps = [(fn, d) for fn, d in self.steps if fn.__name__ == "s_wait_strata" or fn.__name__ in only]
+            self.steps += [(getattr(self, s), 300) for s in only if s not in [fn.__name__ for fn, _ in self.steps]
+                           and hasattr(self, s)]
         self.planned = [fn.__name__ for fn, _ in self.steps]
         self.ran = []
 
@@ -168,6 +173,7 @@ class Smoke:
         yield self.s_section, 300
         yield self.s_primitives, 300
         yield self.s_thread, 300
+        yield self.s_move, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -2394,6 +2400,12 @@ class Smoke:
         of the same helix, the hand, one undo step, Edit Parameters, Cancel, Symbolic (smoke_thread.py)."""
         from . import smoke_thread
         smoke_thread.run(self)
+
+    def s_move(self):
+        """Move Object by Ctrl+T on the book's L-bar (4.7.3) and cylinder (4.6.9): Distance, Angle with Apply, Point
+        to Point, Copy Original with 2 copies, Cancel and Esc, one undo step, negative controls (smoke_move.py)."""
+        from . import smoke_move
+        smoke_move.run(self)
 
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""
