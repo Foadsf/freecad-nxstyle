@@ -155,6 +155,13 @@ class Smoke:
         yield self.s_laser_cut_result, 300
         yield self.s_laser_cut_back, 2000
         yield self.s_laser_cut_after, 100
+        yield self.s_dfm, 1500
+        yield self.s_dfm_check, 300
+        yield self.s_dfm_run_notched, 500
+        yield self.s_dfm_result_notched, 300
+        yield self.s_dfm_run_clean, 500
+        yield self.s_dfm_result_clean, 300
+        yield self.s_dfm_after, 100
         yield self.s_layout_persist, 2500          # switches applications: after the other switching steps
         yield self.s_layout_persist_check, 300
         yield self.s_ap242, 300
@@ -1748,6 +1755,162 @@ class Smoke:
                    r.tab_names())
         if "SmokeLaserCut" in App.listDocuments():
             App.closeDocument("SmokeLaserCut")
+
+    # ------------------------------------------------- Molded Part Validation (DFM add-on)
+    DFM_BUTTONS = {"DFM_SetupAnalysis": "Moldability Validation", "DFM_ThicknessAnalysis": "Check Wall Thickness",
+                   "DFM_DraftAnalysis": "Draft Analysis", "DFM_ProcessLibrary": "Process Library"}
+    DFM_RULE = "Sharp Internal Corners"
+
+    def dfm_want(self):
+        return os.environ.get("NXSTYLE_DFM_EXPECTED", "1") == "1"
+
+    def s_dfm(self):
+        """DFM (github.com/ryankembrey/FreeCAD-DFM-Workbench), on by default once its OCP is installed: two
+        30 x 20 x 10 blocks with a 15 x 5 step, one with the step's inside edge sharp (a known Sharp
+        Internal Corner), one with it filleted R2 (none)."""
+        if not self.dfm_want():
+            return
+        import Part
+        doc = App.newDocument("SmokeDFM")
+        notched = Part.makeBox(30, 20, 10).cut(Part.makeBox(15, 20, 5, App.Vector(15, 0, 5)))
+        inner = [i for i, e in enumerate(notched.Edges)
+                 if all(abs(v.X - 15) < 1e-6 and abs(v.Z - 5) < 1e-6 for v in e.Vertexes)]
+        clean = notched.makeFillet(2.0, [notched.Edges[i] for i in inner])
+        a = doc.addObject("Part::Feature", "Notched")
+        a.Shape = notched
+        b = doc.addObject("Part::Feature", "Filleted")
+        b.Shape = clean
+        b.Placement.Base = App.Vector(0, 40, 0)
+        doc.recompute()
+        self.info["dfm sharp edge"] = [f"Edge{i + 1}" for i in inner]
+        self.shell.switch_application("modeling")
+        self.shell.ribbon.select("Analysis")
+
+    def s_dfm_check(self):
+        cmds = Gui.listCommands()
+        if not self.dfm_want():
+            self.check("DFM off as asked: no Molded Part Validation group",
+                       not any(c in cmds for c in self.DFM_BUTTONS)
+                       and not any(c in self.shell.ribbon.locations for c in self.DFM_BUTTONS),
+                       [c for c in self.DFM_BUTTONS if c in cmds])
+            return
+        r = self.shell.ribbon
+        where = {c: r.locations.get(c) for c in self.DFM_BUTTONS}
+        buttons = {c: self.lc_button(c) for c in self.DFM_BUTTONS}
+        state = {c: None if b is None else (b.text().replace("\n", " "), b.isEnabled()) for c, b in buttons.items()}
+        self.check("DFM add-on loaded: its commands in Analysis > Molded Part Validation, buttons enabled",
+                   all(c in cmds for c in self.DFM_BUTTONS)
+                   and all(w == "Analysis › Molded Part Validation" for w in where.values())
+                   and all(s is not None and s[1] for s in state.values()), {"where": where, "buttons": state})
+        tip = buttons["DFM_SetupAnalysis"].toolTip() if buttons["DFM_SetupAnalysis"] else ""
+        self.check("Molded Part Validation buttons carry NX names, the add-on's own name in the tooltip",
+                   all(s is not None and s[0] == self.DFM_BUTTONS[c] for c, s in state.items())
+                   and "FreeCAD: DFM Analysis" in tip, tip)
+        found = {t: self.shell.finder.find(t) for t in ("Moldability Validation", "Check Wall Thickness")}
+        self.check("Command Finder finds Moldability Validation and Check Wall Thickness",
+                   "DFM_SetupAnalysis" in found["Moldability Validation"]
+                   and "DFM_ThicknessAnalysis" in found["Check Wall Thickness"], found)
+        report = [ln for ln in self.report_text().splitlines()
+                  if ("DFM" in ln or "OCP" in ln) and ("Error" in ln or "Traceback" in ln or "failed" in ln)]
+        self.check("DFM loaded without errors in the Report view", not report, report[:5])
+
+    def dfm_widget(self, kind, name):
+        """The add-on's live task-panel widget of that name (an earlier panel's may wait for deletion)."""
+        found = [w for w in Gui.getMainWindow().findChildren(kind, name) if w.isVisible()]
+        return found[-1] if found else None
+
+    def dfm_run(self, target):
+        """Select the part, Moldability Validation on the ribbon, then the add-on's own panel: material
+        Default (category and process are its only ones and fill themselves), Run Analysis."""
+        doc = App.listDocuments().get("SmokeDFM")
+        b = self.lc_button("DFM_SetupAnalysis")
+        if doc is None or b is None:
+            return
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+        App.setActiveDocument(doc.Name)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.getObject(target))
+        b.click()
+        QtWidgets.QApplication.processEvents()
+        target_box = self.dfm_widget(QtWidgets.QLineEdit, "leSelectModel")
+        material = self.dfm_widget(QtWidgets.QComboBox, "cbMaterial")
+        run = self.dfm_widget(QtWidgets.QPushButton, "pbRunAnalysis")
+        state = {"dialog": bool(Gui.Control.activeDialog()), "target": target_box.text() if target_box else None}
+        if material is not None:
+            material.setCurrentIndex(material.findText("Default"))
+            state["material"] = material.currentText()
+        if run is not None:
+            state["run enabled"] = run.isEnabled()
+            run.click()                 # the add-on analyses in the click, then opens its results panel
+        self.info[f"dfm run {target}"] = state
+
+    def dfm_findings(self):
+        """What the results panel shows: {rule: [geometry of each finding]} and the rules listed as Passed."""
+        tree = self.dfm_widget(QtWidgets.QTreeView, "tvResults")
+        if tree is None:
+            return None, None
+        model, kind, label = tree.model(), Qt.UserRole + 1, Qt.UserRole + 2
+        findings, passed = {}, []
+
+        def walk(parent, under):
+            for row in range(model.rowCount(parent)):
+                i = model.index(row, 0, parent)
+                what, name = i.data(kind), i.data(label)
+                if what == "finding":
+                    findings.setdefault(under, []).append(name)
+                elif under == "Passed" and what == "rule":
+                    passed.append(name)
+                walk(i, "Passed" if name == "Passed" else name if what == "rule" else under)
+        walk(QtCore.QModelIndex(), None)
+        return findings, passed
+
+    def dfm_close(self):
+        """The results panel's Close button, as a user would (the add-on restores the part's colours)."""
+        close = next((bt for bt in Gui.getMainWindow().findChildren(QtWidgets.QPushButton)
+                      if bt.isVisible() and bt.text().replace("&", "") == "Close"), None)
+        if close is not None:
+            close.click()
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+
+    def s_dfm_run_notched(self):
+        if self.dfm_want():
+            self.dfm_run("Notched")
+
+    def s_dfm_result_notched(self):
+        if not self.dfm_want():
+            return
+        findings, passed = self.dfm_findings()
+        self.info["dfm notched"] = {"findings": findings, "passed": passed, "run": self.info.get("dfm run Notched")}
+        sharp = (findings or {}).get(self.DFM_RULE, [])
+        self.check("Moldability Validation from the ribbon flags the sharp inside edge of a stepped block "
+                   "(Sharp Internal Corners, that edge only)",
+                   findings is not None and sharp == self.info.get("dfm sharp edge"),
+                   {"expected": self.info.get("dfm sharp edge"), "findings": findings})
+        if findings is not None:
+            self.shot("11_dfm_moldability.png")
+        self.dfm_close()
+
+    def s_dfm_run_clean(self):
+        if self.dfm_want():
+            self.dfm_run("Filleted")
+
+    def s_dfm_result_clean(self):
+        if not self.dfm_want():
+            return
+        findings, passed = self.dfm_findings()
+        self.info["dfm filleted"] = {"findings": findings, "passed": passed, "run": self.info.get("dfm run Filleted")}
+        self.check("negative control: the same block with that edge filleted R2 has no Sharp Internal Corner "
+                   "(the rule listed as Passed)",
+                   findings is not None and self.DFM_RULE not in findings and self.DFM_RULE in passed,
+                   {"findings": findings, "passed": passed})
+        self.dfm_close()
+
+    def s_dfm_after(self):
+        if "SmokeDFM" in App.listDocuments():
+            App.closeDocument("SmokeDFM")
+        self.shell.ribbon.select("Home")
 
     def s_expressions(self):
         Gui.runCommand("NXStyle_Expressions")

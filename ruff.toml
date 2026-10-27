@@ -1,3 +1,3 @@
-# FreeCAD's SheetMetal add-on (unmodified) and LCInterlocking (a fork with two Qt 6 fixes) are bundled as submodules;
-# each is linted by its own project.
-extend-exclude = ["vendor/FreeCAD_SheetMetal", "vendor/LCInterlocking"]
+# FreeCAD's SheetMetal add-on (unmodified), LCInterlocking (a fork with two Qt 6 fixes) and the DFM Workbench
+# (unmodified) are bundled as submodules; each is linted by its own project.
+extend-exclude = ["vendor/FreeCAD_SheetMetal", "vendor/LCInterlocking", "vendor/FreeCAD-DFM-Workbench"]

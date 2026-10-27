@@ -22,6 +22,7 @@
 * xref:inspection.adoc[Inspection: measured parts and gauges]
 * xref:pin-location.adoc[Pin location]
 * xref:clearance.adoc[Assembly clearance and volume claims]
+* xref:dfm.adoc[Molded part validation (DFM)]
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
 * xref:release-package.adoc[Release packages]

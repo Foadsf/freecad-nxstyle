@@ -320,7 +320,7 @@ class LCInterlockingTests(unittest.TestCase):
         self.assertIn("submodule", why)
 
     def test_loaded_with_M_after_the_others(self):
-        cmd = self.dry_run()["command"]
+        cmd = self.dry_run("--no-dfm")["command"]          # DFM, when present, comes last
         self.assertEqual(cmd[-2:], ["-M", str(self.bundled)])
 
     def test_flag_keeps_it_off_the_command_line(self):
@@ -334,6 +334,133 @@ class LCInterlockingTests(unittest.TestCase):
             self.skipTest("vendor/LCInterlocking not checked out (git submodule update --init)")
         self.assertIn("LCInterlockingWorkbench", (real / "InitGui.py").read_text(encoding="utf-8"))
         self.assertTrue((real / "lasercut" / "join.py").is_file())    # what a profile copy is recognised by
+
+
+class DFMTests(unittest.TestCase):
+    """The DFM add-on behind Analysis > Molded Part Validation: bundled, loaded only with its OCP, its OCP
+    folder put on FreeCAD's path with -M, switched off on its own."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        # resolved, as pick_install resolves FreeCAD's path: a TEMP given in 8.3 form (RUNNER~1 on GitHub's
+        # Windows runners) comes back long, and the paths compared below must be in one form
+        root = Path(self.tmp.name).resolve()
+        self.bundled = root / "vendor" / "FreeCAD-DFM-Workbench"
+        (self.bundled / "freecad" / "DFM").mkdir(parents=True)
+        (self.bundled / "freecad" / "DFM" / "init_gui.py").write_text("")
+        self.bin = root / "FreeCAD" / "bin"                 # a Windows install: python311.dll and python3.dll
+        self.bin.mkdir(parents=True)
+        for name in ("FreeCAD.exe", "python.exe", "python3.dll", "python311.dll"):
+            (self.bin / name).write_text("")
+        self.install = launch_nx.Install(self.bin / "FreeCAD.exe", (1, 1, 4))
+        self.root = root / "nxroot"
+        self.deps = self.root / "pydeps" / "py311"
+        self.profile = root / "profile"
+        self._saved = launch_nx.DFM_DIR, launch_nx.default_profile_root
+        launch_nx.DFM_DIR = self.bundled
+        launch_nx.default_profile_root = lambda: self.root
+
+    def tearDown(self):
+        launch_nx.DFM_DIR, launch_nx.default_profile_root = self._saved
+        self.tmp.cleanup()
+
+    def give_ocp(self, folder):
+        (folder / "OCP").mkdir(parents=True)
+        (folder / "OCP" / "__init__.py").write_text("")
+
+    def dry_run(self, *flags):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            launch_nx.main(["--freecad", str(self.install.exe), "--profile", str(self.profile), "--dry-run",
+                            *flags])
+        return json.loads(out.getvalue())
+
+    def test_python_tag_is_not_taken_from_the_stable_abi_dll(self):
+        exe, tag = launch_nx.freecad_python(self.install)
+        self.assertEqual((exe, tag), (self.bin / "python.exe", "py311"))
+        self.assertEqual(launch_nx.dfm_deps_dir(self.install), self.deps)
+
+    def test_off_without_ocp_and_says_how_to_get_it(self):
+        where, why = launch_nx.find_dfm(self.profile, self.install)
+        self.assertEqual(where, ())
+        self.assertIn("--install-dfm-deps", why)
+
+    def test_bundled_with_its_ocp_folder_first(self):
+        self.give_ocp(self.deps)
+        where, why = launch_nx.find_dfm(self.profile, self.install)
+        self.assertEqual(where, (self.deps, self.bundled))
+        self.assertTrue(why.startswith("bundled"))
+
+    def test_ocp_in_freecads_own_python_is_enough(self):
+        self.give_ocp(self.bin / "Lib" / "site-packages")
+        self.assertEqual(launch_nx.find_dfm(self.profile, self.install)[0], (self.bundled,))
+
+    def test_profile_install_is_not_loaded_twice(self):
+        self.give_ocp(self.deps)
+        pkg = self.profile / "data" / "Mod" / "DFM" / "freecad" / "DFM"
+        pkg.mkdir(parents=True)
+        (pkg / "init_gui.py").write_text("")
+        where, why = launch_nx.find_dfm(self.profile, self.install)
+        self.assertEqual(where, (self.deps,))
+        self.assertIn("NX profile", why)
+
+    def test_switched_off_by_flag_or_config(self):
+        self.give_ocp(self.deps)
+        self.assertEqual(launch_nx.find_dfm(self.profile, self.install, disabled=True)[0], ())
+        (self.profile / "config").mkdir(parents=True)
+        (self.profile / "config" / "nxstyle.json").write_text('{"dfm": "none"}')
+        where, why = launch_nx.find_dfm(self.profile, self.install)
+        self.assertEqual(where, ())
+        self.assertIn("dfm", why)
+
+    def test_missing_submodule_says_how_to_get_it(self):
+        self.give_ocp(self.deps)
+        (self.bundled / "freecad" / "DFM" / "init_gui.py").unlink()
+        where, why = launch_nx.find_dfm(self.profile, self.install)
+        self.assertEqual(where, ())
+        self.assertIn("submodule", why)
+
+    def test_loaded_last_with_M_and_flag_keeps_it_off(self):
+        self.give_ocp(self.deps)
+        cmd = self.dry_run()["command"]
+        self.assertEqual(cmd[-4:], ["-M", str(self.deps), "-M", str(self.bundled)])
+        res = self.dry_run("--no-dfm")
+        self.assertNotIn(str(self.bundled), res["command"])
+        self.assertNotIn(str(self.deps), res["command"])
+        self.assertIn("--no-dfm", res["dfm"])
+
+    def test_deps_pinned_and_installed_without_their_requirements(self):
+        calls = []
+
+        def pip(cmd):           # what the vtk wheel leaves: its DLLs and its Python package
+            calls.append(cmd)
+            for d in ("vtk.libs", "vtkmodules", "OCP"):
+                (self.deps / d).mkdir(parents=True, exist_ok=True)
+            (self.deps / "vtk.py").write_text("")
+            return 0
+        saved = launch_nx.subprocess.call
+        launch_nx.subprocess.call = pip
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(launch_nx.main(["--freecad", str(self.install.exe), "--install-dfm-deps"]), 0)
+        finally:
+            launch_nx.subprocess.call = saved
+        (cmd,) = calls
+        self.assertEqual(cmd[:4], [str(self.bin / "python.exe"), "-m", "pip", "install"])
+        self.assertIn("--no-deps", cmd)                    # vtk's numpy 2 would shadow FreeCAD's
+        self.assertEqual(cmd[cmd.index("--target") + 1], str(self.deps))
+        self.assertTrue(all("==" in d for d in launch_nx.DFM_DEPS) and all(d in cmd for d in launch_nx.DFM_DEPS))
+        # FreeCAD's own vtkmodules must stay the one imported (FEM); OCP keeps the DLLs it links to
+        self.assertEqual(sorted(p.name for p in self.deps.iterdir()), ["OCP", "vtk.libs"])
+
+    def test_real_submodule_is_a_freecad_workbench(self):
+        real = self._saved[0]
+        init = real / "freecad" / "DFM" / "init_gui.py"
+        if not init.is_file():
+            self.skipTest("vendor/FreeCAD-DFM-Workbench not checked out (git submodule update --init)")
+        text = init.read_text(encoding="utf-8")
+        self.assertIn("DFMWorkbench", text)
+        self.assertIn("LGPL-2.1-or-later", (real / "package.xml").read_text(encoding="utf-8"))
 
 
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")
