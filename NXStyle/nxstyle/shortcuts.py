@@ -84,7 +84,8 @@ TABLE = [
     # ---- Modeling
     Entry("Extrude", "X", ["NXStyle_Extrude", "PartDesign_Pad"], nx_id="UG_MODELING_EXTRUDED_FEATURE",
           note="with nothing selected: sketch first, Finish Sketch continues into the Extrude dialog"),
-    Entry("Move Object", "Ctrl+T", "Std_TransformManip"),
+    Entry("Move Object", "Ctrl+T", ["NXStyle_MoveObject", "Std_TransformManip"],
+          note="Distance, Angle, Point to Point; Dynamic is FreeCAD's Transform dragger"),
     # ---- Sketch (sketch edit mode)
     Entry("Profile", "Z", "Sketcher_CreatePolyline", "sketch", nx_id="UG_SKETCH_PROFILE"),
     Entry("Rectangle", "R", "Sketcher_CreateRectangle", "sketch", nx_id="UG_SKETCH_RECTANGLE"),

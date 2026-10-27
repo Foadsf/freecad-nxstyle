@@ -31,6 +31,9 @@ This page lists the differences found by working through the xref:tutorials/inde
 * xref:modeling.adoc#thread[Thread] Detailed is a PartDesign Subtractive Helix of the basic thread profile, so it is real geometry and takes seconds to recompute.
   Symbolic is a feature that records the thread without NX's dashed display.
   The thread starts at an end of the cylinder; the tables are ISO coarse and UNC only, single-start and straight.
+* xref:modeling.adoc#move-object[Move Object] offers Distance, Angle and Point to Point typed in its dialog; Dynamic is FreeCAD's Transform dragger in its own dialog.
+  Copies are not associative (NX's default): a Body's copy is a new Body on a static copy of the solid. There is no Associative option, no Move Object feature, and no vector from a picked face.
+  A Body whose features refer to its origin (a Revolve about the Z axis) moves by its Placement, and FreeCAD 1.1's Unite / Subtract into it then ignores the move; the dialog warns.
 * Hole drills at circle centres in a sketch; NX places hole points directly and adds their location dimensions.
 * At Angle datum planes turn about the face's own axes; NX lets you pick the hinge axis.
 * Datum CSYS with nothing selected asks whether to continue; a Body already has its own origin.

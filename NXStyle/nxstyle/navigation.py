@@ -135,7 +135,7 @@ OBJECT_RADIAL = [
     ("Delete", "Std_Delete"),
     ("Fit Selection", "Std_ViewFitSelection"),
     ("Measure", ["Std_Measure", "Part_Measure_Linear"]),
-    ("Move Object", "Std_TransformManip"),
+    ("Move Object", ["NXStyle_MoveObject", "Std_TransformManip"]),
     ("Show Only", None),
 ]
 
