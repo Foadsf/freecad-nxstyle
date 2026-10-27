@@ -4375,6 +4375,78 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Arborpress_plate.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Create a new file (Impeller_shaft)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed']"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Save it as Impeller_shaft",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Impeller_shaft.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Cylinder: Axis, Diameter, and Height; ZC Axis; Point Dialog (0, 0, 0); Diameter 4, Height 18; OK",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0 typed, Diameter 101.6 and Height 457.2 typed, Boolean 'None', OK",
+   "outcome": "same",
+   "detail": "volume 3706666.6 mm^3, expected 3706666.6; 1 solid(s); origin (0.0, 0.0, 0.0); one undo step ['Cylinder']"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "MB3 > Orient View > Isometric",
+   "replay": "Ctrl+F (Fit, to see the cylinder whole), End (NX's Isometric key)",
+   "outcome": "same",
+   "detail": "view direction (-0.5774, 0.5774, -0.5774) (isometric 1.000000)"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Cone: Diameters and Height; ZC Axis; Point Constructor, Arc/Ellipse/Sphere Center on the cylinder's top edge; Base Diameter 4, Top Diameter 6, Height 10; Unite with the cylinder; OK",
+   "replay": "ribbon 'Home › Feature', Type 'Diameters and Height', Specify Vector 'ZC', 'Arc/Ellipse/Sphere Center', MB1 on the edge at pixel (557, 98): Select Object (1)  Arc/Ellipse/Sphere Center: 0, 0, 457.2, Base 101.6, Top 152.4, Height 254 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "volume 6967160.3 mm^3, expected 6967160.3; 1 solid(s); origin (0.0, 0.0, 457.2); one undo step ['Cone']; united with Body"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Cylinder: ZC Axis; Arc/Ellipse/Sphere Center on the cone's top edge; Diameter 6, Height 20; Unite; OK",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', 'Arc/Ellipse/Sphere Center', MB1 on the edge at pixel (557, 96): Select Object (1)  Arc/Ellipse/Sphere Center: 0, 0, 711.2, Diameter 152.4 and Height 508 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "volume 16233826.7 mm^3, expected 16233826.7; 1 solid(s); origin (0.0, 0.0, 711.2); one undo step ['Cylinder']; united with Body"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "The shaft: cylinder, cone and cylinder in one solid",
+   "replay": "compared with the book's dimensions",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.4e-14 mm, 5 faces (5 in the reference)"
+  },
+  {
+   "tutorial": "AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Save the model",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Impeller_shaft.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   }
  ],
  "info": {

@@ -68,6 +68,7 @@
 * xref:tutorials/al.adoc[AL: Design intent through STEP]
 * xref:tutorials/am.adoc[AM: Receiving STEP: AP, BOM, Part 112 sketch]
 * xref:tutorials/an.adoc[AN: Arbor Press Plate]
+* xref:tutorials/ap.adoc[AP: Impeller Shaft]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

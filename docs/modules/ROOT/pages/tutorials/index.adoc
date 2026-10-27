@@ -8,7 +8,7 @@ They explain what works the same way, what differs and where FreeCAD reaches a l
 
 [.nx-learning-paths]
 * *Start with solid modeling* +
-xref:tutorials/a.adoc[The Adjuster] for a first sketch and extrude, xref:tutorials/ae.adoc[One Extrude, every way] for the command workflow, or xref:tutorials/an.adoc[Arbor Press Plate] for primitives, datums and holes.
+xref:tutorials/a.adoc[The Adjuster] for a first sketch and extrude, xref:tutorials/ae.adoc[One Extrude, every way] for the command workflow, or the xref:tutorials/an.adoc[Arbor Press Plate] and xref:tutorials/ap.adoc[Impeller Shaft] for primitives, datums and holes.
 * *Develop your sketching skills* +
 Try the xref:tutorials/af.adoc[Arbor Press Base], xref:tutorials/ah.adoc[Impeller blade] and xref:tutorials/ak.adoc[Holder] for coordinates, tangent arcs and copied curves.
 * *Document and inspect a part* +
@@ -40,7 +40,7 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 
 | Sketch, extrude, revolve | xref:tutorials/a.adoc[A], xref:tutorials/b.adoc[B], xref:tutorials/l.adoc[L]
 | Datum planes and holes | xref:tutorials/c.adoc[C], xref:tutorials/e.adoc[E], xref:tutorials/an.adoc[AN]
-| Primitives: Block, Cylinder, Cone, Sphere | xref:tutorials/an.adoc[AN]
+| Primitives: Block, Cylinder, Cone, Sphere | xref:tutorials/an.adoc[AN], xref:tutorials/ap.adoc[AP]
 | Datum axes | xref:tutorials/an.adoc[AN]
 | Patterns, mirror, shell, edge blend | xref:tutorials/d.adoc[D], xref:tutorials/f.adoc[F]
 | Sketch constraints, trim, offset | xref:tutorials/i.adoc[I], xref:tutorials/j.adoc[J], xref:tutorials/af.adoc[AF], xref:tutorials/ak.adoc[AK]
@@ -99,7 +99,7 @@ include::partial$outcome-legend.adoc[]
 * Tutorial AE is ours: the acceptance case of the Extrude command (None for a new body, Unite, Subtract, edit, cancel, undo, reopen).
 * Tutorial AL is ours: the plate and its parameters; the exchange follows ISO 10303-55 annex E and ISO 10303-108 Cor.1 annex F.
 * Tutorial AM is ours: the fixture and the bracket profile; the commands follow ISO 10303-112 clause 4.2.2 (selection by ISO 10303-55).
-* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN.
+* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN; section 4.2.2: tutorial AP.
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.
 
 == The videos

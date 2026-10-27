@@ -1,0 +1,54 @@
+= Tutorial AP: Impeller Shaft
+:description: A shaft made of NX primitives: a Cylinder, a Cone on the centre of its top edge and a second Cylinder on the cone, united into one solid (NX 12 for Engineering Design, 4.2.2).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.2.2 (Model a Shaft).
+You learn:: Cylinder (Axis, Diameter, and Height), Cone (Diameters and Height), Specify Vector, the Point Dialog's Arc/Ellipse/Sphere Center, Boolean Unite, Orient View > Isometric
+Sizes:: the book's, in inches, typed in millimetres. A cylinder Ø4 × 18 on ZC from the origin. A cone from Ø4 to Ø6, 10 high, on the cylinder's top. A cylinder Ø6 × 20 on the cone's top.
+
+== Step by step
+
+=== 1. The first cylinder
+
+kbd:[Ctrl+N] and save the part as `Impeller_shaft`.
+Click *Cylinder* (Home › Feature).
+Keep the type *Axis, Diameter, and Height* and choose *ZC* as the vector.
+In Specify Point leave XC, YC and ZC at 0, then type Diameter 4 and Height 18.
+Click *OK*.
+
+kbd:[Ctrl+F] fits the cylinder in the window and kbd:[End] turns the view to Isometric (NX: MB3 > Orient View > Isometric).
+
+image::tutorial-AP-01-cylinder.png[The first cylinder, 4 across and 18 high]
+
+=== 2. The cone
+
+Click *Cone*.
+Keep *Diameters and Height* and the *ZC* vector.
+In Specify Point choose *Arc/Ellipse/Sphere Center* and click the cylinder's top edge: XC, YC and ZC become (0, 0, 18).
+Type Base Diameter 4, Top Diameter 6 and Height 10, choose Boolean *Unite* and click *OK*.
+The cylinder is the part's only body, so the dialog selects it for the Unite by itself.
+
+image::tutorial-AP-02-cone.png[The cone united with the top of the cylinder]
+
+=== 3. The second cylinder
+
+Click *Cylinder* again, keep *ZC*, and with *Arc/Ellipse/Sphere Center* click the cone's top edge: (0, 0, 28).
+Type Diameter 6 and Height 20, choose *Unite* and click *OK*.
+
+image::tutorial-AP-03-shaft.png[The finished shaft: cylinder, cone and cylinder]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AP.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The finished shaft is compared with the book's, built from its dimensions: two cylinders and a frustum on one axis.
+
+== What differs from NX
+
+* NX's Point Dialog opens as its own window. In NX-Style's Cylinder and Cone dialogs its type and its XC, YC and ZC are fields of the dialog itself.
+* NX lists Cylinder and Cone under More in the Feature group; NX-Style shows them in the group.
+* The Cylinder's Arc and Height type and the Cone's other four types are not offered yet; the list's tooltip names them.
