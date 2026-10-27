@@ -13,6 +13,9 @@ These tables are generated from the ribbon files in `NXStyle/nxstyle/resources/r
 
 include::partial$generated/ribbon-modeling.adoc[]
 
+FreeCAD has no thread command for a shaft (PartDesign's Hole threads only holes).
+NX-Style's *Thread* (`NXStyle_Thread`) builds a Detailed thread as a PartDesign *Subtractive Helix* of a thread profile sketch, and a Symbolic one as a feature that records the thread on the Body (xref:modeling.adoc#thread[Thread]).
+
 == Sketch (contextual tab)
 
 include::partial$generated/ribbon-sketch.adoc[]

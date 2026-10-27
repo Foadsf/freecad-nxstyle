@@ -1,0 +1,71 @@
+= Tutorial AQ: Hexagonal Screw
+:description: A hexagon-head screw from NX primitives, a sketched hexagon, a Sphere intersected with the head and a Detailed Thread on the shank (NX 12 for Engineering Design, 4.7.1).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.7.1 (Hexagonal Screw).
+You learn:: Cylinder at the centre of a face, Polygon, Extrude as a body of its own, Static Wireframe for picking hidden edges, Sphere with Intersect and Select Body, Thread (Detailed)
+Sizes:: the book's, in inches, typed in millimetres. Shank Ø0.25 × 1.5, step Ø0.387 × 0.0156, hexagon side 0.246 extruded 0.1876, a cylinder Ø0.387 × 0.1875 inside the head, a Sphere Ø0.55. The thread is NX's default for the shank, 1/4-20 UNC.
+
+== Step by step
+
+=== 1. The shank and the step
+
+kbd:[Ctrl+N] and save the part as `Impeller_hexa-bolt`.
+Click *Cylinder*, choose *ZC*, keep the point at (0, 0, 0), and type Diameter 0.25 and Height 1.5 (6.35 and 38.1 mm).
+Click *OK*.
+
+Click *Cylinder* again and type Diameter 0.387 and Height 0.0156 (9.8298 and 0.39624 mm).
+In Specify Point choose *Arc/Ellipse/Sphere Center* and click the shank's top face: the point is its centre.
+Choose *Unite* and click *OK*.
+
+image::tutorial-AQ-01-cylinders.png[The shank with the thin step cylinder on top]
+
+=== 2. The hexagon head
+
+Select the step's top face and click *Sketch*: the sketch's origin is the circle's centre.
+Press kbd:[P] for *Polygon*.
+FreeCAD asks for the number of sides: type 6 and click OK.
+Type the centre (0, 0) in the fields beside the pointer, then the corner: length 6.2484 mm (0.246 in) at angle 0.
+A regular hexagon's circumradius equals its side length, so this is NX's Side Length 0.246 with Rotation 0.
+Press MB2, then kbd:[Ctrl+Q].
+
+Click *Extrude*, click a side of the hexagon, keep Boolean *None* and type 4.76504 mm (0.1876 in).
+Click *OK*.
+The head is a body of its own, which the Intersect below needs.
+
+=== 3. The rounded head
+
+Switch to *Static Wireframe* (View tab): the next two picks are edges inside the head.
+Click *Cylinder*, type Diameter 0.387 and Height 0.1875, and with *Arc/Ellipse/Sphere Center* click the step's top edge.
+Keep Boolean *None*, and click *OK*.
+
+Click *Sphere* (*Center Point and Diameter*). With *Arc/Ellipse/Sphere Center* click the bottom edge of that cylinder, and type Diameter 0.55 (13.97 mm).
+Choose *Intersect*, choose the hexagonal head in *Select Body*, and click *OK*.
+Switch back to *Shaded with Edges*.
+
+image::tutorial-AQ-02-screw.png[The screw with its head rounded by the sphere]
+
+=== 4. The thread
+
+Click *Thread* (Home › Feature), choose *Detailed*, keep *Right Hand*, and click the shank.
+The dialog fills in 1/4-20 UNC for the 0.25 in shank: major 6.35, minor 4.975, pitch 1.27, angle 60° and length 38.1 mm.
+Keep the values and click *OK*.
+
+image::tutorial-AQ-03-thread.png[The finished screw with its thread]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AQ.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Before the thread, the screw's bodies together are compared with the book's dimensions. The thread is checked against the exact volume a helical sweep of its profile removes.
+
+== What differs from NX
+
+* NX 12 draws the hexagon with Insert > Curve > Polygon, a curve outside sketches. Here, as in NX 2212, the Polygon is drawn in a sketch on the face.
+* FreeCAD's Polygon takes a corner, not a side length. For a hexagon the two are equal.
+* FreeCAD asks for the number of sides in a dialog of its own before the polygon is drawn.
+* The thread is a FreeCAD Subtractive Helix of the thread's profile. See xref:modeling.adoc[Modeling] for the Thread command.

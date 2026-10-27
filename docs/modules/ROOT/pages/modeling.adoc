@@ -239,6 +239,62 @@ Double-clicking the feature opens FreeCAD's own primitive dialog instead.
 * When editing, a Block is shown as *Origin and Edge Lengths*, whatever type made it.
 * The Boolean is not remembered between commands: each starts with *None*.
 
+== Thread [[thread]]
+
+*Thread* is a button in the Feature group (NX: *Insert › Design Feature › Thread*).
+Choose the *Thread Type*, then click the cylindrical face to thread: a shaft for an external thread, a hole's wall for an internal one.
+A face selected before the command is taken as the cylinder.
+
+[cols="1,3",options="header"]
+|===
+| Thread Type | What NX-Style builds
+
+| *Detailed*
+| A real helical thread: a PartDesign Subtractive Helix that sweeps the thread profile (a hidden sketch, *ThreadProfile*, in a plane through the axis) about the cylinder's axis.
+
+| *Symbolic*
+| The cylinder keeps its shape. A *SymbolicThread* feature at the Body's tip records the thread: its callout, diameters, pitch, angle, length and hand, in its *NX Thread* properties.
+|===
+
+Both types carry the same *NX Thread* properties (`NX_Callout`, `NX_MajorDiameter`, `NX_Pitch`, ...), which drawings and PMI can read.
+
+=== The values
+
+The click fills in the nearest standard thread, and the *Standard* list shows which one.
+Choosing another entry fills in its values; values that match no entry read *Custom*.
+
+* A shaft is matched by its major diameter, a hole by its minor diameter (a hole is drilled at about the minor diameter).
+* Parts are metric. A diameter that is an inch size takes the UNC thread, as NX's inch table does: a 0.25 in (6.35 mm) shank gets *1/4-20 UNC*, pitch 1.27.
+  Any other diameter takes the nearest ISO coarse thread: a 6 mm shank gets *M6 x 1*.
+* The tables are ISO 261 coarse pitches (first and second choice diameters, M1 to M64) and ASME B1.1 UNC (#1 to 2 in).
+* *Minor Diameter* is the basic profile's: major − 1.082532 × pitch (ISO 68-1 and ISO 724 D1; ASME B1.1).
+* *Angle* is 60°; *Length* is the cylinder's length.
+
+*Rotation* is *Right Hand* or *Left Hand*.
+*Start* is the end of the cylinder nearest the click; *Select Start* takes the face at the other end, and *Reverse Thread Direction* swaps the ends.
+
+The Detailed thread follows the basic profile: a crest flat of P/8 at the major diameter and flanks at half the Angle each side.
+It runs out through the start face and stops at *Length*; it never cuts past *Length*, so a thread up to a screw's head leaves the head alone.
+
+=== OK, Apply, Cancel
+
+* *OK* (or MB2) adds one undo step, *Thread*; one Undo takes the thread back, with its profile sketch.
+* *Apply* commits the thread and keeps the dialog open for the next one.
+* *Cancel* or kbd:[Esc] leaves nothing behind.
+* An error leaves *OK* unavailable: no cylinder picked, a *Length* past the cylinder's end, a *Minor Diameter* the flanks cannot reach, or a thread that removes nothing.
+* A warning says when the thread does not sit on the cylinder as a table thread would (a Major Diameter smaller than the shank leaves the crests on the shank).
+* *Edit Parameters* on the thread (or its profile sketch) reopens the dialog with the values: the diameters, pitch, angle, length, rotation and direction can change; the cylinder and the Thread Type cannot.
+
+A Detailed thread takes a few seconds to recompute.
+The book's hexagonal screw (NX 12 for Engineering Design, 4.7.1) threads its 0.25 in shank Detailed with the defaults; the self-test replays that case and checks the volume against a separate build of the same helix.
+
+=== Not supported yet
+
+* A start on a face or datum plane part-way along the cylinder: the thread starts at an end.
+* Symbolic's *Method*, *Form*, *Number of Starts*, *Tapered* and *Full Thread*: threads are single-start and straight.
+* Fine pitch and UNF tables: type the values, and the callout reads *Custom*.
+* NX's dashed display of a symbolic thread: the SymbolicThread feature shows the cylinder as it is.
+
 == Datums
 
 *Feature › Datum* has Datum Plane, Datum Axis, Point and Datum CSYS.
@@ -284,7 +340,7 @@ Inside a Body the mirror unites by itself.
 
 * *Edit Parameters* reopens the feature's dialog. It is on the ribbon, the radial menu, and the MB3 menu of the feature in the Part Navigator.
   An extrude opens in the Extrude dialog with its command box (<<extrude>>), so *Cancel* puts every value back.
-  A Block, Cylinder, Cone or Sphere opens in its NX dialog (<<primitives>>).
+  A Block, Cylinder, Cone or Sphere opens in its NX dialog (<<primitives>>), and so does a Thread (<<thread>>).
   Double-clicking the feature opens FreeCAD's own dialog without the command box.
   NX also lets you edit a dimension shown in the graphics window; here the change goes through the dialog or the sketch.
 * kbd:[F2] or MB3 › *Rename* in the Part Navigator gives a feature a name.

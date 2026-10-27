@@ -367,10 +367,13 @@ class MstLowerCasingTutorials:
         sketch's point has no edge)."""
         from . import command_core as core
 
-        def rec(e):
+        def rec(e, place=None):
             a, b = e.FirstParameter, e.LastParameter
-            return tuple(tuple(e.valueAt(t)) for t in (a, b, (a + b) / 2))
-        geo = {i: rec(g.toShape()) for i, g in enumerate(sk.Geometry) if "Point" not in g.TypeId}
+            pts = [e.valueAt(t) for t in (a, b, (a + b) / 2)]
+            return tuple(tuple(place.multVec(p) if place else p) for p in pts)
+        # the shape's edges carry the sketch's placement, its geometry does not
+        geo = {i: rec(g.toShape(), sk.Placement) for i, g in enumerate(sk.Geometry)
+               if "Point" not in g.TypeId and not sk.getConstruction(i)}
         return core.match_edges(geo, {f"Edge{i}": rec(e) for i, e in enumerate(sk.Shape.Edges, 1)})
 
     def ao_rule(self, label):
@@ -394,18 +397,21 @@ class MstLowerCasingTutorials:
         QtWidgets.QApplication.processEvents()
 
     def ao_pick(self, ref):
-        """Pick curve ref of the sketch as a user does: MB1 where it is the only thing under the pointer, else its
-        row in QuickPick (a solid's face or edge, or a curve on top of it, lies there). Returns the route."""
+        sk, g = self._ao_sk, self._ao_map[ref]
+        return self.curve_pick(sk, g, self._ao_names[g], AO_ALONG.get(ref, 0.5))
+
+    def curve_pick(self, sk, g, name, along=0.5):
+        """Pick curve g (shape edge name) of the sketch sk as a user does: MB1 where it is the only thing under the
+        pointer, else its row in QuickPick (a solid's face or edge, or a curve on top of it, lies there); the point
+        is along the curve by that fraction. Returns the route."""
         from . import selection_filter as sf
         from .smoke_section import Run
         from .tutorial import qtest
-        sk, g = self._ao_sk, self._ao_map[ref]
         e = sk.Geometry[g].toShape()
-        t = e.FirstParameter + AO_ALONG.get(ref, 0.5) * (e.LastParameter - e.FirstParameter)
+        t = e.FirstParameter + along * (e.LastParameter - e.FirstParameter)
         view = self.view()
         coin = view.getPointOnViewport(sk.getGlobalPlacement().multVec(e.valueAt(t)))
         rows = sf.rows_at(view, coin)
-        name = self._ao_names[g]
         want = next((r for r in rows if r["pick"].leaf is sk and r["pick"].element == name), None)
         w = self.nav().widget
         dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
@@ -417,7 +423,7 @@ class MstLowerCasingTutorials:
         if alone:
             self.mb1_click(p)
             route = "click"
-            if not self.wait_for(f"the click took {name}", lambda: self.ao_taken(name), timeout_ms=1500):
+            if not self.wait_for(f"the click took {name}", lambda: self.ao_taken(sk, name), timeout_ms=1500):
                 route = "QuickPick (the click was not taken)"
                 sf.select_row(want, clear=False)
         elif want is not None:
@@ -428,12 +434,13 @@ class MstLowerCasingTutorials:
         qtest().qWait(QtWidgets.QApplication.doubleClickInterval() + 80)   # not a double click: a whole object
         return route
 
-    def ao_taken(self, name):
-        """Curve name of the sketch is in the section (or, while FreeCAD's plane list still shows, selected)."""
+    def ao_taken(self, sk, name):
+        """Curve name of sketch sk is in the section, the whole sketch is (Inferred Curves), or, while FreeCAD's
+        plane list still shows, the curve is selected."""
         s = self.ao_ctl().session
-        if s is not None and s.edges and name in s.edges:
+        if s is not None and s.stage == "parameterize" and getattr(s, "sketch", None) is sk and \
+                (not s.edges or name in s.edges):
             return True
-        sk = self._ao_sk
         return any(x.Object is sk and any(sub.split(".")[-1] == name for sub in x.SubElementNames)
                    for x in Gui.Selection.getSelectionEx("", 0))
 
@@ -804,61 +811,85 @@ class MstShaftTutorials:
         dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
         return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
 
-    def ap_rim(self, z, r):
-        """The point of the circle (centre on ZC at height z, radius r) nearest the viewer: on the edge's outline."""
+    def ap_rim(self, z, r, side=False):
+        """The point of the circle (centre on ZC at height z, radius r) nearest the viewer: on the edge's outline.
+        side: its left or right end on the screen instead, where nothing seen edge-on stands in front of it (a
+        prism's vertical edge nearest the viewer runs through the nearest point)."""
         d = self.view().getViewDirection()
         u = App.Vector(-d.x, -d.y, 0)
         u = u.normalize() if u.Length > 1e-9 else App.Vector(1, 0, 0)
+        if side:
+            u = App.Vector(-u.y, u.x, 0)
         return (r * u.x, r * u.y, z)
 
-    def ap_pick_center(self, p, z, r):
+    def ap_pick_center(self, p, z, r, side=False):
         """Specify Point with Arc/Ellipse/Sphere Center: MB1 on the circular edge (centre (0, 0, z), radius r).
         Returns (point type, the point in XC/YC/ZC, the step's status, the pick in the window)."""
         from .smoke_primitives import choose
         from .tutorial import qtest
         p.activate("origin")
         kind = choose(p, "originPointType", "Arc/Ellipse/Sphere Center")
-        rim = self.ap_rim(z, r)
+        rim = self.ap_rim(z, r, side)
         at = self.ap_screen(rim)
         self.mb1_click(at)
         qtest().qWait(400)
         return kind, p.steps["origin"].point(), p.steps["origin"].status.text(), (at.x(), at.y())
 
-    def ap_dialog(self, command, kind, dims, boolean, label, how_extra, want, center=None):
-        """Fill the Cylinder or Cone dialog the way the book does, press OK, and check the body's volume."""
+    def ap_dialog(self, command, kind, dims, boolean, label, how_extra, want, center=None, typed=(0, 0, 0),
+                  target=None, check=None):
+        """Fill the Cylinder, Cone or Sphere dialog the way the book does, press OK, and check the result.
+        center (z, r): Arc/Ellipse/Sphere Center and a click on that circle about ZC; else the point typed. target:
+        the body the Boolean works on, chosen in Select Body. check: () -> (ok, detail) instead of the volume of
+        the part's first body (want)."""
         from . import primitive_ui
         from .smoke_primitives import choose, field, ok
         p = primitive_ui.current()
         if p is None:
             self.step(label, f"ribbon '{command}'", FAIL, f"the {command} dialog did not open")
-            raise RuntimeError(f"no {command} dialog; tutorial AP cannot continue")
+            raise RuntimeError(f"no {command} dialog; the tutorial cannot continue")
         typ = choose(p, "nxType", kind)
-        vector = choose(p, "nxVector", "ZC")
+        vector = choose(p, "nxVector", "ZC") if command != "Sphere" else None
         if center is None:
             pick = None
             choose(p, "originPointType", "Inferred Point")
-            for name in ("originXC", "originYC", "originZC"):
-                self.type_into(field(p, name), 0)
+            for name, v in zip(("originXC", "originYC", "originZC"), typed):
+                self.type_into(field(p, name), v)
             got = p.steps["origin"].point()
         else:
             ptype, got, status, at = self.ap_pick_center(p, *center)
-            pick = f"'{ptype}', MB1 on the edge at pixel {at}: {status}"
+            pick = f"'{ptype}', MB1 at pixel {at}: {status}"
         for name, v in dims:
             self.type_into(field(p, name), v)
         mode = choose(p, "nxBoolean", boolean)
-        target = p.steps["body"].chosen()
+        if target is not None:
+            p.activate("body")
+            combo = p.steps["body"].combo
+            i = combo.findData(target.Name)
+            combo.setCurrentIndex(i)
+            combo.activated.emit(i)
+            from .tutorial import qtest
+            qtest().qWait(500)                   # the dialog rebuilds its preview for the new target
+        chosen = p.steps["body"].chosen()
         pressed = ok()
-        where = (0, 0, 0) if center is None else (0, 0, center[0])
+        where = tuple(typed) if center is None else (0, 0, center[0])
         at_point = got is not None and all(abs(a - b) < 1e-6 for a, b in zip(got, where))
         undo = App.ActiveDocument.UndoNames[:1]
-        how = (f"ribbon '{self._ap_where}', Type '{typ}', Specify Vector '{vector}', "
-               + (pick if pick else "XC/YC/ZC 0 typed") + f", {how_extra}, Boolean '{mode}', OK")
-        if not (pressed and at_point and undo == [command]):
-            self.step(label, how, FAIL, f"OK pressed {pressed}; point {got}, wanted {where}; target {target}; "
+        how = (f"ribbon '{self._ap_where}', Type '{typ}'" + (f", Specify Vector '{vector}'" if vector else "")
+               + ", " + (pick if pick else f"XC/YC/ZC {'/'.join(f'{v:g}' for v in typed)} typed")
+               + f", {how_extra}, Boolean '{mode}'" + (f", Select Body '{target.Label}' from the list"
+                                                       if target is not None else "") + ", OK")
+        if not (pressed and at_point and undo == [command] and (target is None or chosen == target.Name)):
+            self.step(label, how, FAIL, f"OK pressed {pressed}; point {got}, wanted {where}; target {chosen}; "
                       f"undo {App.ActiveDocument.UndoNames[:2]}")
             return False
-        return self.check_volume(label, how, want, f"; origin {tuple(round(c, 6) for c in got)}; one undo step "
-                                 f"{undo}" + (f"; united with {target}" if boolean == "Unite" else ""))
+        extra = f"; origin {tuple(round(c, 6) for c in got)}; one undo step {undo}" + \
+            (f"; with {chosen}" if boolean != "None" else "")
+        if check is not None:
+            App.ActiveDocument.recompute()
+            good, detail = check()
+            self.step(label, how, SAME if good else FAIL, detail + extra)
+            return good
+        return self.check_volume(label, how, want, extra)
 
     # ------------------------------------------------------------- New, Save, the first cylinder
     def ap_new(self):
@@ -943,3 +974,619 @@ class MstShaftTutorials:
 
     def ap_show(self):
         self.show("AP_impeller_shaft")
+
+
+# ================================================================== AQ, AR: Hexagonal Screw and Nut (4.7.1, 4.7.2)
+# The book (pp. 77-82), inches. The screw: a Cylinder Ø0.25 x 1.5 on ZC at the origin; a Cylinder Ø0.387 x 0.0156 at
+# the centre of its top face, united; a hexagon of side 0.246 (Rotation 0) centred on that cylinder's top, extruded
+# 0.1876; a Cylinder Ø0.387 x 0.1875 on the step cylinder; a Sphere Ø0.55 centred on the bottom of that cylinder,
+# intersected with the hexagonal head; a Detailed Thread on the shank. The nut: a hexagon of side 0.28685 at the
+# origin, extruded 0.125; a Sphere Ø0.57 at (0, 0, 0.125), Intersect; the half mirrored through its flat side and
+# united; a Cylinder Ø0.25 x 1 at the origin subtracted; the two inner edges chamfered 0.0436.
+# A regular hexagon's side is its circumradius; Rotation 0 puts a corner on XC.
+AQ_SHANK = (0.25 * IN, 1.5 * IN)
+AQ_STEP = (0.387 * IN, 0.0156 * IN)
+AQ_HEX, AQ_HEX_H = 0.246 * IN, 0.1876 * IN
+AQ_INNER = (0.387 * IN, 0.1875 * IN)
+AQ_SPHERE = 0.55 * IN
+AQ_Z_STEP = AQ_SHANK[1]
+AQ_Z_HEAD = AQ_SHANK[1] + AQ_STEP[1]
+AR_HEX, AR_HEX_H = 0.28685 * IN, 0.125 * IN
+AR_SPHERE = 0.57 * IN
+AR_HOLE = (0.25 * IN, 1.0 * IN)
+AR_CHAMFER = 0.0436 * IN
+
+
+def hole_edge(e, r):
+    """e is a circle of radius r (an edge without a curve FreeCAD can name is not)."""
+    try:
+        return type(e.Curve).__name__ == "Circle" and abs(e.Curve.Radius - r) < 1e-6
+    except Exception:
+        return False
+
+
+def hexagon_prism(r, z0, h):
+    import Part
+    pts = [App.Vector(r * math.cos(math.radians(60 * k)), r * math.sin(math.radians(60 * k)), z0) for k in range(7)]
+    return Part.Face(Part.makePolygon(pts)).extrude(App.Vector(0, 0, h))
+
+
+def aq_reference():
+    """The screw as the book dimensions it, without the thread: shank, step, head (hexagon less what lies outside
+    the sphere) and the cylinder inside the head."""
+    import Part
+    z = App.Vector(0, 0, 1)
+    shank = Part.makeCylinder(AQ_SHANK[0] / 2, AQ_SHANK[1])
+    step = Part.makeCylinder(AQ_STEP[0] / 2, AQ_STEP[1], App.Vector(0, 0, AQ_Z_STEP), z)
+    head = hexagon_prism(AQ_HEX, AQ_Z_HEAD, AQ_HEX_H).common(Part.makeSphere(AQ_SPHERE / 2, App.Vector(0, 0, AQ_Z_HEAD)))
+    inner = Part.makeCylinder(AQ_INNER[0] / 2, AQ_INNER[1], App.Vector(0, 0, AQ_Z_HEAD), z)
+    return shank.fuse([step, head, inner]).removeSplitter()
+
+
+def ar_half():
+    import Part
+    return hexagon_prism(AR_HEX, 0, AR_HEX_H).common(Part.makeSphere(AR_SPHERE / 2, App.Vector(0, 0, AR_HEX_H)))
+
+
+def ar_reference(chamfer=True):
+    """The nut: the half, mirrored through its flat side and united, less the Ø0.25 hole, its two edges chamfered."""
+    import Part
+    half = ar_half()
+    nut = half.fuse(half.mirror(App.Vector(0, 0, AR_HEX_H), App.Vector(0, 0, 1))).removeSplitter()
+    nut = nut.cut(Part.makeCylinder(AR_HOLE[0] / 2, AR_HOLE[1])).removeSplitter()
+    if chamfer:
+        edges = [e for e in nut.Edges if hole_edge(e, AR_HOLE[0] / 2)]
+        nut = nut.makeChamfer(AR_CHAMFER, edges)
+    return nut
+
+
+class MstFastenerTutorials:
+    """Mixin for tutorial.Replay: tutorials AQ (hexagonal screw) and AR (hexagonal nut)."""
+
+    def AQ_STEPS(self):
+        return [self.p_modeling, self.aq_new, self.aq_save, self.aq_shank, self.aq_view, self.aq_step,
+                self.aq_sketch, self.aq_polygon, self.aq_finish, self.aq_extrude, self.aq_extrude_section,
+                self.aq_wireframe, self.aq_inner, self.aq_sphere, self.aq_sphere_dialog, self.aq_check,
+                self.aq_thread, self.aq_thread_dialog, self.aq_save_end, self.aq_fit, self.aq_show]
+
+    def AR_STEPS(self):
+        return [self.p_modeling, self.ar_new, self.ar_save, self.ar_plane, self.ar_polygon, self.ar_finish,
+                self.ar_extrude, self.ar_extrude_section, self.ar_sphere, self.ar_sphere_dialog, self.ar_mirror,
+                self.ar_mirror_dialog, self.ar_hole, self.ar_hole_dialog, self.ar_chamfer, self.ar_chamfer_dialog,
+                self.ar_check, self.ar_fit, self.ar_show]
+
+    # ------------------------------------------------------------- helpers
+    def fs_zoom(self, p, height):
+        """Centre the view on the model point p (mm), height mm tall (once FreeCAD's view animation has ended)."""
+        from pivy import coin
+        from .tutorial import settle_view
+        settle_view(self.view())
+        cam = self.view().getCameraNode()
+        d = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
+        cam.position.setValue(coin.SbVec3f(*p) - d * cam.focalDistance.getValue())
+        if hasattr(cam, "height"):
+            cam.height.setValue(height)
+        QtWidgets.QApplication.processEvents()
+
+    def fs_polygon(self, sk, r):
+        """Polygon (P) in the sketch: the centre typed (0, 0) in the fields beside the pointer, then the corner
+        typed (r along XC: the side length of a hexagon, Rotation 0); MB2 ends the tool. Returns (how, missing
+        corners)."""
+        from . import sketch_ui
+        from .smoke import decode
+        from .tutorial import qtest
+        view = self.nav().widget
+        self.frame_sketch(sk, 0, 0, r * 5)
+        n0 = len(sk.Geometry)
+        asked = {}
+
+        def sides(w):
+            """FreeCAD's Regular Polygon asks for the number of sides first: 6, OK."""
+            box = next(iter(w.findChildren(QtWidgets.QSpinBox)), None)
+            ok = next((b for b in w.findChildren(QtWidgets.QAbstractButton) if b.text().replace("&", "") == "OK"),
+                      None)
+            if box is None or ok is None:
+                return False
+            box.setFocus()
+            box.selectAll()
+            qtest().keyClicks(box, "6")
+            asked.update(title=w.windowTitle(), sides=box.value())
+            ok.click()
+            return True
+        self.modals.handler = sides
+        self.key("P")
+        QtWidgets.QApplication.processEvents()
+        qtest().qWait(300)
+        self.modals.handler = None
+        tool = self.nav().sketch_tool_active()
+        near = self.screen_point(sk, -r * 0.6, r * 0.7)
+        self.send(QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(200)
+        typed = []
+        fields = sketch_ui.xy_fields(sk, view, near)
+        for w, v in zip(fields or (), (0.0, 0.0)):
+            w.setFocus()
+            w.lineEdit().selectAll()
+            qtest().keyClicks(w.lineEdit(), self.typed_number(w, v))
+            qtest().keyClick(w.lineEdit(), *decode("Return"))
+            qtest().qWait(150)
+        typed.append("centre typed" if fields else "centre clicked")
+        if not fields:
+            self.mb1_click(self.screen_point(sk, 0, 0))
+        corner = self.screen_point(sk, r, 0)
+        self.send(QtCore.QEvent.MouseMove, corner, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(200)
+        second = sketch_ui.on_view_fields(view)
+        self.info.setdefault("polygon corner fields", []).append(
+            [(w.objectName(), sketch_ui.field_value(w)) for w in second])
+        if len(second) >= 2:
+            # the length field shows the pointer's distance from the centre (r here), the other is the angle
+            length = min(second[:2], key=lambda w: abs(sketch_ui.field_value(w) - r))
+            angle = next(w for w in second[:2] if w is not length)
+            for w, v in ((length, r), (angle, 0.0)):
+                w.setFocus()
+                w.lineEdit().selectAll()
+                qtest().keyClicks(w.lineEdit(), self.typed_number(w, v))
+                qtest().keyClick(w.lineEdit(), *decode("Return"))
+                qtest().qWait(150)
+            typed.append("corner typed")
+        if len(sk.Geometry) == n0:
+            self.mb1_click(corner)
+            typed.append("corner clicked")
+        self.mb2_click(self.screen_point(sk, -r * 2, r * 2))
+        App.ActiveDocument.recompute()
+        lines = [g for g in range(n0, len(sk.Geometry)) if "Line" in sk.Geometry[g].TypeId
+                 and not sk.getConstruction(g)]
+        corners = [sk.getPoint(g, 1) for g in lines]
+        want = [App.Vector(r * math.cos(math.radians(60 * k)), r * math.sin(math.radians(60 * k)), 0)
+                for k in range(6)]
+        missing = [k for k, w in enumerate(want) if not any((c - w).Length < 1e-6 for c in corners)]
+        sides_how = f"'{asked['title']}' {asked['sides']} sides, OK" if asked else "no sides asked"
+        return f"P key ({sides_how}; tool {tool}), {', '.join(typed)}, MB2", len(lines), missing
+
+    def fs_extrude(self, sk, length, boolean):
+        """Extrude started from the ribbon, the hexagon picked in the graphics window (Curve Rule Inferred
+        Curves: one pick is the whole sketch), Boolean and length set, OK. Returns (how, OK available)."""
+        from . import controller
+        names = self.ao_edge_names(sk)
+        line = next(g for g, geo in enumerate(sk.Geometry) if "Line" in geo.TypeId and not sk.getConstruction(g))
+        route = self.curve_pick(sk, line, names[line])
+
+        def up():
+            s = self.ao_ctl().session
+            return s is not None and s.stage == "parameterize" and controller._alive(s.box)
+        opened = self.wait_for("the Extrude dialog", up, timeout_ms=6000)
+        picked = self.set_combo("nxBoolean", boolean)
+        field = self.set_quantity("lengthEdit", length)
+        ok = self.ao_ok()
+        return (f"a hexagon side picked ({route}; Curve Rule Inferred Curves), dialog opened {opened}; Boolean "
+                f"'{picked}', '{field}' = {length:g} mm; OK"), ok
+
+    def fs_new_feature(self, type_id, before):
+        new = [o for o in App.ActiveDocument.Objects if o.TypeId == type_id and o.Name not in before]
+        return new[-1] if new else None
+
+    def fs_names(self, type_id):
+        return {o.Name for o in App.ActiveDocument.Objects if o.TypeId == type_id}
+
+    def fs_body_of(self, feature):
+        return next((b for b in self.ao_bodies() if feature in b.Group), None)
+
+    # ================================================================ AR: the nut
+    def ar_new(self):
+        self.tutorial = "AR: Hexagonal Nut (NX 12 for Engineering Design, 4.7.2; book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def ar_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file (Impeller_hexa-nut)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}")
+        self.units_step()
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_hexa-nut.FCStd")
+        self.step("Save it as Impeller_hexa-nut", how, outcome, detail)
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def ar_plane(self):
+        picked = self.pick_in_feature_list("XY")
+        self.mb2_click()
+        self.wait_for("ar: sketch in edit", lambda: self.edited_sketch() is not None)
+        self._ar_sk = self.edited_sketch()
+        if self._ar_sk is None:
+            self.step("Polygon: a sketch on the XC-YC plane", f"ribbon '{self._fs_where} > Sketch'", FAIL,
+                      f"no sketch in edit (plane row {picked})")
+            raise RuntimeError("no sketch; tutorial AR cannot continue")
+        self._ar_plane = picked
+        self.wait = 800
+
+    def ar_polygon(self):
+        how, n, missing = self.fs_polygon(self._ar_sk, AR_HEX)
+        self.step("Polygon: 6 sides, Side Length 0.28685, at the origin",
+                  f"ribbon '{self._fs_where} > Sketch' on '{self._ar_plane}', {how}",
+                  DIFFERS if n == 6 and not missing else FAIL,
+                  f"{n} sides; corners at the book's hexagon (side 7.28599 mm, a corner on XC): "
+                  f"{'all six' if not missing else f'missing {missing}'}. NX 12's Insert > Curve > Polygon is a "
+                  "curve outside sketches; NX-Style draws the polygon in a sketch (NX 2212: Sketch > Polygon), whose "
+                  "corner is typed as the circumradius, which a hexagon's side length equals")
+        self.wait = 300
+
+    def ar_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def ar_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("Ctrl+F")
+        self.key("Home")
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def ar_extrude_section(self):
+        how, ok = self.fs_extrude(self._ar_sk, AR_HEX_H, "None")
+        want = hexagon_prism(AR_HEX, 0, AR_HEX_H).Volume
+        self.check_volume("Extrude the hexagon, End Distance 0.125", f"ribbon '{self._fs_where} > Extrude', {how} "
+                          f"{'clicked' if ok else 'unavailable'}", want, "; the part's first solid")
+        self.wait = 400
+
+    def ar_sphere(self):
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Sphere")
+        self.wait = 800
+
+    def ar_sphere_dialog(self):
+        self.ap_dialog("Sphere", "Center Point and Diameter", (("diameter", AR_SPHERE),), "Intersect",
+                       "Sphere: Center Point (0, 0, 0.125) in the Point Dialog, Diameter 0.57, Boolean Intersect, OK",
+                       "Diameter 14.478 typed", ar_half().Volume, typed=(0, 0, AR_HEX_H))
+        self.key("Ctrl+F")
+        self.wait = 1200
+
+    def ar_mirror(self):
+        tip = self.body().Tip
+        # the flat side, named on the Intersect: once the dialog is open the Mirror's preview is the tip
+        self._ar_flat = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-9
+                                     and abs(f.CenterOfMass.z - AR_HEX_H) < 1e-6)
+        self.select_sub(tip, "")
+        self._ar_half = self.body().Shape.Volume
+        b, self._fs_where = self.click_ribbon("Mirror Feature")
+        self.wait = 1500
+
+    def ar_mirror_dialog(self):
+        from .tutorial import qtest
+        self.wait_dialog("ar_mirror_dialog")
+        self.info["AR mirror widgets"] = self.task_widgets()
+        radio = self._field(QtWidgets.QRadioButton, "radioTransformBody")
+        if radio is not None and not radio.isChecked():
+            qtest().mouseClick(radio, Qt.LeftButton, Qt.NoModifier, QtCore.QPoint(8, radio.height() // 2))
+            qtest().qWait(600)                   # FreeCAD rebuilds the panel for the body mode
+        radio = self._field(QtWidgets.QRadioButton, "radioTransformBody")
+        body_mode = radio.isChecked() if radio is not None else None   # the panel rebuilds itself again later
+        ref = self.set_combo("comboPlane", "Select reference")
+        qtest().qWait(300)
+        body = self.body()
+        flat = self._ar_flat
+        at =self.ap_screen((AR_HEX * 0.3, -AR_HEX * 0.3, AR_HEX_H))
+        self.send(QtCore.QEvent.MouseMove, at, Qt.NoButton, Qt.NoButton)
+        qtest().qWait(150)
+        pre = Gui.Selection.getPreselection()
+        route = "click"
+        if pre is not None and pre.ObjectName and any(s.endswith(flat or "?") for s in pre.SubElementNames):
+            self.mb1_click(at)
+        else:
+            # while a reference is picked FreeCAD shows the origin planes, and one lies in front of the face here:
+            # QuickPick lists what is under the pointer, and the face is chosen from it
+            from . import selection_filter as sf
+            w = self.nav().widget
+            dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
+            rows = sf.rows_at(self.view(), (at.x() * dpr, (w.height() - at.y()) * dpr))
+            row = next((r for r in rows if r["pick"].element == flat), None)
+            route = f"QuickPick ({[r['label'] for r in rows[:4]]})"
+            if row is not None:
+                sf.select_row(row, clear=True)
+        qtest().qWait(600)
+        plane = self._field(QtWidgets.QComboBox, "comboPlane")
+        self.info["AR mirror plane pick"] = {
+            "preselected": f"{pre.ObjectName}.{pre.SubElementNames}" if pre is not None and pre.ObjectName else None,
+            "selection": [(s.ObjectName, list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx("", 0)],
+            "items": [plane.itemText(i) for i in range(plane.count())] if plane is not None else None,
+            "mirrored": [(m.Name, str(m.MirrorPlane)) for m in App.ActiveDocument.Objects
+                         if m.TypeId == "PartDesign::Mirrored"]}
+        shown = plane.currentText() if plane is not None else None
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        shape = body.Shape
+        bb = shape.optimalBoundingBox(False, False) if not shape.isNull() else None
+        ok = len(shape.Solids) == 1 and abs(shape.Volume - 2 * self._ar_half) < 1e-6 * shape.Volume and bb is not None \
+            and abs(bb.ZMin) < 1e-6 and abs(bb.ZMax - 2 * AR_HEX_H) < 1e-6 and not Gui.Control.activeDialog()
+        self.step("Edit > Transform: the model, Mirror Through a Plane, its flat side, Copy",
+                  f"the Intersect selected + ribbon '{self._fs_where} > Mirror Feature', Transform body "
+                  f"{body_mode}, plane '{ref}' and the flat top face by {route} "
+                  f"({flat}), MB2 = OK", DIFFERS if ok else FAIL,
+                  f"plane shown '{shown}'; {len(shape.Solids)} solid, {shape.Volume:.1f} mm^3 (twice "
+                  f"{self._ar_half:.1f}), z {bb.ZMin:.3f} to {bb.ZMax:.3f} mm. NX's Transform copies the body "
+                  "unparametrised; Mirror Feature keeps the copy following the half" if bb is not None else
+                  f"no shape; plane '{shown}'")
+        self.step("Combine > Unite: the two halves", "nothing to do", DIFFERS if ok else FAIL,
+                  "Mirror Feature with Transform body unites the copy with the body itself: the nut is one solid")
+        self.key("Ctrl+F")
+        self.wait = 1000
+
+    def ar_hole(self):
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        self.wait = 800
+
+    def ar_hole_dialog(self):
+        import Part
+        half = ar_half()
+        nut = half.fuse(half.mirror(App.Vector(0, 0, AR_HEX_H), App.Vector(0, 0, 1)))
+        want = nut.cut(Part.makeCylinder(AR_HOLE[0] / 2, AR_HOLE[1])).Volume
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AR_HOLE[0]), ("height", AR_HOLE[1])),
+                       "Subtract", "Cylinder: ZC, at the origin, Diameter 0.25, Height 1, Subtract from the nut, OK",
+                       "Diameter 6.35 and Height 25.4 typed", want)
+        self.wait = 400
+
+    def ar_chamfer(self):
+        tip = self.body().Tip
+        edges = [f"Edge{i}" for i, e in enumerate(tip.Shape.Edges, 1) if hole_edge(e, AR_HOLE[0] / 2)]
+        self._ar_edges = edges
+        self.select_subs(tip, edges)
+        b, self._fs_where = self.click_ribbon("Chamfer")
+        self.wait = 1500
+
+    def ar_chamfer_dialog(self):
+        self.wait_dialog("ar_chamfer_dialog")
+        self.info["AR chamfer widgets"] = self.task_widgets()
+        size = self.set_quantity("chamferSize", AR_CHAMFER) or self.set_quantity("Size", AR_CHAMFER)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        self.check_volume("Chamfer: the two inner edges, Distance 0.0436, OK",
+                          f"{self._ar_edges} selected + ribbon '{self._fs_where} > Chamfer', '{size}' = 1.10744 mm, "
+                          "MB2 = OK", ar_reference().Volume)
+        self.wait = 400
+
+    def ar_check(self):
+        from . import geomcheck
+        body = self.body()
+        ok, detail = geomcheck.compare(body.Shape if body is not None else None, ar_reference())
+        self.step("The nut", "compared with the book's dimensions", SAME if ok else FAIL, detail)
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_hexa-nut.FCStd")
+        self.step("Save the model", how, outcome, detail)
+        self.wait = 300
+
+    def ar_fit(self):
+        self.fit()
+
+    def ar_show(self):
+        self.show("AR_hexagonal_nut")
+
+    # ================================================================ AQ: the screw
+    def aq_new(self):
+        self.tutorial = "AQ: Hexagonal Screw (NX 12 for Engineering Design, 4.7.1; book in inches, typed in mm)"
+        self._docs_before = set(App.listDocuments())
+        self.key("Ctrl+N")
+        self.wait = 1200
+
+    def aq_save(self):
+        new = set(App.listDocuments()) - self._docs_before
+        self.step("Create a new file (Impeller_hexa-bolt)", "Ctrl+N, Model template",
+                  SAME if new and self.body() else FAIL, f"new document {sorted(new)}")
+        self.units_step()
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_hexa-bolt.FCStd")
+        self.step("Save it as Impeller_hexa-bolt", how, outcome, detail)
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        self.wait = 800
+
+    def aq_shank(self):
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AQ_SHANK[0]), ("height", AQ_SHANK[1])),
+                       "None", "Cylinder: ZC, centre at the origin, Diameter 0.25, Height 1.5, OK",
+                       "Diameter 6.35 and Height 38.1 typed", math.pi * (AQ_SHANK[0] / 2) ** 2 * AQ_SHANK[1])
+        self.wait = 400
+
+    def aq_view(self):
+        self.key("Ctrl+F")
+        self.key("Home")
+        self.wait = 1500
+
+    def aq_step(self):
+        from .tutorial import qtest
+        self.fs_zoom((0, 0, AQ_Z_STEP), 30)
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        qtest().qWait(800)
+        shank = math.pi * (AQ_SHANK[0] / 2) ** 2 * AQ_SHANK[1]
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AQ_STEP[0]), ("height", AQ_STEP[1])),
+                       "Unite", "Cylinder Ø0.387 x 0.0156: Arc/Ellipse/Sphere Center on the shank's top face, Unite",
+                       "Diameter 9.8298 and Height 0.39624 typed",
+                       shank + math.pi * (AQ_STEP[0] / 2) ** 2 * AQ_STEP[1], center=(AQ_Z_STEP, AQ_SHANK[0] / 4))
+        self.shot("AQ1_cylinders.png")
+        self.wait = 400
+
+    def aq_sketch(self):
+        tip = self.body().Tip
+        top = self.face_of(tip, lambda f: abs(f.normalAt(0, 0).z - 1) < 1e-9 and abs(f.CenterOfMass.z - AQ_Z_HEAD)
+                           < 1e-6)
+        self.select_sub(tip, top)
+        self._aq_top = top
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def aq_polygon(self):
+        self.wait_for("aq: sketch in edit", lambda: self.edited_sketch() is not None)
+        sk = self.edited_sketch()
+        if sk is None:
+            self.step("Polygon: centre at the top circle's centre, 6 sides, Side Length 0.246",
+                      f"{self._aq_top} selected + ribbon '{self._fs_where} > Sketch'", FAIL, "no sketch in edit")
+            raise RuntimeError("no sketch; tutorial AQ cannot continue")
+        self._aq_sk = sk
+        on_face = abs(sk.getGlobalPlacement().Base.z - AQ_Z_HEAD) < 1e-6
+        how, n, missing = self.fs_polygon(sk, AQ_HEX)
+        self.step("Polygon: centre at the top circle's centre, 6 sides, Side Length 0.246, Rotation 0",
+                  f"the step's top face ({self._aq_top}) selected + ribbon '{self._fs_where} > Sketch', {how}",
+                  DIFFERS if n == 6 and not missing and on_face else FAIL,
+                  f"{n} sides; corners {'all at the book hexagon (side 6.2484 mm, a corner on XC)' if not missing else f'missing {missing}'}; "
+                  f"the sketch on the top face {on_face}, its origin the circle's centre. NX 12's Polygon is a curve "
+                  "outside sketches; here it is drawn in a sketch on the face (NX 2212: Sketch > Polygon)")
+        self.wait = 300
+
+    def aq_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def aq_extrude(self):
+        Gui.Selection.clearSelection()
+        self._aq_bodies0 = len(self.ao_bodies())
+        self._aq_pads = self.fs_names("PartDesign::Pad")
+        self.fs_zoom((0, 0, AQ_Z_HEAD), 30)
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def aq_extrude_section(self):
+        how, ok = self.fs_extrude(self._aq_sk, AQ_HEX_H, "None")
+        pad = self.fs_new_feature("PartDesign::Pad", self._aq_pads)
+        want = hexagon_prism(AQ_HEX, AQ_Z_HEAD, AQ_HEX_H)
+        got = pad.Shape if pad is not None else None
+        bb = got.optimalBoundingBox(False, False) if got is not None else None
+        good = ok and got is not None and abs(got.Volume - want.Volume) < 1e-6 * want.Volume and \
+            abs(bb.ZMin - AQ_Z_HEAD) < 1e-6 and abs(bb.ZMax - AQ_Z_HEAD - AQ_HEX_H) < 1e-6 and \
+            len(self.ao_bodies()) == self._aq_bodies0 + 1
+        self._aq_head = self.fs_body_of(pad) if pad is not None else None
+        self.step("Extrude the hexagon, End Distance 0.1876", f"ribbon '{self._fs_where} > Extrude', {how}",
+                  SAME if good else FAIL,
+                  f"volume {got.Volume:.2f} mm^3, expected {want.Volume:.2f}; z {bb.ZMin:.3f} to {bb.ZMax:.3f} mm; "
+                  f"the hexagonal head is a body of its own ({len(self.ao_bodies())} bodies), as the book's later "
+                  "Intersect with the head alone needs" if got is not None else f"OK {ok}; no Extrude")
+        self.wait = 400
+
+    def aq_wireframe(self):
+        self.shot("AQ2_head.png")
+        b, where = self.click_ribbon("Static Wireframe", tab="View")
+        self._aq_wire = where
+        self.fs_zoom((0, 0, AQ_Z_HEAD), 14)
+        Gui.Selection.clearSelection()
+        self._aq_cyls = self.fs_names("PartDesign::AdditiveCylinder")   # before the dialog adds its preview
+        b, self._ap_where = self.click_ribbon("Cylinder")
+        self.wait = 800
+
+    def aq_inner(self):
+        want = math.pi * (AQ_INNER[0] / 2) ** 2 * AQ_INNER[1]
+
+        def check():
+            c = self.fs_new_feature("PartDesign::AdditiveCylinder", self._aq_cyls)
+            b = self.fs_body_of(c) if c is not None else None
+            v = b.Shape.Volume if b is not None else 0.0
+            self._aq_inner = b
+            return (b is not None and abs(v - want) < 1e-6 * want and b not in (self.ao_bodies()[0], self._aq_head),
+                    f"a body of its own, volume {v:.2f} mm^3, expected {want:.2f}; seen in Static Wireframe "
+                    f"(View › '{self._aq_wire}'), the hexagon around it")
+        self.ap_dialog("Cylinder", "Axis, Diameter, and Height", (("diameter", AQ_INNER[0]), ("height", AQ_INNER[1])),
+                       "None", "Cylinder Ø0.387 x 0.1875 on top of the Ø0.387 cylinder",
+                       "Diameter 9.8298 and Height 4.7625 typed", want, center=(AQ_Z_HEAD, AQ_STEP[0] / 2, True),
+                       check=check)
+        self.wait = 400
+
+    def aq_sphere(self):
+        Gui.Selection.clearSelection()
+        self._aq_others = {b.Name: b.Shape.Volume for b in self.ao_bodies() if b is not self._aq_head}
+        b, self._ap_where = self.click_ribbon("Sphere")
+        self.wait = 800
+
+    def aq_sphere_dialog(self):
+        import Part
+        head = hexagon_prism(AQ_HEX, AQ_Z_HEAD, AQ_HEX_H).common(
+            Part.makeSphere(AQ_SPHERE / 2, App.Vector(0, 0, AQ_Z_HEAD)))
+        others = self._aq_others             # measured before the dialog made its preview
+
+        def check():
+            v = self._aq_head.Shape.Volume
+            changed = [b.Name for b in self.ao_bodies() if b.Name in others
+                       and abs(b.Shape.Volume - others[b.Name]) > 1e-6]
+            return (abs(v - head.Volume) < 1e-6 * head.Volume and not changed and len(self._aq_head.Shape.Solids) == 1,
+                    f"the head {v:.2f} mm^3, expected {head.Volume:.2f} (hexagon within the sphere); the other "
+                    f"bodies {'unchanged' if not changed else f'changed: {changed}'}")
+        self.ap_dialog("Sphere", "Center Point and Diameter", (("diameter", AQ_SPHERE),), "Intersect",
+                       "Sphere: centre at the bottom of the last cylinder, Diameter 0.55, Intersect, Target the "
+                       "hexagonal head, OK", "Diameter 13.97 typed", head.Volume,
+                       center=(AQ_Z_HEAD, AQ_INNER[0] / 2, True), target=self._aq_head, check=check)
+        self.click_ribbon("Shaded with Edges", tab="View")
+        self.key("Ctrl+F")
+        self.wait = 1200
+
+    def aq_check(self):
+        from . import geomcheck
+        shapes = [b.Shape for b in self.ao_bodies() if b.ViewObject.Visibility and not b.Shape.isNull()]
+        got = shapes[0].fuse(shapes[1:]).removeSplitter() if shapes else None
+        ok, detail = geomcheck.compare(got, aq_reference())
+        self.step("The screw before its thread: shank, head and the cylinder in it",
+                  f"the {len(shapes)} bodies together, compared with the book's dimensions", SAME if ok else FAIL,
+                  detail)
+        self.shot("AQ3_screw.png")
+        self.wait = 300
+
+    def aq_thread(self):
+        shank = self.ao_bodies()[0]
+        self._aq_shank_volume = shank.Shape.Volume
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Thread")
+        self.wait = 1000
+
+    def aq_thread_dialog(self):
+        from . import thread_core, thread_ui
+        from .primitive_ui import mm as primitive_ui_mm
+        from .smoke_primitives import choose, field, ok
+        from .tutorial import qtest
+        p = thread_ui.current()
+        label = "Thread: Detailed, Right Hand, the bolt's shank, the values it shows kept, OK"
+        if p is None:
+            self.step(label, f"ribbon '{self._fs_where} > Thread'", FAIL, "the Thread dialog did not open")
+            return
+        kind = choose(p, "threadType", "Detailed")
+        hand = choose(p, "rotation", "Right Hand")
+        # MB1 on the shank's side where it faces the camera, near its lower end: the thread starts at the end
+        # nearest the pick
+        d = self.view().getViewDirection()
+        u = App.Vector(-d.x, -d.y, 0).normalize()
+        at = self.ap_screen(tuple(u * (AQ_SHANK[0] / 2 * 0.999) + App.Vector(0, 0, 5)))
+        self.mb1_click(at)
+        qtest().qWait(600)
+        vals = {n: primitive_ui_mm(field(p, n)) for n in ("majorDiameter", "minorDiameter", "pitch", "angle", "length")}
+        table = field(p, "threadTable", QtWidgets.QComboBox)
+        callout = table.currentText() if table is not None else None
+        pressed = ok()
+        self.wait_for("the thread built", lambda: not Gui.Control.activeDialog(), timeout_ms=15000)
+        App.ActiveDocument.recompute()
+        last = dict(thread_ui.HISTORY[-1]) if thread_ui.HISTORY else {}
+        shank = self.ao_bodies()[0]
+        removed = None
+        try:
+            removed = thread_core.removed_volume(
+                thread_core.profile(vals["majorDiameter"], vals["minorDiameter"], vals["pitch"], vals["angle"],
+                                    surface=AQ_SHANK[0] / 2),
+                vals["length"], vals["pitch"], AQ_SHANK[0] / 2)
+        except Exception as e:
+            self.info["AQ thread oracle"] = str(e)
+        got = self._aq_shank_volume - shank.Shape.Volume
+        good = pressed and removed is not None and abs(got - removed) < 1e-3 * removed and \
+            len(shank.Shape.Solids) == 1 and callout == "1/4-20 UNC" and last.get("outcome") == "committed"
+        self.step(label, f"ribbon '{self._fs_where} > Thread', Type '{kind}', Rotation '{hand}', MB1 on the shank, "
+                  "OK", SAME if good else FAIL,
+                  f"the dialog filled in {callout}: major {vals['majorDiameter']:g}, minor {vals['minorDiameter']:g}, "
+                  f"pitch {vals['pitch']:g}, angle {vals['angle']:g}°, length {vals['length']:g} mm; the thread took "
+                  f"{got:.3f} mm^3 from the shank, a helical sweep of that profile takes {removed:.3f}; "
+                  f"{len(shank.Shape.Solids)} solid; undo {last.get('undo')}" if removed is not None else
+                  f"OK pressed {pressed}; values {vals}; callout {callout}; {last}")
+        self.wait = 400
+
+    def aq_save_end(self):
+        outcome, how, detail, path = self.save_ctrl_s("Impeller_hexa-bolt.FCStd")
+        self.step("Save the model", how, outcome, detail)
+        self.wait = 300
+
+    def aq_fit(self):
+        self.fit()
+
+    def aq_show(self):
+        self.show("AQ_hexagonal_screw")

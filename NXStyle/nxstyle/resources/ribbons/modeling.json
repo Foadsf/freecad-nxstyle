@@ -38,6 +38,7 @@
         {"cmd": "NXStyle_Cylinder", "label": "Cylinder"},
         {"cmd": "NXStyle_Cone", "label": "Cone"},
         {"cmd": "NXStyle_Sphere", "label": "Sphere"},
+        {"cmd": "NXStyle_Thread", "label": "Thread"},
         {"cmd": "PartDesign_AdditiveLoft", "label": "Through Curves"},
         {"cmd": "PartDesign_AdditivePipe", "label": "Sweep along Guide"},
         {"cmd": "PartDesign_AdditiveHelix", "label": "Helix Feature"},

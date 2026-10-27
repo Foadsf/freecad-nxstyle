@@ -1,0 +1,57 @@
+= Tutorial AR: Hexagonal Nut
+:description: A hexagon nut: a sketched hexagon extruded, a Sphere intersected with it, the half mirrored through its flat side, a hole subtracted and its edges chamfered (NX 12 for Engineering Design, 4.7.2).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.7.2 (Hexagonal Nut).
+You learn:: Polygon, Sphere at a typed point with Intersect, Mirror Feature through a face of the body, Cylinder with Subtract, Chamfer
+Sizes:: the book's, in inches, typed in millimetres. Hexagon side 0.28685, extruded 0.125. Sphere Ø0.57 at (0, 0, 0.125). Hole Ø0.25 × 1 at the origin. Chamfer 0.0436.
+
+== Step by step
+
+=== 1. The hexagon
+
+kbd:[Ctrl+N] and save the part as `Impeller_hexa-nut`.
+Click *Sketch*, pick the XC-YC plane and press MB2.
+Press kbd:[P] for *Polygon*, type 6 sides, then type the centre (0, 0) and the corner: length 7.28599 mm (0.28685 in) at angle 0.
+Press MB2, then kbd:[Ctrl+Q].
+
+Click *Extrude*, click a side of the hexagon, and type 3.175 mm (0.125 in).
+Click *OK*.
+
+=== 2. Half a nut
+
+Click *Sphere*, keep *Center Point and Diameter*, and type XC 0, YC 0, ZC 3.175 (0.125 in).
+Type Diameter 14.478 (0.57 in), choose *Intersect*, and click *OK*.
+
+=== 3. The other half
+
+Select the Intersect in the Part Navigator and click *Mirror Feature* (Home › Pattern).
+Choose *Transform body*, so that the whole half is mirrored.
+In the plane list choose *Select reference…* and pick the half's flat top face.
+FreeCAD shows the origin planes while you pick, and one of them is in front of the face: press and hold MB1 and choose the face in QuickPick.
+Press MB2.
+The mirrored half is united with the body, so the book's *Unite* step has nothing left to do.
+
+=== 4. The hole and the chamfers
+
+Click *Cylinder*, choose *ZC*, keep the point at (0, 0, 0), and type Diameter 6.35 and Height 25.4.
+Choose *Subtract*, and click *OK*.
+
+Select the hole's two circular edges, click *Chamfer*, type 1.10744 mm (0.0436 in) and press MB2.
+
+image::tutorial-AR-01-nut.png[The finished nut: rounded corners on both faces, the hole chamfered]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AR.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The finished nut is compared with the book's dimensions built by FreeCAD's Part API.
+
+== What differs from NX
+
+* NX 12 draws the hexagon with Insert > Curve > Polygon. Here, as in NX 2212, it is drawn in a sketch.
+* The book mirrors the half with Edit > Transform > Mirror Through a Plane, Copy, then unites the two bodies. NX-Style's Mirror Feature in Transform body mode does both, and the copy keeps following the half.
