@@ -108,6 +108,24 @@ def command_action(name):
     return first
 
 
+def set_group_default(name, entry):
+    """Make the group command name's own action run entry (NX's default, e.g. Studio Spline's Through Points)
+    until the user picks another entry from its drop-down, which FreeCAD then remembers. FreeCAD keeps the
+    index on the group (Gui::ActionGroup's 'defaultAction', ActionGroup::onActivated) and shows its icon.
+    Returns False when name is no group or has no such entry."""
+    acts = command_actions(name)
+    names = [a.objectName() for a in acts]
+    own = command_action(name)
+    group = acts[0].actionGroup() if acts else None
+    if entry not in names or own is None or own is acts[0] or group is None or group.parent() is None:
+        return False
+    i = names.index(entry)
+    group.parent().setProperty("defaultAction", i)
+    own.setIcon(acts[i].icon())
+    own.setToolTip(acts[i].toolTip())
+    return True
+
+
 # FreeCAD makes a command's QAction (Command::initAction) only when a toolbar or menu takes the command, and the
 # workbenches do not place every command a ribbon names (Sketcher_CompLine and Sketcher_CompConstrainRadDia only
 # with non-default Sketcher preferences). A custom toolbar of the workbench, hidden by the shell like every native
@@ -1004,6 +1022,8 @@ class Ribbon(QtWidgets.QWidget):
             return None, size
         label = self._label(item, cmd)
         self._register(cmd, label, tab, group)
+        if item.get("default") and item["default"] != cmd:
+            set_group_default(cmd, item["default"])
         return CommandButton(cmd, label, size, on_run=self._ran), size
 
     def _ran(self, cmd):

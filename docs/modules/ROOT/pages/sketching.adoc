@@ -30,7 +30,7 @@ It holds the Sketch, Curve, Edit Curve and Constraints groups with NX's names; x
 | kbd:[A] | Arc | Arc (centre and two end points)
 | kbd:[O] | Circle | Circle
 | kbd:[P] | Polygon | Regular polygon
-| kbd:[S] | Studio Spline | B-spline
+| kbd:[S] | Studio Spline | B-spline by interpolation: Type Through Points (see <<studio-spline>>)
 | kbd:[T] | Quick Trim | Trim
 | kbd:[E] | Quick Extend | Extend
 | kbd:[F] | Fillet | Fillet (pick the two curves, then the radius)
@@ -57,6 +57,45 @@ Type a value, press kbd:[Enter] for the next field, and the point lands exactly 
 FreeCAD keeps typed coordinates as constraints: horizontal and vertical distances from the axes, or Coincident with the origin for (0, 0).
 For a point on the origin, click the origin instead of typing 0 and 0: FreeCAD 1.1.4 then adds the Coincident twice, and the solver reports the second as redundant.
 Set `sketch_input` to `dimensions` for FreeCAD's default (no position fields), `none`, or `freecad` to leave FreeCAD's own choice alone.
+
+[#studio-spline]
+== Studio Spline
+
+kbd:[S] and *Studio Spline* on the Sketch tab start NX's default type, *Through Points*: the spline passes through every point you click or type.
+It is FreeCAD's B-spline by interpolation, a cubic (degree 3).
+*MB2* ends the spline and the tool, as in NX; at least two points make a spline.
+
+NX's dialog options are in FreeCAD's tool panel (*B-Spline Parameters*) while the tool runs:
+
+[cols="1,3",options="header"]
+|===
+| NX | FreeCAD
+
+| Type: Through Points | First drop-down, *From knots* (the default here)
+| Type: By Poles | First drop-down, *From control points*, or kbd:[M] to switch while drawing; the button's drop-down arrow starts it directly
+| Degree | *Degree* field, kbd:[U] and kbd:[J] (By Poles only: FreeCAD's Through Points is always cubic)
+| Closed | *Periodic* check box; the button's drop-down has both closed kinds
+|===
+
+FreeCAD's own key for *Periodic*, kbd:[R], is NX's Rectangle here: it ends the spline tool and starts Rectangle, so tick the check box instead.
+
+The button's drop-down remembers the last kind picked, as FreeCAD's toolbar does; kbd:[S] is always Through Points.
+
+Typed points::
+The first point takes X and Y, the next ones take the *length and angle* from the point before (FreeCAD has no X and Y fields after the first point).
+For the first point type X, click into the Y field, type Y and press kbd:[Enter]: FreeCAD places the point as soon as either field gets kbd:[Enter] or kbd:[Tab], and the other then holds the pointer's value.
+For each next point type the length, kbd:[Enter], the angle in degrees from the X axis, kbd:[Enter].
+Exercise 4.10.4's spline through (-50, 0), (-25, 1), (25, -8) and (50, 0) is: -50, 0; then 25.0199920063936 and 2.29061004263853; 50.8035431835222 and -10.2039737217317; 26.2488094968134 and 17.7446716250569.
++
+Two FreeCAD habits move typed points:
++
+* FreeCAD looks for automatic constraints at a typed point as it does at a click: a curve within its pick radius (5 pixels) of the point gets one. Zoomed out to 3.75 pixels per mm, the point typed 1 mm above the X axis went *onto* the axis, and the spline with it. Zoom in until the point is several pixels clear of nearby curves before typing it.
+* FreeCAD stores each typed length as a distance with six decimals, so a length typed with more digits is rounded to 1e-6 mm, and the solver moves the later points by the rounding: in the exercise the last point ends 0.7e-6 mm from its typed X. Dimension the points afterwards (below) for exact positions.
+
+Dimensions on through points::
+FreeCAD keeps each through point as a construction point on the spline (an internal knot alignment).
+Dimension and constrain those points as any sketch point: a *Distance* or *Coincident* on one moves it, and the spline follows through it.
+Typed values become constraints: the first point's X and Y as distances from the axes, each typed length as a distance between two points.
 
 == Dimensions
 
