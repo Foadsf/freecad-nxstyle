@@ -178,11 +178,17 @@
         {"cmd": "NXStyle_PMITolerancing", "label": "Tolerancing", "size": "large"}
       ]},
       {"name": "Dimension", "items": [
-        {"cmd": "NXStyle_PMIRapidDimension", "label": "Rapid Dimension", "size": "large"}
+        {"cmd": "NXStyle_PMIRapidDimension", "label": "Rapid Dimension", "size": "large"},
+        {"cmd": "NXStyle_PMILinearDimension", "label": "Linear"},
+        {"cmd": "NXStyle_PMIRadialDimension", "label": "Radial"}
       ]},
       {"name": "Annotation", "items": [
+        {"cmd": "NXStyle_PMINote", "label": "Note", "size": "large"},
         {"cmd": "NXStyle_PMIFeatureControlFrame", "label": "Feature Control Frame", "size": "large"},
         {"cmd": "NXStyle_PMIDatumFeatureSymbol", "label": "Datum Feature Symbol", "size": "large"}
+      ]},
+      {"name": "Supplemental Geometry", "items": [
+        {"cmd": "NXStyle_PMICenterline", "label": "Centerline", "size": "large"}
       ]},
       {"name": "Inspection", "items": [
         {"cmd": "NXStyle_PMIInspectionPlan", "label": "Inspection Plan", "size": "large"},

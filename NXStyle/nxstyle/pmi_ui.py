@@ -7,7 +7,10 @@ Navigator, as in NX:
 - PMI Dimension: a distance between two faces, or the diameter or radius of a cylinder, measured
   from the model (it follows design changes), with deviations, Basic, and a count (4X);
 - PMI Feature Control Frame: characteristic, Ø zone, tolerance, material condition, datums;
-- PMI Datum Feature Symbol: a letter on a face.
+- PMI Datum Feature Symbol: a letter on a face;
+- PMI Note: text with a leader to a face (NX's Annotation > Note);
+- PMI Centerline: the axis of a cylindrical face, drawn dash-dot past its ends (NX's Supplemental Geometry >
+  Centerline).
 
 Each is attached to faces by a link that FreeCAD's topological naming keeps on the same face.
 They are drawn in the graphics window at constant screen size with a leader to the face; feature
@@ -23,8 +26,9 @@ import FreeCADGui as Gui
 from . import config, gdt, iso, pmi, refs, theme
 from .qt import QtCore, QtGui, QtWidgets
 
-TYPES = ["Dimension", "Feature Control Frame", "Datum Feature"]
+TYPES = ["Dimension", "Feature Control Frame", "Datum Feature", "Note", "Centerline"]
 DIM_TYPES = ["Distance", "Diameter", "Radius"]
+CENTERLINE_OVERRUN = 0.08         # a centerline runs past each end of its cylinder by this share of its length
 MODIFIERS = ["None", "MMC", "LMC"]
 FRAME_STYLES = ["Single Frame", "Composite Frame", "Stacked Frames"]
 PX_PER_MM = 4.0           # label images: 7 mm frame height = 28 px
@@ -65,8 +69,8 @@ class PMIFeature:
         _prop(obj, "App::PropertyLinkList", "Views", g, "The model views it is displayed in (empty: all views); "
               "PMI > Display in Views changes them")
         k = obj.PMIType
-        if k != "Datum Feature":
-            _prop(obj, "App::PropertyFloat", "Uncertainty", "Inspection", "Expanded measurement uncertainty U (k = 2) "
+        if k in ("Dimension", "Feature Control Frame"):
+            _prop(obj, "App::PropertyFloat", "Uncertainty", "Inspection","Expanded measurement uncertainty U (k = 2) "
                   "of the method that checks it (mm); 0 = not stated. Gives the TUR and the ISO 14253-1 acceptance "
                   "limits in the inspection plan", 0.0)
         if k == "Dimension":
@@ -111,6 +115,8 @@ class PMIFeature:
                 obj.LowerMaterialCondition = "None"
         elif k == "Datum Feature":
             _prop(obj, "App::PropertyString", "Letter", "Datum Feature", "Datum letter", "A")
+        elif k == "Note":
+            _prop(obj, "App::PropertyStringList", "Text", "Note", "The note's lines")
 
     def onDocumentRestored(self, obj):
         self.setup(obj)
@@ -148,6 +154,10 @@ def evaluate(obj):
     obj.FeatureType = classify(shapes)
     if obj.PMIType == "Dimension":
         problem = measure_dimension(obj, shapes)
+        if problem:
+            return problem
+    elif obj.PMIType == "Centerline":
+        problem = measure_axis(obj, shapes[0])
         if problem:
             return problem
     try:
@@ -203,6 +213,21 @@ def measure_dimension(obj, shapes):
     return None
 
 
+def measure_axis(obj, shape):
+    """Anchor and Anchor2: the ends of a cylinder's axis, run past the cylinder's ends as a drafter draws a
+    centerline; returns why it cannot be drawn, or None."""
+    k = refs.surface_kind(shape)
+    if k not in ("cylinder", "circle"):
+        return f"a centerline needs a cylindrical face or a circular edge, not a {k}"
+    c, d = refs.cylinder_axis(shape)
+    ts = [(v.Point - c).dot(d) for v in shape.Vertexes] or [0.0]
+    lo, hi = min(ts), max(ts)
+    over = max((hi - lo) * CENTERLINE_OVERRUN, 2 * (shape.Surface.Radius if k == "cylinder" else shape.Curve.Radius)
+               * CENTERLINE_OVERRUN)
+    obj.Anchor, obj.Anchor2 = c + d * (lo - over), c + d * (hi + over)
+    return None
+
+
 def feature_key(obj):
     picks = [(o, s) for o, subs in obj.References for s in (subs or [""])]
     return " | ".join(refs.describe(o, s) for o, s in picks)
@@ -235,6 +260,13 @@ def semantic(obj):
             a["frame"] = "composite" if style == "Composite Frame" else "single"
             a["lower"] = {"tolerance": float(obj.LowerTolerance), "modifier": lm,
                           "datums": [parse_datum(d) for d in obj.LowerDatumReferences if d.strip()]}
+    elif k == "Note":
+        a.update(kind="note", text="\n".join(obj.Text))
+    elif k == "Centerline":
+        s, e = tuple(obj.Anchor), tuple(obj.Anchor2)
+        # the ends are in the callout, so a drawing that inherited it is redrawn when the axis moves
+        a.update(kind="centerline", start=s, end=e, text="centerline ({:.3f}, {:.3f}, {:.3f}) to ({:.3f}, {:.3f}, "
+                 "{:.3f})".format(*s, *e))
     else:
         a.update(kind="datum", letter=(obj.Letter or "").strip().upper())
     views = [v.Label for v in getattr(obj, "Views", []) or []]
@@ -444,7 +476,8 @@ def all_pmi(doc):
 
 def create(kind, picks, doc=None, **values):
     doc = doc or App.ActiveDocument
-    name = {"Dimension": "PMI_Dimension", "Feature Control Frame": "PMI_FCF", "Datum Feature": "PMI_Datum"}[kind]
+    name = {"Dimension": "PMI_Dimension", "Feature Control Frame": "PMI_FCF", "Datum Feature": "PMI_Datum",
+            "Note": "PMI_Note", "Centerline": "PMI_Centerline"}[kind]
     obj = doc.addObject("App::FeaturePython", name)
     PMIFeature(obj, kind)
     obj.References = list(picks)
@@ -457,7 +490,7 @@ def create(kind, picks, doc=None, **values):
     if App.GuiUp:
         PMIView(obj.ViewObject)
     doc.recompute()
-    if obj.LabelOffset.Length < 1e-9:
+    if obj.LabelOffset.Length < 1e-9 and kind != "Centerline":         # a centerline has no label
         obj.LabelOffset = default_offset(obj)
     obj.Label = default_label(obj)
     return obj
@@ -467,6 +500,10 @@ def default_label(obj):
     k = obj.PMIType
     if k == "Datum Feature":
         return f"Datum {obj.Letter}"
+    if k == "Note":
+        return f"Note {(obj.Text or [''])[0][:24]}".strip()
+    if k == "Centerline":
+        return "Centerline"
     if k == "Feature Control Frame":
         return obj.Characteristic
     return f"{obj.DimensionType} {obj.Nominal:.3f}"
@@ -567,6 +604,16 @@ def label_svg(obj):
     if a["kind"] == "datum":
         svg, (w, h) = gdt.datum_feature_symbol(a["letter"] or "?", "bottom")
         return svg, w, h
+    if a["kind"] in ("note", "centerline"):
+        from xml.sax.saxutils import escape
+        lines = a.get("text", "").split("\n") or [""]
+        w = max(gdt.text_width(t) for t in lines) + 3.0
+        h = gdt.H * len(lines)
+        body = f'<rect x="0" y="0" width="{w:.3f}" height="{h:.3f}" fill="white" fill-opacity="0.85" stroke="none"/>'
+        for i, t in enumerate(lines):
+            body += (f'<text x="1.5" y="{gdt.H * i + gdt.H / 2 + gdt.TEXT / 2 - 0.3:.3f}" font-family="{gdt.FONT}" '
+                     f'font-size="{gdt.TEXT}">{escape(t)}</text>')
+        return gdt._svg(w, h, body), w, h
     text = pmi.dimension_text(a)
     if a.get("basic"):
         text = text.replace("[", "").replace("]", "")
@@ -610,6 +657,12 @@ def render_label(obj, number=0):
         text = pmi.dimension_text(a).replace("[", "").replace("]", "")
         fm = QtGui.QFontMetricsF(label_font())
         W, H = int(fm.horizontalAdvance(text) + 14), int(gdt.H * PX_PER_MM) + 2
+    elif a["kind"] == "note":
+        text = a.get("text", "")
+        fm = QtGui.QFontMetricsF(label_font())
+        lines = text.split("\n")
+        W = int(max(fm.horizontalAdvance(t) for t in lines) + 14)
+        H = int(gdt.H * PX_PER_MM) * len(lines) + 2
     else:
         svg, w, h = label_svg(obj)
         W, H = int(w * PX_PER_MM) + 2, int(h * PX_PER_MM) + 2
@@ -673,8 +726,8 @@ class PMIView:
     def getIcon(self):
         obj = getattr(getattr(self, "vobj", None), "Object", None)
         k = getattr(obj, "PMIType", "")
-        name = {"Feature Control Frame": "feature_control_frame", "Datum Feature": "datum_feature_symbol"}.get(
-            k, "pmi_dimension")
+        name = {"Feature Control Frame": "feature_control_frame", "Datum Feature": "datum_feature_symbol",
+                "Note": "pmi_note", "Centerline": "pmi_centerline"}.get(k, "pmi_dimension")
         return config.resource("icons", f"{name}.svg")
 
     def updateData(self, obj, prop):
@@ -699,6 +752,9 @@ class PMIView:
         if "Anchor" not in obj.PropertiesList:
             return
         a, off = App.Vector(obj.Anchor), App.Vector(obj.LabelOffset)
+        if obj.PMIType == "Centerline":
+            self.centerline(obj)
+            return
         if off.Length < 1e-9:
             return
         at = a + off
@@ -756,6 +812,23 @@ class PMIView:
             txt.string = obj.Callout
             lab += [font, txt]
         self.geo.addChild(lab)
+
+    def centerline(self, obj):
+        """The axis as a long dash, short dash line (ISO 128-2 type 04) between Anchor and Anchor2."""
+        from pivy import coin
+        a, b = App.Vector(obj.Anchor), App.Vector(obj.Anchor2)
+        if (b - a).Length < 1e-9:
+            return
+        col = coin.SoBaseColor()
+        col.rgb = (0.05, 0.05, 0.05)
+        style = coin.SoDrawStyle()
+        style.lineWidth = 1.2
+        style.linePattern = 0xFF18                      # long dash, gap, short dash, gap
+        coords = coin.SoCoordinate3()
+        coords.point.setValues(0, 2, [(a.x, a.y, a.z), (b.x, b.y, b.z)])
+        ls = coin.SoLineSet()
+        ls.numVertices.setValue(2)
+        self.geo += [col, style, coords, ls]
 
 
 # ------------------------------------------------------------------ dialogs
@@ -818,19 +891,20 @@ class _Panel:
 class DimensionPanel(_Panel):
     title = "PMI Rapid Dimension"
     kind = "Dimension"
+    methods = DIM_TYPES              # Rapid infers the method from the picks; Linear and Radial have fewer
 
     def __init__(self):
         super().__init__()
         self.type = QtWidgets.QComboBox()
         self.type.setObjectName("dimensionType")
-        self.type.addItems(DIM_TYPES)
+        self.type.addItems(self.methods)
         shapes = []
         try:
             shapes = [refs.resolve(o, s) for o, s in self.picks]
         except Exception:
             pass
-        if len(shapes) == 1 and refs.surface_kind(shapes[0]) in ("cylinder", "circle"):
-            self.type.setCurrentIndex(1)
+        if len(shapes) == 1 and refs.surface_kind(shapes[0]) in ("cylinder", "circle") and "Diameter" in self.methods:
+            self.type.setCurrentIndex(self.methods.index("Diameter"))
         self.nominal = QtWidgets.QLabel(self.measure(shapes))
         self.nominal.setObjectName("nominal")
         self.fit = QtWidgets.QLineEdit()
@@ -905,6 +979,71 @@ class DimensionPanel(_Panel):
         return {"DimensionType": self.type.currentText(), "UpperDeviation": self.upper.value(),
                 "LowerDeviation": self.lower.value(), "Fit": self.fit.text().strip(),
                 "Envelope": self.envelope.isChecked(), "Basic": self.basic.isChecked(), "Quantity": self.count.value()}
+
+
+class LinearPanel(DimensionPanel):
+    """NX's PMI Linear: a distance between two faces."""
+    title = "PMI Linear Dimension"
+    methods = ["Distance"]
+
+
+class RadialPanel(DimensionPanel):
+    """NX's PMI Radial: a cylinder's or circular edge's diameter (NX's Method Diameter) or radius."""
+    title = "PMI Radial Dimension"
+    methods = ["Diameter", "Radius"]
+
+
+class NotePanel(_Panel):
+    """NX's PMI Note: the text, and a leader to the selected face."""
+    title = "PMI Note"
+    kind = "Note"
+
+    def __init__(self):
+        super().__init__()
+        self.text = QtWidgets.QPlainTextEdit()
+        self.text.setObjectName("noteText")
+        self.text.setPlaceholderText("The note; one line per line")
+        self.layout.addRow("Text", self.text)
+        self.status = QtWidgets.QLabel("")
+        self.status.setObjectName("noteStatus")
+        self.layout.addRow(self.status)
+
+    def values(self):
+        lines = [t.rstrip() for t in self.text.toPlainText().split("\n")]
+        while lines and not lines[-1]:
+            lines.pop()
+        return {"Text": lines or [""]}
+
+    def accept(self):
+        if not "".join(self.values()["Text"]).strip():
+            self.status.setText("Type the note's text first.")    # not a message box: the dialog stays usable
+            return False
+        return super().accept()
+
+
+class CenterlinePanel(_Panel):
+    """NX's Supplemental Geometry > Centerline: the axis of the selected cylindrical face."""
+    title = "PMI Centerline"
+    kind = "Centerline"
+
+    def __init__(self):
+        super().__init__()
+        self.length = QtWidgets.QLabel(self.measure())
+        self.length.setObjectName("centerlineLength")
+        self.layout.addRow("Axis", self.length)
+
+    def measure(self):
+        try:
+            shapes = [refs.resolve(o, s) for o, s in self.picks]
+        except Exception as e:
+            return f"cannot measure: {e}"
+        if len(shapes) != 1 or refs.surface_kind(shapes[0]) not in ("cylinder", "circle"):
+            return "select one cylindrical face"
+        c, d = refs.cylinder_axis(shapes[0])
+        return f"through ({c.x:.3f}, {c.y:.3f}, {c.z:.3f}) along ({d.x:.3f}, {d.y:.3f}, {d.z:.3f})"
+
+    def values(self):
+        return {}
 
 
 class FramePanel(_Panel):
@@ -1310,6 +1449,16 @@ def inherit(view, objs=None, refresh=True):
                 made.append(dim)
                 on_sheet.add(o.Name)
             continue
+        if a["kind"] in ("note", "centerline"):
+            ann = inherit_note(view, page, o, a) if a["kind"] == "note" else inherit_centerline(view, page, o, a)
+            if ann is None:
+                skipped.append((o.Label, "its axis points at the viewer in this view (a center mark shows it)"))
+                continue
+            gdt_ui.tag(ann, pmi=o.Name)
+            mark_inherited(ann, o, view)
+            made.append(ann)
+            on_sheet.add(o.Name)
+            continue
         picks = [(p, s) for p, subs in o.References for s in (subs or [""])]
         try:
             shape = refs.resolve(*picks[0])
@@ -1423,8 +1572,8 @@ def refresh_inherited(doc, page=None):
         doc.removeObject(ann.Name)  # was then skipped as "already on this sheet")
         made, skipped = inherit(view, [o], refresh=False) if (pg.Name, name) not in done else ([], [])
         for m in made:
-            if getattr(m, "NX_Pmi", "") == name:
-                m.X, m.Y = x, y                    # where the drafter had it
+            if getattr(m, "NX_Pmi", "") == name and getattr(m, "NX_Kind", "") != "centerline":
+                m.X, m.Y = x, y                    # where the drafter had it (a centerline goes where its axis is)
         last_refresh[name] = {"view": view.Name, "made": [m.Name for m in made], "skipped": skipped}
         done.add((pg.Name, name))
     if done:
@@ -1502,9 +1651,15 @@ def tolerancing_note(page):
     return note
 
 
-def _view_edges(view):
+def _view_edges(view, hidden=False):
+    """(index, edge) of the view's visible edges; with hidden, of the hidden ones a view drawing hidden lines (Hard
+    Hidden) shows dashed. TechDraw numbers the visible edges first, then the hidden ones."""
+    n = len(view.getVisibleEdges())
+    rng = range(n)
+    if hidden:
+        rng = range(n, n + len(view.getHiddenEdges())) if getattr(view, "HardHidden", False) else range(0)
     out = []
-    for i in range(len(view.getVisibleEdges())):
+    for i in rng:
         try:
             out.append((i, view.getEdgeByIndex(i)))
         except Exception:
@@ -1521,7 +1676,8 @@ def inherit_dimension(view, page, o, a):
     dtype = None
     if a["dim_type"] in ("diameter", "radius"):
         r = a["nominal"] / (2 if a["dim_type"] == "diameter" else 1)
-        for i, e in edges:
+        # a circle the view shows, else one it draws dashed (a view with hidden lines on: NX dimensions those too)
+        for i, e in edges + _view_edges(view, hidden=True):
             if hasattr(e.Curve, "Radius") and abs(e.Curve.Radius - r * s) < 1e-4 * max(1, r):
                 refs_2d = [(view, f"Edge{i}")]
                 dtype = "Diameter" if a["dim_type"] == "diameter" else "Radius"
@@ -1539,21 +1695,25 @@ def inherit_dimension(view, page, o, a):
                 if refs_2d:
                     break
     else:
-        lines = [(i, e) for i, e in edges if not hasattr(e.Curve, "Radius")]
         target = a["nominal"] * s
         pa = project(view, App.Vector(o.Anchor))
         pb = project(view, App.Vector(o.Anchor2))
         best = None
-        for k, (i, e) in enumerate(lines):
-            for j, f in lines[k + 1:]:
-                g = _parallel_gap(e, f)
-                if g is None or abs(g - target) > 1e-3:
-                    continue
-                # prefer the pair nearest the PMI's own attachment points
-                ce, cf = _centre(view, e), _centre(view, f)
-                score = min(_d(ce, pa) + _d(cf, pb), _d(ce, pb) + _d(cf, pa))
-                if best is None or score < best[0]:
-                    best = (score, i, j, e)
+        # the faces seen edge-on as lines the view shows; else (a bore's floor inside the part) as dashed hidden lines
+        for pool in (edges, edges + _view_edges(view, hidden=True)):
+            lines = [(i, e) for i, e in pool if not hasattr(e.Curve, "Radius")]
+            for k, (i, e) in enumerate(lines):
+                for j, f in lines[k + 1:]:
+                    g = _parallel_gap(e, f)
+                    if g is None or abs(g - target) > 1e-3:
+                        continue
+                    # prefer the pair nearest the PMI's own attachment points
+                    ce, cf = _centre(view, e), _centre(view, f)
+                    score = min(_d(ce, pa) + _d(cf, pb), _d(ce, pb) + _d(cf, pa))
+                    if best is None or score < best[0]:
+                        best = (score, i, j, e)
+            if best is not None:
+                break
         if best is not None:
             _, i, j, e = best
             v = e.Vertexes[-1].Point - e.Vertexes[0].Point
@@ -1592,6 +1752,75 @@ def inherit_dimension(view, page, o, a):
         pass
     place_dimension(view, page, dim, dtype, [view.getEdgeByIndex(int(n[4:])) for _, n in refs_2d])
     return dim
+
+
+def _unscaled(obj):
+    """Sheet-sized: a page at 1:25 must not shrink a note or a symbol (its size is paper, not model)."""
+    if "ScaleType" in obj.PropertiesList:
+        obj.ScaleType = "Custom"
+        obj.Scale = 1.0
+
+
+def view_box(view):
+    """(left, right, bottom, top) of a view's visible edges on the sheet (mm)."""
+    s = float(view.Scale)
+    bb = None
+    for _, e in _view_edges(view):
+        bb = e.BoundBox if bb is None else bb.united(e.BoundBox)
+    if bb is None:
+        return float(view.X), float(view.X), float(view.Y), float(view.Y)
+    return (float(view.X) + bb.XMin * s, float(view.X) + bb.XMax * s, float(view.Y) + bb.YMin * s,
+            float(view.Y) + bb.YMax * s)
+
+
+NOTE_TEXT = 3.5             # mm, the note's lettering on the sheet
+
+
+def inherit_note(view, page, o, a):
+    """A PMI note as a note on the sheet, above the view's top left corner (NX puts it where the model view had
+    it; a drafter moves it), stacked above the view's other inherited notes."""
+    doc = view.Document
+    lines = a.get("text", "").split("\n")
+    note = doc.addObject("TechDraw::DrawViewAnnotation", "Note")
+    page.addView(note)
+    _unscaled(note)
+    note.Text = lines
+    note.TextSize = NOTE_TEXT
+    left, _, _, top = view_box(view)
+    others = [v for v in page.Views if v is not note and v.isDerivedFrom("TechDraw::DrawViewAnnotation")
+              and getattr(v, "NX_Pmi", "") and getattr(v, "NX_View", "") == view.Name]
+    w = max(len(t) for t in lines) * NOTE_TEXT * 0.6
+    h = len(lines) * NOTE_TEXT * 1.4
+    note.X = left + w / 2
+    note.Y = top + 8.0 + h / 2 + sum(len(v.Text) * NOTE_TEXT * 1.4 + 3.0 for v in others)
+    return note
+
+
+def centerline_svg(length, width=0.25):
+    """A horizontal centerline length mm long: long dash, gap, short dash (ISO 128-2 type 04)."""
+    h = 1.0
+    body = (f'<line x1="0" y1="{h / 2}" x2="{length:.3f}" y2="{h / 2}" stroke="black" stroke-width="{width}" '
+            f'stroke-dasharray="8,1.5,1,1.5"/>')
+    return gdt._svg(length, h, body)
+
+
+def inherit_centerline(view, page, o, a):
+    """A PMI centerline on the sheet: its axis, through the view's projection, as a dash-dot line; None when the
+    axis points at the viewer (the circle's center mark shows it then)."""
+    import math
+    from . import gdt_ui
+    p, q = App.Vector(*a["start"]), App.Vector(*a["end"])
+    ax = q - p
+    d = App.Vector(view.Direction).normalize()
+    if ax.Length < 1e-9 or abs(App.Vector(ax).normalize().dot(d)) > 0.999:
+        return None
+    (x1, y1), (x2, y2) = project(view, p), project(view, q)
+    length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+    sym = gdt_ui.add_symbol(page, "Centerline", centerline_svg(length), (x1 + x2) / 2, (y1 + y2) / 2)
+    _unscaled(sym)
+    sym.Rotation = math.degrees(math.atan2(y2 - y1, x2 - x1))
+    gdt_ui.tag(sym, kind="centerline", ends=f"({x1:.3f}, {y1:.3f}) to ({x2:.3f}, {y2:.3f})")
+    return sym
 
 
 def place_dimension(view, page, dim, dtype, edges):
@@ -2118,6 +2347,16 @@ COMMANDS = {
                                             "PMI: a dimension on the model. Select a cylinder (diameter) or two "
                                             "faces (distance) first; it is measured from the model and keeps up "
                                             "with design changes", "pmi_dimension.svg"),
+    "NXStyle_PMILinearDimension": PMICommand(LinearPanel, "Linear",
+                                             "PMI: a distance between the two selected faces, measured from the model",
+                                             "pmi_dimension.svg"),
+    "NXStyle_PMIRadialDimension": PMICommand(RadialPanel, "Radial",
+                                             "PMI: the diameter (or radius) of the selected cylinder or circular "
+                                             "edge, measured from the model", "pmi_radial.svg"),
+    "NXStyle_PMINote": PMICommand(NotePanel, "Note", "PMI: a note with a leader to the selected face",
+                                  "pmi_note.svg"),
+    "NXStyle_PMICenterline": PMICommand(CenterlinePanel, "Centerline",
+                                        "PMI: the centerline of the selected cylindrical face", "pmi_centerline.svg"),
     "NXStyle_PMIFeatureControlFrame": PMICommand(FramePanel, "Feature Control Frame",
                                                  "PMI: a feature control frame on the selected face",
                                                  "feature_control_frame.svg"),

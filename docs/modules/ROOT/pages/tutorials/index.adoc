@@ -54,14 +54,14 @@ The tables show its last runs on FreeCAD {replay-freecad}: {replay-steps} steps.
 | Design changes, parent/child, suppress | xref:tutorials/e.adoc[E], xref:tutorials/m.adoc[M]
 | Materials and mass | xref:tutorials/e.adoc[E]
 | Assemblies | xref:tutorials/g.adoc[G]
-| Drawings | xref:tutorials/d.adoc[D], xref:tutorials/n.adoc[N]
+| Drawings | xref:tutorials/d.adoc[D], xref:tutorials/n.adoc[N], xref:tutorials/az.adoc[AZ], xref:tutorials/bb.adoc[BB]
 | GD&T | xref:tutorials/h.adoc[H]
 | Algorithmic modelling (a Grasshopper-style canvas) | xref:tutorials/o.adoc[O], xref:tutorials/p.adoc[P], xref:tutorials/q.adoc[Q], xref:tutorials/r.adoc[R]
 | Data trees: Graft, Flatten, lists that pair up | xref:tutorials/q.adoc[Q], xref:tutorials/p.adoc[P]
 | Attractors | xref:tutorials/r.adoc[R]
 | Tolerance stack-ups: worst case, RSS, Monte Carlo | xref:tutorials/s.adoc[S], xref:tutorials/t.adoc[T]
 | ISO GPS documentation: fits, the envelope, ISO 2768, 3D PMI, inspection plan | xref:tutorials/t.adoc[T]
-| Drawings made from the PMI | xref:tutorials/t.adoc[T]
+| Drawings made from the PMI | xref:tutorials/t.adoc[T], xref:tutorials/ba.adoc[BA]
 | Volume claims, assembly clearance and interference | xref:tutorials/u.adoc[U]
 | Release, engineering change, release packages | xref:tutorials/v.adoc[V]
 | STEP AP242 with semantic PMI | xref:tutorials/t.adoc[T], xref:tutorials/v.adoc[V]
@@ -102,7 +102,7 @@ include::partial$outcome-legend.adoc[]
 * Tutorial AE is ours: the acceptance case of the Extrude command (None for a new body, Unite, Subtract, edit, cancel, undo, reopen).
 * Tutorial AL is ours: the plate and its parameters; the exchange follows ISO 10303-55 annex E and ISO 10303-108 Cor.1 annex F.
 * Tutorial AM is ours: the fixture and the bracket profile; the commands follow ISO 10303-112 clause 4.2.2 (selection by ISO 10303-55).
-* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN; section 4.2.2: tutorial AP; section 4.4: tutorial AO; sections 4.7.1 and 4.7.2: tutorials AQ and AR; sections 4.7.3, 4.7.4 and 4.7.5: tutorials AS, AT and AU; exercise 4.10.1: tutorial AV; exercise 4.10.2: tutorial AW; exercise 4.10.3: tutorial AX; exercise 4.10.4: tutorial AY.
+* Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN; section 4.2.2: tutorial AP; section 4.4: tutorial AO; sections 4.7.1 and 4.7.2: tutorials AQ and AR; sections 4.7.3, 4.7.4 and 4.7.5: tutorials AS, AT and AU; exercise 4.10.1: tutorial AV; exercise 4.10.2: tutorial AW; exercise 4.10.3: tutorial AX; exercise 4.10.4: tutorial AY; sections 5.2 to 5.4: tutorial AZ; section 5.5: tutorial BA; section 5.6: tutorial BB (exercise 5.7 is not replayed).
 * ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.
 
 == The videos

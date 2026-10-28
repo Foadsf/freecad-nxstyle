@@ -80,6 +80,9 @@
 * xref:tutorials/aw.adoc[AW: Holder]
 * xref:tutorials/ax.adoc[AX: Impeller Upper Casing]
 * xref:tutorials/ay.adoc[AY: Die Cavity]
+* xref:tutorials/az.adoc[AZ: Arbor Press Rack Drawing]
+* xref:tutorials/ba.adoc[BA: PMI on the Impeller]
+* xref:tutorials/bb.adoc[BB: Hex Bolt Drawing]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

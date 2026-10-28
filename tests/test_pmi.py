@@ -35,6 +35,29 @@ def plate():
     ]
 
 
+class NotesAndCenterlines(unittest.TestCase):
+    """A note and a centerline carry text only: no characteristic, no check, no plan row, no AP242 record."""
+    EXTRA = [{"id": "Note", "kind": "note", "text": "Five impeller blades", "feature": "Face4", "feature_type": "other"},
+             {"id": "Axis", "kind": "centerline", "text": "centerline (0, 0, 0) to (10, 0, 0)", "feature": "Face9",
+              "feature_type": "hole"}]
+
+    def test_text_is_theirs(self):
+        self.assertEqual([pmi.text(a) for a in self.EXTRA], ["Five impeller blades", "centerline (0, 0, 0) to (10, 0, 0)"])
+
+    def test_they_change_nothing_in_the_plan_the_checks_or_the_gauges(self):
+        general = "ISO 2768-mK"
+        with_ = plate() + [dict(a) for a in self.EXTRA]
+        self.assertEqual(pmi.check(with_, "ASME"), pmi.check(plate(), "ASME"))
+        self.assertEqual(pmi.inspection_plan(pmi.number(with_, general=general), general=general),
+                         pmi.inspection_plan(pmi.number(plate(), general=general), general=general))
+        self.assertEqual(pmi.gauges(with_), pmi.gauges(plate()))
+        self.assertEqual([a["number"] for a in pmi.number([dict(a) for a in self.EXTRA])], [0, 0])
+
+    def test_ap242_plans_no_record_for_them(self):
+        from nxstyle import ap242
+        self.assertEqual(ap242.plan([dict(a) for a in self.EXTRA], "ISO"), [])
+
+
 class Text(unittest.TestCase):
     def test_zero_deviation_is_the_digit_0(self):
         a = {"kind": "dimension", "dim_type": "diameter", "nominal": 5.0, "plus": 0.2, "minus": 0.0, "count": 4}

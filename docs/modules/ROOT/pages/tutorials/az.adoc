@@ -1,0 +1,80 @@
+= Tutorial AZ: Arbor Press Rack Drawing
+:description: The arbor press rack of tutorial AT on a B sheet at 1:25: a front base view, top and right projected views, borders off, dimensions on all three views and a section through the hole (NX 12 for Engineering Design, 5.2 to 5.4).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 5.2 (creating a drawing), 5.3 (dimensioning) and 5.4 (sectional view).
+You learn:: New Sheet (size, scale, projection), Base View, Projected View, Display Borders, dimensions, Section View
+Part:: tutorial xref:tutorials/at.adoc[AT]'s rack, `Arborpress_rack`. The replay runs AT first.
+Sizes:: the book's, in inches, typed in millimetres: the drawing's dimensions read 25.4 times the book's numbers.
+
+== Step by step
+
+=== 1. The sheet
+
+Open `Arborpress_rack` and press kbd:[Ctrl+Shift+D] for Drafting.
+Click *New Sheet*.
+In the sheet's properties, choose the template `ANSIB_Landscape.svg` (B, 11 x 17 in), the scale 0.04 (1:25) and *Third angle*.
+
+=== 2. The views
+
+Select the rack's body and click *Base View*.
+Set the view's direction to Front and press MB2 to place it.
+
+Select the front view and click *Projected View*.
+Click *Above* and *Right*, then press MB2.
+The top view and the right side view appear lined up with the front view, at its scale.
+The right view shows the hole in the end of the rack as a circle.
+
+Click *Display Borders* to hide the borders round the views.
+
+=== 3. Dimensions
+
+Pick the two end vertices of each length in the view and click *Horizontal* or *Vertical*:
+
+[cols="1,2,1,1",options="header"]
+|===
+| View | Length | Book (in) | Drawing (mm)
+| Top | the rack's length | 240 | 6096
+| Top | from the left end to the first tooth space | 34.8 | 883.92
+| Front | the tooth space's opening | 6.000 | 152.4
+| Front | its floor | 3.396 | 86.26
+| Front | its depth | 5.034 | 127.86
+| Right | the height | 20 | 508
+| Right | the width | 25 | 635
+|===
+
+Drag each dimension clear of its view.
+Where a point has no vertex (the foot of a tooth space), the replay puts a cosmetic vertex on the edge there first.
+
+=== 4. The section
+
+Select the front view and click *Section View*.
+Click the *Up* direction and press MB2.
+TechDraw cuts through the middle of the view, at the height of the hole's axis.
+Move the section below the front view.
+
+image::tutorial-AZ-01-drawing.png[The rack's drawing: top, front and right views with their dimensions, and section A-A through the hole]
+
+Save the part with kbd:[Ctrl+S]; the drawing is saved in it.
+
+== The replay
+
+include::partial$generated/tutorial-AZ.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Every check reads the drawing back from TechDraw and compares it with the model.
+The views' edges must span what the Part API gives for each direction.
+Each dimension must equal the length the Part API's tooth space and bar give, and the book's number times 25.4.
+The section must show the hole's walls one diameter apart, which happens only when the cut goes through the hole's axis.
+
+== What differs from NX
+
+* NX asks for the sheet size, scale and projection in one Sheet dialog. In FreeCAD they are the sheet's properties.
+* NX lists the model views in the Base View dialog. A TechDraw view takes its direction as a property.
+* NX places a projected view where you click round the parent. Here you click a side button. In NX a projected view follows its parent when the parent is dragged; here it stays where it was placed.
+* NX keeps Display Borders in Drafting Preferences. Here it is a button on the Home tab.
+* NX infers horizontal or vertical from where you move the pointer. Here you choose the *Horizontal* or *Vertical* button.
+* TechDraw dimensions attach to vertices. Where NX snaps to any point on an edge, the replay adds a cosmetic vertex first.
+* The book's text puts the 240 on the front view, but its figures put it on the top view. The replay follows the figures.
+* TechDraw puts a new section view on top of its base view. You move it afterwards.

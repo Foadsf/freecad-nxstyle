@@ -3,18 +3,20 @@
   "title": "Drafting",
   "workbench": "TechDrawWorkbench",
   "preload": [],
-  "essential": ["TechDraw_PageDefault", "TechDraw_View", "TechDraw_ProjectionGroup", "TechDraw_SectionView"],
+  "essential": ["TechDraw_PageDefault", "TechDraw_View", "NXStyle_ProjectedView", "TechDraw_SectionView"],
   "tabs": [
     {"name": "Home", "groups": [
       {"name": "Drawing", "items": [
         {"cmd": "TechDraw_PageDefault", "label": "New Sheet", "size": "large"},
         {"cmd": "TechDraw_PageTemplate", "label": "Sheet from Template"},
         {"cmd": "NXStyle_PopulateTitleBlock", "label": "Populate Title Block", "size": "large"},
-        {"cmd": "TechDraw_RedrawPage", "label": "Update Views"}
+        {"cmd": "TechDraw_RedrawPage", "label": "Update Views"},
+        {"cmd": "TechDraw_ToggleFrame", "label": "Display Borders"}
       ]},
       {"name": "View", "items": [
         {"cmd": "TechDraw_View", "label": "Base View", "size": "large"},
-        {"cmd": "TechDraw_ProjectionGroup", "label": "Projected View", "size": "large"},
+        {"cmd": "NXStyle_ProjectedView", "label": "Projected View", "size": "large"},
+        {"cmd": "TechDraw_ProjectionGroup", "label": "Projection Group"},
         {"cmd": "TechDraw_SectionView", "label": "Section View"},
         {"cmd": "TechDraw_ComplexSection", "label": "Stepped Section"},
         {"cmd": "TechDraw_DetailView", "label": "Detail View"},
@@ -33,7 +35,8 @@
         {"cmd": "TechDraw_AngleDimension", "label": "Angular"}
       ]},
       {"name": "Annotation", "items": [
-        {"cmd": ["TechDraw_RichTextAnnotation", "TechDraw_Annotation"], "label": "Note", "size": "large"},
+        {"cmd": "NXStyle_DraftingNote", "label": "Note", "size": "large"},
+        {"cmd": ["TechDraw_RichTextAnnotation", "TechDraw_Annotation"], "label": "Rich Text Note"},
         {"cmd": "TechDraw_Balloon", "label": "ID Symbol (Balloon)"},
         {"cmd": "TechDraw_LeaderLine", "label": "Leader"},
         {"cmd": "TechDraw_WeldSymbol", "label": "Weld Symbol"},

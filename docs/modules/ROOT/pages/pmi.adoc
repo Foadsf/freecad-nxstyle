@@ -14,6 +14,10 @@ image::tutorial-T-03-pmi.png[The guide bush of tutorial T with its PMI: ISO fits
 | Button | Does
 | *Tolerancing* | The part's standard, *ISO GPS* (the default) or *ASME Y14.5*, and its general tolerances, e.g. `ISO 2768-mK`: what a drawing's title block says. Stored with the part's PMI folder.
 | *Rapid Dimension* | A dimension on the model. Select one cylinder (diameter) or two faces (distance) first. The nominal is measured from the model and follows design changes. Give it an ISO 286 *tolerance class* (H7, g6 …: the dialog shows the limits), or upper and lower deviations, the *envelope* Ⓔ (ISO 14405), *theoretically exact*, and a quantity (4X).
+| *Linear* | A distance between the two selected faces, as Rapid Dimension measures it.
+| *Radial* | The diameter of the selected cylinder or circular edge; choose *Radius* for a radius.
+| *Note* | A note with a leader to the selected face: type the text, one line per line.
+| *Centerline* | The axis of the selected cylindrical face, drawn long dash, short dash a little past both ends of the cylinder. It follows the face when the model changes.
 | *Feature Control Frame* | A geometrical tolerance on the selected face: characteristic, Ø zone, tolerance, Ⓜ or Ⓛ, up to three datums with modifiers. The same dialog as Drafting's. *Frame Style* makes it a two-row frame (below).
 | *Datum Feature Symbol* | A datum letter on the selected face.
 | *Inspection Plan* | Numbers the characteristics (the balloons on the model) and lists them with their limits, where the tolerance comes from, and how to measure them; the functional gauge sizes; the checks.
@@ -121,6 +125,9 @@ In Drafting, select a view and click *Inherit PMI*:
 
 * diameters and distances become TechDraw dimensions on the matching edges, with their ISO class, deviations, Ⓔ and count;
 * frames and datum symbols are placed beside their face, if the view shows it edge-on or face-on;
+* a note becomes a note above the view's top left corner;
+* a centerline becomes a dash-dot line on the axis as the view shows it; a view looking down the axis leaves it out (a center mark shows that);
+* in a view that draws hidden lines (*Hard Hidden*), a diameter or a distance whose faces the view does not show is put on the dashed lines, as NX dimensions hidden lines;
 * the sheet gets the tolerancing note: _Tolerancing ISO 8015_, _General tolerances ISO 2768-mK_.
 
 A PMI is placed once per sheet, in the first view that shows it.
@@ -163,7 +170,7 @@ Its Windows and conda builds ship pythonocc, which reaches OpenCASCADE's dimensi
 After writing, OpenCASCADE reads the file back, and the Information window reports what it found.
 Without pythonocc the command writes plain STEP and says why.
 
-Not written, because OpenCASCADE has no semantic slot for them: the envelope Ⓔ, theoretically exact dimensions, a count such as 4X, and the ISO 2768 general tolerance.
+Not written, because OpenCASCADE has no semantic slot for them: the envelope Ⓔ, theoretically exact dimensions, a count such as 4X, the ISO 2768 general tolerance, notes and centerlines.
 The Information window lists each one; they stay in `pmi.json`, the inspection plan and on the drawing.
 
 OpenCASCADE 7.8 writes the IT grade of `LIMITS_AND_FITS` two too high (IT7 as '9'), and its own reader then returns IT9.
