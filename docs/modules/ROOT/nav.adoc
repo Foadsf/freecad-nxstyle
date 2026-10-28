@@ -80,6 +80,7 @@
 * xref:tutorials/aw.adoc[AW: Holder]
 * xref:tutorials/ax.adoc[AX: Impeller Upper Casing]
 * xref:tutorials/ay.adoc[AY: Die Cavity]
+* xref:tutorials/bc.adoc[BC: Release to manufacturing (Carbon)]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

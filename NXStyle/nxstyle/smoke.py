@@ -108,6 +108,7 @@ class Smoke:
         yield self.s_layout_controls, 300
         yield self.s_snap, 900
         yield self.s_strata, 2500
+        yield self.s_carbon, 300
         yield self.s_mouse, 300
         yield self.s_mb2_ok_open, 600
         yield self.s_mb2_ok_click, 600
@@ -559,6 +560,91 @@ class Smoke:
         if prefs.uses_own_navigation(self.shell.cfg):
             self.check("status bar names NXStyle's mouse handling, not just FreeCAD's base style",
                        self.shell.NAV_LABEL in texts and "Blender" not in texts, texts)
+
+    def s_carbon(self):
+        """Carbon (PLM > Manufacturing): the commands on the PLM tab, then Review and Publish to Manufacturing,
+        Manufacturing Status and Test Connection through the dialogs, against the stand-in Carbon server of the
+        unit tests (tests/carbon_fake.py: real HTTP, every request checked against Carbon's published schemas)."""
+        import copy
+        import sys
+        import tempfile
+        from . import carbon, carbon_ui, config
+        from .ribbon import CommandButton
+        names = ("NXStyle_CarbonPublish", "NXStyle_CarbonStatus", "NXStyle_CarbonConnection")
+        have = set(Gui.listCommands())
+        if os.environ.get("NXSTYLE_CARBON") == "0":
+            self.check("Carbon commands off as asked (--no-carbon)", not any(n in have for n in names))
+            return
+        buttons = {b.command for b in self.shell.ribbon.findChildren(CommandButton) if b.command in names}
+        self.check("PLM tab: Manufacturing group (Publish to Manufacturing, Manufacturing Status, Connection)",
+                   self.shell.ribbon.has_tab("PLM") and buttons == set(names), sorted(buttons))
+        tests = os.path.normpath(os.path.join(config.RESOURCES, "..", "..", "..", "tests"))
+        if not os.path.isfile(os.path.join(tests, "carbon_fake.py")):
+            self.skip("Publish to Manufacturing against the stand-in Carbon", f"no {tests}/carbon_fake.py")
+            return
+        sys.path.insert(0, tests)
+        import carbon_fake
+        cfg = config.get()
+        saved = copy.deepcopy(cfg.get("carbon"))
+        tmp = tempfile.mkdtemp(prefix="nxstyle-smoke-carbon-")
+        srv = carbon_fake.Server().__enter__()
+        before = App.ActiveDocument
+        doc = App.newDocument("CarbonPlate")
+        try:
+            cfg["carbon"].update(url=srv.url, allow_unreleased=True, location="",
+                                 api_key_file=os.path.join(tmp, "carbon.key"))
+            carbon.save_api_key(cfg["carbon"]["api_key_file"], carbon_fake.KEY)
+            doc.addObject("Part::Box", "Box")
+            doc.Meta = dict(doc.Meta, DB_PART_NO="SMK-100", DB_PART_REV="A", DB_PART_NAME="Smoke plate")
+            doc.recompute()
+            doc.saveAs(os.path.join(tmp, "CarbonPlate.FCStd"))
+            panel = carbon_ui.PublishPanel()
+            Gui.Control.showDialog(panel)
+            QtWidgets.QApplication.processEvents()
+            panel.form.findChild(QtWidgets.QPushButton, "carbonReview").click()
+            review = panel.out.toPlainText()
+            self.check("Review lists what Carbon would get and writes nothing",
+                       "Would write" in review and "part SMK-100 rev A" in review and srv.writes() == [],
+                       review[:300])
+            self.shot("09b_carbon_review.png")
+            ok = panel.accept()
+            info = Gui.getMainWindow().findChild(QtWidgets.QDialog, "NXInformation")
+            text = info.findChild(QtWidgets.QPlainTextEdit).toPlainText() if info is not None else ""
+            items = {(i["readableId"], i["revision"]) for i in srv.company.items.values()}
+            model = [m["name"] for m in srv.company.models.values()]
+            self.check("Publish to Manufacturing: part, revision and CAD model in Carbon",
+                       ok and items == {("SMK-100", "A")} and model == ["SMK-100_A.step"]
+                       and "published to Carbon" in text and not Gui.Control.activeDialog(),
+                       {"items": sorted(items), "models": model, "information": text[:200]})
+            Gui.runCommand("NXStyle_CarbonStatus")
+            QtWidgets.QApplication.processEvents()
+            info = Gui.getMainWindow().findChild(QtWidgets.QDialog, "NXInformation")
+            text = info.findChild(QtWidgets.QPlainTextEdit).toPlainText() if info is not None else ""
+            self.check("Manufacturing Status reads the part back", "SMK-100 rev A" in text and "stock at Main Shop"
+                       in text, text[:300])
+            Gui.runCommand("NXStyle_CarbonConnection")
+            QtWidgets.QApplication.processEvents()
+            dlg = carbon_ui.dialog
+            connected = dlg is not None and dlg.isVisible() and dlg.test()
+            self.check("Manufacturing Connection: Test Connection with the saved key",
+                       connected and "Test Precision BV" in dlg.result.text(),
+                       dlg.result.text() if dlg is not None else None)
+            self.check("every request matched Carbon's published schemas", srv.schema_problems == [],
+                       srv.schema_problems)
+            if dlg is not None:
+                dlg.reject()
+            if info is not None:
+                info.close()
+        finally:
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+            cfg["carbon"] = saved
+            srv.__exit__(None, None, None)
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+            import shutil
+            shutil.rmtree(tmp, ignore_errors=True)
 
     def s_mouse(self):
         self.s_navigation_label()

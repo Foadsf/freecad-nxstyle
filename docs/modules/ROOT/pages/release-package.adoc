@@ -34,6 +34,8 @@ BUSH-100_B/
 BUSH-100_B.zip                  the folder as a reproducible zip (same files, same bytes)
 ----
 
+*PLM › Publish to Manufacturing* sends a release's package on to xref:manufacturing.adoc[Carbon], the manufacturing system.
+
 == Checking a package
 
 The recipient checks that nothing was changed or lost:

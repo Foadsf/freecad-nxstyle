@@ -419,6 +419,34 @@ def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | N
 
 
 # --------------------------------------------------------------------------
+# Carbon: the manufacturing system (ERP, MES, quality) behind PLM › Manufacturing. A server, not an add-on:
+# nothing is loaded; NXStyle's own client (nxstyle/carbon.py) talks to it, so this only reports how it is set up
+# --------------------------------------------------------------------------
+CARBON_KEY_ENV = "CARBON_API_KEY"
+
+
+def find_carbon(profile: Path, disabled: bool = False) -> str:
+    """How Publish to Manufacturing will connect, for the start-up lines. Never prints the key."""
+    if disabled:
+        return "off (--no-carbon)"
+    cfg = read_settings(profile)
+    if cfg.get("manufacturing", "carbon") != "carbon":
+        return f"off (nxstyle.json: manufacturing = {cfg.get('manufacturing')!r})"
+    c = cfg.get("carbon") or {}
+    url = c.get("url") or os.environ.get("CARBON_URL", "")
+    if not url:
+        return "not set up (PLM > Manufacturing Connection)"
+    key_file = Path(c.get("api_key_file") or profile / "config" / "carbon.key")
+    if os.environ.get(CARBON_KEY_ENV, "").strip():
+        where = CARBON_KEY_ENV
+    elif key_file.is_file():
+        where = str(key_file)
+    else:
+        where = "missing (PLM > Manufacturing Connection)"
+    return f"{url}, API key {where}"
+
+
+# --------------------------------------------------------------------------
 # DFM: design-for-manufacturing checks (ryankembrey/FreeCAD-DFM-Workbench, LGPL-2.1-or-later) behind
 # Analysis > Molded Part Validation. It imports OCP (cadquery-ocp) on load, which FreeCAD does not ship, so
 # --install-dfm-deps puts a pinned copy in a folder of NXStyle's own; the launcher never downloads by itself.
@@ -791,7 +819,8 @@ def main(argv: list[str] | None = None) -> int:
                          "AV Rocker Arm: typed arcs, a bar and bosses, countersunk and counterbored holes, "
                          "AW Holder: AK's sketch modelled in 3D, arm, hub, lugs, cup, slot, holes (runs AK first), "
                          "AX Impeller Upper Casing: AO's casing edited to the other side, a manhole (runs AO first), "
-                         "AY Die Cavity: Blocks, a spline section revolved to cut, a cavity with posts, Edge Blends)")
+                         "AY Die Cavity: Blocks, a spline section revolved to cut, a cavity with posts, Edge Blends, "
+                         "BC release to manufacturing in Carbon (runs T and V first))")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "
@@ -809,6 +838,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
     ap.add_argument("--no-lcinterlocking", action="store_true",
                     help="start without the LCInterlocking add-on (Laser Cut; on by default)")
+    ap.add_argument("--no-carbon", action="store_true",
+                    help="start without the Carbon commands (PLM > Manufacturing; they need a Carbon server)")
     ap.add_argument("--no-dfm", action="store_true",
                     help="start without the DFM add-on (Analysis > Molded Part Validation; on by default once "
                          "--install-dfm-deps has run)")
@@ -856,6 +887,9 @@ def main(argv: list[str] | None = None) -> int:
     extra["NXSTYLE_SHEETMETAL_EXPECTED"] = "1" if sheetmetal or "NX profile" in sheetmetal_why else "0"
     lcinterlocking, lcinterlocking_why = find_lcinterlocking(profile.resolve(), disabled=args.no_lcinterlocking)
     extra["NXSTYLE_LCINTERLOCKING_EXPECTED"] = "1" if lcinterlocking or "NX profile" in lcinterlocking_why else "0"
+    carbon_why = find_carbon(profile.resolve(), disabled=args.no_carbon)
+    if args.no_carbon:
+        extra["NXSTYLE_CARBON"] = "0"
     dfm, dfm_why = find_dfm(profile.resolve(), install, disabled=args.no_dfm)
     extra["NXSTYLE_DFM_EXPECTED"] = "1" if dfm_why.startswith(("bundled", "installed")) else "0"
     cmd = build_command(install, args.files, passthrough,
@@ -864,6 +898,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
+                          "carbon": carbon_why,
                           "command": cmd},
                          indent=2))
         return 0
@@ -877,6 +912,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Katydid: {katydid_why}")
     print(f"SheetMetal: {sheetmetal_why}")
     print(f"LCInterlocking: {lcinterlocking_why}")
+    print(f"Carbon: {carbon_why}")
     print(f"DFM: {dfm_why}")
 
     if harness:
