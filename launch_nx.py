@@ -259,7 +259,8 @@ def prepare_profile(profile: Path, reset: bool = False) -> dict[str, Path]:
 def seed_user_cfg(paths: dict[str, Path], version: tuple[int, int, int] | None) -> bool:
     """Give a brand-new NX profile the few settings FreeCAD reads before any
     add-on runs: the light stylesheet, no first-run wizard, and no panels in
-    overlays (FreeCAD 1.1 puts the Tasks panel in one). Never touches an
+    overlays (FreeCAD 1.1 puts the Tasks panel in one). Also NX's defaults
+    that stay the user's choice afterwards: no view cube. Never touches an
     existing user.cfg. Returns True if it wrote one."""
     cfg = paths["home"] / "user.cfg"
     if cfg.exists():
@@ -284,6 +285,8 @@ def seed_user_cfg(paths: dict[str, Path], version: tuple[int, int, int] | None) 
     ET.SubElement(start, "FCBool", Name="FirstStart2024", Value="0")
     general = group(top, "BaseApp", "Preferences", "General")
     ET.SubElement(general, "FCText", Name="AutoloadModule").text = "PartDesignWorkbench"
+    view = group(top, "BaseApp", "Preferences", "View")
+    ET.SubElement(view, "FCBool", Name="ShowNaviCube", Value="0")
     for side in ("OverlayLeft", "OverlayRight", "OverlayTop", "OverlayBottom"):
         ET.SubElement(group(top, "BaseApp", "MainWindow", "DockWindows", side), "FCText", Name="Widgets")
     ET.ElementTree(root).write(cfg, encoding="UTF-8", xml_declaration=True)
