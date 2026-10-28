@@ -1,0 +1,142 @@
+= Manufacturing with Carbon
+:description: PLM › Manufacturing: the released part into Carbon (ERP, MES, quality), with its revision, CAD model, documents, BOM and inspection plan, and the stock and quality status back.
+
+Next to NX and Teamcenter, a factory runs a manufacturing system: the item master, bills of materials and routings, inventory, jobs on the shop floor, inspection and non-conformances.
+Siemens sells its own for that role.
+NX-Style uses https://github.com/crbnos/carbon[Carbon], an open-source ERP, MES and QMS, for it.
+
+xref:data-management.adoc[Strata] stays the data management: it releases the part with a part number, a revision letter and an approval.
+Carbon takes the released part and makes it.
+The commands are on the *PLM* tab, in the *Manufacturing* group:
+
+[cols="1,3",options="header"]
+|===
+| Command | Does
+
+| *Publish to Manufacturing* | The release into Carbon: the part at its revision, the CAD model, the drawings and documents, the assembly's bill of materials and the inspection plan. *Review* lists what would be written first.
+| *Manufacturing Status* | What Carbon has for the open part: its revisions, stock at a location, inspection plans and open issues.
+| *Manufacturing Connection* | The Carbon server and the API key.
+|===
+
+xref:tutorials/bc.adoc[Tutorial BC] goes through it with tutorial V's guide bush.
+
+== Setting it up
+
+You need a Carbon to connect to, and an API key from it.
+
+* *Carbon Cloud*: sign up at https://app.carbon.ms. The API is part of Carbon's Business plan; on the Starter plan every API call is refused (HTTP 402 or 403).
+* *Your own Carbon*: Carbon's https://carbon.ms/self-hosted[self-hosting guide] (Docker with Caddy, or AWS). Carbon says that using API keys on a self-hosted Carbon needs its commercial licence; check that against your case.
+
+Then:
+
+. In Carbon, open *Settings › API Keys*, create a key and give it the scopes parts (view, create, update), quality (view, create, update), resources (view) and settings (view). Carbon shows the key once.
+  Every operation NX-Style calls is one Carbon classifies as READ or WRITE; none is DESTRUCTIVE.
+. In NX-Style, *PLM › Manufacturing Connection*: the server (for example `https://app.carbon.ms`), the key, and optionally the stock location *Manufacturing Status* reports.
+. *Test Connection* names the companies the key belongs to. *Save*.
+
+The key is a bearer secret.
+NX-Style keeps it in `carbon.key` in the profile's `config` folder, readable only by you, and never in `nxstyle.json`.
+An environment variable `CARBON_API_KEY` is used instead when it is set.
+The key is only sent over https; plain http is refused except to this computer (`localhost`).
+
+== Publish to Manufacturing
+
+. Release the part in Strata (*PLM › Releases*).
+. *PLM › Publish to Manufacturing*. The dialog lists the part's releases and picks the newest *Released* one.
+. *Review*: the list of what Carbon would get, and what it already has. Nothing is written.
+. *OK* publishes.
+
+The dialog makes the xref:release-package.adoc[release package] of that release first: the part exactly as it was released, taken from Strata's history, with its STEP AP242 (with PMI), native file, drawings and inspection plan, and a manifest of SHA-256 checksums.
+That package is checked against its manifest, and Carbon is given what the manifest lists.
+A package that does not verify is not sent.
+
+A part that has no release is not sent: manufacturing builds released revisions.
+`"carbon": {"allow_unreleased": true}` in the xref:settings.adoc[settings] lets the open document go as it is (its part number and revision from the NX attributes `DB_PART_NO` and `DB_PART_REV`, else its name and `0`).
+
+=== What goes where
+
+[cols="2,3",options="header"]
+|===
+| NX-Style | Carbon
+
+| Part number, revision (Strata release) | An item of type Part, with that part number as its *Part ID* and that revision. A part number Carbon does not know yet is created; a new revision of one it knows is created from the revision below (*Create revision*), with its method copied.
+| The part's name (its first release's description) and the release's description | The item's name and description (a later release's description says what changed, so it is not the name)
+| STEP AP242 of the release | The item's CAD model (Carbon renders its 3D view and thumbnail from it)
+| Native `.FCStd`, drawing PDFs, `pmi/` tables, stack-ups, mass properties, the manifest | The item's documents (*Files*), named after their path in the package; the manifest after the release (`<part number>_<revision>_manifest_<commit>.json`)
+| Assembly components (links to other documents) | The lines of the assembly's make method: each component with its own part number and revision (from its document's release, or its NX attributes), the quantities of the same part added up, link arrays counted; a component with no revision known takes the one Carbon has (the active one)
+| Sub-assemblies | Items with a make method of their own, filled the same way
+| Components Carbon does not know | Created as parts: *Make* when they have components, otherwise the `new_part` defaults (Make, Make to Order, tracked as Inventory, unit EA)
+| Inspection plan (xref:pmi.adoc[PMI]) | A Carbon inspection plan on the item, drawing number = part number; one characteristic per plan row: its number (and frame segment) as the label, the requirement, feature, datums and method as the description, the nominal, the plus and minus tolerance, the unit, type Measurement
+|===
+
+=== What it never does
+
+* *It deletes nothing.* BOM lines and characteristics someone added in Carbon by hand stay; the review lists them as kept.
+* *It never edits a released make method.* When the assembly's method in Carbon is *Active* and the BOM differs, a new *Draft* version of the method takes the change, the way Carbon's own CAD integrations do. The Active version stays live until manufacturing activates the Draft.
+* *A new revision starts inactive.* Revision B of a part Carbon builds at revision A is created inactive: the shop floor keeps building A until manufacturing releases B in Carbon (activating the item, or with a change notice).
+* *It sends nothing twice.* The release's manifest goes to Carbon last, named after the release's Strata commit (`PLT-100_B_manifest_3f2a9c1d4e5b.json`). Once Carbon has it, the release is in Carbon: publishing it again uploads nothing, although a package made again differs in time stamps (FreeCAD writes them into the FCStd, the STEP and the PDFs). Without a release, a model or document with the same name and size is not uploaded again, and a changed one is.
+
+== Manufacturing Status
+
+For the open part (its newest release, else its NX attributes, else its name):
+
+----
+PLT-100 rev B: Guide plate
+  active, Design; Make, Make to Order, tracked as Inventory
+  revisions in Carbon: A, B (inactive)
+  stock at Main Shop: 12 EA on hand, 1 on hold, 2 rejected; 0 on production orders, 0 on purchase orders
+  inspection plans: PLT-100 (5 characteristics)
+  open issues: 1
+    NCR-7 Bore oversize (In Progress)
+----
+
+Open issues are Carbon's non-conformances that name the part and are not closed.
+The location is the one set in *Manufacturing Connection*, else Carbon's first.
+
+== From the command line
+
+The same flows run without FreeCAD, on any release package:
+
+[source,bash]
+----
+python -m nxstyle.carbon --url https://app.carbon.ms check
+----
+
+[source,bash]
+----
+python -m nxstyle.carbon --url https://app.carbon.ms publish "Release packages/PLT-100_B" --dry-run
+----
+
+[source,bash]
+----
+python -m nxstyle.carbon --url https://app.carbon.ms status PLT-100 --revision B
+----
+
+Run them from the `NXStyle` folder with the key in `CARBON_API_KEY` (or `--key-file`); `CARBON_URL` can stand for `--url`.
+`--json` prints the result as JSON.
+For an assembly the command line takes the BOM from the package's STEP product structure; FreeCAD's STEP writer names the products after the objects, so the dialog, which reads each component's own part number from its document, is the better route for assemblies.
+
+== Why a connection, not a bundled copy
+
+Carbon is a server application (TypeScript and Postgres, with its own database, storage and background jobs), not a FreeCAD add-on, so there is nothing to load into FreeCAD.
+It is licensed under the AGPL-3.0, and its Enterprise files (`packages/ee` and files named `*.ee.*`) under a commercial licence; NX-Style is LGPL-2.1.
+NX-Style therefore does not include or copy any of Carbon.
+It talks to a Carbon you run or rent, through Carbon's published HTTP API (`POST /api/v1/<module>/<operation>`, the same operations its MCP server offers), with a client of its own in `nxstyle/carbon.py`.
+This keeps both licences apart and lets the same NX-Style work with Carbon Cloud or your own server.
+"Carbon" is a trademark of Carbon Manufacturing Systems Corporation; it is named here to say what the integration connects to.
+
+== Without Carbon
+
+* `python launch_nx.py --no-carbon` starts without the Manufacturing commands once.
+* `"manufacturing": "none"` in the xref:settings.adoc[settings] switches them off for good.
+
+The launcher's start-up lines say how it will connect (`Carbon: https://app.carbon.ms, API key from …`), never the key.
+
+== What is tested
+
+* The unit tests (`tests/test_carbon.py`) run every flow against a stand-in Carbon server on this computer (`tests/carbon_fake.py`). It checks each request against Carbon's published OpenAPI schemas (the operations used are copied in `tests/data/carbon-openapi.json`; `python tools/carbon_spec.py` refreshes them) and behaves as Carbon documents: a new part gets a Draft make method, an Active method refuses changes, a new revision copies the method below it, files go to signed storage URLs.
+* `freecadcmd tests/fc_carbon.py` builds an assembly of links to other documents in a real FreeCAD, reads its BOM, makes its release package and publishes it to the stand-in server.
+* The self-test drives the dialogs: Review, Publish to Manufacturing, Manufacturing Status and Test Connection, against the stand-in server.
+
+Not tested against a running Carbon yet (2026-10-27): the stand-in follows Carbon's published schemas and source, but a real server can still differ, for example in the storage upload or in the rules Carbon checks on BOM lines.
+Report what a real Carbon refuses, with the message *Review* or *OK* shows.

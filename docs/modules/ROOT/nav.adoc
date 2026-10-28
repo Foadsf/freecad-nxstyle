@@ -83,6 +83,7 @@
 * xref:tutorials/az.adoc[AZ: Arbor Press Rack Drawing]
 * xref:tutorials/ba.adoc[BA: PMI on the Impeller]
 * xref:tutorials/bb.adoc[BB: Hex Bolt Drawing]
+* xref:tutorials/bc.adoc[BC: Release to manufacturing (Carbon)]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

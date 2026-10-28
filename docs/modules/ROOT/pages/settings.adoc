@@ -54,6 +54,8 @@ include::partial$generated/settings.adoc[]
 | No Sheet Metal (SheetMetal add-on) | `"sheet_metal": "none"`
 | No Laser Cut (LCInterlocking add-on) | `"laser_cut": "none"`
 | No Molded Part Validation (DFM Workbench) | `"dfm": "none"`
+| No Manufacturing commands (Carbon) | `"manufacturing": "none"`
+| Send parts to Carbon without a Strata release | `"carbon": {"allow_unreleased": true}`
 |===
 
 NOTE: Before 2026-10-13, NX-Style read `nxstyle.json` from the profile's root folder instead of `config`.

@@ -259,7 +259,8 @@ def prepare_profile(profile: Path, reset: bool = False) -> dict[str, Path]:
 def seed_user_cfg(paths: dict[str, Path], version: tuple[int, int, int] | None) -> bool:
     """Give a brand-new NX profile the few settings FreeCAD reads before any
     add-on runs: the light stylesheet, no first-run wizard, and no panels in
-    overlays (FreeCAD 1.1 puts the Tasks panel in one). Never touches an
+    overlays (FreeCAD 1.1 puts the Tasks panel in one). Also NX's defaults
+    that stay the user's choice afterwards: no view cube. Never touches an
     existing user.cfg. Returns True if it wrote one."""
     cfg = paths["home"] / "user.cfg"
     if cfg.exists():
@@ -284,6 +285,8 @@ def seed_user_cfg(paths: dict[str, Path], version: tuple[int, int, int] | None) 
     ET.SubElement(start, "FCBool", Name="FirstStart2024", Value="0")
     general = group(top, "BaseApp", "Preferences", "General")
     ET.SubElement(general, "FCText", Name="AutoloadModule").text = "PartDesignWorkbench"
+    view = group(top, "BaseApp", "Preferences", "View")
+    ET.SubElement(view, "FCBool", Name="ShowNaviCube", Value="0")
     for side in ("OverlayLeft", "OverlayRight", "OverlayTop", "OverlayBottom"):
         ET.SubElement(group(top, "BaseApp", "MainWindow", "DockWindows", side), "FCText", Name="Widgets")
     ET.ElementTree(root).write(cfg, encoding="UTF-8", xml_declaration=True)
@@ -413,6 +416,34 @@ def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | N
     if (LCINTERLOCKING_DIR / "InitGui.py").is_file():
         return LCINTERLOCKING_DIR, f"bundled ({LCINTERLOCKING_DIR})"
     return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
+
+
+# --------------------------------------------------------------------------
+# Carbon: the manufacturing system (ERP, MES, quality) behind PLM › Manufacturing. A server, not an add-on:
+# nothing is loaded; NXStyle's own client (nxstyle/carbon.py) talks to it, so this only reports how it is set up
+# --------------------------------------------------------------------------
+CARBON_KEY_ENV = "CARBON_API_KEY"
+
+
+def find_carbon(profile: Path, disabled: bool = False) -> str:
+    """How Publish to Manufacturing will connect, for the start-up lines. Never prints the key."""
+    if disabled:
+        return "off (--no-carbon)"
+    cfg = read_settings(profile)
+    if cfg.get("manufacturing", "carbon") != "carbon":
+        return f"off (nxstyle.json: manufacturing = {cfg.get('manufacturing')!r})"
+    c = cfg.get("carbon") or {}
+    url = c.get("url") or os.environ.get("CARBON_URL", "")
+    if not url:
+        return "not set up (PLM > Manufacturing Connection)"
+    key_file = Path(c.get("api_key_file") or profile / "config" / "carbon.key")
+    if os.environ.get(CARBON_KEY_ENV, "").strip():
+        where = CARBON_KEY_ENV
+    elif key_file.is_file():
+        where = str(key_file)
+    else:
+        where = "missing (PLM > Manufacturing Connection)"
+    return f"{url}, API key {where}"
 
 
 # --------------------------------------------------------------------------
@@ -791,7 +822,9 @@ def main(argv: list[str] | None = None) -> int:
                          "AY Die Cavity: Blocks, a spline section revolved to cut, a cavity with posts, Edge Blends, "
                          "AZ Rack drawing: Base and Projected Views, dimensions, a section (runs AT first), "
                          "BA PMI on the impeller: Linear, Radial, Centerline, Note, inherited by a drawing (runs AU first), "
-                         "BB Hex bolt drawing: hidden lines, dimensions, a thread note with a leader (runs AQ first))")
+                         "BB Hex bolt drawing: hidden lines, dimensions, a thread note with a leader (runs AQ first), "
+
+                         "BC release to manufacturing in Carbon (runs T and V first))")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "
@@ -809,6 +842,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
     ap.add_argument("--no-lcinterlocking", action="store_true",
                     help="start without the LCInterlocking add-on (Laser Cut; on by default)")
+    ap.add_argument("--no-carbon", action="store_true",
+                    help="start without the Carbon commands (PLM > Manufacturing; they need a Carbon server)")
     ap.add_argument("--no-dfm", action="store_true",
                     help="start without the DFM add-on (Analysis > Molded Part Validation; on by default once "
                          "--install-dfm-deps has run)")
@@ -856,6 +891,9 @@ def main(argv: list[str] | None = None) -> int:
     extra["NXSTYLE_SHEETMETAL_EXPECTED"] = "1" if sheetmetal or "NX profile" in sheetmetal_why else "0"
     lcinterlocking, lcinterlocking_why = find_lcinterlocking(profile.resolve(), disabled=args.no_lcinterlocking)
     extra["NXSTYLE_LCINTERLOCKING_EXPECTED"] = "1" if lcinterlocking or "NX profile" in lcinterlocking_why else "0"
+    carbon_why = find_carbon(profile.resolve(), disabled=args.no_carbon)
+    if args.no_carbon:
+        extra["NXSTYLE_CARBON"] = "0"
     dfm, dfm_why = find_dfm(profile.resolve(), install, disabled=args.no_dfm)
     extra["NXSTYLE_DFM_EXPECTED"] = "1" if dfm_why.startswith(("bundled", "installed")) else "0"
     cmd = build_command(install, args.files, passthrough,
@@ -864,6 +902,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
+                          "carbon": carbon_why,
                           "command": cmd},
                          indent=2))
         return 0
@@ -877,6 +916,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Katydid: {katydid_why}")
     print(f"SheetMetal: {sheetmetal_why}")
     print(f"LCInterlocking: {lcinterlocking_why}")
+    print(f"Carbon: {carbon_why}")
     print(f"DFM: {dfm_why}")
 
     if harness:
