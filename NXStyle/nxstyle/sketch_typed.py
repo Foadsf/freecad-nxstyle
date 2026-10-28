@@ -19,13 +19,17 @@ sketch tools (DrawSketchDefaultHandler::finish) do this when a tool ends:
 4. createAutoConstraints, in 'Add Auto-Constraints' (FreeCAD signals a transaction only once it changes
    something: none when no autoconstraint is left, or after step 3 threw).
 
-TypedGuard notes the tool's geometry transaction and, once the tool's finish() is over (a zero timer from the
-geometry's commit):
+   Step 3 checks on the geometry before it solves: an autoconstraint it keeps can still make the solved sketch
+   redundant (two arcs that meet tangentially are exactly tangent once solved), and the sketch then fails to
+   solve from that curve on.
 
-* gives each constraint of step 2 the value typed, from the on-view fields as they were typed;
-* finds the tool's points that lie on a point of another curve, within Validate Sketch's default tolerance for
-  missing coincidences (sketch_core.missing_joins), and joins them with a Coincident; step 2's constraints then
-  go back one by one, each kept only if the sketch takes it without redundancy, which is what step 2's "valid
+TypedGuard notes the tool's geometry transaction and, once the tool's finish() is over (a zero timer from the
+geometry's commit), takes back the constraints the tool added (steps 2 and 4) and puts them back in NX's order:
+
+* a Coincident for each of the tool's points that lies on a point of another curve or on the origin, within
+  Validate Sketch's default tolerance for missing coincidences (sketch_core.missing_joins);
+* FreeCAD's autoconstraints, then the typed values, each with the value typed (from the on-view fields as they
+  were typed), each kept only if the solved sketch takes it without redundancy: what step 2's "valid
   diagnosis" branch does.
 
 Like FreeCAD's own steps 2 and 3 and Quick Trim's guard, this adds no undo step.
@@ -90,8 +94,9 @@ POINTS = {"Part::GeomLineSegment": (1, 2), "Part::GeomArcOfCircle": (1, 2, 3), "
 
 
 def vertices(sk):
-    """{(GeoId, PointPos): (x, y)} of the sketch's own curves (start 1, end 2, centre 3)."""
-    out = {}
+    """{(GeoId, PointPos): (x, y)} of the sketch's own curves (start 1, end 2, centre 3), and its origin (-1, 1): a
+    point held on the origin is joined to every other point held there."""
+    out = {(-1, 1): (0.0, 0.0)}
     for g, geo in enumerate(sk.Geometry):
         for pos in POINTS.get(geo.TypeId, ()):
             p = sk.getPoint(g, pos)
@@ -178,41 +183,59 @@ class TypedGuard(QtCore.QObject):
             App.Console.PrintWarning(f"NX-Style typed points: repair skipped: {e}\n")
 
     def _repair(self, p):
+        """The tool's constraints are taken back and put back: the joins first, then FreeCAD's autoconstraints,
+        then the typed values (exact), each kept only if the solved sketch takes it without redundancy.
+
+        FreeCAD checks its autoconstraints for redundancy on the geometry before it solves; solved, two arcs that
+        meet tangentially (AV's R0.50 end between its R1.50 and R2.50 bands) are exactly tangent, and a Coincident
+        there with the typed radius and centre is redundant. The sketch then does not solve at all ('Solving the
+        sketch failed'), and setDatum fails too (its error codes come from the solve)."""
         import Sketcher
         sk = p["sk"]
         n = len(sk.Constraints)
-        typed_ids = list(range(p["typed0"], min(p.get("typed1", n), n)))
+        t0, t1 = p["typed0"], min(p.get("typed1", n), n)
         new = set(range(p["geo0"], len(sk.Geometry)))
-        exact = []
-        for i in typed_ids:
-            c = sk.Constraints[i]
-            if c.Type in core.TYPED_DATUMS:
-                v = core.exact_datum(c.Value, p["typed"])
-                if v is not None:
-                    sk.setDatum(i, v)
-                    exact.append((i, c.Type, c.Value, v))
-        joins, dropped, refused, missing = [], [], [], []
-        if new and not redundant(sk):
-            missing = core.missing_joins(vertices(sk), new, links(sk), JOIN_TOL)
-            if missing:
-                back = [sk.Constraints[i] for i in typed_ids]
-                for i in reversed(typed_ids):
-                    sk.delConstraint(i)
-                for (g1, p1), (g2, p2) in missing:
-                    k = sk.addConstraint(Sketcher.Constraint("Coincident", g1, p1, g2, p2))
-                    if redundant(sk):         # two of the tool's points on one: one Coincident is enough
-                        sk.delConstraint(k)
-                        refused.append(((g1, p1), (g2, p2)))
-                    else:
-                        joins.append(((g1, p1), (g2, p2)))
-                for c in back:
-                    k = sk.addConstraint(c)
-                    if redundant(sk):         # the joins hold what this typed value held
-                        sk.delConstraint(k)
-                        dropped.append((c.Type, c.First, int(c.FirstPos), c.Value))
-                sk.solve()
-        self.last = {"tool": p["name"], "typed": p["typed"], "exact": exact, "missing": missing, "joined": joins,
-                     "refused": refused, "dropped": dropped}
+        typed = [sk.Constraints[i] for i in range(t0, t1)]
+        auto = [sk.Constraints[i] for i in range(t1, n)]
+        values = [core.exact_datum(c.Value, p["typed"]) if c.Type in core.TYPED_DATUMS else None for c in typed]
+        exact = [(c.Type, c.First, c.Value, v) for c, v in zip(typed, values) if v is not None]
+        self.last = {"tool": p["name"], "typed": p["typed"], "exact": exact, "missing": [], "joined": [],
+                     "refused": [], "dropped": []}
+        was_sound = not redundant(sk)
+        missing = core.missing_joins(vertices(sk), new, links(sk), JOIN_TOL) if new else []
+        if was_sound and not missing and not exact:
+            return
+        for i in reversed(range(t0, n)):
+            sk.delConstraint(i)
+        if redundant(sk):                 # not sound before this tool: put back what FreeCAD made, as it was
+            for c in typed + auto:
+                sk.addConstraint(c)
+            self.last["skipped"] = "the sketch had redundant constraints before this tool"
+            return
+        # after the tool's constraints are gone, a point FreeCAD joined is free again: look again
+        missing = core.missing_joins(vertices(sk), new, links(sk), JOIN_TOL) if new else []
+        joins, refused, dropped = self.last["joined"], self.last["refused"], self.last["dropped"]
+        self.last["missing"] = missing
+
+        def keep(c, value=None):
+            k = sk.addConstraint(c)
+            if value is not None:
+                try:
+                    sk.setDatum(k, value)
+                except Exception:
+                    pass                  # the redundancy check below decides
+            if redundant(sk):
+                sk.delConstraint(k)
+                return False
+            return True
+
+        for (g1, p1), (g2, p2) in missing:
+            (joins if keep(Sketcher.Constraint("Coincident", g1, p1, g2, p2)) else refused).append(
+                ((g1, p1), (g2, p2)))
+        for c, v in [(c, None) for c in auto] + list(zip(typed, values)):
+            if not keep(c, v):            # the joins hold what it held
+                dropped.append((c.Type, c.First, int(c.FirstPos), c.Value))
+        sk.solve()
         if exact or joins:
             App.Console.PrintLog(f"NX-Style typed points: {len(exact)} typed value(s) kept exactly, {len(joins)} "
                                  f"end point(s) joined, {len(dropped)} typed constraint(s) the joins replace: "

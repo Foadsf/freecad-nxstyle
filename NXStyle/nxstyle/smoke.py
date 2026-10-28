@@ -129,6 +129,7 @@ class Smoke:
         yield self.s_sketch_constraints, 300
         yield self.s_sketch_point_typed, 300
         yield self.s_sketch_typed_join, 300
+        yield self.s_sketch_typed_av, 300
         yield self.s_sketch_studio_spline, 300
         yield self.s_sketch_linear_dimension, 300
         yield self.s_sketch_hide, 300
@@ -1090,6 +1091,11 @@ class Smoke:
         """Typed points that land on an existing end point join it, as NX infers a coincident point (smoke_typed.py)."""
         from . import smoke_typed
         smoke_typed.run(self)
+
+    def s_sketch_typed_av(self):
+        """Tutorial AV's arm drawn as its replay draws it, every value typed: two closed loops (smoke_typed.py)."""
+        from . import smoke_typed
+        smoke_typed.run_av(self)
 
     def s_sketch_studio_spline(self):
         """NX's Studio Spline (S) is Type Through Points: exercise 4.10.4's spline, (-50, 0), (-25, 1), (25, -8) and

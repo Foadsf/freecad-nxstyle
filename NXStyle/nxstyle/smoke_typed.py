@@ -3,7 +3,9 @@
 
 Two arcs (A) and a line (L) in the sketch in edit, every value typed in FreeCAD's on-view fields beside the
 pointer, each typed point on the end of the curve before: one closed wire, a Coincident at each join, no gap above
-1e-7 mm, no redundant constraint, and one Undo takes back the last curve. The same input with NX-Style's guard off
+1e-7 mm, no redundant constraint, and one Undo takes back the last curve. Then tutorial AV's arm (run_av), its 7
+arcs and line from tutorial_mst4.av_arm_curves drawn the same way: two closed loops, no gap above 1e-9 mm, where
+tangential joins make FreeCAD's own autoconstraints redundant once solved. The same input with NX-Style's guard off
 (FreeCAD 1.1.4 alone) is the negative control and must fail. Each run records what was typed, the constraints
 FreeCAD wrote, its report-view messages and what the guard did (smoke.json info 'typed join ...')."""
 
@@ -253,6 +255,80 @@ def scenario(smoke, label, guarded, pointer_off=0.0):
     App.ActiveDocument.recompute()
     guard.enabled = True
     return ok, detail
+
+
+def frame(d, sk, cx, cy, height):
+    from pivy import coin
+    from .tutorial import settle_view
+    settle_view(d.view)
+    cam = d.view.getCameraNode()
+    dirn = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
+    g = sk.getGlobalPlacement().multVec(App.Vector(cx, cy, 0))
+    cam.position.setValue(coin.SbVec3f(g.x, g.y, g.z) - dirn * cam.focalDistance.getValue())
+    if hasattr(cam, "height"):
+        cam.height.setValue(height)
+    QtWidgets.QApplication.processEvents()
+    qwait(200)
+
+
+def av_scenario(smoke, label, guarded):
+    """Tutorial AV's arm (NX 12 for Engineering Design 4.10.1) as the replay draws it: its 7 arcs and 1 line, from
+    tutorial_mst4.av_arm_curves, every value typed. Two closed loops, no gap above 1e-9 mm, no redundancy."""
+    import Part
+    from . import sketch_typed, sketch_ui
+    from .tutorial_mst4 import av_arm_curves
+    IN = 25.4
+    sk = sketch_ui.edited_sketch()
+    guard = sketch_typed.install()
+    guard.enabled, guard.last, guard.typed = guarded, None, []
+    d = Drive(smoke, sk)
+    frame(d, sk, -1.25 * IN, 1.25 * IN, 4 * IN)
+    outline, slot = av_arm_curves()
+    curves, repairs = [], []
+    for c in outline + slot:
+        if c[0] == "line":
+            curves += d.line((c[1][0] * IN, c[1][1] * IN), (c[2][0] * IN, c[2][1] * IN))
+        else:
+            _k, ctr, r, a0, a1 = c
+            curves += d.arc((ctr[0] * IN, ctr[1] * IN), r * IN, a0, a1 - a0)
+        repairs.append(guard.last)
+        sk.solve()
+        repairs[-1] = {"after": len(curves), "redundant": list(sk.RedundantConstraints),
+                       "conflicting": list(sk.ConflictingConstraints), **(repairs[-1] or {})}
+    gp = gaps(sk, curves)
+    try:
+        wires = [Part.Wire(w) for w in Part.sortEdges([sk.Geometry[g].toShape() for g in curves])]
+        closed = len(wires) == 2 and all(w.isClosed() for w in wires)
+    except Exception as e:
+        closed = f"no wire: {e}"
+    sk.solve()
+    bad = list(sk.RedundantConstraints) + list(sk.ConflictingConstraints)
+    ok = len(curves) == 8 and closed is True and max(gp or [1]) < 1e-9 and not bad
+    smoke.info[f"typed join AV {label}"] = {
+        "log": d.log, "repairs": repairs, "gaps": [f"{x:.3e}" for x in gp], "closed": closed,
+        "constraints": rows(sk), "redundant or conflicting": bad}
+    detail = (f"{len(curves)} curves, two closed loops {closed}, largest end gap {max(gp or [0]):.2e} mm, "
+              f"redundant/conflicting {bad}")
+    sk.deleteAllGeometry()
+    App.ActiveDocument.recompute()
+    guard.enabled = True
+    return ok, detail
+
+
+def run_av(smoke):
+    results = {}
+    for label, guarded in (("FreeCAD alone (control)", False), ("NX-Style", True)):
+        try:
+            results[label] = av_scenario(smoke, label, guarded)
+        except Exception as e:
+            results[label] = (None, repr(e))
+            smoke.info[f"traceback typed join AV {label}"] = traceback.format_exc()
+    ok, detail = results["NX-Style"]
+    smoke.check("typed points join, tutorial AV's arm: its 7 arcs and line, every value typed, make two closed loops "
+                "with no gap above 1e-9 mm and no redundant constraint", ok is True, detail)
+    ok, detail = results["FreeCAD alone (control)"]
+    smoke.check("typed points join, AV control: the same input with NX-Style's guard off fails that check",
+                ok is False, detail)
 
 
 def run(smoke):
