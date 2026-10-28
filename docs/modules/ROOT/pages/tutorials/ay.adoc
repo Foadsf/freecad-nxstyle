@@ -1,0 +1,59 @@
+= Tutorial AY: Die Cavity
+:description: Two Blocks, a section closed by a Studio Spline revolved to cut a curved top, a cavity with four corner posts, and Edge Blends (NX 12 for Engineering Design, exercise 4.10.4).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 4.10.4 (Die Cavity).
+You learn:: Block with Unite and Subtract, a sketch with a Studio Spline through typed points, Revolve (Subtract) about a sketch line, Cylinder with Unite, Edge Blend
+Sizes:: the book's, in millimetres.
+
+The book draws the section's spline through four points and gives the posts as "20 inches" in a millimetre part; they are Ø20 mm here.
+Its pictures put R10 on the top block's four vertical outer edges and R5 on the posts' top edges, which is what the replay blends.
+
+== Step by step
+
+=== 1. The blocks
+
+Create a new part, `Die_cavity`, in mm.
+Choose *Block*, type the origin (−75, −50, −80) and the lengths 150 × 100 × 40, and click *OK*.
+Choose *Block* again: origin (−50, −40, −40), 100 × 80 × 40, Boolean *Unite*: the top block, centred.
+
+=== 2. The section
+
+Click *Sketch* and pick the XZ plane.
+With *Line* (kbd:[L]) draw (50, 0) to (50, 30), then to (−50, 30), then to (−50, 0); type each point in the X and Y fields.
+Press kbd:[S] (*Studio Spline*, Through Points) and type (−50, 0), (−25, 1), (25, −8) and (50, 0); MB2 ends it. The section is now closed.
+Draw one more line from (−75, −100) to (75, −100): the revolve axis, 60 mm below the first block's top.
+Finish the sketch with kbd:[Ctrl+Q].
+
+=== 3. The curved top
+
+Click *Revolve (Subtract)*, set the Curve Rule to *Single Curve* and pick the section's four curves.
+Under the axis choose *Line…* and pick the axis line.
+Type End 45 and Start −45, and click *OK*: the top block's top now follows the spline.
+
+=== 4. The cavity and the posts
+
+Choose *Block*: origin (−35, −25, −30), 70 × 50 × 30, Boolean *Subtract*: the cavity.
+Choose *Cylinder*, Axis, Diameter, and Height, vector ZC: Ø20 × 15 at (−35, −25, −30), Boolean *Unite*. Repeat at (−35, 25), (35, −25) and (35, 25): a post in each corner of the cavity.
+
+=== 5. The blends
+
+Select the top block's four vertical outer edges and click *Edge Blend*; type 10 and press MB2.
+Select the four posts' top edges and blend them with 5.
+
+image::tutorial-AY-01-die-cavity.png[The die cavity: the curved top, the cavity and its corner posts]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AY.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each step is compared with FreeCAD's Part API build of the book's dimensions, the section's spline taken from the sketch.
+
+== What differs from NX
+
+* *Profile* (kbd:[Z]) shows no on-view X/Y fields in FreeCAD's sketcher, so the replay draws the three lines with *Line* (kbd:[L]), which does.
+* The Revolve box resets a Start that is not valid yet: typing Start −45 while End is still 0 reads back 0. Typing End first avoids it.

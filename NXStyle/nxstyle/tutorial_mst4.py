@@ -2701,10 +2701,13 @@ class MstDieCavityTutorials:
                 shown = [sketch_ui.field_value(w) for w in shown_w]
                 polar = (math.hypot(x - prev[0], y - prev[1]), math.degrees(math.atan2(y - prev[1], x - prev[0])))
                 best = None
+                def diff(a, b, angle):
+                    d = abs(a - b)
+                    return min(d % 360, 360 - d % 360) if angle else d    # -179.8° and 180° are 0.2° apart
                 for pair in ((x, y), polar):
                     for order in ((0, 1), (1, 0)):
                         if len(shown) == 2:
-                            err = sum(abs(shown[order[k]] - pair[k]) for k in range(2))
+                            err = sum(diff(shown[order[k]], pair[k], pair is polar and k == 1) for k in range(2))
                             if best is None or err < best[0]:
                                 best = (err, order, pair)
                 pairs = [((shown_w[best[1][0]], shown_w[best[1][1]]), best[2])] if best else []
@@ -2849,9 +2852,13 @@ class MstDieCavityTutorials:
     def ay_curves(self):
         sk = self._ay_sk
         g0 = len(sk.Geometry)
-        t1, c1 = self.fs_points(sk, "Z", AY_PROFILE)                 # Profile: the three lines
+        # the three lines, each with Line (L): FreeCAD's Profile (Z) shows no fields to type a point in
+        t1, c1 = 0, 0
+        for p, q in zip(AY_PROFILE, AY_PROFILE[1:]):
+            t, c = self.fs_points(sk, "L", [p, q])
+            t1, c1 = t1 + t, c1 + c
         g1 = len(sk.Geometry)
-        t2, c2 = self.fs_points(sk, "S", AY_SPLINE)                  # Studio Spline through the four points
+        t2, c2 = self.ay_spline(sk, AY_SPLINE)                        # Studio Spline through the four points
         g2 = len(sk.Geometry)
         t3, c3 = self.fs_points(sk, "L", [(-75, AY_AXIS_Z), (75, AY_AXIS_Z)])   # the axis line
         g3 = len(sk.Geometry)
@@ -2873,14 +2880,45 @@ class MstDieCavityTutorials:
             pass
         ok = len(splines) == 1 and through and max(through) < 1e-6 and closed and self._ay_axis is not None
         self.step("Sketch: the section (three lines and the spline through four points) and the axis line",
-                  f"ribbon '{self._fs_where} > Sketch' on '{self._ay_plane}'; Z (Profile) {t1} points typed, S "
+                  f"ribbon '{self._fs_where} > Sketch' on '{self._ay_plane}'; L (Line) x3 {t1} points typed, S "
                   f"(Studio Spline) {t2} typed, L (Line) {t3} typed (clicked: {c1 + c2 + c3}); MB2 after each",
                   SAME if ok else FAIL,
                   f"{len(splines)} spline, its distance from the four points {through} mm; the section closed "
                   f"{closed}; the axis line at z = {AY_AXIS_Z} mm {self._ay_axis is not None}. The book's reference "
                   "lines (the blocks' outlines) are not drawn: they only help place the curves")
-        self._ay = self.ay_stages(sk)
+        try:
+            self._ay = self.ay_stages(sk)
+        except Exception as e:
+            self.info["AY reference"] = f"the Part API could not build the section's solids: {e}"
         self.wait = 300
+
+    def ay_spline(self, sk, pts):
+        """Studio Spline (S, Through Points): zoomed to about 10 px/mm first (zoomed out FreeCAD snaps a typed point
+        onto a curve within its pick radius), each point typed with sketch_ui.type_spline_point (X and Y for the
+        first, the length and the angle from the last for the others); MB2 ends it. Returns (typed, missed)."""
+        from . import sketch_ui
+        from .tutorial import qtest
+        view = self.nav().widget
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+        cx, cy = (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2
+        self.frame_sketch(sk, cx, cy, view.height() / 10.0)
+        self.key("S")
+        QtWidgets.QApplication.processEvents()
+        typed, missed, prev = 0, 0, None
+        for x, y in pts:
+            p = self.screen_point(sk, x + 1.0, y + 1.5)
+            self.send(QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            qtest().qWait(200)
+            got = sketch_ui.type_spline_point(sk, view, p, (x, y), prev)
+            if got is None:
+                missed += 1
+            else:
+                typed += 1
+            prev = (x, y)
+            qtest().qWait(150)
+        self.mb2_click(self.screen_point(sk, min(xs) + 5, max(ys) + 6))
+        App.ActiveDocument.recompute()
+        return typed, missed
 
     def ay_finish(self):
         self.key("Ctrl+Q")
@@ -2909,8 +2947,9 @@ class MstDieCavityTutorials:
         qtest().qWait(500)
         s = self.ao_ctl().session
         axis = dict(s.axis) if s is not None else None
-        self.set_quantity("nxLimitStart", -45)
+        # End first: with End still at its default 360, Start -45 would make 405° and the box resets Start to 0
         self.set_quantity("nxLimitEnd", 45)
+        self.set_quantity("nxLimitStart", -45)
         s = self.ao_ctl().session
         limits = tuple(s.limits) if s is not None and s.limits else None
         want_axis = f"line:{names[self._ay_axis]}"

@@ -77,6 +77,7 @@
 * xref:tutorials/at.adoc[AT: Arbor Press Rack]
 * xref:tutorials/au.adoc[AU: Impeller, the solid]
 * xref:tutorials/ax.adoc[AX: Impeller Upper Casing]
+* xref:tutorials/ay.adoc[AY: Die Cavity]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]
