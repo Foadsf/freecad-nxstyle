@@ -23,6 +23,9 @@ Its *Dynamic* motion is FreeCAD's *Transform* (`Std_TransformManip`), which had 
 
 include::partial$generated/ribbon-sketch.adoc[]
 
+*Studio Spline* is FreeCAD's B-spline group with *B-spline by interpolation* (`Sketcher_CreateBSplineByInterpolation`) as its default: NX's Type *Through Points*.
+NX's *By Poles* is *B-spline by control points* (`Sketcher_CreateBSpline`) in the button's drop-down, or *From control points* in the tool's panel; the periodic kinds are NX's *Closed* (xref:sketching.adoc#studio-spline[Studio Spline]).
+
 == Drafting
 
 include::partial$generated/ribbon-drafting.adoc[]

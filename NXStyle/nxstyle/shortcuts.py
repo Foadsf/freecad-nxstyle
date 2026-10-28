@@ -93,7 +93,9 @@ TABLE = [
     Entry("Arc", "A", "Sketcher_CreateArc", "sketch", nx_id="UG_SKETCH_ARC"),
     Entry("Circle", "O", "Sketcher_CreateCircle", "sketch", nx_id="UG_SKETCH_CIRCLE"),
     Entry("Polygon", "P", ["Sketcher_CreateRegularPolygon", "Sketcher_CreateHexagon"], "sketch"),
-    Entry("Studio Spline", "S", "Sketcher_CreateBSpline", "sketch"),
+    Entry("Studio Spline", "S", ["Sketcher_CreateBSplineByInterpolation", "Sketcher_CreateBSpline"], "sketch",
+          note="Type Through Points (the spline passes through the points); By Poles is 'From control points' "
+               "in the tool's drop-down; MB2 ends it"),
     Entry("Quick Trim", "T", "Sketcher_Trimming", "sketch"),
     Entry("Quick Extend", "E", "Sketcher_Extend", "sketch"),
     Entry("Fillet", "F", "Sketcher_CreateFillet", "sketch"),
@@ -107,7 +109,8 @@ TABLE = [
     Entry("Show and Hide Panel", "Ctrl+W", "NXStyle_ShowHide"),
     Entry("Immediate Hide", "Ctrl+Shift+I", "NXStyle_ImmediateHide", note="pick objects to hide them; Esc to finish"),
     Entry("Show Panel", "Ctrl+Shift+K", ["NXStyle_Show", "Std_ShowSelection"],
-          note="select the hidden objects in the Part Navigator (in a sketch, the constraint list) first"),
+          note="shows the objects selected in the Part Navigator (in a sketch, the dimensions selected in the "
+               "constraint list); with nothing selected, a list of the hidden objects to pick from"),
     Entry("Show All", "Ctrl+Shift+U", ["NXStyle_ShowAll", "Std_ShowObjects"],
           note="in a sketch, the hidden dimensions and constraints too"),
     Entry("Invert Show/Hidden", "Ctrl+Shift+B", "NXStyle_InvertVisibility"),

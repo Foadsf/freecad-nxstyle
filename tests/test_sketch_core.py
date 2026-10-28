@@ -80,6 +80,16 @@ class Gallery(unittest.TestCase):
                          [("Horizontal", "Sketcher_ConstrainDistanceX"), ("Vertical", "Sketcher_ConstrainDistanceY"),
                           ("Point-to-Point", "Sketcher_ConstrainDistance")])
 
+    def test_studio_spline_defaults_to_through_points(self):
+        """NX's Studio Spline defaults to Type Through Points: FreeCAD's B-spline by interpolation, as the group
+        button's default; By Poles (control points) and the closed kinds stay in the group's drop-down."""
+        with open(RIBBON, encoding="utf-8") as fh:
+            tab = json.load(fh)["tabs"][0]
+        item = next(i for g in tab["groups"] for i in g["items"] if i.get("label") == "Studio Spline")
+        self.assertEqual(item["cmd"][0], "Sketcher_CompCreateBSpline")
+        self.assertEqual(item["default"], "Sketcher_CreateBSplineByInterpolation")
+        self.assertIn(item["default"], item["cmd"])        # without the group: the Through Points command itself
+
 
 class OnViewFields(unittest.TestCase):
     def test_fields_matched_to_the_cursor_whatever_their_order(self):
@@ -92,6 +102,22 @@ class OnViewFields(unittest.TestCase):
 
     def test_too_few_fields(self):
         self.assertIsNone(core.xy_fields([3.0], (3.0, 0.0)))
+
+    def test_spline_steps_of_the_die_cavity(self):
+        """Exercise 4.10.4's spline: after (-50, 0) each point is a length and an angle from the one before."""
+        pts = [(-50, 0), (-25, 1), (25, -8), (50, 0)]
+        steps = [core.spline_step(a, b) for a, b in zip(pts, pts[1:])]
+        self.assertAlmostEqual(steps[0][0], 25.019992006393608, places=12)
+        self.assertAlmostEqual(steps[1][1], -10.203973721731684, places=12)   # downhill: a negative angle
+        x, y = pts[0]
+        for (length, angle), want in zip(steps, pts[1:]):
+            x, y = x + length * math.cos(math.radians(angle)), y + length * math.sin(math.radians(angle))
+            self.assertLess(math.hypot(x - want[0], y - want[1]), 1e-12)
+
+    def test_spline_step_fields_whatever_their_order(self):
+        # pointer near (-25, 1) after (-50, 0): about 25 long at about 2.3 degrees
+        self.assertEqual(core.spline_step_fields([2.3, 25.0], (-25.1, 1.0), (-50, 0)), (1, 0))
+        self.assertEqual(core.spline_step_fields([25.0, 2.3], (-25.1, 1.0), (-50, 0)), (0, 1))
 
 
 class ConstraintVisibility(unittest.TestCase):

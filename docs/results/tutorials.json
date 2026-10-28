@@ -5127,6 +5127,134 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Impeller_upper_casing.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 1,
+   "nx": "Create a new file, units mm (Die_cavity)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed']; NX-Style parts are metric"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 2,
+   "nx": "Save it as Die_cavity",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Die_cavity.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 3,
+   "nx": "Block 150 x 100 x 40 at (-75, -50, -80)",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -75/-50/-80 typed, length 150, width 100, height 40 typed, Boolean 'None', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 6 faces (6 in the reference); origin (-75.0, -50.0, -80.0); one undo step ['Block']"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 4,
+   "nx": "Block 100 x 80 x 40 on top, centred, Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -50/-40/-40 typed, length 100, width 80, height 40 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 11 faces (11 in the reference); origin (-50.0, -40.0, -40.0); one undo step ['Block']; with Body"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 5,
+   "nx": "Sketch: the section (three lines and the spline through four points) and the axis line",
+   "replay": "ribbon 'Home › Direct Sketch > Sketch' on 'XZ-plane (Base plane)'; L (Line) x3 6 points typed, S (Studio Spline) 4 typed, L (Line) 2 typed (clicked: 0); MB2 after each",
+   "outcome": "same",
+   "detail": "1 spline, its distance from the four points [0.0, 0.0, 0.0, 0.0] mm; the section closed True; the axis line at z = -100 mm True. The book's reference lines (the blocks' outlines) are not drawn: they only help place the curves"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 6,
+   "nx": "Revolve (Subtract): the section's curves, the axis line, Start -45, End 45",
+   "replay": "ribbon 'Home › Feature > Revolve (Subtract)', Curve Rule 'Single Curve', the 4 curves picked (QuickPick, click); 'Line…' + the axis line (QuickPick (the click was not taken)); Start and End typed",
+   "outcome": "same",
+   "detail": "section of 4 curves; axis {'vector': 'line:Edge5', 'point': (0.0, 0.0, 0.0)}; limits (-45.0, 45.0)"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 7,
+   "nx": "OK: the top block's surface cut to the spline, curved across",
+   "replay": "OK clicked",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 12 faces (12 in the reference)"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 8,
+   "nx": "Block 70 x 50 x 30 subtracted: the cavity",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -35/-25/-30 typed, length 70, width 50, height 30 typed, Boolean 'Subtract', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 17 faces (17 in the reference); origin (-35.0, -25.0, -30.0); one undo step ['Block']; with Body"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 9,
+   "nx": "Cylinder Ø20 x 15 at the cavity's corner (-35, -25), Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC -35/-25/-30 typed, diameter 20, height 15 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 19 faces (19 in the reference); origin (-35.0, -25.0, -30.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 10,
+   "nx": "Cylinder Ø20 x 15 at the cavity's corner (-35, 25), Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC -35/25/-30 typed, diameter 20, height 15 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 21 faces (21 in the reference); origin (-35.0, 25.0, -30.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 11,
+   "nx": "Cylinder Ø20 x 15 at the cavity's corner (35, -25), Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 35/-25/-30 typed, diameter 20, height 15 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 23 faces (23 in the reference); origin (35.0, -25.0, -30.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 12,
+   "nx": "Cylinder Ø20 x 15 at the cavity's corner (35, 25), Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 35/25/-30 typed, diameter 20, height 15 typed, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 25 faces (25 in the reference); origin (35.0, 25.0, -30.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 13,
+   "nx": "Edge Blend R10: the outer edges (the top block's corners)",
+   "replay": "4 edges selected + ribbon 'Home › Feature > Edge Blend', 'filletRadius' = 10 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 29 faces (29 in the reference)"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 14,
+   "nx": "Edge Blend R5: the inner edges (the corner posts' tops)",
+   "replay": "4 edges selected + ribbon 'Home › Feature > Edge Blend', 'filletRadius' = 5 mm, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 33 faces (33 in the reference)"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 15,
+   "nx": "The die cavity",
+   "replay": "compared with the book's dimensions built by the Part API",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 33 faces (33 in the reference)"
+  },
+  {
+   "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",
+   "n": 16,
+   "nx": "Save the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Die_cavity.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   }
  ],
  "info": {
