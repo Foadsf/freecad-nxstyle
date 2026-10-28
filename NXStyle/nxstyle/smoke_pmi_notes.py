@@ -229,7 +229,9 @@ def run(smoke):
             made3, skipped3 = pmi_ui.inherit(back, [bore_dia] if bore_dia else [])
             dim = next((m for m in made3 if m.isDerivedFrom("TechDraw::DrawViewDimension")), None)
             n_vis = len(back.getVisibleEdges())
-            edge = int(dim.References2D[0][1][4:]) if dim is not None else None
+            sub = dim.References2D[0][1] if dim is not None else None
+            sub = sub[0] if isinstance(sub, (tuple, list)) else sub
+            edge = int(sub[4:]) if sub else None
             results[hard] = {"value": round(float(dim.getRawValue()), 4) if dim else None, "edge": edge,
                              "visible edges": n_vis, "skipped": skipped3}
         smoke.check("Inherit PMI dimensions a hidden circle on a view that draws hidden lines (dashed), and only there",

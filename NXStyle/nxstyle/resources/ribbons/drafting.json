@@ -10,8 +10,7 @@
         {"cmd": "TechDraw_PageDefault", "label": "New Sheet", "size": "large"},
         {"cmd": "TechDraw_PageTemplate", "label": "Sheet from Template"},
         {"cmd": "NXStyle_PopulateTitleBlock", "label": "Populate Title Block", "size": "large"},
-        {"cmd": "TechDraw_RedrawPage", "label": "Update Views"},
-        {"cmd": "TechDraw_ToggleFrame", "label": "Display Borders"}
+        {"cmd": "TechDraw_RedrawPage", "label": "Update Views"}
       ]},
       {"name": "View", "items": [
         {"cmd": "TechDraw_View", "label": "Base View", "size": "large"},

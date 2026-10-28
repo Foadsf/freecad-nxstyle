@@ -20,7 +20,7 @@ Choose the template `ANSIE_Landscape.svg` (E, 34 x 44 in), the scale 8 and *Thir
 Select the screw's bodies and click *Base View*, direction Front: the screw stands with its head up.
 Select the view, click *Projected View*, then *Right* and *Above*, and press MB2.
 The view above is the top view: the hexagon.
-Click *Display Borders* to hide the borders.
+Display Borders is already off, as in xref:tutorials/az.adoc[tutorial AZ].
 
 Select the three views and turn on their *Hard Hidden*: hidden lines are drawn dashed.
 The top view now shows the shank under the head as a dashed circle.

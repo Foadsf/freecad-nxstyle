@@ -5,8 +5,11 @@ NX makes the other orthographic views one by one off a parent view: start Projec
 side of the parent and click; each click places a view, Close (or Esc) ends. FreeCAD's own Projected View is a
 projection group made from the part, with its own anchor view. Here the parent is the selected drawing view (else
 the sheet's newest base view); each side button places one view of the part turned that way for the sheet's
-projection angle, at the parent's scale and with its view style, lined up with it. The views stay where they are
-placed: dragging the parent later does not move them (in NX it does).
+projection angle, at the parent's scale and with its view style, lined up with it.
+
+FreeCAD 1.1's Base View makes a DrawProjGroupItem that belongs to no group (measured); it is a parent like a plain
+view. The projected view is a view of its own: it stays where it is placed when the parent is dragged later (in NX it
+follows the parent).
 """
 
 import FreeCAD as App
@@ -23,8 +26,26 @@ VIEW_STYLE = ("LineWidth", "HiddenWidth", "IsoWidth", "ExtraWidth", "Color", "Hi
 
 
 def is_part_view(o):
-    return o is not None and o.isDerivedFrom("TechDraw::DrawViewPart") and not o.isDerivedFrom(
-        "TechDraw::DrawProjGroupItem")
+    """A view of the part that can be a parent: a plain view or a projection group's view, not a section or detail."""
+    return o is not None and o.TypeId in ("TechDraw::DrawViewPart", "TechDraw::DrawProjGroupItem")
+
+
+def group_of(view):
+    """The projection group a DrawProjGroupItem belongs to, else None."""
+    if view is None or view.TypeId != "TechDraw::DrawProjGroupItem":
+        return None
+    return next((g for g in view.InList if g.isDerivedFrom("TechDraw::DrawProjGroup")), None)
+
+
+def sheet_xy(view):
+    """Where a view's centre is on the sheet: a group's view is placed relative to its group."""
+    from .gdt_ui import view_origin
+    return view_origin(view)[:2]
+
+
+def scale_of(view):
+    from .gdt_ui import view_origin
+    return view_origin(view)[2]
 
 
 def parent_view():
@@ -34,8 +55,12 @@ def parent_view():
             return o
     from . import gdt_ui
     page = gdt_ui.active_page()
-    views = [v for v in (page.Views if page is not None else []) if is_part_view(v)
-             and v.TypeId == "TechDraw::DrawViewPart"]
+    views = []
+    for v in page.Views if page is not None else []:
+        if v.isDerivedFrom("TechDraw::DrawProjGroup") and v.Anchor is not None:
+            views.append(v.Anchor)
+        elif is_part_view(v):
+            views.append(v)
     return views[-1] if views else None
 
 
@@ -79,8 +104,10 @@ def make_projected(parent, side):
                 setattr(v.ViewObject, p, getattr(parent.ViewObject, p))
     except Exception:
         pass
-    s = float(parent.getScale()) if hasattr(parent, "getScale") else float(parent.Scale)
-    x, y = core.place((float(parent.X), float(parent.Y)), paper_size(parent, parent.Direction, parent.XDirection),
+    if v.ScaleType == "Page" and group_of(parent) is not None:     # a group's scale is the group's
+        v.ScaleType, v.Scale = "Custom", scale_of(parent)
+    s = scale_of(parent)
+    x, y = core.place(sheet_xy(parent), paper_size(parent, parent.Direction, parent.XDirection),
                       paper_size(v, direction, xdir), side, s)
     v.X, v.Y = x, y
     for name, kind, value, tip in (("NX_ParentView", "App::PropertyLink", parent, "The view it was projected from"),

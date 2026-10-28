@@ -3,7 +3,7 @@
 
 [horizontal]
 Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), sections 5.2 (creating a drawing), 5.3 (dimensioning) and 5.4 (sectional view).
-You learn:: New Sheet (size, scale, projection), Base View, Projected View, Display Borders, dimensions, Section View
+You learn:: New Sheet (size, scale, projection), Base View, Projected View, dimensions, Section View
 Part:: tutorial xref:tutorials/at.adoc[AT]'s rack, `Arborpress_rack`. The replay runs AT first.
 Sizes:: the book's, in inches, typed in millimetres: the drawing's dimensions read 25.4 times the book's numbers.
 
@@ -25,7 +25,7 @@ Click *Above* and *Right*, then press MB2.
 The top view and the right side view appear lined up with the front view, at its scale.
 The right view shows the hole in the end of the rack as a circle.
 
-Click *Display Borders* to hide the borders round the views.
+The book now turns off Display Borders. A FreeCAD sheet starts with *Show Frames* off, so there is nothing to press.
 
 === 3. Dimensions
 
@@ -73,7 +73,7 @@ The section must show the hole's walls one diameter apart, which happens only wh
 * NX asks for the sheet size, scale and projection in one Sheet dialog. In FreeCAD they are the sheet's properties.
 * NX lists the model views in the Base View dialog. A TechDraw view takes its direction as a property.
 * NX places a projected view where you click round the parent. Here you click a side button. In NX a projected view follows its parent when the parent is dragged; here it stays where it was placed.
-* NX keeps Display Borders in Drafting Preferences. Here it is a button on the Home tab.
+* NX shows a border round each view until Display Borders is unchecked. A FreeCAD sheet starts with *Show Frames* off, and FreeCAD's *Turn View Frames On/Off* stays greyed in 1.1.4. The replay reports the property; it did not measure how the sheet looks.
 * NX infers horizontal or vertical from where you move the pointer. Here you choose the *Horizontal* or *Vertical* button.
 * TechDraw dimensions attach to vertices. Where NX snaps to any point on an edge, the replay adds a cosmetic vertex first.
 * The book's text puts the 240 on the front view, but its figures put it on the top view. The replay follows the figures.

@@ -1280,9 +1280,10 @@ def project(view, p):
     view's own (unscaled, centred) coordinates like its edges, then scaled onto the sheet."""
     # (TechDraw's projectPoint gives the projection without the view's centring: measured, FreeCAD 1.1.4,
     # the top of a part 0..38 high projects to y 38 in a front view whose edges run from -19 to 19)
-    s = float(view.Scale)
+    from .gdt_ui import view_origin
+    vx, vy, s = view_origin(view)
     q = view_xy(view, p)
-    return float(view.X) + q.x * s, float(view.Y) + q.y * s
+    return vx + q.x * s, vy + q.y * s
 
 
 def view_frame(view):
@@ -1763,14 +1764,14 @@ def _unscaled(obj):
 
 def view_box(view):
     """(left, right, bottom, top) of a view's visible edges on the sheet (mm)."""
-    s = float(view.Scale)
+    from .gdt_ui import view_origin
+    vx, vy, s = view_origin(view)
     bb = None
     for _, e in _view_edges(view):
         bb = e.BoundBox if bb is None else bb.united(e.BoundBox)
     if bb is None:
-        return float(view.X), float(view.X), float(view.Y), float(view.Y)
-    return (float(view.X) + bb.XMin * s, float(view.X) + bb.XMax * s, float(view.Y) + bb.YMin * s,
-            float(view.Y) + bb.YMax * s)
+        return vx, vx, vy, vy
+    return vx + bb.XMin * s, vx + bb.XMax * s, vy + bb.YMin * s, vy + bb.YMax * s
 
 
 NOTE_TEXT = 3.5             # mm, the note's lettering on the sheet
@@ -1858,8 +1859,9 @@ def edge_scale(view):
 
 def _centre(view, e):
     m = (e.Vertexes[0].Point + e.Vertexes[-1].Point) * 0.5
-    s = float(view.Scale)
-    return float(view.X) + m.x * s, float(view.Y) + m.y * s
+    from .gdt_ui import view_origin
+    vx, vy, s = view_origin(view)
+    return vx + m.x * s, vy + m.y * s
 
 
 def _d(p, q):

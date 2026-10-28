@@ -23,7 +23,7 @@ NX asks for the size, projection and scale in one Sheet dialog; in FreeCAD they 
 Changing the template later keeps the views where they are, as NX's *Edit Sheet* does.
 FreeCAD's default sheet is A4.
 
-*Home › Drawing › Display Borders* turns the borders round the views off and on (NX: *Drafting Preferences › View › Display Borders*).
+NX's *Drafting Preferences › View › Display Borders* has no button here. A FreeCAD sheet starts with its *Show Frames* property off. FreeCAD's own *Turn View Frames On/Off* stays greyed in FreeCAD 1.1.4.
 
 === Title block and revision block
 

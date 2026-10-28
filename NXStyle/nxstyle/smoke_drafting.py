@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
-"""Self-test of NX Drafting's Projected View and Display Borders (called from smoke.py), on a bar 60 x 25 x 20 with a
+"""Self-test of NX Drafting's Projected View and Note (called from smoke.py), on a bar 60 x 25 x 20 with a
 Ø8 hole along its length, the arbor press rack's shape in small:
 
 - Projected View is a Home › View button; with the front view selected, Above and Right place two views;
@@ -8,7 +8,8 @@
 - one undo step removes both; Close (Esc) keeps a view placed, as NX's Close does;
 - on a first angle sheet the view placed to the right shows the left side;
 - negative control: the same edge check on a plain second Base View placed above (still a front view) fails;
-- Display Borders, a Home › Drawing button, turns the sheet's view borders off and on."""
+- Note: the lines typed with a symbol button, the lettering height, a leader ending on the selected edge; an empty
+  note is refused."""
 
 import traceback
 
@@ -55,11 +56,13 @@ def build(doc):
 
 
 def edges_ready(view, timeout_ms=15000):
-    """Wait for TechDraw's hidden-line worker; the view's visible edges (unscaled, centred)."""
+    """Wait for TechDraw's hidden-line worker; the view's visible edges, unscaled and centred (getEdgeByIndex:
+    getVisibleEdges gives them at the view's scale, measured 120 x 50 for a 60 x 25 top view at 2:1)."""
     for _ in range(timeout_ms // 100):
         try:
-            if view.getVisibleEdges():
-                return view.getVisibleEdges()
+            n = len(view.getVisibleEdges())
+            if n:
+                return [view.getEdgeByIndex(i) for i in range(n)]
         except Exception:
             pass
         qwait(100)
@@ -203,10 +206,11 @@ def run(smoke):
             and float(right.X) - BAR[1] / 2 * s > float(front.X) + fw / 2 * s
         smoke.check("Projected views keep the parent's scale, line up with it and stand clear of it", aligned,
                     {v.Label: (float(v.X), float(v.Y), float(v.Scale)) for v in (front, top, right) if v is not None})
+        names = [v.Name for v in (top, right) if v is not None]
         undo = doc.UndoNames[:1]
         doc.undo()
         doc.recompute()
-        gone = all(doc.getObject(v.Name) is None for v in (top, right) if v is not None)
+        gone = bool(names) and all(doc.getObject(n) is None for n in names)
         smoke.check("Projected View is one undo step; undo removes the views it placed",
                     undo == ["Projected View"] and gone and len(doc.UndoNames) >= n0,
                     {"undo names": undo, "views gone": gone})
@@ -229,6 +233,46 @@ def run(smoke):
         smoke.check("On a first angle sheet the view placed to the right shows the left side",
                     first is not None and tuple(first.Direction) == (-1, 0, 0) and float(first.X) > float(front.X),
                     {"direction": tuple(first.Direction) if first else None})
+
+        # 3b. off a view made by the Base View button (FreeCAD 1.1: a projection group item in no group)
+        page.ProjectionType = "Third angle"
+        doc.recompute()
+        seen = {v.Name for v in page.Views}
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, part.Name)
+        ribbon_click(smoke, "Base View")
+        qwait(800)
+        mb2_on_sheet()
+        qwait(500)
+        if Gui.Control.activeDialog():
+            from .navigation import accept_task_dialog
+            accept_task_dialog()
+        doc.recompute()
+        anchor = next((v for v in page.Views if v.Name not in seen and v.isDerivedFrom("TechDraw::DrawViewPart")),
+                      None)
+        group = drafting_ui.group_of(anchor)
+        got = {}
+        if anchor is not None:
+            p, (gtop, gright) = projected(smoke, anchor, ("Above", "Right"))
+            if p is not None:
+                p.accept()
+            doc.recompute()
+            ok_t, d_t = matches(part, gtop, circle=False) if gtop else (False, "no view")
+            ok_r, d_r = matches(part, gright, circle=True) if gright else (False, "no view")
+            ax, ay = drafting_ui.sheet_xy(anchor)
+            lined = (round(drafting_ui.sheet_xy(gtop)[0] - ax, 6) if gtop else None,
+                     round(drafting_ui.sheet_xy(gright)[1] - ay, 6) if gright else None)
+            got = {"Base View made": anchor.TypeId, "its group": group.Name if group else None,
+                   "its InList": [o.TypeId for o in anchor.InList], "top": d_t, "right": d_r,
+                   "made": [v.TypeId if v else None for v in (gtop, gright)],
+                   "lined up (top x, right y vs the parent)": lined}
+            good = ok_t and ok_r and lined[0] is not None and abs(lined[0]) < 1e-6 and lined[1] is not None \
+                and abs(lined[1]) < 1e-6
+        else:
+            good = False
+        smoke.check("Projected View off a view made by the Base View button (FreeCAD 1.1: a projection group item in no "
+                    "group): the top and the right side, lined up with it", good,
+                    got or "no Base View made")
 
         # 4. negative control: a second Base View above the front is still a front view; the edge check refuses it
         imposter = doc.addObject("TechDraw::DrawViewPart", "Imposter")
@@ -285,19 +329,6 @@ def run(smoke):
             Gui.Control.closeDialog()
         smoke.check("Negative control: a Note with no text is refused", refused and len(drafting_ui.NOTES) == n_notes,
                     {"notes before, after": (n_notes, len(drafting_ui.NOTES))})
-
-        # 6. Display Borders: the sheet's view frames off and on
-        vo = page.ViewObject
-        was = bool(vo.ShowFrames)
-        Gui.Selection.clearSelection()
-        ribbon_click(smoke, "Display Borders")
-        off = bool(vo.ShowFrames)
-        ribbon_click(smoke, "Display Borders")
-        on = bool(vo.ShowFrames)
-        smoke.check("Display Borders (Home › Drawing) turns the view borders off and on (NX: Drafting Preferences › "
-                    "View › Display Borders)", was and not off and on,
-                    {"before": was, "after one click": off, "after two": on,
-                     "where": smoke.shell.ribbon.locations.get("TechDraw_ToggleFrame")})
     except Exception:
         smoke.check("drafting scenario ran", False, traceback.format_exc().splitlines()[-1])
         smoke.info["traceback drafting"] = traceback.format_exc()

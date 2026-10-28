@@ -4,7 +4,7 @@ University of Science and Technology). The book works in inches; the parts are m
 millimetres, so a drawing's dimension reads 25.4 times the book's number.
 
   AZ  5.2-5.4 Arbor Press Rack drawing: tutorial AT's rack on a B sheet (11 x 17) at 1:25; Base View Front,
-      Projected Views above and to the right, Display Borders off, dimensions on the three views, a Section View
+      Projected Views above and to the right, Display Borders (off already), dimensions on the three views, a Section View
       through the hole in the end.
   BA  5.5 PMI on the impeller (tutorial AU's part): Linear and Radial PMI dimensions, a Centerline, a Note; a
       drawing whose views inherit the PMI (Aligned to Drawing).
@@ -22,7 +22,7 @@ import os
 
 import FreeCAD as App
 import FreeCADGui as Gui
-
+from . import drafting_ui
 from .qt import QtWidgets
 
 IN = 25.4
@@ -106,19 +106,31 @@ class DraftingSteps:
         v = new[-1] if new else None
         if v is not None:
             v.Direction, v.XDirection = App.Vector(*direction), App.Vector(*xdirection)
-            v.ScaleType = scale_type
-            v.X, v.Y = x, y
+            self.dz_place(v, x, y, scale_type)
+        self.wait_for("base view dialog", lambda: bool(Gui.Control.activeDialog()), 1500)
         if Gui.Control.activeDialog():
             self.mb2_click_on_sheet()
+            QtWidgets.QApplication.processEvents()
+        if not self.wait_for("base view dialog closed by MB2", lambda: not Gui.Control.activeDialog(), 3000):
+            from .navigation import accept_task_dialog
+            self.retries.append("Base View: MB2 on the sheet did not close the dialog; OK pressed")
+            self.progress(f"dz_base: dialog still open after MB2: {self.task_widgets()}")
+            accept_task_dialog()
+            self.wait_for("base view dialog closed by OK", lambda: not Gui.Control.activeDialog(), 3000)
         App.ActiveDocument.recompute()
         return v, where
 
     def dz_projected(self, parent, sides):
         """The parent view selected + Projected View; one side button per view, MB2 on the sheet (NX: a click on
         each side of the parent, then Close)."""
-        from . import drafting_ui
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection(App.ActiveDocument.Name, parent.Name)
+        QtWidgets.QApplication.processEvents()
+        cmd = drafting_ui.COMMANDS["NXStyle_ProjectedView"]
+        self.progress(f"dz_projected: parent {parent.Name} {parent.TypeId}; selection "
+                      f"{[(o.Name, o.TypeId) for o in Gui.Selection.getSelection()]}; dialog "
+                      f"{bool(Gui.Control.activeDialog())}; parent_view {getattr(drafting_ui.parent_view(), 'Name', None)}"
+                      f"; IsActive {cmd.IsActive()}; document {App.ActiveDocument.Name}")
         b, where = self.click_ribbon("Projected View")
         QtWidgets.QApplication.processEvents()
         p = drafting_ui.current()
@@ -139,10 +151,17 @@ class DraftingSteps:
         return made, where, closed
 
     @staticmethod
-    def dz_span(view):
+    def dz_lines(view, hidden=False):
+        """The view's visible (or, with hidden, its dashed hidden) edges, unscaled and centred: getEdgeByIndex.
+        getVisibleEdges gives them at the view's scale (measured: 120 x 50 for a 60 x 25 top view at 2:1)."""
+        from . import pmi_ui
+        return [e for _, e in pmi_ui._view_edges(view, hidden)]
+
+    @classmethod
+    def dz_span(cls, view):
         """(width, height) of a view's visible edges, unscaled (mm)."""
         bb = None
-        for e in view.getVisibleEdges():
+        for e in cls.dz_lines(view):
             bb = e.BoundBox if bb is None else bb.united(e.BoundBox)
         return (round(bb.XLength, 4), round(bb.YLength, 4)) if bb is not None else None
 
@@ -155,13 +174,13 @@ class DraftingSteps:
         w, h, _, _ = drafting_core.extent(corners, tuple(view.Direction), tuple(view.XDirection))
         return round(w, 4), round(h, 4)
 
-    @staticmethod
-    def dz_on_edge(view, q):
+    @classmethod
+    def dz_on_edge(cls, view, q):
         """Distance (unscaled mm) from a view point to the nearest visible edge."""
         import Part
         v = Part.Vertex(App.Vector(q.x, q.y, 0))
         best = None
-        for e in view.getVisibleEdges():
+        for e in cls.dz_lines(view):
             try:
                 d = e.distToShape(v)[0]
             except Exception:
@@ -192,8 +211,12 @@ class DraftingSteps:
 
     def dz_dimension(self, page, view, kind, p1, p2, offset):
         """Two model points' vertices selected + the ribbon's dimension; (dimension, how)."""
-        a, how_a = self.dz_vertex(view, p1)
-        b, how_b = self.dz_vertex(view, p2)
+        _, how_a = self.dz_vertex(view, p1)
+        _, how_b = self.dz_vertex(view, p2)
+        # a cosmetic vertex renumbers the view's vertices: look both names up again once both exist (measured: the
+        # first name went stale when the second point needed a cosmetic vertex, and no dimension was made)
+        a, _ = self.dz_vertex(view, p1)
+        b, _ = self.dz_vertex(view, p2)
         if not a or not b:
             return None, f"{how_a}; {how_b}"
         before = {d.Name for d in page.Views if d.isDerivedFrom("TechDraw::DrawViewDimension")}
@@ -210,9 +233,36 @@ class DraftingSteps:
         return d, f"{a} ({how_a}), {b} ({how_b}) + ribbon '{where} > {kind}'"
 
     @staticmethod
+    def dz_place(view, x, y, scale_type=None, scale=None):
+        """Place a view on the sheet and set its scale; a projection group's view (what Base View makes in FreeCAD
+        1.1) is placed and scaled through its group."""
+        g = drafting_ui.group_of(view)
+        target = g if g is not None and g.Anchor is view else view
+        if scale_type is not None:
+            target.ScaleType = scale_type
+        if scale is not None:
+            target.ScaleType, target.Scale = "Custom", scale
+        if target is view and g is not None:
+            gx, gy = drafting_ui.sheet_xy(g) if hasattr(g, "X") else (0.0, 0.0)
+            view.X, view.Y = x - gx, y - gy
+        else:
+            target.X, target.Y = x, y
+        App.ActiveDocument.recompute()
+
+    @staticmethod
     def dz_close(a, b, tol=1e-3):
         return a is not None and b is not None and all(abs(p - q) < tol for p, q in zip(a, b))
 
+    def dz_borders_off(self, page, label):
+        """NX shows a border round each view until Display Borders is unchecked. The FreeCAD sheet's Show Frames is off
+        by default; its own Turn View Frames On/Off stays greyed in 1.1.4, and no instrument here showed a change on
+        screen when Show Frames was set (a grab of the sheet did not change even when a view was selected), so the
+        replay reports the property and does not claim what the sheet looks like."""
+        on = bool(page.ViewObject.ShowFrames)
+        self.step(label, "nothing to press: the sheet's Show Frames is off", DIFFERS if not on else FAIL,
+                  f"Show Frames {on}. NX shows the borders until this is unchecked; FreeCAD's sheet starts with Show "
+                  "Frames off. Its Turn View Frames On/Off stays greyed in FreeCAD 1.1.4, so NX-Style has no Display "
+                  "Borders button; how the sheet looks was not measured")
     def dz_fit_sheet(self):
         try:
             Gui.SendMsgToActiveView("ViewFit")
@@ -267,7 +317,7 @@ class MstRackDrawingTutorials(DraftingSteps):
         ok = v is not None and self.dz_edges(v, "az front")
         span = self.dz_span(v) if ok else None
         want = self.dz_oracle_span(self._az_body.Shape, v) if v is not None else None
-        good = ok and self.dz_close(span, want) and abs(float(v.Scale) - AZ_SCALE) < 1e-12
+        good = ok and self.dz_close(span, want) and abs(drafting_ui.scale_of(v) - AZ_SCALE) < 1e-12
         self._az_front = v
         self.step("Base View: Model View to Use Front, Scale 1:25, a click to place it",
                   f"body selected + ribbon '{where} > Base View', MB2 on the sheet; the view's Direction Front",
@@ -288,13 +338,13 @@ class MstRackDrawingTutorials(DraftingSteps):
             self.dz_edges(v, f"az {name}")
             span, want = self.dz_span(v), self.dz_oracle_span(self._az_body.Shape, v)
             rows[name] = {"direction": tuple(round(c, 6) for c in v.Direction), "span": span, "Part API": want,
-                          "scale": float(v.Scale), "at": (round(float(v.X), 2), round(float(v.Y), 2))}
+                          "scale": drafting_ui.scale_of(v), "at": tuple(round(c, 2) for c in drafting_ui.sheet_xy(v))}
             good = good and self.dz_close(span, want) and tuple(v.Direction) == d and \
-                float(v.Scale) == float(self._az_front.Scale)
-        holes = [e for e in (right.getVisibleEdges() if right is not None else []) if hasattr(e.Curve, "Radius")
+                abs(drafting_ui.scale_of(v) - drafting_ui.scale_of(self._az_front)) < 1e-12
+        holes = [e for e in (self.dz_lines(right) if right is not None else []) if hasattr(e.Curve, "Radius")
                  and abs(e.Curve.Radius - self._az_hole_r()) < 1e-3]
-        aligned = good and abs(float(top.X) - float(self._az_front.X)) < 1e-9 and \
-            abs(float(right.Y) - float(self._az_front.Y)) < 1e-9
+        fx, fy = drafting_ui.sheet_xy(self._az_front)
+        aligned = good and abs(drafting_ui.sheet_xy(top)[0] - fx) < 1e-6 and abs(drafting_ui.sheet_xy(right)[1] - fy) < 1e-6
         self._az_top, self._az_right = top, right
         self.step("Projected View: move the cursor above and to the right of the front view and click; Close",
                   f"front view selected + ribbon '{where} > Projected View', Above and Right, MB2",
@@ -308,17 +358,8 @@ class MstRackDrawingTutorials(DraftingSteps):
         return AT_HOLE[1] / 2 * IN
 
     def az_borders(self):
-        vo = self._az_page.ViewObject
-        before = bool(vo.ShowFrames)
-        b, where = self.click_ribbon("Display Borders")
-        QtWidgets.QApplication.processEvents()
-        after = bool(vo.ShowFrames)
-        self.step("Drafting Preferences > View: Display Borders off, OK", f"ribbon '{where} > Display Borders'",
-                  DIFFERS if before and not after else FAIL,
-                  f"the sheet's view borders {before} -> {after}. NX keeps the setting in Drafting Preferences; "
-                  "here it is a Home tab button (FreeCAD's Turn View Frames On/Off, the sheet's Show Frames)")
+        self.dz_borders_off(self._az_page, "Drafting Preferences > View: Display Borders off, OK")
         self.wait = 300
-
     def az_dimensions(self):
         """The book's figure (p. 112): 240 and 34.8 on the top view, the tooth space's 6.000, 3.396 and 5.034 on the
         front view, 20 and 25 on the right view. Each value is compared with the Part API's tooth space and bar."""
@@ -399,7 +440,7 @@ class MstRackDrawingTutorials(DraftingSteps):
         r = self._az_hole_r()
         walls = []
         if sec is not None:
-            for e in sec.getVisibleEdges():
+            for e in self.dz_lines(sec):
                 if hasattr(e.Curve, "Radius") or len(e.Vertexes) < 2:
                     continue
                 a, b = e.Vertexes[0].Point, e.Vertexes[-1].Point
@@ -413,8 +454,8 @@ class MstRackDrawingTutorials(DraftingSteps):
             and gap is not None and abs(gap - 2 * r) < 1e-3 and self.dz_close(span, (240 * IN, 25 * IN))
         if sec is not None:
             # NX: the section is dragged below the base view and placed with MB1; FreeCAD drops it on its base view
-            sec.X = float(self._az_front.X)
-            sec.Y = float(self._az_front.Y) - 48.0
+            fx, fy = drafting_ui.sheet_xy(self._az_front)
+            sec.X, sec.Y = fx, fy - 48.0
             App.ActiveDocument.recompute()
         self.step("Section View: a click under the front view's middle (arrows up), drag the section below it, MB1",
                   f"front view selected + ribbon '{self._az_sec_where} > Section View', direction "
@@ -677,6 +718,8 @@ class MstImpellerPMITutorials(DraftingSteps):
             front.HardHidden = True                 # the bore's floor is inside: its 16 is read off dashed lines
             App.ActiveDocument.recompute()
         ok = front is not None and self.dz_edges(front, "ba front", 120000)
+        if ok:            # the bore's floor is a hidden line: Inherit PMI needs it computed (ba1 ran ahead of it once)
+            self.wait_for("ba front: hidden lines", lambda: len(front.getHiddenEdges()) > 0, 60000)
         made, where2, closed = self.dz_projected(front, ("Right",)) if ok else ({}, "", False)
         right = made.get("Right")
         if right is not None:
@@ -730,6 +773,12 @@ class MstImpellerPMITutorials(DraftingSteps):
                     except Exception:
                         out.append(None)
             return sorted(x for x in out if x is not None)
+        for hidden in (False, True):            # for the record: the front view's lines across the axis
+            xs = sorted({round((e.Vertexes[0].Point.x), 3) for _, e in pmi_ui._view_edges(self._ba_front, hidden)
+                         if not hasattr(e.Curve, "Radius") and len(e.Vertexes) >= 2
+                         and abs(e.Vertexes[0].Point.x - e.Vertexes[-1].Point.x) < 1e-6})
+            self.progress(f"ba_inherit: front {'hidden' if hidden else 'visible'} vertical lines at x {xs}; "
+                          f"HardHidden {self._ba_front.HardHidden}, {len(self._ba_front.getHiddenEdges())} hidden edges")
         fv, rv = values(front.get("made", [])), values(right.get("made", []))
         want_f = sorted(round(o.Nominal / IN, 4) for o in (self._ba_len, self._ba_depth) if o is not None)
         want_r = sorted(round(o.Nominal / IN, 4) for o in self._ba_dias if o is not None)
@@ -739,7 +788,7 @@ class MstImpellerPMITutorials(DraftingSteps):
         axis_y = None
         if line is not None:
             cx, cy = pmi_ui.view_centre(self._ba_front)
-            axis_y = round(float(self._ba_front.Y) + (0.0 - cy) * float(self._ba_front.Scale), 4)
+            axis_y = round(drafting_ui.sheet_xy(self._ba_front)[1] + (0.0 - cy) * drafting_ui.scale_of(self._ba_front), 4)
         good = fv == want_f and rv == want_r and note == [["Five impeller blades"]] and line is not None and \
             abs(float(line.Y) - axis_y) < 1e-3 and abs(float(line.Rotation)) < 1e-6
         self.step("Inherit PMI onto Drawing: the PMI and the note on the views", "each view selected + ribbon "
@@ -808,6 +857,14 @@ class MstBoltDrawingTutorials(DraftingSteps):
         return hexagon_prism(AQ_HEX, AQ_Z_HEAD, AQ_HEX_H).common(
             Part.makeSphere(AQ_SPHERE / 2, App.Vector(0, 0, AQ_Z_HEAD)))
 
+    @staticmethod
+    def bb_top_r(head):
+        """Radius of the head's top face: the flat circle where the sphere meets it (the arcs where the sphere cuts the
+        hexagon's sides also reach the top, but slope down)."""
+        hb = head.optimalBoundingBox(False, False)
+        return max(e.Curve.Radius for e in head.Edges if hasattr(e.Curve, "Radius")
+                   and e.BoundBox.ZLength < 1e-6 and abs(e.BoundBox.ZMax - hb.ZMax) < 1e-6)
+
     def bb_drafting(self):
         self.key("Ctrl+Shift+D")
         self.wait = 2500
@@ -842,14 +899,8 @@ class MstBoltDrawingTutorials(DraftingSteps):
         self.wait = 600
 
     def bb_borders(self):
-        vo = self._bb_page.ViewObject
-        before = bool(vo.ShowFrames)
-        b, where = self.click_ribbon("Display Borders")
-        after = bool(vo.ShowFrames)
-        self.step("Preferences > Drafting > View: Display Borders off", f"ribbon '{where} > Display Borders'",
-                  DIFFERS if before and not after else FAIL, f"view borders {before} -> {after} (as in tutorial AZ)")
+        self.dz_borders_off(self._bb_page, "Preferences > Drafting > View: Display Borders off")
         self.wait = 300
-
     def bb_hidden(self):
         from .tutorial_mst4 import AQ_SHANK
         views = [self._bb_front, self._bb_right, self._bb_top]
@@ -860,7 +911,7 @@ class MstBoltDrawingTutorials(DraftingSteps):
         App.ActiveDocument.recompute()
         self.wait_for("bb: hidden lines", lambda: len(self._bb_top.getHiddenEdges()) > 0, 120000)
         r = AQ_SHANK[0] / 2
-        hidden = [round(e.Curve.Radius, 4) for e in self._bb_top.getHiddenEdges() if hasattr(e.Curve, "Radius")]
+        hidden = [round(e.Curve.Radius, 4) for e in self.dz_lines(self._bb_top, hidden=True) if hasattr(e.Curve, "Radius")]
         ok = any(abs(x - r) < 1e-3 for x in hidden)
         for v in views:
             if "HiddenStyle" in v.ViewObject.PropertiesList:
@@ -879,8 +930,7 @@ class MstBoltDrawingTutorials(DraftingSteps):
         from .tutorial_mst4 import AQ_HEX, AQ_STEP, AQ_SHANK
         head = self.bb_head_ref()
         hb = head.optimalBoundingBox(False, False)
-        top_r = max(e.Curve.Radius for e in head.Edges if hasattr(e.Curve, "Radius")
-                    and abs(e.BoundBox.ZMax - hb.ZMax) < 1e-6)                  # the top face's circle
+        top_r = self.bb_top_r(head)
         corner_z = max(v.Point.z for v in head.Vertexes if abs(math.hypot(v.Point.x, v.Point.y) - AQ_HEX) < 1e-6)
         z_top, z_head = hb.ZMax, hb.ZMin
         r_step = AQ_STEP[0] / 2
@@ -913,7 +963,8 @@ class MstBoltDrawingTutorials(DraftingSteps):
     def bb_note(self):
         from .tutorial_mst4 import AQ_SHANK
         v = self._bb_front
-        s = float(v.Scale)
+        s = drafting_ui.scale_of(v)
+        vx, vy = drafting_ui.sheet_xy(v)
         # the thread's flank nearest the middle of the shank's right side, as the book's click on the threaded shaft
         from . import pmi_ui
         target = pmi_ui.view_xy(v, App.Vector(AQ_SHANK[0] / 2, 0, AQ_SHANK[1] / 2))
@@ -929,7 +980,6 @@ class MstBoltDrawingTutorials(DraftingSteps):
         typed = self.bb_type_note()
         self.mb2_click_on_sheet()
         QtWidgets.QApplication.processEvents()
-        from . import drafting_ui
         rec = drafting_ui.NOTES[-1] if drafting_ui.NOTES else {}
         note = App.ActiveDocument.getObject(rec.get("note", "")) if rec else None
         tip = rec.get("tip")
@@ -937,8 +987,8 @@ class MstBoltDrawingTutorials(DraftingSteps):
         on = None
         if tip is not None:
             cx, cy = pmi_ui.view_centre(v)
-            x_model = (tip[0] - float(v.X)) / s + cx
-            z_model = (tip[1] - float(v.Y)) / s + cy
+            x_model = (tip[0] - vx) / s + cx
+            z_model = (tip[1] - vy) / s + cy
             on = (round(x_model, 4), round(z_model, 4))
         good = typed and note is not None and list(note.Text) == self.BB_NOTE and on is not None and \
             AQ_SHANK[0] / 2 * 0.7 < abs(on[0]) < AQ_SHANK[0] / 2 * 1.001 and 0 < on[1] < AQ_SHANK[1] and \
@@ -981,9 +1031,7 @@ class MstBoltDrawingTutorials(DraftingSteps):
     def bb_radial(self):
         v = self._bb_top
         head = self.bb_head_ref()
-        hb = head.optimalBoundingBox(False, False)
-        top_r = max(e.Curve.Radius for e in head.Edges if hasattr(e.Curve, "Radius")
-                    and abs(e.BoundBox.ZMax - hb.ZMax) < 1e-6)
+        top_r = self.bb_top_r(head)
         circles = [(i, e) for i, e in self.view_edges(v) if hasattr(e.Curve, "Radius")
                    and abs(e.Curve.Radius - top_r) < 1e-3]
         page = self._bb_page
@@ -1011,14 +1059,12 @@ class MstBoltDrawingTutorials(DraftingSteps):
     def bb_iso(self):
         v, where = self.dz_base(self._bb_page, self.bb_bodies(), *ISO, 820.0, 400.0)
         if v is not None:
-            v.ScaleType = "Custom"
-            v.Scale = BB_SCALE / 2
-            App.ActiveDocument.recompute()
+            self.dz_place(v, 820.0, 400.0, scale=BB_SCALE / 2)
         ok = v is not None and self.dz_edges(v, "bb iso", 180000)
         d = tuple(round(c, 6) for c in v.Direction) if v else None
         self.step("Base View: Isometric, placed beside the others", f"the screw's bodies selected + ribbon '{where} > "
                   "Base View', MB2; Direction isometric", SAME if ok and d == tuple(round(c, 6) for c in ISO[0])
-                  else FAIL, f"direction {d}, {len(v.getVisibleEdges()) if ok else 0} edges, scale {v.Scale if v else '?'}"
+                  else FAIL, f"direction {d}, {len(v.getVisibleEdges()) if ok else 0} edges, scale {drafting_ui.scale_of(v) if v else '?'}"
                   " (half the sheet's, to fit beside the views)")
         self.wait = 600
 

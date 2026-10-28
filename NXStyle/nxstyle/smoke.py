@@ -2629,7 +2629,7 @@ class Smoke:
 
     def s_drafting_views(self):
         """NX's Projected View off a selected view (Above, Right, first angle, Close, undo), its edges against the
-        Part API with a negative control, and Display Borders (smoke_drafting.py)."""
+        Part API with a negative control, and the Note with a leader (smoke_drafting.py)."""
         from . import smoke_drafting
         smoke_drafting.run(self)
 
