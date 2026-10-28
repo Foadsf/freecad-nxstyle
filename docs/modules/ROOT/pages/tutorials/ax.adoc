@@ -54,4 +54,4 @@ Each step is compared with FreeCAD's Part API build of the book's curves and the
 == What differs from NX
 
 * NX keeps a sketch visible after an Extrude uses it; FreeCAD hides it, so it has to be shown again before its curves can be picked.
-* Right after a selection, Ctrl+Shift+K (NX's Show) and Ctrl+B (Hide) did nothing in the replay until FreeCAD had updated its commands (about 1.5 s); the View tab's Show button worked at once. This is being fixed.
+* Right after a selection, Ctrl+Shift+K (NX's Show) and Ctrl+B (Hide) did nothing in the replay until FreeCAD had updated its commands (about 1.5 s); the View tab's Show button worked at once. Both keys now work right after a pick (PR #36); the replay still uses the button.
