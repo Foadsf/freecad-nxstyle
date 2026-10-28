@@ -1,0 +1,92 @@
+= Tutorial AW: Holder
+:description: The holder of tutorial AK modelled in 3D from its sketch: an arm extruded symmetric and hollowed, a hub of Cylinders and Cones, lugs, a cup cut from the sketch's circles, a cross, a slot and tapped holes (NX 12 for Engineering Design, exercise 4.10.2).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 4.10.2 (Holder). It continues the sketch of xref:tutorials/ak.adoc[tutorial AK].
+You learn:: Extrude with Symmetric Value, Block, Cylinder and Cone with Unite and Subtract, a Datum Plane at an offset, a sketch on it, Extrude (Subtract) of some of a sketch's curves, Show and Hide
+Sizes:: the drawing's, in inches, typed in millimetres.
+
+The book gives only the detail drawing and says to continue from the sketch. The steps are ours, and so is the reading of the views where the drawing leaves room:
+
+* The hub is Ø3.50 down to 1.75, then a cone to Ø2.76 at 2.41, then Ø2.76 down to 3.50. The drawing's 30° and 0.37 make the cone 0.64 high; its 2.41 makes it 0.66 high (29.3°). The 2.41 is used.
+* Inside, from below: a Ø2.00 bore, a cone to Ø2.76, and Ø2.76 up to 1.50 below the top. The cup is Ø2.76 and 1.38 deep, so a 0.12 web separates the two.
+* The boss and the cross rise from the cup's floor to 0.50 below the top. The ribs run 3.00 long into the wall.
+* The arm is hollow from below, with walls 0.50 at the sides and 0.63 at the end. The slot is 0.50 deep.
+* The tapped holes are drilled at their tap-drill sizes, 25/64 for the 7/16-20 and 29/64 for the 1/2-20, and the threads are not modelled. The 1/16 rounds and detail B are left out.
+
+The replay runs tutorial AK first and starts from the sketch AK saved.
+
+== Step by step
+
+=== 1. The arm
+
+Open `Holder` and save it as `Holder_part`.
+Click *Sketch*, pick the XC-ZC plane and draw the arm's side with *Line* (kbd:[L]):
+
+. along the top from the axis to 2.00;
+. 17.8° down to the end, at 5.50 and 1.125 below the top;
+. down the end to 3.50;
+. back 0.63 along the bottom;
+. 25.7° up to 1.75 below the top;
+. back to the axis, and up to the start.
+
+Start each line on the last one's end, so that the sketcher makes the two coincident, and type its other end. Then kbd:[Ctrl+Q].
+
+Click *Extrude*, pick a line, choose *Symmetric Value* and type 88.9 mm (3.50 in), then click *OK*.
+Choose *Block*: origin (0, −1.25, −3.50), 4.87 × 2.50 × 2.00, Boolean *Subtract*. This leaves the arm hollow from below.
+
+=== 2. The hub
+
+With *Cylinder* (Axis, Diameter, and Height, vector ZC), make Ø3.50 × 1.75 at (0, 0, −1.75) with *Unite*.
+With *Cone* (Diameters and Height), make Ø2.76 to Ø3.50 × 0.66 at (0, 0, −2.41) with *Unite*.
+Add a *Cylinder* Ø2.76 × 1.09 at (0, 0, −3.50) with *Unite*.
+
+Hollow it from below with *Subtract*:
+
+* a *Cylinder* Ø2.00 × 1.09 at (0, 0, −3.50);
+* a *Cone* from Ø2.00 to Ø2.76, 0.66 high, at (0, 0, −2.41);
+* a *Cylinder* Ø2.76 × 0.25 at (0, 0, −1.75).
+
+=== 3. The lugs
+
+Select the XC-YC plane and choose *Datum* > *Datum Plane*. Type −3.048 mm (0.12 in) along Z and press MB2.
+Click *Sketch* on the datum plane. Draw each lug's straight part with *Line*: from the Ø3.50 circle, 1.00 wide, out to where its sides touch the R0.38 end. The ends are AK's.
+Click *Extrude*, pick a line, choose *Unite*, type 12.7 mm (0.50 in) and tick *Reversed*.
+Make the round ends with three *Cylinder* features, each Ø0.76 × 0.50 on the bolt circle at (·, ·, −0.62), with *Unite*.
+
+=== 4. The cup, from the sketch's circles
+
+Select AK's sketch and press kbd:[Ctrl+Shift+K] (*Show*): FreeCAD may have hidden it.
+Click *Extrude (Subtract)*, set the Curve Rule to *Single Curve* and pick the Ø2.76 circle and the lugs' three Ø0.38 circles.
+Type 35.052 mm (1.38 in) and click *OK*. This cuts the cup and the lug holes.
+
+Add the boss, a *Cylinder* Ø0.75 × 0.88 at (0, 0, −1.38), with *Unite*.
+Then make the cross from two *Block* features with *Unite*, each 3.00 × 0.25 × 0.88: one along XC and one along YC.
+
+=== 5. The slot and the holes
+
+Choose *Block* with *Subtract*: from the Ø3.50 circle (x = 1.732) to past the end, 0.50 wide and 0.50 deep. This is the sketch's slot.
+Make the holes with *Cylinder* and *Subtract*:
+
+* Ø25/64 through the boss and the web;
+* two Ø29/64 along XC through the end, 1.09 up and 1.50 apart.
+
+Select the datum plane and the sketch and press kbd:[Ctrl+B] (*Hide*).
+
+image::tutorial-AW-01-holder.png[The holder: hub, cup with its cross, lugs, the hollow arm with its slot and end holes]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AW.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each step is compared with FreeCAD's Part API build of our reading of the drawing; the arm's outline is taken from the sketch.
+
+== What differs from NX
+
+* NX extrudes the regions of AK's sketch directly. FreeCAD's sketch faces need closed loops, and the lugs, the cross and the slot end on circles that are not split there. So the replay draws the lugs again on a datum plane and makes the cross and the slot from Blocks. It still cuts the cup and the lug holes from AK's whole circles.
+* A typed end on the Line's length and angle fields lands up to 3e-5 mm from the point: on its own it does not close an outline. The replay starts each line with a click on the last one's end.
+* The tapped holes are plain holes at the tap-drill size; NX's Hole command makes them threaded.

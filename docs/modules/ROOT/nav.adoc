@@ -76,6 +76,7 @@
 * xref:tutorials/as.adoc[AS: Arbor Press L-Bar]
 * xref:tutorials/at.adoc[AT: Arbor Press Rack]
 * xref:tutorials/au.adoc[AU: Impeller, the solid]
+* xref:tutorials/aw.adoc[AW: Holder]
 * xref:tutorials/ax.adoc[AX: Impeller Upper Casing]
 * xref:tutorials/ay.adoc[AY: Die Cavity]
 

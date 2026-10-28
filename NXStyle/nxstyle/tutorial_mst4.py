@@ -20,6 +20,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from .qt import Qt, QtCore, QtWidgets
+from .tutorial_mst import AK_BOLT, AK_LUG_HOLE, AK_LUG_R, AK_LUGS, ak_lug
 
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
@@ -2671,9 +2672,10 @@ class MstDieCavityTutorials:
                 self.ay_inner, self.ay_inner_dialog, self.ay_check, self.ay_fit, self.ay_show]
 
     # ------------------------------------------------------------- helpers
-    def fs_points(self, sk, key, pts):
+    def fs_points(self, sk, key, pts, click=()):
         """A sketch tool started with key, each point typed in the fields beside the pointer (X, then Y, Enter
-        after each); MB2 ends it. Returns the points typed and those clicked instead."""
+        after each); MB2 ends it. The points whose index is in click are clicked instead (on an existing end point
+        the sketcher makes them coincident). Returns the points typed and those clicked."""
         from . import sketch_ui
         view = self.nav().widget
         xs, ys = [p[0] for p in pts], [p[1] for p in pts]
@@ -2684,7 +2686,16 @@ class MstDieCavityTutorials:
         typed, clicked = 0, 0
         from .tutorial import qtest
         prev = None
-        for x, y in pts:
+        for i, (x, y) in enumerate(pts):
+            if i in click:
+                at = self.screen_point(sk, x, y)
+                self.send(QtCore.QEvent.MouseMove, at, Qt.NoButton, Qt.NoButton)
+                qtest().qWait(150)
+                self.mb1_click(at)
+                clicked += 1
+                prev = (x, y)
+                qtest().qWait(100)
+                continue
             if prev is None:
                 near = self.screen_point(sk, x + span * 0.03, y + span * 0.04)
                 self.send(QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
@@ -3025,6 +3036,512 @@ class MstDieCavityTutorials:
 
     def ay_show(self):
         self.show("AY_die_cavity")
+
+
+# ================================================================== AW: Holder (exercise 4.10.2)
+# The book (p. 100) gives the holder as a detail drawing, inches, and says to continue from the sketch of exercise
+# 3.6.2 (tutorial AK, on XC-YC; here its top, z = 0). This is our reading of the views:
+# - the hub: Ø3.50 down to 1.75, a cone to Ø2.76 at 2.41 (the 0.37 TYP and the 30°: the drawing's 2.41 makes it
+#   29.3°), Ø2.76 down to 3.50. Inside from below: a Ø2.00 bore up to 2.41, a cone to Ø2.76 at 1.75, Ø2.76 up to 1.50.
+# - the cup: Ø2.76 down 1.38 (the front view's hidden line and section A-A), a web to 1.50 below it; a Ø0.75 boss
+#   and the cross (ribs 0.25 wide, run 3.00 long into the wall) up from the floor to 0.50 below the top.
+# - the arm (front view): its top flat to 2.00 from the axis, then 17.8° down to 1.125 at the end (5.50); its end
+#   down to 3.50; under it 25.7° back up to 1.75 below the top, from 0.63 inside the end; 3.50 wide. Hollow from
+#   below (section A-A, C-C): walls 0.50 at the sides, 0.63 at the end, its ceiling 1.50 below the top.
+# - the slot of the sketch, 0.50 wide, from the Ø3.50 circle to the end, 0.50 deep (section A-A).
+# - three lugs 0.50 thick, 0.12 below the top (the front view), the sketch's outline: sides tangent to the R0.38 end
+#   and 1.00 apart on the Ø3.50 circle; the holes the sketch's Ø0.38 circles.
+# - 7/16-20 UNF tapped through the boss and the web, 1/2-20 UNF twice through the end, 1.09 up, 1.50 apart: drilled
+#   at the tap-drill sizes (25/64 and 29/64), the threads not modelled.
+# The 1/16 rounds and fillets and detail B (a 30° edge on the lugs) are left out.
+AW_HUB, AW_FOOT, AW_BORE = (3.50, 1.75), (2.76, 2.41), 2.00
+AW_CUP, AW_WEB, AW_BOSS, AW_RIB, AW_RIB_TOP = 1.38, 1.50, 0.75, (3.00, 0.25), 0.50
+AW_ARM = [(0, 0), (2.00, 0), (5.50, -1.125), (5.50, -3.50), (4.87, -3.50),
+          (4.87 - 1.75 / math.tan(math.radians(25.7)), -1.75), (0, -1.75)]
+AW_ARM_W, AW_WALL = 3.50, 0.50
+AW_SLOT = (0.50, 0.50)                    # width, depth
+AW_LUG_TOP, AW_LUG_T = 0.12, 0.50
+AW_TAP_C, AW_TAP_E, AW_TAP_E_AT = 25 / 64, 29 / 64, (1.09, 0.75)     # tap drills; end holes 1.09 up, y = ±0.75
+
+
+class MstHolderSolidTutorials:
+    """Mixin for tutorial.Replay: tutorial AW (it starts from tutorial AK's sketch)."""
+
+    def AW_STEPS(self):
+        return [self.p_modeling, self.aw_open, self.aw_sketch, self.aw_plane, self.aw_arm, self.aw_finish,
+                self.aw_arm_extrude, self.aw_arm_dialog, self.aw_hollow, self.aw_hub, self.aw_inside,
+                self.aw_lug_plane, self.aw_lug_plane_ok, self.aw_lug_sketch, self.aw_lugs, self.aw_lug_finish,
+                self.aw_lug_extrude, self.aw_lug_extrude_ok, self.aw_lug_ends, self.aw_cup, self.aw_cup_section,
+                self.aw_cross, self.aw_slot, self.aw_holes, self.aw_check, self.aw_fit, self.aw_show]
+
+    # ------------------------------------------------------------- the reference
+    @staticmethod
+    def aw_lug_quads():
+        """Each lug's straight part (side end, tangent point, tangent point, side end), mm."""
+        return [[(p.x, p.y) for p in ak_lug(deg)[:4]] for deg in AK_LUGS]
+
+    def aw_circles(self):
+        """Tutorial AK's Ø2.76 circle and its three Ø0.38 lug holes: geometry indices (AK typed them to 0.01 mm:
+        Ø70.10, not 70.104)."""
+        sk = self._aw_ak
+
+        def circle(g, r, at):
+            geo = sk.Geometry[g]
+            return geo.TypeId == "Part::GeomCircle" and not sk.getConstruction(g) and abs(geo.Radius - r) < 0.01 \
+                and abs(geo.Center.Length - at) < 0.01
+        n = range(len(sk.Geometry))
+        return ([g for g in n if circle(g, AW_FOOT[0] * IN / 2, 0)] +
+                [g for g in n if circle(g, AK_LUG_HOLE / 2, AK_BOLT / 2)])
+
+    def aw_stages(self):
+        """The holder as the drawing makes it (Part API, mm); the cup and the lug holes from AK's circles."""
+        import Part
+        V, z = App.Vector, App.Vector(0, 0, 1)
+
+        def cyl(d, z0, h, x=0.0, y=0.0):
+            return Part.makeCylinder(d * IN / 2, h * IN, V(x * IN, y * IN, z0 * IN), z)
+
+        def cone(d0, d1, z0, h):
+            return Part.makeCone(d0 * IN / 2, d1 * IN / 2, h * IN, V(0, 0, z0 * IN), z)
+
+        def box(x, y, z0, dx, dy, dz):
+            return Part.makeBox(dx * IN, dy * IN, dz * IN, V(x * IN, y * IN, z0 * IN))
+
+        def drawn(sk, lines):
+            """The face of a sketch's closed outline of lines, placed as the sketch is."""
+            f = Part.Face(Part.Wire(Part.__sortEdges__([sk.Geometry[g].toShape() for g in lines])))
+            return f.transformGeometry(sk.getGlobalPlacement().toMatrix())
+
+        s = {}
+        if getattr(self, "_aw_arm_lines", None):
+            arm = drawn(self._aw_sk, self._aw_arm_lines)
+        else:
+            arm = Part.Face(Part.makePolygon([V(x * IN, 0, zz * IN) for x, zz in AW_ARM + AW_ARM[:1]]))
+        s["arm"] = arm.extrude(V(0, AW_ARM_W * IN, 0)).translated(V(0, -AW_ARM_W * IN / 2, 0))
+        inner = AW_ARM_W / 2 - AW_WALL
+        s["hollow"] = s["arm"].cut(box(0, -inner, -3.50, AW_ARM[4][0], 2 * inner, 3.50 - AW_WEB)).removeSplitter()
+        (dh, hh), (df, zf) = AW_HUB, AW_FOOT
+        s["hub"] = s["hollow"].fuse(cyl(dh, -hh, hh)).removeSplitter()
+        s["cone"] = s["hub"].fuse(cone(df, dh, -zf, zf - hh)).removeSplitter()
+        s["foot"] = s["cone"].fuse(cyl(df, -3.50, 3.50 - zf)).removeSplitter()
+        s["bore"] = s["foot"].cut(cyl(AW_BORE, -3.50, 3.50 - zf)).removeSplitter()
+        s["funnel"] = s["bore"].cut(cone(AW_BORE, df, -zf, zf - hh)).removeSplitter()
+        s["under"] = s["funnel"].cut(cyl(df, -hh, hh - AW_WEB)).removeSplitter()
+        # the lugs from AK's outline, not from the drawn lines: their ends are within 1e-5 mm, but a side 1e-5 off
+        # the tangent made the Part API's fuse with the R0.38 end a null shape
+        quads = []
+        for q in self.aw_lug_quads():
+            f = Part.Face(Part.makePolygon([V(x, y, -AW_LUG_TOP * IN) for x, y in q + q[:1]]))
+            quads.append(f.extrude(V(0, 0, -AW_LUG_T * IN)))
+        lugs = s["under"]
+        for q in quads:
+            lugs = lugs.fuse(q)
+        s["lugs"] = lugs.removeSplitter()
+        ends = s["lugs"]
+        for k, deg in enumerate(AK_LUGS):
+            c = ak_lug(deg)[4]
+            ends = ends.fuse(Part.makeCylinder(AK_LUG_R, AW_LUG_T * IN, V(c.x, c.y, -(AW_LUG_TOP + AW_LUG_T) * IN),
+                                               z)).removeSplitter()
+            s[f"end{k + 1}"] = ends
+        tools = []
+        for g in self.aw_circles():
+            c = self._aw_ak.Geometry[g]
+            tools.append(Part.makeCylinder(c.Radius, AW_CUP * IN, V(c.Center.x, c.Center.y, -AW_CUP * IN), z))
+        self._aw_tools = len(tools)
+        cup = ends
+        for t in tools:
+            cup = cup.cut(t)
+        s["cup"] = cup.removeSplitter()
+        h = AW_CUP - AW_RIB_TOP
+        s["boss"] = s["cup"].fuse(cyl(AW_BOSS, -AW_CUP, h)).removeSplitter()
+        L, w = AW_RIB
+        s["rib1"] = s["boss"].fuse(box(-L / 2, -w / 2, -AW_CUP, L, w, h)).removeSplitter()
+        s["rib2"] = s["rib1"].fuse(box(-w / 2, -L / 2, -AW_CUP, w, L, h)).removeSplitter()
+        sw, sd = AW_SLOT
+        x0 = math.sqrt((dh / 2) ** 2 - (sw / 2) ** 2)
+        self._aw_slot_x0 = x0
+        s["slot"] = s["rib2"].cut(box(x0, -sw / 2, -sd, 5.50 - x0 + 0.25, sw, sd + 0.25)).removeSplitter()
+        s["tap"] = s["slot"].cut(cyl(AW_TAP_C, -AW_WEB - 0.25, AW_WEB + 0.25)).removeSplitter()
+        hole = s["tap"]
+        xe = AW_ARM[4][0] - 0.12
+        for k, y in enumerate((-AW_TAP_E_AT[1], AW_TAP_E_AT[1])):
+            t = Part.makeCylinder(AW_TAP_E * IN / 2, (5.50 - xe + 0.12) * IN,
+                                  V(xe * IN, y * IN, (-3.50 + AW_TAP_E_AT[0]) * IN), V(1, 0, 0))
+            hole = hole.cut(t).removeSplitter()
+            s[f"end_hole{k + 1}"] = hole
+        return s
+
+    def aw_compare(self, stage, label, how):
+        from . import geomcheck
+        body = self.body()
+        try:
+            ok, detail = geomcheck.compare(body.Shape if body is not None else None, self._aw[stage])
+        except Exception as e:
+            ok, detail = False, f"no comparison: {e}"
+        self.step(label, how, SAME if ok else FAIL, detail)
+        return ok
+
+    def aw_primitive(self, command, kind, dims, boolean, label, typed, stage, axis="ZC"):
+        """A Block, Cylinder or Cone; dims and typed in inches (typed in mm)."""
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon(command)
+        qtest().qWait(900)
+
+        def check():
+            from . import geomcheck
+            try:
+                return geomcheck.compare(self.body().Shape, self._aw[stage])
+            except Exception as e:
+                return False, f"no comparison: {e}"
+        names = ", ".join(f"{n} {v * IN:.6g}" for n, v in dims)
+        self.ap_dialog(command, kind, [(n, v * IN) for n, v in dims], boolean, label, f"{names} typed", 0,
+                       typed=tuple(c * IN for c in typed), axis=axis, check=check)
+
+    # ------------------------------------------------------------- the sketch of AK, and the arm
+    def aw_open(self):
+        import os
+        from .tutorial import OUT
+        self.tutorial = "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)"
+        path = os.path.join(OUT, "Holder.FCStd")
+        for name, d in list(App.listDocuments().items()):
+            if os.path.normcase(d.FileName or "") == os.path.normcase(path):
+                App.closeDocument(name)
+        QtWidgets.QApplication.processEvents()
+        doc = App.openDocument(path) if os.path.exists(path) else None
+        sk = next((o for o in doc.Objects if o.TypeId == "Sketcher::SketchObject"), None) if doc else None
+        ok = sk is not None and self.body() is not None
+        self._aw_ak = sk
+        self._aw = {}
+        if ok:
+            try:
+                self._aw = self.aw_stages()
+                self.info["AW circles of AK picked"] = self._aw_tools
+            except Exception as e:
+                self.info["AW reference"] = f"the Part API could not build the holder: {e}"
+        outcome, how, detail, _path = self.save_ctrl_s("Holder_part.FCStd") if ok else (FAIL, "-", "", None)
+        self.step("Open the holder's sketch and save it as Holder_part", f"File > Open (by script); {how}",
+                  outcome if ok else FAIL, f"tutorial AK's sketch, {len(sk.Geometry)} curves; {detail}" if ok
+                  else f"no holder sketch at {path}: tutorial AK saves it")
+        if not ok:
+            raise RuntimeError("no holder sketch; tutorial AW cannot continue")
+        self.key("Ctrl+F")
+        self.key("Home")
+        self.wait = 1200
+
+    def aw_sketch(self):
+        Gui.Selection.clearSelection()
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def aw_plane(self):
+        picked = self.pick_in_feature_list("XZ")
+        self.mb2_click()
+        self.wait_for("aw: sketch in edit", lambda: self.edited_sketch() is not None)
+        self._aw_sk = self.edited_sketch()
+        if self._aw_sk is None:
+            self.step("Sketch the arm on the XC-ZC plane", f"ribbon '{self._fs_where} > Sketch'", FAIL,
+                      f"no sketch in edit (plane row {picked})")
+            raise RuntimeError("no sketch; tutorial AW cannot continue")
+        self._aw_plane = picked
+        self.wait = 800
+
+    def aw_lines(self, sk, pts):
+        """A closed outline of lines with Line (L): the first line's ends typed; each next line starts with a click
+        on the last one's end (the sketcher makes them coincident) and its end typed; the last ends with a click on
+        the first point. Returns (typed, clicked, closed, lines, the ends' largest distance from pts in mm)."""
+        import Part
+        g0 = len(sk.Geometry)
+        typed = clicked = 0
+        n = len(pts)
+        for k, (p, q) in enumerate(zip(pts, pts[1:] + pts[:1])):
+            click = () if k == 0 else (0, 1) if k == n - 1 else (0,)
+            t, c = self.fs_points(sk, "L", [p, q], click=click)
+            typed, clicked = typed + t, clicked + c
+        lines = [g for g in range(g0, len(sk.Geometry)) if "Line" in sk.Geometry[g].TypeId]
+        ends = [sk.getPoint(g, i) for g in lines for i in (1, 2)]
+        off = max((min((e - App.Vector(x, y, 0)).Length for x, y in pts) for e in ends), default=None)
+        self.info.setdefault("AW outline ends", []).append(
+            {"lines": len(lines), "ends": [(round(e.x, 6), round(e.y, 6)) for e in ends],
+             "coincident": sum(1 for c in sk.Constraints if c.Type == "Coincident")})
+        try:
+            closed = Part.Wire(Part.__sortEdges__([sk.Geometry[g].toShape() for g in lines])).isClosed()
+        except Exception:
+            closed = False
+        return typed, clicked, closed and len(lines) == n, lines, off
+
+    def aw_arm(self):
+        sk = self._aw_sk
+        pts = [(x * IN, z * IN) for x, z in AW_ARM]
+        typed, clicked, closed, lines, off = self.aw_lines(sk, pts)
+        ok = closed and off is not None and off < 1e-3
+        self.step("Sketch the arm's side: its top flat, then 17.8° down to the end, the end, and 25.7° back under it",
+                  f"ribbon '{self._fs_where} > Sketch' on '{self._aw_plane}'; L (Line) x{len(pts)}, {typed} points "
+                  f"typed, {clicked} clicked on the last line's end (a coincident end); MB2 after each",
+                  SAME if ok else FAIL, f"the outline closed {closed}; its ends within {off:.2g} mm of the drawing's "
+                  f"(in) {[(round(x, 4), z) for x, z in AW_ARM]}" if off is not None else "no lines")
+        if ok:
+            self._aw_arm_lines = lines
+            try:
+                self._aw = self.aw_stages()
+            except Exception as e:
+                self.info["AW reference"] = f"the Part API could not build the holder from the sketch: {e}"
+        self.wait = 300
+
+    def aw_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def aw_arm_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("Ctrl+Alt+F")
+        self.key("Ctrl+F")
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def aw_arm_dialog(self):
+        from . import controller
+        sk = self._aw_sk
+        names = self.ao_edge_names(sk)
+        line = next(g for g, geo in enumerate(sk.Geometry) if "Line" in geo.TypeId)
+        route = self.curve_pick(sk, line, names[line])
+        self.wait_for("the Extrude dialog", lambda: self.ao_ctl().session is not None
+                      and self.ao_ctl().session.stage == "parameterize" and controller._alive(self.ao_ctl().session.box),
+                      timeout_ms=6000)
+        sym = self.choose("symmetric", "sidesmode") or self.checkbox("midplane")
+        field = self.set_quantity("lengthEdit", AW_ARM_W * IN)
+        ok = self.ao_ok()
+        App.ActiveDocument.recompute()
+        self.aw_compare("arm", "Extrude the arm 3.50 wide, Symmetric Value",
+                        f"ribbon '{self._fs_where} > Extrude', a line picked ({route}; Curve Rule Inferred Curves), "
+                        f"'{sym}', '{field}' = {AW_ARM_W * IN:g} mm, OK {'clicked' if ok else 'unavailable'}")
+        self.key("Home")
+        self.key("Ctrl+F")
+        self.wait = 800
+
+    def aw_hollow(self):
+        inner = AW_ARM_W / 2 - AW_WALL
+        self.aw_primitive("Block", "Origin and Edge Lengths",
+                          (("length", AW_ARM[4][0]), ("width", 2 * inner), ("height", 3.50 - AW_WEB)), "Subtract",
+                          "Block subtracted from below: the arm hollow, walls 0.50 at the sides and 0.63 at the end",
+                          (0, -inner, -3.50), "hollow")
+        self.wait = 400
+
+    # ------------------------------------------------------------- the hub
+    def aw_hub(self):
+        (dh, hh), (df, zf) = AW_HUB, AW_FOOT
+        self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", dh), ("height", hh)), "Unite",
+                          "Cylinder Ø3.50 x 1.75 under the sketch, Unite: the hub", (0, 0, -hh), "hub")
+        from .tutorial import qtest
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cone")
+        qtest().qWait(900)
+
+        def check():
+            from . import geomcheck
+            return geomcheck.compare(self.body().Shape, self._aw["cone"])
+        self.ap_dialog("Cone", "Diameters and Height", (("baseDiameter", df * IN), ("topDiameter", dh * IN),
+                                                        ("height", (zf - hh) * IN)), "Unite",
+                       "Cone Ø2.76 to Ø3.50, 0.66 high, under the hub, Unite",
+                       f"Base {df * IN:g}, Top {dh * IN:g}, Height {(zf - hh) * IN:.6g} typed", 0,
+                       typed=(0, 0, -zf * IN), check=check)
+        self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", df), ("height", 3.50 - zf)), "Unite",
+                          "Cylinder Ø2.76 down to 3.50, Unite: the foot", (0, 0, -3.50), "foot")
+        self.wait = 400
+
+    def aw_inside(self):
+        (_, hh), (df, zf) = AW_HUB, AW_FOOT
+        from .tutorial import qtest
+        self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", AW_BORE), ("height", 3.50 - zf)),
+                          "Subtract", "Cylinder Ø2.00 subtracted from below: the bore", (0, 0, -3.50), "bore")
+        Gui.Selection.clearSelection()
+        b, self._ap_where = self.click_ribbon("Cone")
+        qtest().qWait(900)
+
+        def check():
+            from . import geomcheck
+            return geomcheck.compare(self.body().Shape, self._aw["funnel"])
+        self.ap_dialog("Cone", "Diameters and Height", (("baseDiameter", AW_BORE * IN), ("topDiameter", df * IN),
+                                                        ("height", (zf - hh) * IN)), "Subtract",
+                       "Cone Ø2.00 to Ø2.76 subtracted: the inside of the hub's cone",
+                       f"Base {AW_BORE * IN:g}, Top {df * IN:g}, Height {(zf - hh) * IN:.6g} typed", 0,
+                       typed=(0, 0, -zf * IN), check=check)
+        self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", df), ("height", hh - AW_WEB)),
+                          "Subtract", "Cylinder Ø2.76 subtracted up to 1.50 below the top: under the web",
+                          (0, 0, -hh), "under")
+        self.wait = 400
+
+    # ------------------------------------------------------------- the lugs
+    def aw_lug_plane(self):
+        body = self.body()
+        Gui.ActiveDocument.ActiveView.setActiveObject("pdbody", body)
+        Gui.Selection.clearSelection()
+        xy = next(f for f in body.Origin.OriginFeatures if f.Role == "XY_Plane")
+        Gui.Selection.addSelection(App.ActiveDocument.Name, body.Name, f"{body.Origin.Name}.{xy.Name}.")
+        self._aw_planes = self.fs_names("PartDesign::Plane")
+        self._aw_where = self.click_dropdown("Datum", "Datum Plane")
+        self.wait = 1200
+
+    def aw_lug_plane_ok(self):
+        self.wait_dialog("aw_lug_plane_ok")
+        name = self.set_quantity("attachmentoffsetz", -AW_LUG_TOP * IN)
+        self.mb2_click()
+        App.ActiveDocument.recompute()
+        plane = self.fs_new_feature("PartDesign::Plane", self._aw_planes)
+        z = plane.Placement.Base.z if plane is not None else None
+        self._aw_plane_obj = plane
+        self.step("Datum Plane 0.12 below the XC-YC plane (the lugs' top)", f"the XY plane selected (Part Navigator) "
+                  f"+ ribbon '{self._aw_where} > Datum > Datum Plane', '{name}' = {-AW_LUG_TOP * IN:g} mm, MB2 = OK",
+                  SAME if z is not None and abs(z + AW_LUG_TOP * IN) < 1e-6 else FAIL,
+                  f"plane at z = {z} mm" if z is not None else "no datum plane")
+        self.wait = 400
+
+    def aw_lug_sketch(self):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self.body().Name, f"{self._aw_plane_obj.Name}.")
+        b, self._fs_where = self.click_ribbon("Sketch")
+        self.wait = 1500
+
+    def aw_lugs(self):
+        self.wait_for("aw: lug sketch in edit", lambda: self.edited_sketch() is not None)
+        sk = self.edited_sketch()
+        if sk is None:
+            self.step("Sketch the lugs on the datum plane", f"ribbon '{self._fs_where} > Sketch'", FAIL,
+                      "no sketch in edit")
+            raise RuntimeError("no sketch; tutorial AW cannot continue")
+        self._aw_lug_sk = sk
+        results = [self.aw_lines(sk, q) for q in self.aw_lug_quads()]
+        typed = sum(r[0] for r in results)
+        clicked = sum(r[1] for r in results)
+        closed = [r[2] for r in results]
+        offs = [r[4] for r in results]
+        ok = all(closed) and None not in offs and max(offs) < 1e-3
+        self.step("Sketch the lugs' straight parts: from the Ø3.50 circle out to where their sides touch the R0.38 "
+                  "ends, three times", f"the datum plane + ribbon '{self._fs_where} > Sketch'; L (Line) x12, {typed} "
+                  f"points typed, {clicked} clicked on an end; MB2 after each", SAME if ok else FAIL,
+                  f"three closed outlines {closed}, their ends within {max(o for o in offs if o is not None):.2g} mm "
+                  "of tutorial AK's: on the Ø3.50 circle 1.00 apart, and the tangent points of the R0.38 ends"
+                  if any(o is not None for o in offs) else "no lines")
+        self.wait = 300
+
+    def aw_lug_finish(self):
+        self.key("Ctrl+Q")
+        self.wait = 1200
+
+    def aw_lug_extrude(self):
+        Gui.Selection.clearSelection()
+        self.key("Home")
+        self.key("Ctrl+F")
+        b, self._fs_where = self.click_ribbon("Extrude")
+        self.wait = 1500
+
+    def aw_lug_extrude_ok(self):
+        from .tutorial import qtest
+        how, ok = self.fs_extrude(self._aw_lug_sk, AW_LUG_T * IN, "Unite", reversed_=True)
+        self.aw_compare("lugs", "Extrude the lugs 0.50 down, Unite",
+                        f"ribbon '{self._fs_where} > Extrude', {how} {'clicked' if ok else 'unavailable'}")
+        qtest().qWait(200)
+        self.wait = 400
+
+    def aw_lug_ends(self):
+        for k, deg in enumerate(AK_LUGS):
+            c = ak_lug(deg)[4]
+            self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", 2 * AK_LUG_R / IN),
+                                                                         ("height", AW_LUG_T)), "Unite",
+                              f"Cylinder Ø0.76 x 0.50, the lug's R0.38 end at {deg:g}° on the bolt circle, Unite",
+                              (c.x / IN, c.y / IN, -(AW_LUG_TOP + AW_LUG_T)), f"end{k + 1}")
+        self.wait = 400
+
+    # ------------------------------------------------------------- the cup, from AK's circles
+    def aw_cup(self):
+        # FreeCAD may have hidden the sketch; a hidden curve cannot be picked: show it (NX's Show)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(App.ActiveDocument.Name, self._aw_ak.Name)
+        from .tutorial import qtest
+        qtest().qWait(300)
+        self.key("Ctrl+Shift+K")
+        QtWidgets.QApplication.processEvents()
+        self._aw_shown = self._aw_ak.ViewObject.Visibility
+        Gui.Selection.clearSelection()
+        self.key("Home")
+        self.key("Ctrl+F")
+        b, self._fs_where = self.click_ribbon("Extrude (Subtract)")
+        self.wait = 1500
+
+    def aw_cup_section(self):
+        from . import controller
+        sk = self._aw_ak
+        names = self.ao_edge_names(sk)
+        rule = self.ao_rule("Single Curve")
+        picks = self.aw_circles()
+        routes = [self.curve_pick(sk, g, names[g]) for g in picks]
+        self.wait_for("the Extrude (Subtract) dialog", lambda: self.ao_ctl().session is not None
+                      and self.ao_ctl().session.stage == "parameterize" and controller._alive(self.ao_ctl().session.box)
+                      and len(self.ao_ctl().session.edges or []) == len(picks), timeout_ms=6000)
+        self.set_combo("nxBoolean", "Subtract")
+        field = self.set_quantity("lengthEdit", AW_CUP * IN)
+        ok = self.ao_ok()
+        self.ao_rule("Inferred Curves")
+        self.aw_compare("cup", "Extrude (Subtract) the sketch's Ø2.76 circle and the lugs' Ø0.38 circles 1.38 down: "
+                        "the cup and the lug holes",
+                        f"the sketch shown (Ctrl+Shift+K: {self._aw_shown}); ribbon '{self._fs_where} > Extrude "
+                        f"(Subtract)', Curve Rule '{rule}', {len(picks)} circles picked ({', '.join(sorted(set(routes)))}"
+                        f"), '{field}' = {AW_CUP * IN:g} mm, OK {'clicked' if ok else 'unavailable'}")
+        self.wait = 400
+
+    def aw_cross(self):
+        h = AW_CUP - AW_RIB_TOP
+        self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", AW_BOSS), ("height", h)), "Unite",
+                          "Cylinder Ø0.75 up from the cup's floor to 0.50 below the top, Unite: the boss",
+                          (0, 0, -AW_CUP), "boss")
+        L, w = AW_RIB
+        self.aw_primitive("Block", "Origin and Edge Lengths", (("length", L), ("width", w), ("height", h)), "Unite",
+                          "Block 3.00 x 0.25 along XC, Unite: two arms of the cross", (-L / 2, -w / 2, -AW_CUP), "rib1")
+        self.aw_primitive("Block", "Origin and Edge Lengths", (("length", w), ("width", L), ("height", h)), "Unite",
+                          "Block 0.25 x 3.00 along YC, Unite: the other two", (-w / 2, -L / 2, -AW_CUP), "rib2")
+        self.wait = 400
+
+    def aw_slot(self):
+        sw, sd = AW_SLOT
+        x0 = self._aw_slot_x0
+        self.aw_primitive("Block", "Origin and Edge Lengths",
+                          (("length", 5.50 - x0 + 0.25), ("width", sw), ("height", sd + 0.25)), "Subtract",
+                          "Block subtracted: the sketch's slot, 0.50 wide and 0.50 deep, from the Ø3.50 circle",
+                          (x0, -sw / 2, -sd), "slot")
+        self.wait = 400
+
+    def aw_holes(self):
+        self.aw_primitive("Cylinder", "Axis, Diameter, and Height", (("diameter", AW_TAP_C), ("height", AW_WEB + 0.25)),
+                          "Subtract", "Cylinder Ø25/64 subtracted through the boss and the web: the 7/16-20 tap drill",
+                          (0, 0, -AW_WEB - 0.25), "tap")
+        xe = AW_ARM[4][0] - 0.12
+        for k, y in enumerate((-AW_TAP_E_AT[1], AW_TAP_E_AT[1])):
+            self.aw_primitive("Cylinder", "Axis, Diameter, and Height",
+                              (("diameter", AW_TAP_E), ("height", 5.50 - xe + 0.12)), "Subtract",
+                              f"Cylinder Ø29/64 along XC through the end, 1.09 up, y = {y:+g}: a 1/2-20 tap drill",
+                              (xe, y, -3.50 + AW_TAP_E_AT[0]), f"end_hole{k + 1}", axis="XC")
+        self.wait = 400
+
+    def aw_check(self):
+        self.aw_compare("end_hole2", "The holder", "compared with our reading of the drawing, built by the Part API")
+        # the datum plane and AK's sketch hidden (both selected, Ctrl+B: NX's Hide)
+        Gui.Selection.clearSelection()
+        hide = [self._aw_plane_obj, self._aw_ak]
+        for o in hide:
+            Gui.Selection.addSelection(App.ActiveDocument.Name, o.Name)
+        self.key("Ctrl+B")
+        QtWidgets.QApplication.processEvents()
+        self.info["AW hidden by Ctrl+B"] = [not o.ViewObject.Visibility for o in hide]
+        Gui.Selection.clearSelection()
+        outcome, how, detail, path = self.save_ctrl_s("Holder_part.FCStd")
+        self.step("Save the part", how, outcome, detail)
+        self.wait = 300
+
+    def aw_fit(self):
+        self.fit()
+
+    def aw_show(self):
+        self.show("AW_holder")
 
 
 # ================================================================== AV: Rocker Arm (exercise 4.10.1)
