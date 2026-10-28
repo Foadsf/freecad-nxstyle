@@ -142,6 +142,13 @@ kbd:[Ctrl+W] opens the *Show and Hide* panel: show or hide all objects of one ty
 
 image::ui-show-hide.png[Show and Hide panel,320]
 
+kbd:[Ctrl+B] (*Hide*) hides the selected objects, and kbd:[Ctrl+Shift+K] (*Show*) shows them again.
+A hidden object cannot be picked in the graphics window, so select it in the Part Navigator.
+With nothing selected, *Show* opens a list of the hidden objects: pick them and click *OK*, which is one undo step.
+In NX the hidden objects appear in the graphics window to be picked.
+Both keys work at once after a pick.
+kbd:[Ctrl+Shift+U] (*Show All*) shows everything; kbd:[Ctrl+Shift+B] swaps shown and hidden.
+
 == Touch Mode and FreeCAD's own interface
 
 * kbd:[F4] toggles *Touch Mode*: larger ribbon and bar icons.

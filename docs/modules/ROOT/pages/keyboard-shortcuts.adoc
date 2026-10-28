@@ -14,6 +14,12 @@ To keep FreeCAD's keys instead of NX's, set `"nx_shortcuts": false` in the xref:
 
 include::partial$generated/shortcuts.adoc[]
 
+== Hide and Show
+
+kbd:[Ctrl+B] and kbd:[Ctrl+Shift+K] act on the selection, and work at once after you select something in the Part Navigator.
+With nothing selected, kbd:[Ctrl+Shift+K] opens a list of the hidden objects to show (xref:user-interface.adoc#_show_and_hide[]).
+In a sketch, both keys act on the dimensions and constraints you select (xref:sketching.adoc[]).
+
 == Keys FreeCAD gives up
 
 [cols="1,3",options="header"]
