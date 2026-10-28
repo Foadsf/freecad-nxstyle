@@ -53,6 +53,8 @@ class SeedTests(unittest.TestCase):
                 texts = {e.get("Name"): (e.text or "") for e in tree.iter("FCText")}
                 self.assertEqual(texts["StyleSheet"], sheet)
                 self.assertEqual(texts["Widgets"], "")          # no panels in overlays
+                bools = {e.get("Name"): e.get("Value") for e in tree.iter("FCBool")}
+                self.assertEqual(bools["ShowNaviCube"], "0")    # no view cube, as in NX (issue #7)
                 self.assertEqual(tree.getroot().tag, "FCParameters")
 
     def test_never_overwrites_existing_user_cfg(self):

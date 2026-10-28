@@ -151,8 +151,9 @@ def apply(cfg=None):
     v.SetInt("DefaultShapeLineWidth", int(cfg.get("edge_width", 1)))
     v.SetBool("RandomColor", False)
     # NX shows a view triad in the lower-left corner and no view cube. FreeCAD
-    # 1.0 can only draw its triad lower-right, so NXStyle draws its own.
-    v.SetBool("ShowNaviCube", False)
+    # 1.0 can only draw its triad lower-right, so NXStyle draws its own. The
+    # launcher hides the view cube in a new profile only (seed_user_cfg): a cube
+    # switched on in FreeCAD's Preferences stays on.
     v.SetBool("CornerCoordSystem", cfg.get("view_triad", "nx") == "freecad")
     v.SetBool("ZoomAtCursor", bool(cfg.get("zoom_at_cursor", True)))
     v.SetBool("InvertZoom", bool(cfg.get("invert_wheel_zoom", True)))
