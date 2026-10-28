@@ -4,7 +4,8 @@
 A PMI annotation is a dict, as stored in the model (see pmi_ui) and in a release package:
 
   id            unique name of the annotation in its part
-  kind          "dimension", "fcf" (geometrical tolerance frame), "datum" (datum feature)
+  kind          "dimension", "fcf" (geometrical tolerance frame), "datum" (datum feature); "note" and
+                "centerline" carry only text: they are no characteristic, have no checks and no AP242 form
   feature       what it is attached to, e.g. "Body:Face7" (one string, or two joined by " | ")
   feature_type  "plane", "hole" (internal cylinder), "pin" (external cylinder), "width" (two
                 opposed planes: a slot or a tab), or "other"

@@ -23,6 +23,8 @@ NX asks for the size, projection and scale in one Sheet dialog; in FreeCAD they 
 Changing the template later keeps the views where they are, as NX's *Edit Sheet* does.
 FreeCAD's default sheet is A4.
 
+NX's *Drafting Preferences › View › Display Borders* has no button here. A FreeCAD sheet starts with its *Show Frames* property off. FreeCAD's own *Turn View Frames On/Off* stays greyed in FreeCAD 1.1.4.
+
 === Title block and revision block
 
 *Home › Drawing › Populate Title Block* fills the sheet's title block the way NX fills it from the part's attributes.
@@ -55,7 +57,8 @@ xref:tutorials/ac.adoc[Tutorial AC] fills the guide bush's sheet after its two r
 | NX | Here
 
 | Base View | Select the body, click *Base View*, press *MB2*. The view's direction is a property.
-| Projected View | FreeCAD's Projected View is a *projection group*. To place views one by one as NX does, make a second Base View with the direction you need and line it up.
+| Projected View | Select the parent view (else the newest base view is taken), click *Projected View*, then *Above*, *Right*, *Below* or *Left* once for each view; *MB2*, *OK* or *Esc* ends it and keeps the views. Each view is the part turned for the sheet's projection angle (third angle: the view above is the top view), at the parent's scale and view style, lined up with it. One undo step removes them all.
+| Projection Group | FreeCAD's own projected views: a group made from the part, with its own anchor view.
 | Section View | Select the base view, click *Section View*, pick the direction in the dialog, *MB2*. The new view lands on the base view; move it afterwards.
 | Detail View | *Detail View* magnifies an area of a selected view.
 |===
@@ -103,7 +106,8 @@ When the part is documented in 3D (xref:pmi.adoc[PMI]), select a view and click 
 == Center marks, notes, hatches
 
 * *Center Mark* draws centre lines for the selected circles; TechDraw adds none by itself.
-* Note, ID Symbol (Balloon), Leader, Weld Symbol and Surface Finish are on the Annotation group.
+* *Note*: select the view edge the leader ends on (NX's terminating object), click *Note*, type the text; *Ø*, *°* and *±* are on the Symbols buttons. The lettering height and the leader's stub length are fields of the dialog (NX sets them in the note's Settings afterwards). The leader runs outward, away from the view. With no edge selected the note has no leader.
+* ID Symbol (Balloon), Leader, Weld Symbol and Surface Finish are on the Annotation group; *Rich Text Note* is FreeCAD's own note.
 * *Hatch* and *Crosshatch* fill faces and sections.
 
 == Hide and show
