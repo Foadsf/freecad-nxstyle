@@ -150,6 +150,17 @@ class DraftingSteps:
         App.ActiveDocument.recompute()
         return made, where, closed
 
+    def dz_hidden_ready(self, view, what, tries=6):
+        """Wait for a view's hidden lines. TechDraw's worker sometimes delivers none until the view is recomputed again
+        (measured: none for 60 s after Hard Hidden was set, 60 hidden edges after a later recompute), so it is touched
+        between waits, as tutorial Y does."""
+        for k in range(tries):
+            if self.wait_for(f"{what}: hidden lines (try {k + 1})", lambda: len(view.getHiddenEdges()) > 0, 10000):
+                return True
+            view.touch()
+            view.recompute()
+        return len(view.getHiddenEdges()) > 0
+
     @staticmethod
     def dz_lines(view, hidden=False):
         """The view's visible (or, with hidden, its dashed hidden) edges, unscaled and centred: getEdgeByIndex.
@@ -718,15 +729,15 @@ class MstImpellerPMITutorials(DraftingSteps):
             front.HardHidden = True                 # the bore's floor is inside: its 16 is read off dashed lines
             App.ActiveDocument.recompute()
         ok = front is not None and self.dz_edges(front, "ba front", 120000)
-        if ok:            # the bore's floor is a hidden line: Inherit PMI needs it computed (ba1 ran ahead of it once)
-            self.wait_for("ba front: hidden lines", lambda: len(front.getHiddenEdges()) > 0, 60000)
+        if ok:            # the bore's floor is a hidden line: Inherit PMI needs it computed
+            self.dz_hidden_ready(front, "ba front")
         made, where2, closed = self.dz_projected(front, ("Right",)) if ok else ({}, "", False)
         right = made.get("Right")
         if right is not None:
             right.HardHidden = True                 # the book's view down the axis shows its hidden circles dashed
             App.ActiveDocument.recompute()
             self.dz_edges(right, "ba right", 120000)
-            self.wait_for("ba right: hidden lines", lambda: len(right.getHiddenEdges()) > 0, 60000)
+            self.dz_hidden_ready(right, "ba right")
         iso, _ = self.dz_base(self._ba_page, [self._ba_body], *ISO, 330.0, 200.0)     # clear of the title block
         if iso is not None:
             self.dz_edges(iso, "ba iso", 120000)
@@ -909,7 +920,7 @@ class MstBoltDrawingTutorials(DraftingSteps):
             Gui.Selection.addSelection(App.ActiveDocument.Name, v.Name)
             v.HardHidden = True
         App.ActiveDocument.recompute()
-        self.wait_for("bb: hidden lines", lambda: len(self._bb_top.getHiddenEdges()) > 0, 120000)
+        self.dz_hidden_ready(self._bb_top, "bb top", tries=12)
         r = AQ_SHANK[0] / 2
         hidden = [round(e.Curve.Radius, 4) for e in self.dz_lines(self._bb_top, hidden=True) if hasattr(e.Curve, "Radius")]
         ok = any(abs(x - r) < 1e-3 for x in hidden)
