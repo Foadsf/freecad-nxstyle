@@ -5,7 +5,9 @@ whose sketch FreeCAD hid after a Pad (tutorial AX's case) and a second, hidden b
 - the hidden sketch selected (by name, then through its Body), Ctrl+Shift+K at once: shown;
 - the hidden body clicked in the Part Navigator, Ctrl+Shift+K at once with the focus still there: shown;
 - nothing selected, Ctrl+Shift+K: the Show dialog lists the hidden objects; OK shows the picked one, one undo step;
-- Ctrl+B at once after a pick hides it; Ctrl+Shift+U shows all; Ctrl+Shift+B inverts.
+- Ctrl+B at once after a pick hides it; Ctrl+Shift+U shows all; Ctrl+Shift+B inverts;
+- keys whose command needs a selection, at once after the pick: Ctrl+I (Object Information), Ctrl+D (Delete, an
+  alias action) - shortcuts.KeyGate and enable_if_active.
 
 "At once" is before FreeCAD's command-state timer has seen the selection: each case first waits for that timer to
 grey Std_ShowSelection for the empty selection and records that it was still greyed at the key, else the check
@@ -31,9 +33,13 @@ def stale_wait():
         qwait(100)
 
 
+def actions_enabled(name):
+    return [a.isEnabled() for a in Gui.Command.get(name).getAction() or []]
+
+
 def freecad_show_enabled():
     """Whether FreeCAD's own Show Selection action is enabled now (False just after a pick: the race is reached)."""
-    return [a.isEnabled() for a in Gui.Command.get("Std_ShowSelection").getAction() or []]
+    return actions_enabled("Std_ShowSelection")
 
 
 def key_on(widget, seq):
@@ -121,22 +127,33 @@ def run(smoke):
                                               for g in got.values()),
                     f"{got} (the action must still be greyed at the key, [False], else this does not reach the race)")
 
-        # 2. the hidden body clicked in the Part Navigator; the key with the focus still in the navigator
-        smoke.shell.show_part_navigator()
+        # 2. the hidden body clicked in the Part Navigator; the key with the focus still in the navigator. Start from
+        # NX's default filters, as a new part does (the detail records what an earlier step left)
+        sh = smoke.shell
+        filters = (sh.type_filter.currentText(), getattr(sh.scope_filter, "currentText", lambda: "?")())
+        sh.type_filter.setCurrentIndex(0)
+        sh.scope_filter.select("assembly")
+        sh.show_part_navigator()
         tree = navigator_status.model_tree()
         stale_wait()
         item = click_tree(tree, doc, other.Name) if tree is not None else None
         picked, stale = None, None
         if item:
+            for _ in range(50):                # the tree hands the click to the selection a moment later
+                if Gui.Selection.getSelectionEx("", 0):
+                    break
+                qwait(20)
             picked = sorted(s.ObjectName for s in Gui.Selection.getSelectionEx("", 0))
             stale = freecad_show_enabled()
             key_on(tree, "Ctrl+Shift+K")
         smoke.check("Show (Ctrl+Shift+K) right after picking a hidden body in the Part Navigator shows it",
                     item and picked == [other.Name] and other.ViewObject.Visibility and stale == [False],
                     f"tree item clicked {item}; selected {picked}; Std_ShowSelection enabled at the key {stale}; "
-                    f"shown {other.ViewObject.Visibility}")
+                    f"shown {other.ViewObject.Visibility}; filters before the reset (type, scope) {filters}")
 
         # 3. nothing selected: the dialog lists the hidden objects; OK shows the picked one, one undo step
+        if showhide._show is not None:         # a dialog left from a failed case would keep the main window inactive
+            showhide._show.close()
         sk.ViewObject.Visibility = False
         other.ViewObject.Visibility = False
         stale_wait()
@@ -180,6 +197,33 @@ def run(smoke):
                     "keys", hidden and all_shown and inverted and back,
                     f"hidden by Ctrl+B {hidden}; all shown by Ctrl+Shift+U {all_shown}; inverted {inverted}; "
                     f"inverted back {back}")
+
+        # 5. any NX key whose command needs a selection, right after the pick: Object Information (Ctrl+I, the
+        # command's own action) and Delete (Ctrl+D, an alias that triggers Std_Delete)
+        lone = doc.addObject("Part::Box", "Lone")
+        doc.recompute()
+        stale_wait()
+        Gui.Selection.addSelection(doc.Name, other.Name)
+        info_stale = actions_enabled("NXStyle_ObjectInfo")
+        smoke.press("Ctrl+I")
+        qwait(100)
+        win = next((w for w in QtWidgets.QApplication.topLevelWidgets()
+                    if w.objectName() == "NXInformation" and w.isVisible()), None)
+        edit = win.findChild(QtWidgets.QPlainTextEdit) if win is not None else None
+        info = edit is not None and f"({other.Name})" in edit.toPlainText()
+        if win is not None:
+            win.close()
+        stale_wait()
+        Gui.Selection.addSelection(doc.Name, lone.Name)
+        delete_stale = actions_enabled("Std_Delete")
+        smoke.press("Ctrl+D")
+        QtWidgets.QApplication.processEvents()
+        deleted = doc.getObject("Lone") is None
+        smoke.check("Object Information (Ctrl+I) and Delete (Ctrl+D) right after a pick, while FreeCAD still greys "
+                    "their actions", info and deleted and info_stale == [False] and delete_stale == [False],
+                    f"Information window {info}; Lone deleted {deleted}; actions enabled at the key: Object "
+                    f"Information {info_stale}, Delete {delete_stale} (must be [False], else this does not reach "
+                    f"the race)")
     except Exception:
         smoke.check("show scenario ran", False, traceback.format_exc().splitlines()[-1])
         smoke.info["traceback show"] = traceback.format_exc()
