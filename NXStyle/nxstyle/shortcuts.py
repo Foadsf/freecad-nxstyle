@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from .qt import QAction, QtGui, QtWidgets, Qt
+from .qt import QAction, QtCore, QtGui, QtWidgets, Qt
 
 
 @dataclass
@@ -161,6 +161,58 @@ def resolve(entry, known):
     return ""
 
 
+def enable_if_active(name, act=None):
+    """Give a command's action the state its command reports now. FreeCAD sets it on a timer after a selection
+    change (Gui.updateCommands() only schedules that), so right after a pick the action of a command that needs a
+    selection is still disabled: Qt drops its key, and trigger() does nothing. True when it was enabled here."""
+    try:
+        cmd = Gui.Command.get(name)
+        acts = [act] if act is not None else list(cmd.getAction() or [])
+        if not acts or all(a.isEnabled() for a in acts) or not cmd.isActive():
+            return False
+        for a in acts:
+            a.setEnabled(True)
+        return True
+    except Exception:
+        return False
+
+
+def event_key(ev):
+    """The key of a QKeyEvent as norm() writes it ('Ctrl+Shift+K')."""
+    mods = ev.modifiers() & (Qt.ShiftModifier | Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)
+    try:
+        seq = QtGui.QKeySequence(QtCore.QKeyCombination(mods, Qt.Key(ev.key())))
+    except (AttributeError, TypeError):              # Qt 5: an int
+        seq = QtGui.QKeySequence(int(mods) | int(ev.key()))
+    return seq.toString()
+
+
+class KeyGate(QtCore.QObject):
+    """Qt sends ShortcutOverride to the focus widget before it looks a key up in its shortcut map: there, the
+    action of an NX key's command gets the state its command reports now (enable_if_active). Without it, a key
+    pressed right after a pick in the Part Navigator did nothing (tutorial AX: Ctrl+B, Ctrl+Shift+K).
+
+    Only the part-level keys ("doc" context): in a sketch FreeCAD greys a creation tool while it hands over from
+    the last one, and isActive() does not say so. Enabling Profile (Z) there right after the last Profile ended
+    started it half-way (smoke: "Profile left open", measured 2026-10-28)."""
+
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+        self.last = None             # (key, command) the gate last enabled, for tests
+
+    def eventFilter(self, obj, ev):
+        if ev.type() == QtCore.QEvent.ShortcutOverride:
+            try:
+                key = event_key(ev)
+                name = self.owner.commands.get(key)
+                if name and enable_if_active(name, self.owner.targets.get(key)):
+                    self.last = (key, name)
+            except Exception:
+                pass
+        return False
+
+
 def _cmd_actions():
     """id(QAction) -> command name, for actions that belong to a FreeCAD command."""
     out = {}
@@ -181,7 +233,9 @@ class Shortcuts:
         self.mw = Gui.getMainWindow()
         self.aliases = {}       # key -> QAction
         self.targets = {}       # key -> QAction that should fire
+        self.commands = {}      # key -> command whose own action is the target (not an alias)
         self.rows = []          # report rows
+        self.gate = KeyGate(self)
 
     # ---------------------------------------------------------------- apply
     def apply(self):
@@ -209,11 +263,14 @@ class Shortcuts:
             if act in self.aliases.values():
                 act.setShortcut(QtGui.QKeySequence(key))
             else:
+                if e.context == "doc":
+                    self.commands[key] = e.resolved
                 cmd = Gui.Command.get(e.resolved)
                 cmd.setShortcut(key)
                 if norm(act.shortcut().toString()) != key:
                     act.setShortcut(QtGui.QKeySequence(key))
         self.attach_to_window()
+        QtWidgets.QApplication.instance().installEventFilter(self.gate)
         self.rows = [self._row(k, e) for k, e in wanted]
         return self.rows
 
@@ -256,6 +313,8 @@ class Shortcuts:
             e.resolved = resolve(e, _known())
         if e.resolved:
             commands.remember(e.resolved)
+            if e.context == "doc":                # else trigger() on the still disabled action does nothing
+                enable_if_active(e.resolved)
             trigger(e.resolved)
         elif e.message:
             QtWidgets.QMessageBox.information(self.mw, e.nx, e.message)
@@ -310,6 +369,8 @@ _instance = None
 
 def apply(shell):
     global _instance
+    if _instance is not None:
+        QtWidgets.QApplication.instance().removeEventFilter(_instance.gate)
     _instance = Shortcuts(shell)
     return _instance.apply()
 
