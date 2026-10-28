@@ -1,0 +1,70 @@
+= Tutorial BA: PMI on the Impeller
+:description: Linear and Radial PMI dimensions, a Centerline and a Note on the impeller of tutorial AU, then a drawing whose views inherit them (NX 12 for Engineering Design, 5.5).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 5.5 (Product and Manufacturing Information).
+You learn:: the PMI tab: Rapid and Linear, Radial, Centerline, Note; model views; Inherit PMI on a drawing
+Part:: tutorial xref:tutorials/au.adoc[AU]'s impeller, `Impeller_impeller`. The replay runs AH and AU first.
+Sizes:: the book's, in inches, typed in millimetres.
+
+== Step by step
+
+=== 1. Dimensions along the axis
+
+Open `Impeller_impeller` and click the *PMI* tab.
+Select the impeller's two end faces and click *Rapid Dimension*, then MB2: 16.25 in, the cone's length.
+Select the large end face and the bore's floor and click *Linear*: 16 in, the bore's depth.
+
+=== 2. Diameters
+
+The book does not say which view the PMI goes into.
+The diameters are read down the axis, so double-click *Right* under Model Views to make it the work view.
+Then click *Radial* on each of these, with the *Diameter* method:
+
+* the large end's circular edge, Ø15;
+* the small end's circular edge, Ø8;
+* the bore, Ø4;
+* the pin hole, Ø0.275.
+
+=== 3. Centerline and note
+
+Double-click *Front* under Model Views.
+Select the bore and click *Centerline* (Supplemental Geometry): its axis appears, a little longer than the bore.
+Select a blade, click *Note*, type `Five impeller blades` and press MB2.
+
+image::tutorial-BA-01-pmi.png[The impeller with its PMI: the lengths, the diameters, the centerline through the bore and the note]
+
+Save the part.
+
+=== 4. The drawing
+
+Press kbd:[Ctrl+Shift+D] and click *New Sheet* (B, 11 x 17, here at 1:10).
+Make a Base View looking at the front, a Projected View to its right (the view down the axis), and a Base View in the isometric direction.
+The front and right views show hidden lines.
+Set each view's *NX_InheritPMI* to *Aligned to Drawing (Entire Part)*, the option the book picks in the View Creation Wizard.
+Select each view and click *Inherit PMI*.
+The front view gets the two lengths, the note and the centerline.
+The right view gets the four diameters.
+
+image::tutorial-BA-02-drawing.png[The impeller's drawing: the lengths, note and centerline on the front view, the diameters on the view down the axis]
+
+== The replay
+
+include::partial$generated/tutorial-BA.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each PMI is compared with the impeller the Part API builds from the book's sizes.
+The lengths must be the distances between its end faces and the bore's floor, the diameters its circles and cylinders.
+The centerline must lie on the X axis and run from the bore's floor to its mouth, plus the overrun.
+The note's leader must end on the blade.
+On the drawing, each inherited dimension must carry the PMI's value, and the centerline must lie on the axis as the front view shows it.
+
+== What differs from NX
+
+* NX 12 switches the PMI application on from File. NX-Style's PMI tab is always there.
+* NX places a PMI with a click in the graphics window. Here it is placed beside its face, in the work view's plane.
+* NX's Inherit PMI option is in the View Creation Wizard. Here it is each view's *NX_InheritPMI* property, and the *Inherit PMI* button brings the PMI onto the view.
+* The book's axial view shows the Ø8 end as a dashed hidden circle. Here, too, the view draws hidden lines, and the dimension goes on the dashed circle.
+* A note inherited onto the drawing goes above the view, without its leader, as in the book's figure.
+* The book's drawing view of the PMI is isometric. Inherit PMI places dimensions on edges seen square, so here the PMI goes on the front view and the view down the axis. The isometric view shows the part only.

@@ -792,7 +792,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
-    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY",
+    ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,AZ,BA,BB",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
                          "G Shaft Support assembly, H GD&T plate drawing, I Gasket (trim, fillet, "
@@ -820,6 +820,10 @@ def main(argv: list[str] | None = None) -> int:
                          "AW Holder: AK's sketch modelled in 3D, arm, hub, lugs, cup, slot, holes (runs AK first), "
                          "AX Impeller Upper Casing: AO's casing edited to the other side, a manhole (runs AO first), "
                          "AY Die Cavity: Blocks, a spline section revolved to cut, a cavity with posts, Edge Blends, "
+                         "AZ Rack drawing: Base and Projected Views, dimensions, a section (runs AT first), "
+                         "BA PMI on the impeller: Linear, Radial, Centerline, Note, inherited by a drawing (runs AU first), "
+                         "BB Hex bolt drawing: hidden lines, dimensions, a thread note with a leader (runs AQ first), "
+
                          "BC release to manufacturing in Carbon (runs T and V first))")
     ap.add_argument("--keep-open", action="store_true", help="with --smoke-test: leave FreeCAD open afterwards")
     ap.add_argument("--require-all", action="store_true",

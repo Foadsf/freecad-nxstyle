@@ -41,10 +41,11 @@ from .tutorial_mst import (MstCasingTutorials, MstCircularBaseTutorials, MstHold
 from .tutorial_mst4 import (MstArborPressTutorials, MstDieCavityTutorials, MstFastenerTutorials,
                             MstHolderSolidTutorials, MstImpellerSolidTutorials, MstLowerCasingTutorials, MstPlateTutorials, MstRockerArmTutorials,
                             MstShaftTutorials, MstUpperCasingTutorials)
+from .tutorial_mst5 import MstBoltDrawingTutorials, MstImpellerPMITutorials, MstRackDrawingTutorials
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
-ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,BC"
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,AZ,BA,BB,BC"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
@@ -133,7 +134,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
              MstTutorials, MstCasingTutorials, MstImpellerTutorials, MstCircularBaseTutorials, MstHolderTutorials,
              MstPlateTutorials, MstLowerCasingTutorials, MstShaftTutorials, MstFastenerTutorials,
              MstArborPressTutorials, MstImpellerSolidTutorials, MstUpperCasingTutorials, MstDieCavityTutorials,
-             MstRockerArmTutorials, MstHolderSolidTutorials):
+             MstRockerArmTutorials, MstHolderSolidTutorials, MstRackDrawingTutorials, MstImpellerPMITutorials,
+             MstBoltDrawingTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -475,11 +477,17 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         X = list(getattr(self, "X_STEPS", lambda: [])())
         Y = list(getattr(self, "Y_STEPS", lambda: [])())
         Z = list(getattr(self, "Z_STEPS", lambda: [])())
-        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK, AL, AM, AN, AO, AP, AQ, AR, AS, AT, AU, AV, AW, AX, AY, BC = (
+        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK, AL, AM, AN, AO, AP, AQ, AR, AS, AT, AU, AV, AW, AX, AY, AZ, BA, BB, BC = (
             list(getattr(self, f"{k}_STEPS", lambda: [])())
             for k in ("AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ",
-                      "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "BC"))
+                      "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ", "BA", "BB", "BC"))
         wanted = [w.strip() for w in (os.environ.get("NXSTYLE_TUTORIALS") or ALL_TUTORIALS).upper().split(",")]
+        if "AZ" in wanted and "AT" not in wanted:    # AZ draws tutorial AT's rack
+            wanted.insert(wanted.index("AZ"), "AT")
+        if "BA" in wanted and "AU" not in wanted:    # BA documents tutorial AU's impeller with PMI
+            wanted.insert(wanted.index("BA"), "AU")
+        if "BB" in wanted and "AQ" not in wanted:    # BB draws tutorial AQ's screw
+            wanted.insert(wanted.index("BB"), "AQ")
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
         if "BC" in wanted and "V" not in wanted:     # BC sends the guide bush V released to manufacturing
@@ -507,7 +515,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
                            ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z),
                            ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD), ("AE", AE), ("AF", AF), ("AG", AG), ("AH", AH), ("AJ", AJ),
                            ("AK", AK), ("AL", AL), ("AM", AM), ("AN", AN), ("AO", AO), ("AP", AP), ("AQ", AQ), ("AR", AR), ("AS", AS),
-                           ("AT", AT), ("AU", AU), ("AV", AV), ("AW", AW), ("AX", AX), ("AY", AY), ("BC", BC)):
+                           ("AT", AT), ("AU", AU), ("AV", AV), ("AW", AW), ("AX", AX), ("AY", AY), ("AZ", AZ),
+                           ("BA", BA), ("BB", BB), ("BC", BC)):
             if key in wanted:
                 yield from steps
 
