@@ -11,6 +11,7 @@ constraint list's check boxes treat the virtual space as hidden in the 3D view. 
 dimensions there, Show (Ctrl+Shift+K) and Show All (Ctrl+Shift+U) bring them back.
 """
 
+import math
 import re
 
 H_AXIS, V_AXIS = -1, -2
@@ -125,6 +126,71 @@ def moved_constraint(kind, other, pos, piece):
     """Sketcher.Constraint's arguments for a lost constraint put back on piece: the point first, as FreeCAD
     writes an end held on a curve."""
     return (kind, other, pos, piece) if pos else (kind, other, piece)
+
+
+TYPED_DATUMS = ("Distance", "DistanceX", "DistanceY", "Radius", "Diameter", "Angle")
+
+
+def printf_f(v):
+    """v as C's printf '%f' writes it: 6 decimals."""
+    return float("%f" % v)
+
+
+def exact_datum(value, typed):
+    """The typed value a sketch constraint's datum stands for, or None to leave the datum alone.
+
+    FreeCAD 1.1.4's sketch tools write the constraint of each value typed in an on-view field through C's '%f'
+    (6 decimals), in the sketch's units: mm, and radians for angles typed in degrees. A typed 90 deg sweep is
+    kept as 1.570796 rad, 3.3e-7 rad short of a quarter turn: on R63.5 the arc's end moves 2e-5 mm off the point
+    typed. value: the datum as FreeCAD wrote it (mm or radians); typed: [(number as typed, is_angle)] in the
+    fields' units (mm, degrees). Returns the typed number in the datum's units and sign, when value is its '%f'
+    image and not already that number."""
+    best = None
+    for t, is_angle in typed:
+        exact = abs(math.radians(t) if is_angle else t)
+        if exact == abs(value):
+            return None
+        if abs(printf_f(exact) - abs(value)) < 1e-12 and (best is None or abs(exact - abs(value)) < best[0]):
+            best = (abs(exact - abs(value)), exact)
+    if best is None:
+        return None
+    return best[1] if value >= 0 else -best[1]
+
+
+JOINING = ("Coincident", "Tangent", "Perpendicular")    # with a point on each side, they join the two points
+
+
+def missing_joins(points, new, links, tol):
+    """Points of the new curves that lie on a point of another curve without a constraint joining them.
+
+    points: {(GeoId, PointPos): (x, y)}; new: the GeoIds a tool just made; links: [((g, p), (h, q))] the points
+    already joined (Coincident, or Tangent / Perpendicular end to end), directly or through others; tol: mm.
+    Returns [((g, p), (h, q))], the new point first, each joined to the nearest point within tol: one of older
+    curves before one of the new ones. (FreeCAD 1.1.4's detectMissingPointOnPointConstraints cannot be used
+    here: it starts its list of coincidences from all constraints, so a point held by a DistanceX or a point on
+    the X axis falls out of its group, and a typed point is held so.)"""
+    group = {k: k for k in points}
+
+    def root(k):
+        while group[k] != k:
+            group[k] = group[group[k]]
+            k = group[k]
+        return k
+
+    for a, b in links:
+        if a in group and b in group:
+            group[root(a)] = root(b)
+    out = []
+    for v in sorted(k for k in points if k[0] in new):
+        x, y = points[v]
+        near = [(k[0] in new, math.hypot(points[k][0] - x, points[k][1] - y), k) for k in points
+                if k[0] != v[0] and root(k) != root(v)]
+        near = [n for n in near if n[1] <= tol]
+        if near:
+            u = min(near)[2]
+            out.append((v, u))
+            group[root(v)] = root(u)
+    return out
 
 
 class NotCollinear(ValueError):

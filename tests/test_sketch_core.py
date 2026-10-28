@@ -2,6 +2,7 @@
 """NX sketch constraints in FreeCAD terms: element names, Collinear's roles, the gallery (no FreeCAD needed)."""
 
 import json
+import math
 import os
 import sys
 import unittest
@@ -179,6 +180,62 @@ class TrimLosses(unittest.TestCase):
         before = constraints(["Tangent 1/0 0/0", "Tangent 1/0 0/0"])
         after = constraints(["Tangent 1/0 0/0"])
         self.assertEqual(core.trim_losses(before, after, 0, [0], {}), [("Tangent", 1, 0)])
+
+
+class ExactDatum(unittest.TestCase):
+    """FreeCAD writes typed on-view values through '%f'; the typed number comes back."""
+
+    def test_angles_typed_in_degrees_come_back_in_radians(self):
+        self.assertEqual(core.exact_datum(1.570796, [(63.5, False), (90.0, True)]), math.pi / 2)
+        self.assertEqual(core.exact_datum(3.141593, [(180.0, True)]), math.pi)
+        self.assertEqual(core.exact_datum(-1.308997, [(75.0, True)]), -math.radians(75))   # the sign FreeCAD wrote
+
+    def test_lengths_with_more_than_six_decimals(self):
+        typed = math.hypot(38.1, 63.5)
+        self.assertEqual(core.exact_datum(core.printf_f(typed), [(typed, False)]), typed)
+        self.assertEqual(core.exact_datum(-13.147908, [(-13.1479076, False)]), -13.1479076)
+
+    def test_left_alone(self):
+        self.assertIsNone(core.exact_datum(63.5, [(63.5, False)]))             # '%f' kept it exactly
+        self.assertIsNone(core.exact_datum(1.570796, []))                      # nothing typed
+        self.assertIsNone(core.exact_datum(1.5708, [(90.0, True)]))            # not the '%f' image of a typed value
+        self.assertIsNone(core.exact_datum(1.570796, [(1.570796, False)]))     # typed as it stands
+
+    def test_the_nearest_of_two_typed_values(self):
+        self.assertEqual(core.exact_datum(2.0, [(2.0000004, False), (1.9999998, False)]), 1.9999998)
+
+
+class MissingJoins(unittest.TestCase):
+    """The smoke's two arcs and line: arc 0 from (0, 63.5) to (-63.5, 0), arc 1 on to (-38.1, 0), line 2 back."""
+
+    POINTS = {(0, 1): (0.0, 63.5), (0, 2): (-63.5, 2.1e-5), (0, 3): (0.0, 0.0),
+              (1, 1): (-63.5, 4.4e-6), (1, 2): (-38.1, 0.0), (1, 3): (-50.8, 0.0),
+              (2, 1): (-38.1, 0.0), (2, 2): (0.0, 63.5)}
+
+    def test_each_new_point_on_an_older_one(self):
+        self.assertEqual(core.missing_joins(self.POINTS, {2}, [((1, 1), (0, 2))], 1e-4),
+                         [((2, 1), (1, 2)), ((2, 2), (0, 1))])
+
+    def test_points_already_joined_are_left_alone(self):
+        links = [((1, 1), (0, 2)), ((2, 1), (1, 2)), ((2, 2), (0, 1))]
+        self.assertEqual(core.missing_joins(self.POINTS, {2}, links, 1e-4), [])
+
+    def test_joined_through_another_point(self):
+        pts = {(0, 2): (5.0, 0.0), (1, 1): (5.0, 0.0), (2, 1): (5.0, 0.0)}
+        self.assertEqual(core.missing_joins(pts, {2}, [((2, 1), (1, 1)), ((1, 1), (0, 2))], 1e-4), [])
+
+    def test_tolerance(self):
+        arcs = {k: v for k, v in self.POINTS.items() if k[0] != 2}             # before the line is drawn
+        self.assertEqual(core.missing_joins(arcs, {1}, [], 1e-4), [((1, 1), (0, 2))])
+        self.assertEqual(core.missing_joins(arcs, {1}, [], 1e-6), [])          # 2.1e-5 apart: '%f' angles
+
+    def test_an_older_curve_first_and_one_join_per_place(self):
+        pts = {(0, 2): (5.0, 0.0), (1, 1): (5.0, 0.0), (2, 1): (5.0, 0.0)}
+        # curves 1 and 2 are new: both go on the old curve's point, not on each other as well
+        self.assertEqual(core.missing_joins(pts, {1, 2}, [], 1e-4), [((1, 1), (0, 2)), ((2, 1), (0, 2))])
+
+    def test_a_curve_is_not_joined_to_itself(self):
+        self.assertEqual(core.missing_joins({(0, 1): (0.0, 0.0), (0, 2): (0.0, 0.0)}, {0}, [], 1e-4), [])
 
 
 if __name__ == "__main__":

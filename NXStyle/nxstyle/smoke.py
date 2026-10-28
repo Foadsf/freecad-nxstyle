@@ -128,6 +128,7 @@ class Smoke:
         yield self.s_sketch_trim, 300             # before Point on Curve: MB2 must not leave the trim's gate up
         yield self.s_sketch_constraints, 300
         yield self.s_sketch_point_typed, 300
+        yield self.s_sketch_typed_join, 300
         yield self.s_sketch_linear_dimension, 300
         yield self.s_sketch_hide, 300
         yield self.s_sketch_datum, 300
@@ -1082,6 +1083,11 @@ class Smoke:
                    f"{(q.x, q.y) if q is not None else None}; constraints on it {held}")
         sk.deleteAllGeometry()
         sk.Document.recompute()
+
+    def s_sketch_typed_join(self):
+        """Typed points that land on an existing end point join it, as NX infers a coincident point (smoke_typed.py)."""
+        from . import smoke_typed
+        smoke_typed.run(self)
 
     def s_sketch_linear_dimension(self):
         """NX's Linear Dimension (Sketch tab, Constraints): Horizontal and Vertical between the origin and a point
