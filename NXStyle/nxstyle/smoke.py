@@ -2971,11 +2971,14 @@ class Smoke:
             self.finish()
             return
         fn, delay = self.steps.pop(0)
+        t0 = time.monotonic()
         try:
             fn()
         except Exception:
             self.check(f"step {fn.__name__}", False, traceback.format_exc().splitlines()[-1])
             self.info[f"traceback {fn.__name__}"] = traceback.format_exc()
+        # [name, seconds in the step, ms waited after it]: shows which steps a slower run spends its time in
+        self.info.setdefault("step seconds", []).append([fn.__name__, round(time.monotonic() - t0, 2), delay])
         self.ran.append(fn.__name__)
         QtCore.QTimer.singleShot(delay, self.next)
 

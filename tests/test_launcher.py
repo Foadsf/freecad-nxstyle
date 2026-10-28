@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -657,6 +658,86 @@ class MemoryCeilingTests(unittest.TestCase):
         finally:
             k.ReleaseMutex(ctypes.c_void_p(held))
             k.CloseHandle(ctypes.c_void_p(held))
+
+
+class TimeLimitTests(unittest.TestCase):
+    """A run's time limit grows with its plan; a run that hangs still ends."""
+
+    PLAN = ("class Other:\n    def plan(self):\n        yield 1\n\n"
+            "class Smoke:\n    def plan(self):\n        yield self.s_a, 100\n        yield self.s_b, 100\n"
+            "        yield self.s_a, 100\n\n    def s_a(self):\n        yield 'not a step'\n")
+
+    def test_counts_only_the_yields_of_smoke_plan(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "smoke.py"
+            src.write_text(self.PLAN, encoding="utf-8")
+            self.assertEqual(launch_nx.smoke_planned_steps(src), 3)
+            src.write_text("class Smoke:\n    pass\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                launch_nx.smoke_planned_steps(src)
+
+    def test_real_plan_is_counted(self):
+        text = launch_nx.SMOKE_SOURCE.read_text(encoding="utf-8")
+        plan = text.split("    def plan(self):", 1)[1].split("\n    def ", 1)[0]
+        self.assertEqual(launch_nx.smoke_planned_steps(), plan.count("        yield self.s_"))
+
+    def test_smoke_limit_for_a_small_and_a_large_plan(self):
+        for steps in (5, 87, 200):                     # a small plan, the real one, and a large one
+            self.assertEqual(launch_nx.harness_timeout("smoke", "", steps=steps),
+                             launch_nx.SMOKE_BASE_S + steps * launch_nx.SMOKE_STEP_S)
+        self.assertEqual(launch_nx.harness_timeout("smoke", "", steps=11)
+                         - launch_nx.harness_timeout("smoke", "", steps=10), launch_nx.SMOKE_STEP_S)
+
+    def test_full_self_test_fits_with_room(self):
+        # 79 steps took about 550 s on 2026-10-28, and the old fixed 600 s then ended runs of 83 steps
+        steps = launch_nx.smoke_planned_steps()
+        limit = launch_nx.harness_timeout("smoke", "")
+        self.assertGreater(limit, 600)
+        self.assertGreaterEqual(limit, 550 / 79 * steps * 1.3)
+
+    def test_tutorial_limit_grows_with_the_tutorials(self):
+        self.assertEqual(launch_nx.harness_timeout("tutorial", "A,B,C"),
+                         launch_nx.TUTORIAL_BASE_S + 3 * launch_nx.TUTORIAL_EACH_S)
+
+    def test_override_wins_and_must_be_positive(self):
+        self.assertEqual(launch_nx.harness_timeout("smoke", "", override=42), 42)
+        self.assertEqual(launch_nx.harness_timeout("tutorial", "A,B", override=42), 42)
+        with self.assertRaises(ValueError):
+            launch_nx.harness_timeout("smoke", "", override=0)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            launch_nx.main(["--smoke-test", "out", "--timeout", "-5"])
+
+    @unittest.skipUnless(os.name == "nt", "the job-object runner is Windows-only")
+    def test_hung_run_is_ended_at_the_limit(self):
+        t0 = time.monotonic()
+        code = launch_nx.run_on_hidden_desktop([sys.executable, "-c", "import time; time.sleep(120)"],
+                                               dict(os.environ), timeout_s=launch_nx.harness_timeout(
+                                                   "smoke", "", override=2), hidden=False)
+        self.assertIsNone(code)                       # main() reports None as "timed out", exit 3
+        self.assertLess(time.monotonic() - t0, 30)
+
+    @unittest.skipUnless(os.name == "nt", "the job-object runner is Windows-only")
+    def test_override_reaches_the_run_and_a_real_hang_returns_exit_3(self):
+        # negative control: a run that really exceeds its limit is ended by the runner, and main() reports 3.
+        # --timeout 2 must replace the computed limit, not sit beside it.
+        with tempfile.TemporaryDirectory() as tmp:
+            install = launch_nx.Install(Path(sys.executable), (1, 1, 4))
+            sleeper = [sys.executable, "-c", "import time; time.sleep(120)"]
+            seen = {}
+            real = launch_nx.run_on_hidden_desktop
+
+            def spy(cmd, env, timeout_s, **kw):
+                seen["timeout_s"] = timeout_s
+                return real(cmd, env, timeout_s, **kw)
+
+            with mock.patch.object(launch_nx, "pick_install", return_value=install), \
+                 mock.patch.object(launch_nx, "build_command", return_value=sleeper), \
+                 mock.patch.object(launch_nx, "run_on_hidden_desktop", side_effect=spy), \
+                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                code = launch_nx.main(["--smoke-test", str(Path(tmp) / "out"),
+                                       "--profile", str(Path(tmp) / "profile"), "--timeout", "2"])
+        self.assertEqual(code, 3)                       # a run past its limit ends as timeout
+        self.assertEqual(seen["timeout_s"], 2)          # --timeout, not the computed limit
 
 
 if __name__ == "__main__":
