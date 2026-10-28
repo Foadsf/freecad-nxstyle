@@ -56,7 +56,7 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Hide | <kbd>Ctrl</kbd>+<kbd>B</kbd> | `NXStyle_Hide` (`Std_HideSelection` outside a sketch) | anywhere | in a sketch: the selected dimensions and constraints (FreeCAD's virtual space) |
 | Show and Hide Panel | <kbd>Ctrl</kbd>+<kbd>W</kbd> | `NXStyle_ShowHide` | anywhere |  |
 | Immediate Hide | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> | `NXStyle_ImmediateHide` | anywhere | pick objects to hide them; Esc to finish |
-| Show Panel | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> | `NXStyle_Show` (`Std_ShowSelection` outside a sketch) | anywhere | select the hidden objects in the Part Navigator (in a sketch, the constraint list) first |
+| Show Panel | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> | `NXStyle_Show` (`Std_ShowSelection` outside a sketch) | anywhere | shows the objects selected in the Part Navigator (in a sketch, the dimensions selected in the constraint list); with nothing selected, a list of the hidden objects to pick from |
 | Show All | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd> | `NXStyle_ShowAll` (and `Std_ShowObjects`) | anywhere | in a sketch, the hidden dimensions and constraints too |
 | Invert Show/Hidden | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> | `NXStyle_InvertVisibility` | anywhere |  |
 | Edit Display | <kbd>Ctrl</kbd>+<kbd>J</kbd> | `Std_SetAppearance` | anywhere |  |

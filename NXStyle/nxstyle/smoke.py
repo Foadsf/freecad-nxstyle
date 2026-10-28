@@ -174,6 +174,7 @@ class Smoke:
         yield self.s_primitives, 300
         yield self.s_thread, 300
         yield self.s_move, 300
+        yield self.s_show_key, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -1168,11 +1169,12 @@ class Smoke:
         by_key = [bool(sk.getVirtualSpace(i)) for i in dims]
         after_key = sk.ViewObject.Visibility
         # MB3 on empty space with the other dimension picked: FreeCAD's sketch menu, with NX-Style's Hide. MB3 comes
-        # right after the pick, before FreeCAD's command-state timer runs: Hide is still greyed from the empty
-        # selection (the AG replay's "0 of 6 hidden"), so the menu must enable it itself
+        # right after the pick, before FreeCAD's command-state timer runs (the AG replay's "0 of 6 hidden": Hide was
+        # still greyed from the empty selection). NX-Style's Hide no longer waits for the selection; FreeCAD's own
+        # Hide Selection, refreshed by the same timer, shows whether the pick came before the timer
         Gui.Selection.clearSelection()
-        hide_action = Gui.Command.get("NXStyle_Hide").getAction()
-        for _ in range(30):                    # FreeCAD's timer greys Hide for the empty selection
+        hide_action = Gui.Command.get("Std_HideSelection").getAction()
+        for _ in range(30):                    # FreeCAD's timer greys Hide Selection for the empty selection
             if not any(a.isEnabled() for a in hide_action):
                 break
             qtest().qWait(100)
@@ -1215,7 +1217,7 @@ class Smoke:
         self.check("MB3 right after picking a dimension: the menu's Hide is enabled and works, though FreeCAD's "
                    "command-state timer has not run since the pick", seen.get("stale") == [False]
                    and seen.get("enabled") is True and by_menu[1],
-                   f"Hide action enabled just after the pick {seen.get('stale')} (must be [False], else this check "
+                   f"Std_HideSelection enabled just after the pick {seen.get('stale')} (must be [False], else this check "
                    f"does not reach the race); in the menu {seen.get('enabled')}; dimension hidden {by_menu[1]}")
         doc.undo()
         undone = [bool(sk.getVirtualSpace(i)) for i in dims]
@@ -2420,6 +2422,12 @@ class Smoke:
         to Point, Copy Original with 2 copies, Cancel and Esc, one undo step, negative controls (smoke_move.py)."""
         from . import smoke_move
         smoke_move.run(self)
+
+    def s_show_key(self):
+        """NX's Show (Ctrl+Shift+K) by its key right after a pick, and with nothing selected; Hide, Show All and
+        Invert by theirs (smoke_show.py)."""
+        from . import smoke_show
+        smoke_show.run(self)
 
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""

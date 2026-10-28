@@ -109,7 +109,7 @@ When the part is documented in 3D (xref:pmi.adoc[PMI]), select a view and click 
 == Hide and show
 
 kbd:[Ctrl+B] hides the selection on the sheet as in the model.
-To show hidden items again, select them in the Part Navigator and press kbd:[Ctrl+Shift+K]; NX picks them from a list.
+To show hidden items again, select them in the Part Navigator and press kbd:[Ctrl+Shift+K]. With nothing selected, kbd:[Ctrl+Shift+K] lists the hidden objects to pick from.
 
 == Associativity
 

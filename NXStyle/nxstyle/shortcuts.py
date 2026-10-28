@@ -107,7 +107,8 @@ TABLE = [
     Entry("Show and Hide Panel", "Ctrl+W", "NXStyle_ShowHide"),
     Entry("Immediate Hide", "Ctrl+Shift+I", "NXStyle_ImmediateHide", note="pick objects to hide them; Esc to finish"),
     Entry("Show Panel", "Ctrl+Shift+K", ["NXStyle_Show", "Std_ShowSelection"],
-          note="select the hidden objects in the Part Navigator (in a sketch, the constraint list) first"),
+          note="shows the objects selected in the Part Navigator (in a sketch, the dimensions selected in the "
+               "constraint list); with nothing selected, a list of the hidden objects to pick from"),
     Entry("Show All", "Ctrl+Shift+U", ["NXStyle_ShowAll", "Std_ShowObjects"],
           note="in a sketch, the hidden dimensions and constraints too"),
     Entry("Invert Show/Hidden", "Ctrl+Shift+B", "NXStyle_InvertVisibility"),

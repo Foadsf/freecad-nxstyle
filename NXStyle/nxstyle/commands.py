@@ -152,6 +152,13 @@ def category(o):
 CATEGORIES = ["Solid Bodies", "Sheet Bodies", "Curves", "Points", "Sketches", "Datums", "Components", "Other"]
 
 
+def hidden_objects(doc):
+    """The display objects that are hidden, by category and label: what NX's Show offers with nothing selected.
+    A Body's origin is left out: FreeCAD keeps every one hidden (the Show and Hide panel's Datums row has them)."""
+    hidden = [o for o in display_objects(doc) if not o.ViewObject.Visibility and o.TypeId != "App::Origin"]
+    return sorted(hidden, key=lambda o: (CATEGORIES.index(category(o)), o.Label))
+
+
 class InvertVisibility:
     def GetResources(self):
         return {"MenuText": "Invert Shown and Hidden",
