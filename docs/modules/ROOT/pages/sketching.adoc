@@ -56,6 +56,20 @@ NX-Style sets FreeCAD's on-view parameters to *Position and dimensions* (setting
 Type a value, press kbd:[Enter] for the next field, and the point lands exactly there: *Point*, then 298.45 kbd:[Enter] 152.4 kbd:[Enter] makes a point at (298.45, 152.4) mm.
 FreeCAD keeps typed coordinates as constraints: horizontal and vertical distances from the axes, or Coincident with the origin for (0, 0).
 For a point on the origin, click the origin instead of typing 0 and 0: FreeCAD 1.1.4 then adds the Coincident twice, and the solver reports the second as redundant.
+
+Typed points that meet::
+In NX a point typed onto an existing end point is that point: NX infers the coincidence, so the book's typed arcs and lines make a closed profile.
+FreeCAD 1.1.4 loses both halves of that, and NX-Style puts them back when each curve tool finishes:
++
+* *The value typed is kept.* FreeCAD writes each typed value's constraint with six decimals, angles in radians: a typed 90° sweep becomes 1.570796 rad, and the end of an R63.5 arc lands 2e-5 mm off the point typed.
+NX-Style gives the constraint the number typed (π/2 here).
+* *A point typed onto an end point joins it.* FreeCAD finds the end point under a typed point, but it adds the typed constraints first; those already hold the point, so it drops the Coincident as redundant (the report view says "Autoconstraints cause redundancy" or "Redundant constraint is not an autoconstraint ... Please report!").
+NX-Style adds the Coincident for each point of the new curve that lies within 1e-4 mm of a point of another curve (Validate Sketch's default tolerance for missing coincidences), then keeps only the typed constraints the sketch still needs: one the coincidence makes redundant is left out, as FreeCAD itself intends.
+Where two arcs meet tangentially (an R12.7 arc inside an R63.5 one, say), the solver can call the second arc's radius redundant at the join; it is then held by the join and the first arc instead of by its own dimension.
++
+The repair adds no undo step: Undo takes back the curve as before.
+The self-test draws two arcs and a line this way and checks that they form one closed wire with no gap above 1e-7 mm; with the repair off, FreeCAD alone leaves gaps of 3.3e-5 mm and no Coincident.
+
 Set `sketch_input` to `dimensions` for FreeCAD's default (no position fields), `none`, or `freecad` to leave FreeCAD's own choice alone.
 
 [#studio-spline]

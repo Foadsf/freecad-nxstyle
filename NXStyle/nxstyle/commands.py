@@ -774,6 +774,8 @@ def register(apps):
     controller.install_context_menu()
     sketch_ui.install_context_menu()
     sketch_ui.install_trim_guard()
+    from . import sketch_typed
+    sketch_typed.install()
     # FreeCAD 1.0 creates a Python command's QAction only when the command is
     # placed in a toolbar or menu. A global custom toolbar (hidden by the shell)
     # makes FreeCAD create the actions, so shortcuts and ribbon buttons work.
