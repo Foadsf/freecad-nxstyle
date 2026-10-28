@@ -3806,7 +3806,7 @@
    "nx": "Move Curve: the 4 curves, Distance 0.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 1.7e-05 mm"
+   "detail": "4 copies made; largest error 5.2e-06 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3822,7 +3822,7 @@
    "nx": "Move Curve: the lower curve, -1.5 along YC, Copy Original",
    "replay": "4 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "4 copies made; largest error 2.0e-05 mm"
+   "detail": "4 copies made; largest error 6.6e-05 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -3838,7 +3838,7 @@
    "nx": "Move Curve: the outer end line, -0.5 along XC, Copy Original",
    "replay": "1 curves selected + ribbon 'Sketch › Edit Curve > Move Curve', base point, offset typed",
    "outcome": "same",
-   "detail": "1 copies made; largest error 2.3e-07 mm"
+   "detail": "1 copies made; largest error 5.6e-07 mm"
   },
   {
    "tutorial": "AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)",
@@ -4030,7 +4030,7 @@
    "nx": "A new part in inches (Holder)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']"
+   "detail": "new document ['Unnamed1']"
   },
   {
    "tutorial": "AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)",
@@ -4388,7 +4388,7 @@
    "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
    "n": 2,
    "nx": "Revolve, Selection Filter Single Curve, the 10 curves of the wall",
-   "replay": "ribbon 'Home › Feature > Revolve' (FreeCAD asks for a plane: True), Curve Rule 'Single Curve', MB1 on each curve: 1 by QuickPick, 9 by click",
+   "replay": "ribbon 'Home › Feature > Revolve' (FreeCAD asks for a plane: True), Curve Rule 'Single Curve', MB1 on each curve: 10 by click",
    "outcome": "same",
    "detail": "the section holds 10 curves, the wall's True; the first pick closes FreeCAD's plane list and opens the dialog with it"
   },
@@ -4406,13 +4406,13 @@
    "nx": "OK: the revolved wall",
    "replay": "OK clicked",
    "outcome": "same",
-   "detail": "volume 10035707.1 mm^3, expected 10035707.1; 1 solid(s); Profile the 10 curves True; below the sketch plane True; one undo step True (['Revolve'])"
+   "detail": "volume 10035706.5 mm^3, expected 10035706.5; 1 solid(s); Profile the 10 curves True; below the sketch plane True; one undo step True (['Revolve'])"
   },
   {
    "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
    "n": 5,
    "nx": "Extrude, Single Curve, the outer curves of the casing (its edge)",
-   "replay": "ribbon 'Home › Feature > Extrude' (plane asked: True), Curve Rule 'Single Curve', MB1 on each curve: 4 by QuickPick, 6 by click",
+   "replay": "ribbon 'Home › Feature > Extrude' (plane asked: True), Curve Rule 'Single Curve', MB1 on each curve: 9 by QuickPick, 1 by click",
    "outcome": "same",
    "detail": "the section holds 10 curves, the edge's True; where a curve lies on the wall's face, QuickPick lists it (the book's note: press and hold MB1)"
   },
@@ -4422,7 +4422,7 @@
    "nx": "Extrude it 0.5 in along -ZC, OK",
    "replay": "Boolean 'None' in the box; 'lengthEdit' = 12.7 mm and Reversed clicked (True) in FreeCAD's panel; OK clicked",
    "outcome": "same",
-   "detail": "volume 381783.1 mm^3, expected 381783.1; z -12.70 to 0.00 mm; its own body (2 bodies): with Unite it would touch the wall only along a line, two solids in one body, so the edge is a body of its own, as the book's Solid Body filter in the next step shows"
+   "detail": "volume 381783.6 mm^3, expected 381783.6; z -12.70 to 0.00 mm; its own body (2 bodies): with Unite it would touch the wall only along a line, two solids in one body, so the edge is a body of its own, as the book's Solid Body filter in the next step shows"
   },
   {
    "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
@@ -4430,7 +4430,7 @@
    "nx": "Mirror the edge through the centre plane, Copy",
    "replay": "the edge's body made the work body and its Extrude selected (Part Navigator) + ribbon 'Home › Pattern > Mirror Feature', plane 'Base XZ-plane', MB2 = OK",
    "outcome": "differs",
-   "detail": "the edge's body holds 2 solids, 763566.3 mm^3 (twice 381783.1), symmetric about XZ (y -419.1 to 419.1 mm). NX's Edit > Transform copies the solid unparametrised; Mirror Feature keeps the copy following the edge"
+   "detail": "the edge's body holds 2 solids, 763567.1 mm^3 (twice 381783.6), symmetric about XZ (y -419.1 to 419.1 mm). NX's Edit > Transform copies the solid unparametrised; Mirror Feature keeps the copy following the edge"
   },
   {
    "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
@@ -4454,7 +4454,7 @@
    "nx": "OK: the flange, united with the wall",
    "replay": "OK clicked",
    "outcome": "same",
-   "detail": "volume 10377415.4 mm^3, expected 10377415.4; 1 solid(s); the flange's volume added to the wall's"
+   "detail": "volume 10377414.8 mm^3, expected 10377414.8; 1 solid(s); the flange's volume added to the wall's"
   },
   {
    "tutorial": "AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)",
@@ -4596,7 +4596,7 @@
    "tutorial": "AQ: Hexagonal Screw (NX 12 for Engineering Design, 4.7.1; book in inches, typed in mm)",
    "n": 7,
    "nx": "Extrude the hexagon, End Distance 0.1876",
-   "replay": "ribbon 'Home › Feature > Extrude', a hexagon side picked (click; Curve Rule Inferred Curves), dialog opened True; Boolean 'None', 'lengthEdit' = 4.76504 mm; OK",
+   "replay": "ribbon 'Home › Feature > Extrude', a side picked (click; Curve Rule Inferred Curves), dialog opened True; Boolean 'None', 'lengthEdit' = 4.76504 mm; OK",
    "outcome": "same",
    "detail": "volume 483.34 mm^3, expected 483.34; z 38.496 to 43.261 mm; the hexagonal head is a body of its own (2 bodies), as the book's later Intersect with the head alone needs"
   },
@@ -4646,7 +4646,7 @@
    "nx": "Create a new file (Impeller_hexa-nut)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed1']"
+   "detail": "new document ['Unnamed2']"
   },
   {
    "tutorial": "AR: Hexagonal Nut (NX 12 for Engineering Design, 4.7.2; book in inches, typed in mm)",
@@ -4676,7 +4676,7 @@
    "tutorial": "AR: Hexagonal Nut (NX 12 for Engineering Design, 4.7.2; book in inches, typed in mm)",
    "n": 5,
    "nx": "Extrude the hexagon, End Distance 0.125",
-   "replay": "ribbon 'Home › Feature > Extrude', a hexagon side picked (click; Curve Rule Inferred Curves), dialog opened True; Boolean 'None', 'lengthEdit' = 3.175 mm; OK clicked",
+   "replay": "ribbon 'Home › Feature > Extrude', a side picked (click; Curve Rule Inferred Curves), dialog opened True; Boolean 'None', 'lengthEdit' = 3.175 mm; OK clicked",
    "outcome": "same",
    "detail": "volume 437.9 mm^3, expected 437.9; 1 solid(s); the part's first solid"
   },
@@ -5049,6 +5049,118 @@
    "detail": "Impeller_impeller.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Create a new file (Rocker_arm)",
+   "replay": "Ctrl+N, Model template",
+   "outcome": "same",
+   "detail": "new document ['Unnamed3']"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "Units in the New dialog (the book picks inches)",
+   "replay": "metric part kept; book sizes typed in mm",
+   "outcome": "differs",
+   "detail": "FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Save it as Rocker_arm",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Rocker_arm.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Sketch the arm: the band R1.50 to R2.50 from 90° to 180° with its R0.50 end, and the slot on R2.00 from 105° (75°) to 180°",
+   "replay": "ribbon 'Home › Direct Sketch > Sketch' on 'XY-plane (Base plane)'; arcs (A) and a line (L), every point typed in the fields beside the pointer",
+   "outcome": "same",
+   "detail": "8 curves in 2 loops, closed True; area 1309.0 mm², the drawing's 1309.0; how: centre typed, start typed, sweep typed; line 2 typed"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Extrude the arm 0.38 along ZC",
+   "replay": "ribbon 'Home › Feature > Extrude', a side picked (click; Curve Rule Inferred Curves), dialog opened True; Boolean 'None', 'lengthEdit' = 9.652 mm; OK clicked",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.3e-07 mm, 10 faces (10 in the reference)"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Block 0.31 x 2.50 x 0.75 at the pivot: the bar, Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 0/0/0 typed, length 0.31, width 2.5, height 0.75 (in) typed in mm, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 3.6e-15 mm, 14 faces (14 in the reference); origin (0.0, 0.0, 0.0); one undo step ['Block']; with Body"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Cylinder Ø1.00 x 1.00 along ZC at the pivot, Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/0 typed, diameter 1, height 1 (in) typed in mm, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 15 faces (15 in the reference); origin (0.0, 0.0, 0.0); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Cylinder Ø1.00 along XC on top of the bar, from 0.12 behind it, Unite",
+   "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC -3.048/63.5/9.525 typed, diameter 1, height 0.43 (in) typed in mm, Boolean 'Unite', OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1.4e-14 mm, 16 faces (16 in the reference); origin (-3.048, 63.5, 9.525); one undo step ['Cylinder']; with Body"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Hole on the pivot boss's top face, at its centre",
+   "replay": "Face14 selected + ribbon 'Home › Feature > Hole'; ribbon 'Sketch › Curve > Point', the point typed in the sketch on the face",
+   "outcome": "same",
+   "detail": "1 point(s); at the centre True"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Hole Ø0.38 through, countersink 0.75 x 82°",
+   "replay": "'Diameter' = 9.652 mm, Depth 'Through all', 'Countersink', 'HoleCutDiameter' = 19.05, 'HoleCutCountersinkAngle' = 82, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 3.2e-14 mm, 18 faces (18 in the reference)"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Hole on the top boss's back face, at its centre",
+   "replay": "Face3 selected + ribbon 'Home › Feature > Hole'; ribbon 'Sketch › Curve > Point', the point typed in the sketch on the face",
+   "outcome": "same",
+   "detail": "1 point(s); at the centre True"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Hole Ø0.44 through, counterbore Ø0.75 x 0.25",
+   "replay": "'Diameter' = 11.176 mm, Depth 'Through all', 'Counterbore', 'HoleCutDiameter' = 19.05, 'HoleCutDepth' = 6.35, MB2 = OK",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 4.8e-14 mm, 22 faces (22 in the reference)"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 13,
+   "nx": "The rocker arm",
+   "replay": "compared with the drawing's dimensions built by the Part API",
+   "outcome": "same",
+   "detail": "same solid as the reference: 0 mm³ differ, box within 4.8e-14 mm, 22 faces (22 in the reference)"
+  },
+  {
+   "tutorial": "AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)",
+   "n": 14,
+   "nx": "Save the part",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Rocker_arm.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
    "n": 1,
    "nx": "Open the holder's sketch and save it as Holder_part",
@@ -5062,7 +5174,7 @@
    "nx": "Sketch the arm's side: its top flat, then 17.8° down to the end, the end, and 25.7° back under it",
    "replay": "ribbon 'Home › Direct Sketch > Sketch' on 'XZ-plane (Base plane)'; L (Line) x7, 7 points typed, 7 clicked on the last line's end (a coincident end); MB2 after each",
    "outcome": "same",
-   "detail": "the outline closed True; its ends within 3e-05 mm of the drawing's (in) [(0, 0), (2.0, 0), (5.5, -1.125), (5.5, -3.5), (4.87, -3.5), (1.2338, -1.75), (0, -1.75)]"
+   "detail": "the outline closed True; its ends within 8.9e-10 mm of the drawing's (in) [(0, 0), (2.0, 0), (5.5, -1.125), (5.5, -3.5), (4.87, -3.5), (1.2338, -1.75), (0, -1.75)]"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5078,7 +5190,7 @@
    "nx": "Block subtracted from below: the arm hollow, walls 0.50 at the sides and 0.63 at the end",
    "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 0/-31.75/-88.9 typed, length 123.698, width 63.5, height 50.8 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 2.5e-05 mm, 15 faces (14 in the reference); origin (0.0, -31.75, -88.9); one undo step ['Block']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 15 faces (15 in the reference); origin (0.0, -31.75, -88.9); one undo step ['Block']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5086,7 +5198,7 @@
    "nx": "Cylinder Ø3.50 x 1.75 under the sketch, Unite: the hub",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-44.45 typed, diameter 88.9, height 44.45 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 2.5e-05 mm, 17 faces (17 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 15 faces (22 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5094,7 +5206,7 @@
    "nx": "Cone Ø2.76 to Ø3.50, 0.66 high, under the hub, Unite",
    "replay": "ribbon 'Home › Feature', Type 'Diameters and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-61.214 typed, Base 70.104, Top 88.9, Height 16.764 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 2.5e-05 mm, 18 faces (18 in the reference); origin (0.0, 0.0, -61.214); one undo step ['Cone']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 18 faces (21 in the reference); origin (0.0, 0.0, -61.214); one undo step ['Cone']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5102,7 +5214,7 @@
    "nx": "Cylinder Ø2.76 down to 3.50, Unite: the foot",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-88.9 typed, diameter 70.104, height 27.686 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 19 faces (19 in the reference); origin (0.0, 0.0, -88.9); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 19 faces (22 in the reference); origin (0.0, 0.0, -88.9); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5110,7 +5222,7 @@
    "nx": "Cylinder Ø2.00 subtracted from below: the bore",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-88.9 typed, diameter 50.8, height 27.686 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 21 faces (21 in the reference); origin (0.0, 0.0, -88.9); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 21 faces (24 in the reference); origin (0.0, 0.0, -88.9); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5118,7 +5230,7 @@
    "nx": "Cone Ø2.00 to Ø2.76 subtracted: the inside of the hub's cone",
    "replay": "ribbon 'Home › Feature', Type 'Diameters and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-61.214 typed, Base 50.8, Top 70.104, Height 16.764 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 22 faces (22 in the reference); origin (0.0, 0.0, -61.214); one undo step ['Cone']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 22 faces (25 in the reference); origin (0.0, 0.0, -61.214); one undo step ['Cone']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5126,7 +5238,7 @@
    "nx": "Cylinder Ø2.76 subtracted up to 1.50 below the top: under the web",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-44.45 typed, diameter 70.104, height 6.35 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 23 faces (23 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 23 faces (26 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5142,7 +5254,7 @@
    "nx": "Sketch the lugs' straight parts: from the Ø3.50 circle out to where their sides touch the R0.38 ends, three times",
    "replay": "the datum plane + ribbon 'Home › Direct Sketch > Sketch'; L (Line) x12, 12 points typed, 12 clicked on an end; MB2 after each",
    "outcome": "same",
-   "detail": "three closed outlines [True, True, True], their ends within 8.3e-06 mm of tutorial AK's: on the Ø3.50 circle 1.00 apart, and the tangent points of the R0.38 ends"
+   "detail": "three closed outlines [True, True, True], their ends within 7.1e-10 mm of tutorial AK's: on the Ø3.50 circle 1.00 apart, and the tangent points of the R0.38 ends"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5150,7 +5262,7 @@
    "nx": "Extrude the lugs 0.50 down, Unite",
    "replay": "ribbon 'Home › Feature > Extrude', a side picked (QuickPick; Curve Rule Inferred Curves), dialog opened True; Boolean 'Unite', 'lengthEdit' = 12.7 mm, Reversed clicked (True); OK clicked",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.0022 mm³ differ, box within 2.1e-06 mm, 38 faces (38 in the reference)"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference)"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5158,7 +5270,7 @@
    "nx": "Cylinder Ø0.76 x 0.50, the lug's R0.38 end at 180° on the bolt circle, Unite",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC -57.15/6.99886e-15/-15.748 typed, diameter 19.304, height 12.7 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.00145 mm³ differ, box within 2.1e-06 mm, 38 faces (38 in the reference); origin (-57.15, 0.0, -15.748); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference); origin (-57.15, 0.0, -15.748); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5166,7 +5278,7 @@
    "nx": "Cylinder Ø0.76 x 0.50, the lug's R0.38 end at 300° on the bolt circle, Unite",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 28.575/-49.4934/-15.748 typed, diameter 19.304, height 12.7 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000115 mm³ differ, box within 2.1e-06 mm, 39 faces (38 in the reference); origin (28.575, -49.493352, -15.748); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference); origin (28.575, -49.493352, -15.748); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5174,7 +5286,7 @@
    "nx": "Cylinder Ø0.76 x 0.50, the lug's R0.38 end at 60° on the bolt circle, Unite",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 28.575/49.4934/-15.748 typed, diameter 19.304, height 12.7 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 40 faces (38 in the reference); origin (28.575, 49.493352, -15.748); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference); origin (28.575, 49.493352, -15.748); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5182,7 +5294,7 @@
    "nx": "Extrude (Subtract) the sketch's Ø2.76 circle and the lugs' Ø0.38 circles 1.38 down: the cup and the lug holes",
    "replay": "the sketch shown (Ctrl+Shift+K: True); ribbon 'Home › Feature > Extrude (Subtract)', Curve Rule 'Single Curve', 4 circles picked (QuickPick), 'lengthEdit' = 35.052 mm, OK clicked",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 45 faces (43 in the reference)"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 43 faces (46 in the reference)"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5190,7 +5302,7 @@
    "nx": "Cylinder Ø0.75 up from the cup's floor to 0.50 below the top, Unite: the boss",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-35.052 typed, diameter 19.05, height 22.352 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 47 faces (45 in the reference); origin (0.0, 0.0, -35.052); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 45 faces (48 in the reference); origin (0.0, 0.0, -35.052); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5198,7 +5310,7 @@
    "nx": "Block 3.00 x 0.25 along XC, Unite: two arms of the cross",
    "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -38.1/-3.175/-35.052 typed, length 76.2, width 6.35, height 22.352 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 53 faces (51 in the reference); origin (-38.1, -3.175, -35.052); one undo step ['Block']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 51 faces (54 in the reference); origin (-38.1, -3.175, -35.052); one undo step ['Block']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5206,7 +5318,7 @@
    "nx": "Block 0.25 x 3.00 along YC, Unite: the other two",
    "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -3.175/-38.1/-35.052 typed, length 6.35, width 76.2, height 22.352 typed, Boolean 'Unite', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 61 faces (59 in the reference); origin (-3.175, -38.1, -35.052); one undo step ['Block']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 59 faces (62 in the reference); origin (-3.175, -38.1, -35.052); one undo step ['Block']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5214,7 +5326,7 @@
    "nx": "Block subtracted: the sketch's slot, 0.50 wide and 0.50 deep, from the Ø3.50 circle",
    "replay": "ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 43.9941/-6.35/-12.7 typed, length 102.056, width 12.7, height 19.05 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 65 faces (64 in the reference); origin (43.994091, -6.35, -12.7); one undo step ['Block']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 63 faces (67 in the reference); origin (43.994091, -6.35, -12.7); one undo step ['Block']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5222,7 +5334,7 @@
    "nx": "Cylinder Ø25/64 subtracted through the boss and the web: the 7/16-20 tap drill",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-44.45 typed, diameter 9.92188, height 44.45 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 66 faces (65 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 64 faces (68 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5230,7 +5342,7 @@
    "nx": "Cylinder Ø29/64 along XC through the end, 1.09 up, y = -0.75: a 1/2-20 tap drill",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 120.65/-19.05/-61.214 typed, diameter 11.5094, height 22.098 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 67 faces (66 in the reference); origin (120.65, -19.05, -61.214); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 65 faces (69 in the reference); origin (120.65, -19.05, -61.214); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5238,7 +5350,7 @@
    "nx": "Cylinder Ø29/64 along XC through the end, 1.09 up, y = +0.75: a 1/2-20 tap drill",
    "replay": "ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 120.65/19.05/-61.214 typed, diameter 11.5094, height 22.098 typed, Boolean 'Subtract', OK",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 68 faces (67 in the reference); origin (120.65, 19.05, -61.214); one undo step ['Cylinder']; with Body"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 66 faces (70 in the reference); origin (120.65, 19.05, -61.214); one undo step ['Cylinder']; with Body"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5246,7 +5358,7 @@
    "nx": "The holder",
    "replay": "compared with our reading of the drawing, built by the Part API",
    "outcome": "same",
-   "detail": "same solid as the reference: 0.000113 mm³ differ, box within 1e-07 mm, 68 faces (67 in the reference)"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 66 faces (70 in the reference)"
   },
   {
    "tutorial": "AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)",
@@ -5270,7 +5382,7 @@
    "nx": "Edit Parameters of the wall's Revolve: End -180, above the split plane",
    "replay": "the Revolve selected (Part Navigator) + ribbon 'Home › Edit Feature > Edit Parameters' (box open True), Start 0 and End -180 typed (limits (0.0, -180.0)), OK clicked",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 12 faces (12 in the reference)"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 12 faces (12 in the reference)"
   },
   {
    "tutorial": "AX: Impeller Upper Casing (NX 12 for Engineering Design, exercise 4.10.3; book in inches, typed in mm)",
@@ -5278,7 +5390,7 @@
    "nx": "Edit Parameters of the flange's Revolve: End -180",
    "replay": "the Revolve selected (Part Navigator) + ribbon 'Home › Edit Feature > Edit Parameters' (box open True), Start 0 and End -180 typed (limits (0.0, -180.0)), OK clicked",
    "outcome": "same",
-   "detail": "same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 14 faces (14 in the reference)"
+   "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 14 faces (14 in the reference)"
   },
   {
    "tutorial": "AX: Impeller Upper Casing (NX 12 for Engineering Design, exercise 4.10.3; book in inches, typed in mm)",
@@ -5302,7 +5414,7 @@
    "nx": "Sketch the manhole: two squares, 5 x 5 and 4 x 4, over the wall's straight part",
    "replay": "the datum plane + ribbon 'Home › Direct Sketch > Sketch'; R key (tool True), first corner typed, opposite corner typed as length, width, MB2; then R key (tool True), first corner typed, opposite corner typed as length, width, MB2",
    "outcome": "same",
-   "detail": "8 lines, corners as planned; centred at x = -92.82 mm, the middle of Line 1 (the book leaves the manhole's size to the reader)"
+   "detail": "8 lines, corners as planned; centred at x = -109.71 mm, the middle of Line 1 (the book leaves the manhole's size to the reader)"
   },
   {
    "tutorial": "AX: Impeller Upper Casing (NX 12 for Engineering Design, exercise 4.10.3; book in inches, typed in mm)",
@@ -5316,7 +5428,7 @@
    "tutorial": "AX: Impeller Upper Casing (NX 12 for Engineering Design, exercise 4.10.3; book in inches, typed in mm)",
    "n": 8,
    "nx": "Extrude (Subtract) the inner square through the wall",
-   "replay": "the sketch shown again (Ctrl+Shift+K did nothing; View > Show: True); ribbon 'Home › Feature > Extrude (Subtract)', Curve Rule 'Single Curve', the 4 inner lines picked (QuickPick, QuickPick, QuickPick, QuickPick), 'lengthEdit' = 127 mm, OK clicked",
+   "replay": "the sketch shown again (Ctrl+Shift+K: True); ribbon 'Home › Feature > Extrude (Subtract)', Curve Rule 'Single Curve', the 4 inner lines picked (QuickPick, QuickPick, QuickPick, QuickPick), 'lengthEdit' = 127 mm, OK clicked",
    "outcome": "same",
    "detail": "same solid as the reference: 0 mm³ differ, box within 0 mm, 23 faces (23 in the reference)"
   },
@@ -5342,7 +5454,7 @@
    "nx": "Create a new file, units mm (Die_cavity)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']; NX-Style parts are metric"
+   "detail": "new document ['Unnamed4']; NX-Style parts are metric"
   },
   {
    "tutorial": "AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)",

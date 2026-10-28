@@ -1,0 +1,60 @@
+= Tutorial AV: Rocker Arm
+:description: A rocker arm from its drawing: an arm band with a slot sketched with typed arcs, a bar and two bosses from Block and Cylinder, a countersunk and a counterbored hole (NX 12 for Engineering Design, exercise 4.10.1).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 4.10.1 (Rocker Arm).
+You learn:: arcs typed in the fields beside the pointer (centre, radius and start angle, sweep), Extrude, Block and Cylinder with Unite, Hole with a countersink and with a counterbore
+Sizes:: the drawing's, in inches, typed in millimetres.
+
+The book gives the rocker arm only as a drawing; its views are small and rotated, and the replay follows this reading of them:
+
+* The pivot is at the origin: a boss Ø1.00 × 1.00 along ZC. Its hole is Ø0.38 through, with a 0.75 × 82° countersink.
+* The bar is 0.31 wide (XC), runs from the pivot up to 2.50, and is 0.75 thick (ZC).
+* The arm is 0.38 thick: a band between R1.50 and R2.50 about the pivot, from 90° to 180°, with its end rounded R0.50.
+* A slot 0.50 wide runs on R2.00 from 105° (75° from the horizontal) to 180°, with R0.25 ends.
+* The top boss is Ø1.00 along XC on top of the bar, its centre level with the top, 2.50 up. It runs from 0.12 behind the bar to the bar's front face. Its hole is Ø0.44 through, with a Ø0.75 × 0.25 counterbore.
+
+== Step by step
+
+=== 1. The arm
+
+Create `Rocker_arm` and click *Sketch* on the XC-YC plane.
+Draw the band with *Arc* (kbd:[A]):
+
+* the outer arc: centre (0, 0), R2.50 from 90°, a 90° sweep;
+* the R0.50 end: centre (−2.00, 0), from 180°, a 180° sweep;
+* the inner arc: R1.50.
+
+Close it with a *Line* (kbd:[L]) on the YC axis from 1.50 to 2.50.
+Draw the slot the same way: arcs R2.25 and R1.75 from 105° to 180°, and an R0.25 arc at each end.
+
+Type every value in the fields beside the pointer. Where a typed point lands on an end point, the sketcher makes the two coincident, so both loops close.
+kbd:[Ctrl+Q], then *Extrude* the sketch 0.38 along ZC.
+
+=== 2. The bar and the bosses
+
+* *Block* 0.31 × 2.50 × 0.75 at the origin, *Unite*: the bar.
+* *Cylinder* Ø1.00 × 1.00 along ZC at the origin, *Unite*: the pivot boss.
+* *Cylinder* Ø1.00 along XC from (−0.12, 2.50, 0.375), long enough to reach the bar's front face, *Unite*: the top boss.
+
+=== 3. The holes
+
+Select the pivot boss's top face, click *Hole* and place the point at its centre. Choose *Countersink*: Ø0.38 through, countersink Ø0.75 × 82°.
+Select the top boss's back face, click *Hole* at its centre and choose *Counterbore*: Ø0.44 through, counterbore Ø0.75 × 0.25.
+
+image::tutorial-AV-01-rocker-arm.png[The rocker arm: the band with its slot, the bar, the pivot boss with its countersink and the top boss]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AV.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each step is compared with FreeCAD's Part API build of the drawing's dimensions.
+
+== What differs from NX
+
+* In FreeCAD 1.1.4, values typed in the sketcher's fields are stored rounded to six decimals, with angles in radians. Its autoconstraints also drop the coincidence a typed point lands on, so the arcs ended up to 3.3e-5 mm apart and the profile stayed open. NX-Style keeps the typed values exact and joins the ends (PRs #37 and #39); the outline now closes to 2e-14 mm.
+* Where two arcs meet tangentially, the join already holds the second arc's radius, so its typed radius dimension is not kept as a constraint.

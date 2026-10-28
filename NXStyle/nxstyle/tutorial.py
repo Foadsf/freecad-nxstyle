@@ -43,7 +43,7 @@ from .tutorial_mst4 import (MstArborPressTutorials, MstDieCavityTutorials, MstFa
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
-ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AW,AX,AY"
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
