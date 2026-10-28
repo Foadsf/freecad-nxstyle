@@ -5582,7 +5582,7 @@
    "nx": "The guide bush, released in tutorial V as BUSH-100 rev B (rev A obsolete); a Carbon to send it to",
    "replay": "the replay's Carbon: the stand-in server of the unit tests, on this computer",
    "outcome": "differs",
-   "detail": "releases [('BUSH-100', 'A', 'Obsolete'), ('BUSH-100', 'B', 'Released')]; server http://127.0.0.1:<port>. A user connects to Carbon Cloud (app.carbon.ms) or their own Carbon instead"
+   "detail": "releases [('BUSH-100', 'A', 'Obsolete'), ('BUSH-100', 'B', 'Released')]; server http://127.0.0.1:62613. A user connects to Carbon Cloud (app.carbon.ms) or their own Carbon instead"
   },
   {
    "tutorial": "BC: Release to manufacturing: the guide bush into Carbon",
@@ -5590,7 +5590,7 @@
    "nx": "Manufacturing Connection: server and API key, Test Connection, Save",
    "replay": "ribbon 'PLM › Manufacturing > Manufacturing Connection', server and key typed, 'Test Connection', 'Save'",
    "outcome": "same",
-   "detail": "'Connected to http://127.0.0.1:<port>: Test Precision BV.'; the server goes into nxstyle.json, the key into carbon.key (mode 0o600), never into nxstyle.json"
+   "detail": "'Connected to http://127.0.0.1:62613: Test Precision BV.'; the server goes into nxstyle.json, the key into carbon.key (mode 0o666), never into nxstyle.json"
   },
   {
    "tutorial": "BC: Release to manufacturing: the guide bush into Carbon",
@@ -5598,7 +5598,7 @@
    "nx": "Publish to Manufacturing: the newest Released revision, Review",
    "replay": "ribbon 'PLM › Manufacturing > Publish to Manufacturing', release 'BUSH-100 rev B (Released)', 'Review'",
    "outcome": "same",
-   "detail": "nothing written yet (0 writes); the review lists part BUSH-100 rev B (Make); CAD model BUSH-100_B.step (12623 bytes); document analysis_ToleranceStackup.csv (653 bytes); document analysis_ToleranceStackup.txt (1509 bytes); document analysis_mass_properties.csv (160 bytes); document drawings_Page.pdf (26661 bytes); document model_BUSH-100_B.FCStd (45982 bytes); document pmi_checks.txt (142 bytes); document pmi_inspection_plan.csv (927 bytes); document pmi_pmi.json (3374 bytes); document BUSH-100_B_manifest_2cea0517a420.json (3419 bytes); inspection plan 'BUSH-100 rev B inspection plan (NX-Style PMI)'; inspection plan: 6 characteristics added,"
+   "detail": "nothing written yet (0 writes); the review lists part BUSH-100 rev B (Make); CAD model BUSH-100_B.step (12623 bytes); document analysis_ToleranceStackup.csv (653 bytes); document analysis_ToleranceStackup.txt (1509 bytes); document analysis_mass_properties.csv (160 bytes); document drawings_Page.pdf (44544 bytes); document model_BUSH-100_B.FCStd (45165 bytes); document pmi_checks.txt (142 bytes); document pmi_inspection_plan.csv (927 bytes); document pmi_pmi.json (3374 bytes); document BUSH-100_B_manifest_373fdca35af0.json (3419 bytes); inspection plan 'BUSH-100 rev B inspection plan (NX-Style PMI)'; inspection plan: 6 characteristics added,"
   },
   {
    "tutorial": "BC: Release to manufacturing: the guide bush into Carbon",
@@ -5606,7 +5606,7 @@
    "nx": "OK: Carbon gets the release",
    "replay": "MB2 = OK",
    "outcome": "same",
-   "detail": "13 writes: part BUSH-100 rev B (Make); CAD model BUSH-100_B.step (12623 bytes); document analysis_ToleranceStackup.csv (653 bytes); document analysis_ToleranceStackup.txt (1509 bytes); document analysis_mass_properties.csv (160 bytes); document drawings_Page.pdf (26661 bytes); document model_BUSH-100_B.FCStd (45982 bytes); document pmi_checks.txt (142 bytes); document pmi_inspection_plan.csv (927 bytes); document pmi_pmi.json (3374 bytes); document BUSH-100_B_manifest_2cea0517a420.json (3419 bytes); inspection plan 'BUSH-100 rev B inspection plan (NX-Style PMI)'; inspection plan: 6 characteristics added, 0 changed"
+   "detail": "13 writes: part BUSH-100 rev B (Make); CAD model BUSH-100_B.step (12623 bytes); document analysis_ToleranceStackup.csv (653 bytes); document analysis_ToleranceStackup.txt (1509 bytes); document analysis_mass_properties.csv (160 bytes); document drawings_Page.pdf (44544 bytes); document model_BUSH-100_B.FCStd (45165 bytes); document pmi_checks.txt (142 bytes); document pmi_inspection_plan.csv (927 bytes); document pmi_pmi.json (3374 bytes); document BUSH-100_B_manifest_373fdca35af0.json (3419 bytes); inspection plan 'BUSH-100 rev B inspection plan (NX-Style PMI)'; inspection plan: 6 characteristics added, 0 changed"
   },
   {
    "tutorial": "BC: Release to manufacturing: the guide bush into Carbon",
@@ -5614,7 +5614,7 @@
    "nx": "In Carbon: the part at rev B, its CAD model, documents and inspection plan",
    "replay": "what the replay's Carbon holds",
    "outcome": "same",
-   "detail": "item BUSH-100 rev B (active); CAD model BUSH-100_B.step; documents ['BUSH-100_B_manifest_2cea0517a420.json', 'analysis_ToleranceStackup.csv', 'analysis_ToleranceStackup.txt', 'analysis_mass_properties.csv', 'drawings_Page.pdf', 'model_BUSH-100_B.FCStd', 'pmi_checks.txt', 'pmi_inspection_plan.csv', 'pmi_pmi.json']; 6 characteristics for 6 plan rows; the bore Ø16 F7 as nominal 16 +0.034 -(-0.016) mm, i.e. 16.016 to 16.034; requests outside Carbon's published schemas: 0"
+   "detail": "item BUSH-100 rev B (active); CAD model BUSH-100_B.step; documents ['BUSH-100_B_manifest_373fdca35af0.json', 'analysis_ToleranceStackup.csv', 'analysis_ToleranceStackup.txt', 'analysis_mass_properties.csv', 'drawings_Page.pdf', 'model_BUSH-100_B.FCStd', 'pmi_checks.txt', 'pmi_inspection_plan.csv', 'pmi_pmi.json']; 6 characteristics for 6 plan rows; the bore Ø16 F7 as nominal 16 +0.034 -(-0.016) mm, i.e. 16.016 to 16.034; requests outside Carbon's published schemas: 0"
   },
   {
    "tutorial": "BC: Release to manufacturing: the guide bush into Carbon",
