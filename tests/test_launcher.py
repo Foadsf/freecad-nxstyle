@@ -522,6 +522,88 @@ class DFMTests(unittest.TestCase):
         self.assertIn("LGPL-2.1-or-later", (real / "package.xml").read_text(encoding="utf-8"))
 
 
+class NxtTests(unittest.TestCase):
+    """FreeCAD-Nxt, a trial: bundled but off by default, on with --nxt or "nxt": true, FreeCAD 1.1 or newer."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name).resolve()
+        self.bundled = root / "vendor" / "FreeCAD-Nxt"
+        (self.bundled / "freecad" / "nxt").mkdir(parents=True)
+        (self.bundled / "freecad" / "nxt" / "init_gui.py").write_text("")
+        self.profile = root / "profile"
+        self.install = launch_nx.Install(root / "FreeCAD.exe", (1, 1, 4))
+        self._saved = launch_nx.NXT_DIR
+        launch_nx.NXT_DIR = self.bundled
+
+    def tearDown(self):
+        launch_nx.NXT_DIR = self._saved
+        self.tmp.cleanup()
+
+    def _config(self, text):
+        (self.profile / "config").mkdir(parents=True, exist_ok=True)
+        (self.profile / "config" / "nxstyle.json").write_text(text)
+
+    def dry_run(self, *flags):
+        exe = Path(self.tmp.name) / "FreeCAD"          # never run: a lone GUI binary is not asked its version
+        exe.write_text("")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            launch_nx.main(["--freecad", str(exe), "--profile", str(self.profile), "--dry-run", *flags])
+        return json.loads(out.getvalue())
+
+    def test_off_by_default(self):
+        where, why = launch_nx.find_nxt(self.profile, self.install)
+        self.assertIsNone(where)
+        self.assertIn("--nxt", why)
+
+    def test_on_by_flag_or_config(self):
+        self.assertEqual(launch_nx.find_nxt(self.profile, self.install, enabled=True)[0], self.bundled)
+        self._config('{"nxt": true}')
+        self.assertEqual(launch_nx.find_nxt(self.profile, self.install)[0], self.bundled)
+        self._config('{"nxt": "yes"}')                    # only true turns it on
+        self.assertIsNone(launch_nx.find_nxt(self.profile, self.install)[0])
+
+    def test_needs_freecad_1_1(self):
+        old = launch_nx.Install(self.install.exe, (1, 0, 2))
+        where, why = launch_nx.find_nxt(self.profile, old, enabled=True)
+        self.assertIsNone(where)
+        self.assertIn("1.1", why)
+
+    def test_profile_install_is_not_loaded_twice(self):
+        pkg = self.profile / "data" / "Mod" / "FreeCAD-Nxt" / "freecad" / "nxt"
+        pkg.mkdir(parents=True)
+        (pkg / "init_gui.py").write_text("")
+        where, why = launch_nx.find_nxt(self.profile, self.install, enabled=True)
+        self.assertIsNone(where)
+        self.assertIn("NX profile", why)
+
+    def test_missing_submodule_says_how_to_get_it(self):
+        (self.bundled / "freecad" / "nxt" / "init_gui.py").unlink()
+        where, why = launch_nx.find_nxt(self.profile, self.install, enabled=True)
+        self.assertIsNone(where)
+        self.assertIn("submodule", why)
+
+    def test_default_command_is_unchanged_and_flag_adds_it_last(self):
+        off = self.dry_run()
+        self.assertNotIn(str(self.bundled), off["command"])
+        on = self.dry_run("--nxt")
+        self.assertEqual(on["command"], off["command"] + ["-M", str(self.bundled)])
+        self.assertTrue(on["nxt"].startswith("bundled"))
+
+    def test_real_submodule_is_a_namespace_package(self):
+        real = self._saved
+        init = real / "freecad" / "nxt" / "init_gui.py"
+        if not init.is_file():
+            self.skipTest("vendor/FreeCAD-Nxt not checked out (git submodule update --init)")
+        self.assertFalse((real / "InitGui.py").exists())            # no workbench: loaded as freecad.nxt
+        manifest = (real / "package.xml").read_text(encoding="utf-8")
+        self.assertIn("LGPL-2.1-or-later", manifest)
+        self.assertIn("<freecadmin>1.1.0</freecadmin>", manifest)
+        self.assertIn('"CheckAddonUpdates"', (real / "freecad" / "nxt" / "core" / "settings.py")
+                      .read_text(encoding="utf-8"))                 # the preference NXStyle sets (nxstyle/nxt.py)
+
+
 @unittest.skipUnless(os.name == "nt", "job objects are Windows-only")
 class MemoryCeilingTests(unittest.TestCase):
     """A runaway test run must stop at its ceiling instead of exhausting the machine."""

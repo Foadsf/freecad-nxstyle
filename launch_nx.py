@@ -419,6 +419,31 @@ def find_lcinterlocking(profile: Path, disabled: bool = False) -> tuple[Path | N
 
 
 # --------------------------------------------------------------------------
+# Nxt: a QtQuick model panel and Property Inspector (obelisk79/FreeCAD-Nxt, LGPL-2.1-or-later). A trial, off by
+# default: --nxt or "nxt": true turns it on. A freecad.nxt namespace package, not a workbench; it needs FreeCAD 1.1
+# --------------------------------------------------------------------------
+NXT_DIR = HERE / "vendor" / "FreeCAD-Nxt"          # git submodule of github.com/obelisk79/FreeCAD-Nxt
+NXT_MIN_FREECAD = (1, 1, 0)                        # its package.xml <freecadmin>
+
+
+def find_nxt(profile: Path, install: Install, enabled: bool = False) -> tuple[Path | None, str]:
+    """The Nxt folder to load with -M, or None, and why; one copy only, as for Strata. Off unless --nxt or
+    "nxt": true; a copy the Addon Manager installed into the NX profile is loaded by FreeCAD itself either way."""
+    mods = profile / "data" / "Mod"
+    if mods.is_dir():
+        for mod in sorted(mods.iterdir()):
+            if (mod / "freecad" / "nxt" / "init_gui.py").is_file():
+                return None, f"installed in the NX profile ({mod})"
+    if not enabled and read_settings(profile).get("nxt") is not True:
+        return None, "off (--nxt or \"nxt\": true in nxstyle.json turns it on)"
+    if install.version and install.version < NXT_MIN_FREECAD:
+        return None, f"off: it needs FreeCAD {'.'.join(map(str, NXT_MIN_FREECAD))} or newer"
+    if (NXT_DIR / "freecad" / "nxt" / "init_gui.py").is_file():
+        return NXT_DIR, f"bundled ({NXT_DIR})"
+    return None, "not found: run 'git submodule update --init' in the freecad-nxstyle folder"
+
+
+# --------------------------------------------------------------------------
 # Carbon: the manufacturing system (ERP, MES, quality) behind PLM › Manufacturing. A server, not an add-on:
 # nothing is loaded; NXStyle's own client (nxstyle/carbon.py) talks to it, so this only reports how it is set up
 # --------------------------------------------------------------------------
@@ -838,6 +863,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="start without the SheetMetal add-on (NX Sheet Metal; on by default)")
     ap.add_argument("--no-lcinterlocking", action="store_true",
                     help="start without the LCInterlocking add-on (Laser Cut; on by default)")
+    ap.add_argument("--nxt", action="store_true",
+                    help="start with the FreeCAD-Nxt add-on (model panel, Property Inspector; a trial, off by "
+                         "default; FreeCAD 1.1 or newer)")
     ap.add_argument("--no-carbon", action="store_true",
                     help="start without the Carbon commands (PLM > Manufacturing; they need a Carbon server)")
     ap.add_argument("--no-dfm", action="store_true",
@@ -892,13 +920,17 @@ def main(argv: list[str] | None = None) -> int:
         extra["NXSTYLE_CARBON"] = "0"
     dfm, dfm_why = find_dfm(profile.resolve(), install, disabled=args.no_dfm)
     extra["NXSTYLE_DFM_EXPECTED"] = "1" if dfm_why.startswith(("bundled", "installed")) else "0"
+    nxt, nxt_why = find_nxt(profile.resolve(), install, enabled=args.nxt)
+    if nxt or "NX profile" in nxt_why:
+        extra["NXSTYLE_NXT_EXPECTED"] = "1"
     cmd = build_command(install, args.files, passthrough,
-                        tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m) + dfm)
+                        tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m) + dfm
+                        + ((nxt,) if nxt else ()))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
-                          "carbon": carbon_why,
+                          "nxt": nxt_why, "carbon": carbon_why,
                           "command": cmd},
                          indent=2))
         return 0
@@ -914,6 +946,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"LCInterlocking: {lcinterlocking_why}")
     print(f"Carbon: {carbon_why}")
     print(f"DFM: {dfm_why}")
+    print(f"Nxt: {nxt_why}")
 
     if harness:
         if os.name == "nt":

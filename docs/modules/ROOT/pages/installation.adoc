@@ -110,6 +110,9 @@ python launch_nx.py part.FCStd
 | `--no-dfm`
 | Starts without the DFM Workbench (Analysis › Molded Part Validation). To switch it off for good, set `"dfm": "none"`.
 
+| `--nxt`
+| Starts with the FreeCAD-Nxt add-on, a trial that is off by default (xref:nxt.adoc[]). To switch it on for good, set `"nxt": true`. It needs FreeCAD 1.1 or newer.
+
 | `--install-dfm-deps`
 | Installs what the DFM Workbench needs (cadquery-ocp 7.8.1.1.post1 and VTK 9.3.1, pinned to FreeCAD 1.1's OpenCASCADE 7.8.1, and gmsh 4.15.2 for its colour maps) with FreeCAD's own Python, then exits. The only option that downloads anything.
 
