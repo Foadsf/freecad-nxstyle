@@ -60,12 +60,24 @@ def active_page():
     return pages[-1] if pages else None
 
 
+def view_origin(view):
+    """(x, y, scale) of a view on the sheet: a projection group's view (FreeCAD 1.1's Base View makes one) is
+    placed relative to its group, and takes the group's scale."""
+    x, y = float(view.X), float(view.Y)
+    if view.TypeId == "TechDraw::DrawProjGroupItem":
+        g = next((o for o in view.InList if o.isDerivedFrom("TechDraw::DrawProjGroup")), None)
+        if g is not None:
+            x, y = x + float(g.X), y + float(g.Y)
+    s = float(view.getScale()) if hasattr(view, "getScale") else float(view.Scale)
+    return x, y, s
+
+
 def edge_on_sheet(view, edge):
     """Edge midpoint, direction and outward normal on the sheet (mm, Y up)."""
-    s = float(view.Scale)
+    vx, vy, s = view_origin(view)
     a, b = edge.Vertexes[0].Point, edge.Vertexes[-1].Point
     mid = edge.valueAt((edge.FirstParameter + edge.LastParameter) / 2)
-    x, y = float(view.X) + mid.x * s, float(view.Y) + mid.y * s
+    x, y = vx + mid.x * s, vy + mid.y * s
     dx, dy = b.x - a.x, b.y - a.y
     horizontal = abs(dx) >= abs(dy)
     # outward = away from the view centre (edge geometry is relative to it)
@@ -80,7 +92,8 @@ def dimension_on_sheet(dim):
     view = dim.References2D[0][0] if dim.References2D else None
     if view is None:
         return float(dim.X), float(dim.Y)
-    return float(view.X) + float(dim.X), float(view.Y) + float(dim.Y)
+    vx, vy, _ = view_origin(view)
+    return vx + float(dim.X), vy + float(dim.Y)
 
 
 def add_symbol(page, name, svg, x, y):

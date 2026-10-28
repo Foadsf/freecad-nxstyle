@@ -179,6 +179,8 @@ class Smoke:
         yield self.s_thread, 300
         yield self.s_move, 300
         yield self.s_show_key, 300
+        yield self.s_drafting_views, 300
+        yield self.s_pmi_notes, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -2717,6 +2719,18 @@ class Smoke:
         Invert by theirs (smoke_show.py)."""
         from . import smoke_show
         smoke_show.run(self)
+
+    def s_drafting_views(self):
+        """NX's Projected View off a selected view (Above, Right, first angle, Close, undo), its edges against the
+        Part API with a negative control, and the Note with a leader (smoke_drafting.py)."""
+        from . import smoke_drafting
+        smoke_drafting.run(self)
+
+    def s_pmi_notes(self):
+        """The PMI tab's Linear, Radial, Note and Centerline against the Part API, two negative controls, and
+        Inherit PMI bringing them onto a front view (smoke_pmi_notes.py)."""
+        from . import smoke_pmi_notes
+        smoke_pmi_notes.run(self)
 
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""

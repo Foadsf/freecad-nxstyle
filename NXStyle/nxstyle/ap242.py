@@ -390,7 +390,9 @@ def write(objs, pmi_objs, path, standard="ISO", general=None, names=None, colors
     anns = []
     for p in pmi_objs:
         a = pmi_ui.semantic(p)
-        if pmi.is_valid(a):
+        if a["kind"] not in ("datum", "dimension", "fcf"):    # a note or a centerline: no semantic AP242 form here
+            problems.append(f"{p.Label}: a {a['kind']} has no AP242 semantic form in OCCT; not written")
+        elif pmi.is_valid(a):
             anns.append(a)
         else:                                  # its values are not current: not written as if they were
             problems.append(f"{p.Label}: not valid ({a.get('invalid', '')}); not written")
