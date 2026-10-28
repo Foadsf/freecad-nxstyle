@@ -63,6 +63,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `sheetmetal.py`, `sheetmetal_ui.py` | Bend allowance, bend deduction and flat length (no FreeCAD); Sheet Metal Preferences and Flat Pattern on the bundled SheetMetal add-on.
 | `resources/ribbons/laser_cut.json` | Laser Cut: the bundled LCInterlocking add-on's commands under NX-style names.
 | `lcinterlocking.py` | An import hook that gives an upstream LCInterlocking (from the Addon Manager) the bundled fork's two Qt 6 fixes when its task panel module loads (no FreeCAD).
+| `resources/ribbons/modeling.json` (Analysis › Molded Part Validation) | The bundled DFM Workbench's commands under NX names; optional items, so the group disappears when the add-on is off. The launcher (`find_dfm`, `--install-dfm-deps`) supplies its OCP.
 | `alignment.py`, `alignment_ui.py` | Pin location: fit, translation, rotation, pointing error and thermal mismatch (no FreeCAD); the Pin Location analysis object and dialog.
 | `position_eval.py`, `position_ui.py` | Position of a measured pattern: bonus, the upper row against the datums, the lower row's minimax best fit (no FreeCAD); the Position Evaluation object and its measurement table.
 | `msa.py`, `msa_ui.py` | Measurement capability: gauge repeatability by the range method, TUR, ISO 14253-1 acceptance limits (no FreeCAD); the Gauge Study object.
@@ -75,7 +76,7 @@ It is a FreeCAD module that rebuilds the main window at start, plus a launcher t
 | `plm.py` | Strata as the data management.
 | `carbon.py`, `carbon_ui.py` | Carbon as the manufacturing system: the HTTP client, publishing a release package (item, revision, model, documents, BOM, inspection plan) and the status (no FreeCAD; also `python -m nxstyle.carbon`); the Manufacturing commands, the connection dialog and the assembly's BOM from FreeCAD links. xref:manufacturing.adoc[]
 | `qt.py` | Qt shims: the same code on FreeCAD 1.0 (PySide2) and 1.1 (PySide6).
-| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `smoke_selection.py` holds the self-test's selection scenarios; `tutorial_katydid.py`, `tutorial_precision.py` and `tutorial_inspection.py` hold tutorials O–R, S–Z and AA–AC.
+| `smoke.py`, `tutorial.py` | The self-test and the tutorial replay (xref:testing.adoc[]); `smoke_selection.py` holds the self-test's selection scenarios and `smoke_section.py` its Extrude and Revolve sections; `tutorial_katydid.py`, `tutorial_precision.py` and `tutorial_inspection.py` hold tutorials O–R, S–Z and AA–AC.
 |===
 
 == Ribbon files

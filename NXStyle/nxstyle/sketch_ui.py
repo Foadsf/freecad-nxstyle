@@ -204,6 +204,33 @@ def xy_fields(sk, widget, p):
     return (fields[pick[0]], fields[pick[1]]) if pick else None
 
 
+def type_spline_point(sk, widget, p, point, prev=None):
+    """Type one point of a running Studio Spline (FreeCAD's B-spline tool, either type) with the pointer at p.
+
+    The first point (prev None) takes X and Y. FreeCAD 1.1.4 places it as soon as either field gets Enter, the
+    other at the pointer's value, so X is typed without Enter and Enter goes to Y. A later point takes the length
+    and angle from prev (FreeCAD has no X and Y there): Enter in each. Returns the values typed, or None when
+    the two fields are not there."""
+    from .qt import Qt
+    from .tutorial import qtest
+    fields = on_view_fields(widget)
+    cursor = cursor_on_sketch(sk, widget, p)
+    want = tuple(point) if prev is None else core.spline_step(prev, point)
+    pick = (core.xy_fields if prev is None else core.spline_step_fields)(
+        [field_value(w) for w in fields], cursor, *(() if prev is None else (prev,)))
+    if not pick:
+        return None
+    for i, (k, v) in enumerate(zip(pick, want)):
+        x = fields[k]
+        x.setFocus()
+        x.lineEdit().selectAll()
+        qtest().keyClicks(x.lineEdit(), f"{v:.15g}".replace(".", x.locale().decimalPoint()))
+        if prev is not None or i == 1:
+            qtest().keyClick(x.lineEdit(), Qt.Key_Return)
+        qtest().qWait(150)
+    return want
+
+
 # ------------------------------------------------------------------ Hide, Show, Show All (Ctrl+B, Ctrl+Shift+K/U)
 def picked_constraints(sk):
     """(indices of the constraints of sk that are selected, other objects selected, other elements of sk)."""
@@ -248,8 +275,9 @@ class Visibility:
     FREECAD = {"hide": "Std_HideSelection", "show": "Std_ShowSelection", "show_all": "Std_ShowObjects"}
     TEXT = {"hide": ("Hide", "Hide the selected objects; in a sketch, the selected dimensions and constraints "
                              "(NX: Ctrl+B)"),
-            "show": ("Show", "Show the selected objects; in a sketch, the selected hidden dimensions and "
-                             "constraints, picked in the constraint list (NX: Ctrl+Shift+K)"),
+            "show": ("Show", "Show the selected objects; with nothing selected, pick hidden objects in a list; in a "
+                             "sketch, the selected hidden dimensions and constraints, picked in the constraint list "
+                             "(NX: Ctrl+Shift+K)"),
             "show_all": ("Show All", "Show every object; in a sketch, every hidden dimension and constraint too "
                                      "(NX: Ctrl+Shift+U)")}
 
@@ -263,14 +291,21 @@ class Visibility:
         return {"MenuText": text, "ToolTip": tip, "Pixmap": _pixmap(self.FREECAD[self.kind]), "CmdType": "ForEdit"}
 
     def IsActive(self):
-        if App.ActiveDocument is None:
-            return False
-        return self.kind == "show_all" or bool(Gui.Selection.getSelectionEx())
+        # Not tied to the selection: FreeCAD enables a command's action on a timer after a selection change, so a
+        # key pressed right after a pick in the Part Navigator found the action still disabled, and Qt dropped it
+        # (tutorial AX's Ctrl+Shift+K). Activated looks at the selection itself.
+        return App.ActiveDocument is not None
 
     def Activated(self):
         sk = edited_sketch()
         if sk is None:
-            Gui.runCommand(self.FREECAD[self.kind])
+            if self.kind == "show_all" or Gui.Selection.getSelectionEx("", 0):
+                Gui.runCommand(self.FREECAD[self.kind])
+            elif self.kind == "show":            # NX's Show with nothing selected: pick the hidden objects
+                from . import showhide
+                showhide.show_hidden_dialog()
+            else:
+                _status("Hide: select the objects to hide first (Immediate Hide, Ctrl+Shift+I, hides what you pick)")
             return
         ids, others, elements = picked_constraints(sk)
         change, hide = core.visibility_change(self.kind, ids, hidden_flags(sk))
@@ -309,6 +344,18 @@ class SketchMenu:
             out.append({"insert": "NXStyle_Hide", "menuItem": "Std_Delete"})
         if core.visibility_change("show", ids, flags)[0]:
             out.append({"insert": "NXStyle_Show", "menuItem": "Std_Delete"})
+        # FreeCAD enables command actions on a timer after a selection change (Gui.updateCommands() only schedules
+        # it): MB3 right after picking would show these entries greyed, and a click on them does nothing. Enable
+        # them for the selection the menu is built for. (Visibility.IsActive no longer reads the selection, so this
+        # is now a guard for an entry whose IsActive does.)
+        for entry in out:
+            try:
+                cmd = Gui.Command.get(entry["insert"])
+                active = cmd.isActive()
+                for a in cmd.getAction():
+                    a.setEnabled(active)
+            except Exception:
+                pass
         return out
 
 

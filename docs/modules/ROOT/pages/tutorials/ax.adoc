@@ -1,0 +1,57 @@
+= Tutorial AX: Impeller Upper Casing
+:description: The lower casing of tutorial AO turned into the upper one with Edit Parameters, and a manhole added: a square tube and an opening through the wall (NX 12 for Engineering Design, exercise 4.10.3).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 4.10.3 (Impeller Upper Casing). It starts from the lower casing of xref:tutorials/ao.adoc[tutorial AO].
+You learn:: Edit Parameters of a Revolve and of an Extrude, a Datum Plane at an offset, a sketch on it, Extrude with Unite, Extrude (Subtract) of some of a sketch's curves, Show
+Sizes:: the lower casing's, in inches, typed in millimetres. The manhole is ours (see below).
+
+The book gives the upper casing the lower casing's dimensions and leaves the manhole to the reader: it should be big enough to see the impeller blades and to put a hand inside to clean it.
+Here it is a square tube 5 × 5 in with 0.5 in walls, its top 3 in above the casing (z = 18 in), over the middle of the wall's straight part, and a 4 × 4 in opening through the wall.
+The tube ends in the middle of the wall's thickness (z = 14.75 in): ending it on the wall's inner face would leave a tangent contact that the Unite cannot make.
+
+The replay runs tutorials AG and AO first and starts from the part AO saved.
+
+== Step by step
+
+=== 1. The lower casing, turned over
+
+Open `Impeller_lower_casing` and save it as `Impeller_upper_casing`.
+
+Select the wall's Revolve in the Part Navigator and click *Edit Parameters*.
+Keep Start 0, type End −180, and click *OK*: the wall is now above the split plane.
+Do the same for the flange's Revolve.
+
+Select the edge's Extrude, click *Edit Parameters*, untick *Reversed* in FreeCAD's panel and click *OK*.
+The edge now runs up from the split plane, and its mirrored copy follows by itself.
+
+=== 2. The manhole
+
+Select the XC-YC plane in the Part Navigator and choose *Datum* > *Datum Plane*. Type 457.2 mm (18 in) in the offset along Z and press MB2.
+Select the datum plane and click *Sketch*.
+Draw two squares with *Rectangle* (kbd:[R]), both centred over the middle of the wall's straight part: 5 × 5 in and 4 × 4 in. Then kbd:[Ctrl+Q].
+
+Click *Extrude*, click a side of a square, choose *Unite*, and type 82.55 mm (3.25 in).
+Tick *Reversed* so that it runs down to the casing, then click *OK*: the tube.
+
+FreeCAD hides a sketch once an Extrude uses it, and a hidden curve cannot be picked.
+Select the sketch in the Part Navigator and click *Show* (View tab).
+Click *Extrude (Subtract)*, set the Curve Rule to *Single Curve* and pick the inner square's four lines; QuickPick lists them where they lie on the tube.
+Type 127 mm (5 in) and click *OK*: the opening through the wall.
+
+image::tutorial-AX-01-casing.png[The upper casing with its square manhole]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-AX.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+Each step is compared with FreeCAD's Part API build of the book's curves and the manhole.
+
+== What differs from NX
+
+* NX keeps a sketch visible after an Extrude uses it; FreeCAD hides it, so it has to be shown again before its curves can be picked.
+* Right after a selection, Ctrl+Shift+K (NX's Show) and Ctrl+B (Hide) did nothing in the replay until FreeCAD had updated its commands (about 1.5 s); the View tab's Show button worked at once. Both keys now work right after a pick (PR #36); the replay still uses the button.

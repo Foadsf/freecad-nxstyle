@@ -2,7 +2,7 @@
 :description: The sketch of an impeller's lower casing: a line, two tangent arcs and a line, dimensioned from a fixed point, then copied with Move Curve into the casing wall, its edge and the flange (NX 12 for Engineering Design, 3.5.2).
 
 [horizontal]
-Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.2. The book's chapter 4.4 then revolves this sketch into the casing.
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.2. The book's chapter 4.4 then revolves this sketch into the casing: xref:tutorials/ao.adoc[tutorial AO].
 You learn:: Profile with tangent arcs, a fixed point to dimension from, radius dimensions, Move Curve with Copy Original, joining curve ends with lines
 Sizes:: the book's, in inches, typed in millimetres. Line 1 is 15 below the origin and 7.3 long. Curve 1 has a radius of 33 and Curve 2 of 8. Line 2 is 8.1 below the origin and 1.0 long. The copies are 0.5 up (the wall), 1.5 down (the edge), and the flange is 0.5 wide.
 

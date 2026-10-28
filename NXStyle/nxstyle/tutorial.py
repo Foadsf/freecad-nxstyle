@@ -38,11 +38,13 @@ from .tutorial_lasercut import LaserCutTutorials
 from .tutorial_manufacturing import ManufacturingTutorials
 from .tutorial_mst import (MstCasingTutorials, MstCircularBaseTutorials, MstHolderTutorials, MstImpellerTutorials,
                            MstTutorials)
-from .tutorial_mst4 import MstPlateTutorials
+from .tutorial_mst4 import (MstArborPressTutorials, MstDieCavityTutorials, MstFastenerTutorials,
+                            MstHolderSolidTutorials, MstImpellerSolidTutorials, MstLowerCasingTutorials, MstPlateTutorials, MstRockerArmTutorials,
+                            MstShaftTutorials, MstUpperCasingTutorials)
 from .tutorial_precision import PrecisionTutorials
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
-ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO"
+ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,BC"
 IN = 25.4
 SAME, DIFFERS, MISSING, FAIL = "same", "differs", "missing", "FAILED"
 LIMIT = "limit"   # the NX way fails in FreeCAD itself (shown by the same call through the Part API); a workaround follows
@@ -129,7 +131,9 @@ class SaveWatch:
 class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, ExchangeTutorials, LaserCutTutorials,
              ExtrudeTutorials, ManufacturingTutorials,
              MstTutorials, MstCasingTutorials, MstImpellerTutorials, MstCircularBaseTutorials, MstHolderTutorials,
-             MstPlateTutorials):
+             MstPlateTutorials, MstLowerCasingTutorials, MstShaftTutorials, MstFastenerTutorials,
+             MstArborPressTutorials, MstImpellerSolidTutorials, MstUpperCasingTutorials, MstDieCavityTutorials,
+             MstRockerArmTutorials, MstHolderSolidTutorials):
     def __init__(self, shell):
         self.shell = shell
         self.rows = []
@@ -299,7 +303,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         Qt's QDoubleSpinBox and FreeCAD's QuantitySpinBox both read numbers in the locale
         (LC_NUMERIC on Linux): under nl_NL '.' is the group separator, so '0.05' is 5 and
         '3.175' is 3175, while a Dutch user types '0,05'."""
-        return f"{float(value):.6g}".replace(".", w.locale().decimalPoint())
+        # all the digits a value has (127.8636 = 5.034 in), not six significant ones (which typed 127.864)
+        return f"{round(float(value), 9):.12g}".replace(".", w.locale().decimalPoint())
 
     def check_typed(self, w, value, text):
         """Read the field back: a typed number it took as another value fails the step."""
@@ -321,6 +326,11 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         Some FreeCAD dialogs only take the text when the field finishes editing, as a
         user's Tab or click elsewhere does."""
         from .smoke import decode
+        app = QtWidgets.QApplication.instance()
+        if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+            # a hidden desktop has no foreground window: the field never gets focus, and Tab leaves its text
+            # uncommitted (measured: an Edge Blend radius kept 1 mm after a Move Object and two Unite / Subtract)
+            app.setActiveWindow(Gui.getMainWindow())
         w.setFocus()
         ed = w.lineEdit()
         ed.selectAll()
@@ -465,18 +475,27 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         X = list(getattr(self, "X_STEPS", lambda: [])())
         Y = list(getattr(self, "Y_STEPS", lambda: [])())
         Z = list(getattr(self, "Z_STEPS", lambda: [])())
-        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK, AL, AM, AN, AO = (list(getattr(self, f"{k}_STEPS", lambda: [])())
-                                                      for k in ("AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AJ",
-                                                                "AK", "AL", "AM", "AN", "AO"))
+        AA, AB, AC, AD, AE, AF, AG, AH, AJ, AK, AL, AM, AN, AO, AP, AQ, AR, AS, AT, AU, AV, AW, AX, AY, BC = (
+            list(getattr(self, f"{k}_STEPS", lambda: [])())
+            for k in ("AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ",
+                      "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "BC"))
         wanted = [w.strip() for w in (os.environ.get("NXSTYLE_TUTORIALS") or ALL_TUTORIALS).upper().split(",")]
         if "N" in wanted and "M" not in wanted:      # the drawing is of tutorial M's U-Bracket
             wanted.insert(wanted.index("N"), "M")
-        if "AO" in wanted and "V" not in wanted:     # AO sends the guide bush V released to manufacturing
-            wanted.insert(wanted.index("AO"), "V")
+        if "BC" in wanted and "V" not in wanted:     # BC sends the guide bush V released to manufacturing
+            wanted.insert(wanted.index("BC"), "V")
         if "AC" in wanted and "V" not in wanted:     # AC's sheet is the guide bush V released
             wanted.insert(wanted.index("AC"), "V")
         if "V" in wanted and "T" not in wanted:      # V releases tutorial T's guide bush
             wanted.insert(wanted.index("V"), "T")
+        if "AX" in wanted and "AO" not in wanted:    # AX turns AO's lower casing into the upper one
+            wanted.insert(wanted.index("AX"), "AO")
+        if "AO" in wanted and "AG" not in wanted:    # AO makes the solids of AG's casing sketch
+            wanted.insert(wanted.index("AO"), "AG")
+        if "AU" in wanted and "AH" not in wanted:    # AU makes the impeller of AH's blade sketch
+            wanted.insert(wanted.index("AU"), "AH")
+        if "AW" in wanted and "AK" not in wanted:    # AW models the holder from AK's sketch
+            wanted.insert(wanted.index("AW"), "AK")
         if "KatydidWorkbench" not in Gui.listWorkbenches():
             wanted = [w for w in wanted if w not in "OPQR"]   # Katydid off (--no-katydid): nothing to replay on
         if "SMWorkbench" not in Gui.listWorkbenches():
@@ -487,7 +506,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
                            ("I", I), ("J", J), ("K", K), ("L", L), ("M", M), ("N", N), ("O", O), ("P", P),
                            ("Q", Q), ("R", R), ("S", S), ("T", T), ("U", U), ("V", V), ("W", W), ("X", X), ("Y", Y), ("Z", Z),
                            ("AA", AA), ("AB", AB), ("AC", AC), ("AD", AD), ("AE", AE), ("AF", AF), ("AG", AG), ("AH", AH), ("AJ", AJ),
-                           ("AK", AK), ("AL", AL), ("AM", AM), ("AN", AN), ("AO", AO)):
+                           ("AK", AK), ("AL", AL), ("AM", AM), ("AN", AN), ("AO", AO), ("AP", AP), ("AQ", AQ), ("AR", AR), ("AS", AS),
+                           ("AT", AT), ("AU", AU), ("AV", AV), ("AW", AW), ("AX", AX), ("AY", AY), ("BC", BC)):
             if key in wanted:
                 yield from steps
 

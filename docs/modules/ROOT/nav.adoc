@@ -1,4 +1,5 @@
 * xref:index.adoc[Overview]
+* xref:whats-new.adoc[What's new]
 
 .Getting started
 * xref:installation.adoc[Installation]
@@ -21,6 +22,7 @@
 * xref:inspection.adoc[Inspection: measured parts and gauges]
 * xref:pin-location.adoc[Pin location]
 * xref:clearance.adoc[Assembly clearance and volume claims]
+* xref:dfm.adoc[Molded part validation (DFM)]
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
 * xref:release-package.adoc[Release packages]
@@ -67,7 +69,18 @@
 * xref:tutorials/al.adoc[AL: Design intent through STEP]
 * xref:tutorials/am.adoc[AM: Receiving STEP: AP, BOM, Part 112 sketch]
 * xref:tutorials/an.adoc[AN: Arbor Press Plate]
-* xref:tutorials/ao.adoc[AO: Release to manufacturing (Carbon)]
+* xref:tutorials/ao.adoc[AO: Impeller Lower Casing, Extrude and Revolve]
+* xref:tutorials/ap.adoc[AP: Impeller Shaft]
+* xref:tutorials/aq.adoc[AQ: Hexagonal Screw]
+* xref:tutorials/ar.adoc[AR: Hexagonal Nut]
+* xref:tutorials/as.adoc[AS: Arbor Press L-Bar]
+* xref:tutorials/at.adoc[AT: Arbor Press Rack]
+* xref:tutorials/au.adoc[AU: Impeller, the solid]
+* xref:tutorials/av.adoc[AV: Rocker Arm]
+* xref:tutorials/aw.adoc[AW: Holder]
+* xref:tutorials/ax.adoc[AX: Impeller Upper Casing]
+* xref:tutorials/ay.adoc[AY: Die Cavity]
+* xref:tutorials/bc.adoc[BC: Release to manufacturing (Carbon)]
 
 .Reference
 * xref:nx-to-freecad.adoc[NX commands and their FreeCAD equivalents]

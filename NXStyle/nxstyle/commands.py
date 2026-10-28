@@ -152,6 +152,13 @@ def category(o):
 CATEGORIES = ["Solid Bodies", "Sheet Bodies", "Curves", "Points", "Sketches", "Datums", "Components", "Other"]
 
 
+def hidden_objects(doc):
+    """The display objects that are hidden, by category and label: what NX's Show offers with nothing selected.
+    A Body's origin is left out: FreeCAD keeps every one hidden (the Show and Hide panel's Datums row has them)."""
+    hidden = [o for o in display_objects(doc) if not o.ViewObject.Visibility and o.TypeId != "App::Origin"]
+    return sorted(hidden, key=lambda o: (CATEGORIES.index(category(o)), o.Label))
+
+
 class InvertVisibility:
     def GetResources(self):
         return {"MenuText": "Invert Shown and Hidden",
@@ -647,21 +654,32 @@ class EditParameters:
         sel = Gui.Selection.getSelection()
         return primitive_ui.editable(sel[0]) if len(sel) == 1 else None
 
+    @staticmethod
+    def _thread():
+        from . import thread_ui
+        sel = Gui.Selection.getSelection()
+        return thread_ui.editable(sel[0]) if len(sel) == 1 else None
+
     def GetResources(self):
         return {"MenuText": "Edit Parameters",
-                "ToolTip": "Reopen the selected feature's dialog; an Extrude opens in the NX command panel, a "
-                           "Block, Cylinder, Cone or Sphere in its NX dialog",
+                "ToolTip": "Reopen the selected feature's dialog; an Extrude or a Revolve opens in the NX command "
+                           "panel, a Block, Cylinder, Cone, Sphere or Thread in its NX dialog",
                 "Pixmap": _pixmap("Std_Edit", "Std_DlgParameter")}
 
     def IsActive(self):
         return _has_doc() and not Gui.Control.activeDialog() and bool(Gui.Selection.getSelection())
 
     def Activated(self):
-        from . import controller, primitive_ui
+        from . import controller, primitive_ui, thread_ui
         prim = self._primitive()
         if prim is not None:
             Gui.Selection.clearSelection()
             primitive_ui.start(prim[0], prim[1])
+            return
+        thread = self._thread()
+        if thread is not None:
+            Gui.Selection.clearSelection()
+            thread_ui.start(thread)
             return
         feat = self._feature()
         if feat is None:
@@ -709,24 +727,29 @@ def register(apps):
         "NXStyle_MeasureBodies": MeasureBodies(),
         "NXStyle_TouchMode": TouchMode(),
         "NXStyle_Extrude": ControlledFeature("Extrude", None, "Extrude",
-                                             "Extrude a sketch: Boolean None (a new body), Unite or Subtract; with nothing selected, "
-                                             "sketch first (NX: X)", "PartDesign_Pad"),
+                                             "Extrude a section (a sketch, or curves picked with the Curve Rule): Boolean "
+                                             "None (a new body), Unite or Subtract; with nothing selected, sketch first "
+                                             "or pick curves (NX: X)", "PartDesign_Pad"),
         "NXStyle_ExtrudeSubtract": ControlledFeature("Extrude", "subtract", "Extrude (Subtract)",
                                                      "Extrude a sketch with Boolean Subtract", "PartDesign_Pocket"),
         "NXStyle_EditParameters": EditParameters(),
-        "NXStyle_Revolve": SketchFirstFeature("PartDesign_Revolution", "Revolve",
-                                              "Revolve a sketch; with nothing selected, sketch first",
-                                              "PartDesign_Revolution"),
-        "NXStyle_RevolveSubtract": SketchFirstFeature("PartDesign_Groove", "Revolve (Subtract)",
-                                                      "Revolve a sketch and subtract it", "PartDesign_Groove"),
+        "NXStyle_Revolve": ControlledFeature("Revolve", None, "Revolve",
+                                             "Revolve a section (a sketch, or curves picked with the Curve Rule) about "
+                                             "an axis: Boolean None, Unite or Subtract; with nothing selected, sketch "
+                                             "first or pick curves", "PartDesign_Revolution"),
+        "NXStyle_RevolveSubtract": ControlledFeature("Revolve", "subtract", "Revolve (Subtract)",
+                                                     "Revolve a section with Boolean Subtract", "PartDesign_Groove"),
         "NXStyle_Hole": SketchFirstFeature("PartDesign_Hole", "Hole",
                                            "Hole: pick a face or plane, place the hole centres (circles), "
                                            "Finish Sketch continues into the Hole dialog", "PartDesign_Hole"),
     }
-    from . import (alignment_ui, carbon_ui, claims, clearance, collector_ui, gdt_ui, msa_ui, parametric_ui, pmi_ui,
-                   package_ui, position_ui, primitive_ui, sheetmetal_ui, sketch_ui, stackup_ui, titleblock_ui)
+    from . import (alignment_ui, carbon_ui, claims, clearance, collector_ui, gdt_ui, move_ui, msa_ui, parametric_ui, pmi_ui,
+                   package_ui, position_ui, primitive_ui, sheetmetal_ui, sketch_ui, stackup_ui, thread_ui,
+                   titleblock_ui)
     table.update(collector_ui.COMMANDS)
     table.update(primitive_ui.COMMANDS)
+    table.update(thread_ui.COMMANDS)
+    table.update(move_ui.COMMANDS)
     table.update(sketch_ui.COMMANDS)
     table.update(alignment_ui.COMMANDS)
     table.update(position_ui.COMMANDS)
@@ -752,6 +775,8 @@ def register(apps):
     controller.install_context_menu()
     sketch_ui.install_context_menu()
     sketch_ui.install_trim_guard()
+    from . import sketch_typed
+    sketch_typed.install()
     # FreeCAD 1.0 creates a Python command's QAction only when the command is
     # placed in a toolbar or menu. A global custom toolbar (hidden by the shell)
     # makes FreeCAD create the actions, so shortcuts and ribbon buttons work.

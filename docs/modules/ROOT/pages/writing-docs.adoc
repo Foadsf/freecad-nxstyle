@@ -68,3 +68,14 @@ The build stops on any AsciiDoc warning (a broken cross reference, a missing inc
 * Sizes in millimetres; a book's inch value only in parentheses after it.
 * Screenshots come from the self-test and the tutorial replay, so they show the current UI. Name them after what they show (`ui-…`, `tutorial-X-…`).
 * Say what differs from NX plainly; no promises about what FreeCAD will do later.
+
+== Maintaining the overview
+
+The overview's `page-role: home` selects the landing-page styles in `docs/ui/css/nxstyle.css`.
+Other pages keep Antora's sidebar and page outline.
+Keep the overview focused on entry points; put detailed options and limitations in the linked guides.
+
+When a workflow changes, update xref:whats-new.adoc[], its matching feature guide and xref:differences.adoc[] together.
+Use existing tutorial screenshots and descriptive alternative text; do not substitute mockups for working features.
+Preview the homepage, a guide and the tutorial index at desktop and mobile widths.
+Check the menu, search results, section links and keyboard focus as well as the build.

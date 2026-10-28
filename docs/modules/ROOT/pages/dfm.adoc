@@ -1,0 +1,72 @@
+= Molded Part Validation (DFM)
+:description: Design-for-manufacturing checks for injection-molded parts on the bundled DFM Workbench: draft, wall thickness, undercuts and sharp corners, under NX's Molded Part Validation names.
+
+*Analysis › Molded Part Validation* on the Modeling ribbon checks a part against the rules of a manufacturing process before it goes to the toolmaker.
+The checks come from the https://github.com/ryankembrey/FreeCAD-DFM-Workbench[DFM Workbench] (Ryan Kembrey, LGPL-2.1-or-later), which NX-Style bundles unmodified in `vendor/FreeCAD-DFM-Workbench` and the launcher loads.
+Its commands exist from start-up, so they sit on the Modeling ribbon; there is no separate application to switch to.
+The add-on's own command name is shown in each button's tooltip (*FreeCAD: DFM Analysis* under *Moldability Validation*).
+
+== Before the first use
+
+The add-on needs OCP (cadquery-ocp), which FreeCAD does not ship, and gmsh for its colour maps.
+Until they are installed the launcher prints `DFM: off: it needs OCP` and the group is not on the ribbon. Install them once:
+
+[source,bash]
+----
+python launch_nx.py --install-dfm-deps
+----
+
+This runs FreeCAD's own Python (`pip install --no-deps`) and puts cadquery-ocp 7.8.1.1.post1, VTK 9.3.1 and gmsh 4.15.2 in `FreeCAD-NXStyle/pydeps/py311`, beside the NX profiles and outside the FreeCAD installation.
+cadquery-ocp 7.8.1 matches the OpenCASCADE 7.8.1 that FreeCAD 1.1 is built on. `--no-deps` keeps VTK from bringing in numpy 2 and matplotlib, which would shadow FreeCAD's own copies.
+Of VTK only its DLLs are kept, which OCP links to: FreeCAD ships VTK 9.3.1's Python package itself for Pre/Post (FEM), and a second copy on the path made switching to Pre/Post hang.
+The launcher then adds that folder to FreeCAD's module path (`-M`) ahead of the add-on, and never downloads anything by itself.
+
+== The buttons
+
+[cols="2,2,4",options="header"]
+|===
+| Button | Add-on command | Does
+| *Moldability Validation* | DFM Analysis | Checks the selected part (or the only body in the part) against every rule of a process and material, and lists the findings.
+| *Check Wall Thickness* | Thickness Analysis | Colours the part by wall thickness on a uniform mesh, with a legend.
+| *Draft Analysis* | Draft Analysis | Colours the part by draft angle to a pull direction on a uniform mesh.
+| *Process Library* | Process Library | Creates and edits processes, their rules and their materials' limits.
+|===
+
+NX has the first three under the same names: *Moldability Validation* on the Molded Part Design tab, *Check Wall Thickness* under Molded Part Validation, and *Draft Analysis* in the Face Shape group of the Analysis tab.
+*Process Library* has no NX counterpart and keeps the add-on's name.
+NX's Check-Mate checkers are not mapped: the add-on has no checker framework of that kind.
+
+== What Moldability Validation checks
+
+The add-on ships one process, *Plastic Injection Molding*, with these rules. The limits shown are its *Default* material's; each other material (ABS, PC, PP, …) overrides some of them.
+
+[cols="2,1,4",options="header"]
+|===
+| Rule | Severity | Finding
+| Minimum Draft Angle | error below 0.5°, warning below 1° | A face too close to parallel with the pull direction (default +Z), so it drags on ejection.
+| Minimum Wall Thickness | error below 0.5 mm, warning below 1 mm | A section too thin to fill.
+| Maximum Wall Thickness | error above 5 mm, warning above 4 mm | A section that cools slowly: sink marks and voids.
+| Undercut | error | A face trapped behind other geometry along the pull direction (needs a slider or lifter).
+| Sharp Internal Corners | error | A concave edge with no radius: a stress raiser that disturbs the flow.
+| Sharp External Corners | warning | A convex edge with no radius: a sharp inside corner in the mold, which needs EDM.
+|===
+
+The add-on's rulebook also has a maximum overhang angle and a maximum bridge span, for processes such as 3D printing that you define in the Process Library.
+
+== How to run it
+
+. Select the part (a Body, or a Part solid), then *Analysis › Molded Part Validation › Moldability Validation*.
+. In the task panel, choose the material. The category and the process fill themselves while the add-on has only one of each. The pull direction is +Z unless you click a face or an edge for it.
+. *Run Analysis*. The results panel lists the findings by criticality and rule; click one to highlight its face or edge, and double-click to zoom to it. Rules with no finding are listed under *Passed*.
+. *Save* keeps the results in the document; *Close* restores the part's colours. The panel also exports CSV and compares runs (its History tab).
+
+== Switching it off
+
+`python launch_nx.py --no-dfm`, or `"dfm": "none"` in `nxstyle.json`, starts without the add-on, and the Molded Part Validation group is not on the ribbon.
+A DFM Workbench already installed in the NX profile's `Mod` folder (by the Addon Manager) is used instead of the bundled one, never both.
+
+== Limits
+
+* The checks are rule-of-thumb checks for a designer, not a mold-flow simulation.
+* Findings name faces and edges by number (`Edge7`). If the part changes after a saved analysis, the add-on warns when the document is opened again that those numbers may have moved.
+* Check Wall Thickness and Draft Analysis mesh the part with gmsh; a very fine mesh on a large part takes a while.

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 """Manufacturing tutorial: the released part handed to the manufacturing system.
 
-  AO  tutorial V's guide bush, released as BUSH-100 rev B, sent to Carbon (ERP, MES, quality) with
+  BC  tutorial V's guide bush, released as BUSH-100 rev B, sent to Carbon (ERP, MES, quality) with
       PLM › Publish to Manufacturing: the connection, the review, the publish (item, revision, CAD model,
       documents, the inspection plan's characteristics), a second publish that writes nothing, and the
       shop's stock and a non-conformance read back with Manufacturing Status (runs T and V first)
@@ -29,12 +29,12 @@ def _out():
 class ManufacturingTutorials:
     """Mixin for tutorial.Replay (uses the p_ and v_ helpers of PrecisionTutorials)."""
 
-    def AO_STEPS(self):
+    def BC_STEPS(self):
         return [self.an_new, self.an_connect, self.an_review, self.an_publish, self.an_check, self.an_again,
                 self.an_shop, self.an_status, self.an_done]
 
     def an_new(self):
-        self.tutorial = "AO: Release to manufacturing: the guide bush into Carbon"
+        self.tutorial = "BC: Release to manufacturing: the guide bush into Carbon"
         from . import config
         tests = os.path.normpath(os.path.join(config.RESOURCES, "..", "..", "..", "tests"))
         self._an_srv = None
@@ -75,7 +75,7 @@ class ManufacturingTutorials:
             qtest().mouseClick(dlg.findChild(QtWidgets.QPushButton, "carbonTest"), Qt.LeftButton)
             QtWidgets.QApplication.processEvents()
             result = dlg.result.text()
-            dlg.grab().save(os.path.join(_out(), "tutorial-AO-01-connection.png"))
+            dlg.grab().save(os.path.join(_out(), "tutorial-BC-01-connection.png"))
             save = next((x for x in dlg.findChildren(QtWidgets.QPushButton) if x.text().replace("&", "") == "Save"),
                         None)
             if save is not None:
@@ -115,7 +115,7 @@ class ManufacturingTutorials:
                   + "; ".join(x.strip() for x in text.splitlines() if x.startswith("  "))[:600])
         dock = self.tasks_dock()
         if dock is not None:
-            dock.grab().save(os.path.join(_out(), "tutorial-AO-02-review.png"))
+            dock.grab().save(os.path.join(_out(), "tutorial-BC-02-review.png"))
         self.wait = 300
 
     def an_publish(self):
@@ -128,7 +128,7 @@ class ManufacturingTutorials:
         self.step("OK: Carbon gets the release", f"{how} = OK", SAME if ok else FAIL,
                   f"{len(r.get('actions', []))} writes: "
                   + "; ".join(a["what"] for a in r.get("actions", []))[:700])
-        self.p_shot_info("tutorial-AO-03-published.png")
+        self.p_shot_info("tutorial-BC-03-published.png")
         self.p_close_info()
         self.wait = 300
 
@@ -198,7 +198,7 @@ class ManufacturingTutorials:
               and "NCR-0001 Bore below 16.016 (F7)" in text)
         self.step("Manufacturing Status: revision, stock and the open non-conformance", f"ribbon '{where} > "
                   "Manufacturing Status'", SAME if ok else FAIL, " | ".join(x.strip() for x in text.splitlines())[:600])
-        self.p_shot_info("tutorial-AO-04-status.png")
+        self.p_shot_info("tutorial-BC-04-status.png")
         self.p_close_info()
         self.wait = 100
 

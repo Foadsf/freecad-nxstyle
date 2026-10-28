@@ -10,3 +10,6 @@
 [submodule "vendor/LCInterlocking"]
 	path = vendor/LCInterlocking
 	url = https://github.com/Foadsf/LCInterlocking.git
+[submodule "vendor/FreeCAD-DFM-Workbench"]
+	path = vendor/FreeCAD-DFM-Workbench
+	url = https://github.com/ryankembrey/FreeCAD-DFM-Workbench.git

@@ -6,7 +6,8 @@ interface, TYPE (defined types, ENUMERATION and SELECT, EXTENSIBLE and BASED_ON 
 with bounds, OPTIONAL and UNIQUE elements), ENTITY (ABSTRACT, SUPERTYPE OF with ONEOF / AND / ANDOR,
 SUBTYPE OF, explicit attributes, OPTIONAL, redeclarations SELF\\entity.attribute in the attribute list,
 DERIVE and INVERSE, UNIQUE and WHERE rules by label). FUNCTION, PROCEDURE, RULE, CONSTANT and
-SUBTYPE_CONSTRAINT bodies are skipped by name: they constrain values, they are never instantiated.
+SUBTYPE_CONSTRAINT bodies are kept as text, as are WHERE and UNIQUE rules, DERIVE expressions and
+INVERSE declarations: express_eval evaluates them.
 
 A Dictionary is what the schemas say about instances: the attribute list of each entity in the order
 Part 21 writes it (internal mapping, 10.2.5.2: supertypes first, in SUBTYPE OF order, each once), the
@@ -20,9 +21,8 @@ parameters, aggregates with their bounds, SET and UNIQUE duplicates), references
 to instances of the wrong entity, complex instances that are not closed under their supertypes, that
 break a ONEOF or leave an abstract supertype without a subtype; and the header rules of Part 21 clause 8.
 
-WHERE rules are listed by label and not evaluated: that needs an EXPRESS interpreter with the schemas'
-FUNCTIONs, which this module does not attempt. A clean check() therefore means "well-formed against the
-schemas", not "every WHERE rule holds"; parametric.py checks the rules that matter for the data it writes.
+check() is about form: whether every instance is well-formed against the schemas. Whether the rules
+hold is express_eval.rules().
 """
 
 import json
@@ -259,7 +259,7 @@ SECTIONS = ("DERIVE", "INVERSE", "UNIQUE", "WHERE", "END_ENTITY")
 def _entity(p, schema):
     name = p.ident()
     e = {"schema": schema, "abstract": False, "supertype_of": None, "subtype_of": [], "attributes": [],
-         "redeclared": [], "derived": [], "inverse": [], "unique": [], "where": []}
+         "redeclared": [], "derived": [], "derive": {}, "inverse": [], "unique": [], "where": []}
     while not p.accept(";"):
         if p.accept("ABSTRACT"):
             e["abstract"] = True
@@ -300,18 +300,35 @@ def _entity(p, schema):
             while p.peek() not in SECTIONS:
                 names = _attr_names(p)
                 p.expect(":")
-                _type(p)
+                t = _type(p)
                 p.expect(":=")
-                p.until({";"})
+                expr = p.until({";"})
                 p.expect(";")
                 for red, n in names:
-                    e["derived"].append(f"{red[0]}.{red[1]}" if red else n)
+                    key = f"{red[0]}.{red[1]}" if red else n
+                    e["derived"].append(key)
+                    e["derive"][key] = {"name": n, "type": t, "expr": expr}
         elif sec == "INVERSE":
             while p.peek() not in SECTIONS:
                 names = _attr_names(p)
-                p.until({";"})
+                p.expect(":")
+                inv = {"agg": None, "lo": None, "hi": None}
+                if p.peek() in ("SET", "BAG"):
+                    inv["agg"] = p.next()
+                    if p.accept("["):
+                        inv["lo"] = _bound(p.until({":"}))
+                        p.expect(":")
+                        inv["hi"] = _bound(p.until({"]"}))
+                        p.expect("]")
+                    p.expect("OF")
+                inv["entity"] = p.ident()
+                p.expect("FOR")
+                inv["for"] = p.ident()
+                if p.accept("."):                    # FOR entity.attribute (EXPRESS edition 2)
+                    inv["for"] = p.ident()
                 p.expect(";")
-                e["inverse"] += [n for _, n in names]
+                for _, n in names:
+                    e["inverse"].append(dict(inv, name=n))
         elif sec in ("UNIQUE", "WHERE"):
             while p.peek() not in SECTIONS:
                 label = None
@@ -320,7 +337,11 @@ def _entity(p, schema):
                     p.next()
                 text = p.until({";"})
                 p.expect(";")
-                (e["unique"] if sec == "UNIQUE" else e["where"]).append(label or text[:60])
+                if sec == "WHERE":
+                    e["where"].append({"label": label or f"wr{len(e['where']) + 1}", "expr": text})
+                else:
+                    attrs = [a.replace(" ", "").lower() for a in text.split(",")]
+                    e["unique"].append({"label": label or f"ur{len(e['unique']) + 1}", "attrs": attrs})
         else:
             raise ExpressError(f"entity {name}: unexpected {sec!r}")
     p.expect(";")
@@ -376,19 +397,20 @@ def _typedecl(p, schema):
                 p.next()
             text = p.until({";"})
             p.expect(";")
-            t["where"].append(label or text[:60])
+            t["where"].append({"label": label or f"wr{len(t['where']) + 1}", "expr": text})
     p.expect("END_TYPE")
     p.expect(";")
     return name, t
 
 
-_SKIP = {"FUNCTION": "END_FUNCTION", "PROCEDURE": "END_PROCEDURE", "RULE": "END_RULE",
-         "CONSTANT": "END_CONSTANT", "SUBTYPE_CONSTRAINT": "END_SUBTYPE_CONSTRAINT"}
+_ALGORITHMS = {"FUNCTION": "END_FUNCTION", "PROCEDURE": "END_PROCEDURE", "RULE": "END_RULE",
+               "SUBTYPE_CONSTRAINT": "END_SUBTYPE_CONSTRAINT"}
 
 
-def _skip(p, start):
-    end, depth = _SKIP[start], 1
-    name = p.ident() if p.kind() == "id" and start != "CONSTANT" else None
+def _algorithm(p, start):
+    """FUNCTION, PROCEDURE, RULE or SUBTYPE_CONSTRAINT -> (name, its whole text, for express_eval)."""
+    end, depth, first = _ALGORITHMS[start], 1, p.i - 1
+    name = p.ident() if p.kind() == "id" else None
     while depth:
         v = p.next()
         if v == start:
@@ -396,7 +418,21 @@ def _skip(p, start):
         elif v == end:
             depth -= 1
     p.expect(";")
-    return name
+    return name, " ".join(x[1] for x in p.t[first:p.i])
+
+
+def _constants(p):
+    """CONSTANT id : type := expression; ... END_CONSTANT; -> {name: {type, expr}}."""
+    out = {}
+    while not p.accept("END_CONSTANT"):
+        n = p.ident()
+        p.expect(":")
+        t = _type(p)
+        p.expect(":=")
+        out[n] = {"type": t, "expr": p.until({";"})}
+        p.expect(";")
+    p.expect(";")
+    return out
 
 
 def parse(text):
@@ -406,7 +442,8 @@ def parse(text):
     while p.i < len(p.t):
         if not p.accept("SCHEMA"):
             raise ExpressError(f"expected SCHEMA, found {p.peek()!r}")
-        s = {"name": p.ident(), "interface": [], "types": {}, "entities": {}, "algorithms": []}
+        s = {"name": p.ident(), "interface": [], "types": {}, "entities": {}, "algorithms": [],
+             "functions": {}, "procedures": {}, "rules": {}, "constants": {}}
         if p.kind() == "str":
             p.next()                                 # schema version id
         p.expect(";")
@@ -433,8 +470,17 @@ def parse(text):
             elif v == "ENTITY":
                 n, e = _entity(p, s["name"])
                 s["entities"][n] = e
-            elif v in _SKIP:
-                s["algorithms"].append((v, _skip(p, v)))
+            elif v == "CONSTANT":
+                c = _constants(p)
+                for n, body in c.items():
+                    body["schema"] = s["name"]
+                s["constants"].update(c)
+                s["algorithms"] += [("CONSTANT", n) for n in c]
+            elif v in _ALGORITHMS:
+                n, text = _algorithm(p, v)
+                s["algorithms"].append((v, n))
+                if v != "SUBTYPE_CONSTRAINT":
+                    s[v.lower() + "s"][n] = {"schema": s["name"], "text": text}
             else:
                 ctx = " ".join(x[1] for x in p.t[max(0, p.i - 12):p.i + 6])
                 raise ExpressError(f"schema {s['name']}: unexpected {v!r} near: {ctx}")
@@ -447,11 +493,15 @@ def parse(text):
 class Dictionary:
     """Entities and types of one or more schemas, with Part 21 mapping helpers."""
 
-    def __init__(self, entities=None, types=None, short_names=None, sources=None):
+    ALGORITHMS = ("functions", "procedures", "rules", "constants")
+
+    def __init__(self, entities=None, types=None, short_names=None, sources=None, algorithms=None):
         self.entities = entities or {}
         self.types = types or {}
         self.short_names = short_names or {}          # SHORT -> long entity name
         self.sources = sources or []
+        # FUNCTION, PROCEDURE and RULE text and CONSTANTs by name, for express_eval
+        self.algorithms = {k: dict((algorithms or {}).get(k, {})) for k in self.ALGORITHMS}
         self._order = {}
         self._subtypes = None
 
@@ -461,6 +511,8 @@ class Dictionary:
         for s in schemas:
             d.types.update(s["types"])
             d.entities.update(s["entities"])
+            for k in cls.ALGORITHMS:
+                d.algorithms[k].update(s.get(k, {}))
             d.sources.append(s["name"])
         d.short_names.update({k.upper(): v.lower() for k, v in (short_names or {}).items()})
         return d
@@ -469,24 +521,37 @@ class Dictionary:
     def from_text(cls, text):
         return cls.from_schemas(parse(text))
 
+    def copy(self):
+        return Dictionary(dict(self.entities), dict(self.types), dict(self.short_names), list(self.sources),
+                          self.algorithms)
+
     def merge(self, other):
         self.types.update(other.types)
         self.entities.update(other.entities)
         self.short_names.update(other.short_names)
+        for k in self.ALGORITHMS:
+            self.algorithms[k].update(other.algorithms[k])
         self.sources += other.sources
         self._order, self._subtypes = {}, None
         return self
+
+    @property
+    def has_rules(self):
+        """False for a dictionary compiled before rule text was kept (format 1)."""
+        return any(isinstance(w, dict) for e in self.entities.values() for w in e["where"]) or \
+            any(self.algorithms.values())
 
     @classmethod
     def load(cls, path):
         with open(path, encoding="utf-8") as f:
             d = json.load(f)
-        return cls(d["entities"], d["types"], d.get("short_names"), d.get("sources"))
+        return cls(d["entities"], d["types"], d.get("short_names"), d.get("sources"), d.get("algorithms"))
 
     def dump(self, path):
         with open(path, "w", encoding="utf-8") as f:
-            json.dump({"format": "nxstyle express dictionary 1", "sources": self.sources,
-                       "entities": self.entities, "types": self.types, "short_names": self.short_names},
+            json.dump({"format": "nxstyle express dictionary 2", "sources": self.sources,
+                       "entities": self.entities, "types": self.types, "short_names": self.short_names,
+                       "algorithms": self.algorithms},
                       f, indent=None, sort_keys=True, separators=(",", ":"))
             f.write("\n")
 

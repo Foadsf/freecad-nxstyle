@@ -39,14 +39,14 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Edit Section | <kbd>Ctrl</kbd>+<kbd>H</kbd> | `Part_SectionCut` | anywhere |  |
 | Toggle Full Screen | <kbd>Alt</kbd>+<kbd>Return</kbd> | `Std_MainFullscreen` | anywhere |  |
 | Extrude | <kbd>X</kbd> | `PartDesign_Pad` | anywhere |  |
-| Move Object | <kbd>Ctrl</kbd>+<kbd>T</kbd> | `Std_TransformManip` | anywhere |  |
+| Move Object | <kbd>Ctrl</kbd>+<kbd>T</kbd> | `NXStyle_MoveObject` | anywhere | Distance, Angle, Point to Point; Dynamic is FreeCAD's Transform dragger |
 | Profile | <kbd>Z</kbd> | `Sketcher_CreatePolyline` | sketch |  |
 | Rectangle | <kbd>R</kbd> | `Sketcher_CreateRectangle` | sketch |  |
 | Line | <kbd>L</kbd> | `Sketcher_CreateLine` | sketch |  |
 | Arc | <kbd>A</kbd> | `Sketcher_CreateArc` | sketch |  |
 | Circle | <kbd>O</kbd> | `Sketcher_CreateCircle` | sketch |  |
 | Polygon | <kbd>P</kbd> | `Sketcher_CreateRegularPolygon` | sketch |  |
-| Studio Spline | <kbd>S</kbd> | `Sketcher_CreateBSpline` | sketch |  |
+| Studio Spline | <kbd>S</kbd> | `Sketcher_CreateBSplineByInterpolation` | sketch | Type Through Points; By Poles is "From control points" in the tool's drop-down; MB2 ends it |
 | Quick Trim | <kbd>T</kbd> | `Sketcher_Trimming` | sketch |  |
 | Quick Extend | <kbd>E</kbd> | `Sketcher_Extend` | sketch |  |
 | Fillet | <kbd>F</kbd> | `Sketcher_CreateFillet` | sketch |  |
@@ -56,7 +56,7 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Hide | <kbd>Ctrl</kbd>+<kbd>B</kbd> | `NXStyle_Hide` (`Std_HideSelection` outside a sketch) | anywhere | in a sketch: the selected dimensions and constraints (FreeCAD's virtual space) |
 | Show and Hide Panel | <kbd>Ctrl</kbd>+<kbd>W</kbd> | `NXStyle_ShowHide` | anywhere |  |
 | Immediate Hide | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> | `NXStyle_ImmediateHide` | anywhere | pick objects to hide them; Esc to finish |
-| Show Panel | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> | `NXStyle_Show` (`Std_ShowSelection` outside a sketch) | anywhere | select the hidden objects in the Part Navigator (in a sketch, the constraint list) first |
+| Show Panel | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> | `NXStyle_Show` (`Std_ShowSelection` outside a sketch) | anywhere | shows the objects selected in the Part Navigator (in a sketch, the dimensions selected in the constraint list); with nothing selected, a list of the hidden objects to pick from |
 | Show All | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd> | `NXStyle_ShowAll` (and `Std_ShowObjects`) | anywhere | in a sketch, the hidden dimensions and constraints too |
 | Invert Show/Hidden | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> | `NXStyle_InvertVisibility` | anywhere |  |
 | Edit Display | <kbd>Ctrl</kbd>+<kbd>J</kbd> | `Std_SetAppearance` | anywhere |  |

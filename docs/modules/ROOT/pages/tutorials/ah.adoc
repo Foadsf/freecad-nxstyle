@@ -2,7 +2,7 @@
 :description: The sketch of an impeller blade: two points, an arc about each, two arcs by 3 points joining them, all tangent, and the four radii (NX 12 for Engineering Design, 3.5.3).
 
 [horizontal]
-Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.3. The book's chapter 4.7.5 models the impeller from this sketch.
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 3.5.3. The book's chapter 4.7.5 models the impeller from this sketch: xref:tutorials/au.adoc[tutorial AU].
 You learn:: points at given coordinates, Arc by Center and Endpoints, Arc by 3 Points, tangent arcs, radius dimensions
 Sizes:: the book's, in inches, typed in millimetres. The points are at the origin and at (11.75, 6). The end arcs have radii of 1.5 and 0.5; the arcs between them 18 (top) and 15 (bottom).
 

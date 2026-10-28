@@ -13,9 +13,18 @@ These tables are generated from the ribbon files in `NXStyle/nxstyle/resources/r
 
 include::partial$generated/ribbon-modeling.adoc[]
 
+FreeCAD has no thread command for a shaft (PartDesign's Hole threads only holes).
+NX-Style's *Thread* (`NXStyle_Thread`) builds a Detailed thread as a PartDesign *Subtractive Helix* of a thread profile sketch, and a Symbolic one as a feature that records the thread on the Body (xref:modeling.adoc#thread[Thread]).
+
+NX's *Edit › Move Object* (kbd:[Ctrl+T] and the MB3 radial menu) is NX-Style's *Move Object* (`NXStyle_MoveObject`): it moves a Body's free features and the sketches attached to its origin (FreeCAD 1.1's PartDesign Boolean ignores a target Body's Placement), and sets the Placement of Part objects and links (an attached sketch's or datum's Attachment Offset) by a typed Distance, Angle or Point to Point motion, and makes copies as new Bodies, static Part features or links.
+Its *Dynamic* motion is FreeCAD's *Transform* (`Std_TransformManip`), which had kbd:[Ctrl+T] before (xref:modeling.adoc#move-object[Move Object]).
+
 == Sketch (contextual tab)
 
 include::partial$generated/ribbon-sketch.adoc[]
+
+*Studio Spline* is FreeCAD's B-spline group with *B-spline by interpolation* (`Sketcher_CreateBSplineByInterpolation`) as its default: NX's Type *Through Points*.
+NX's *By Poles* is *B-spline by control points* (`Sketcher_CreateBSpline`) in the button's drop-down, or *From control points* in the tool's panel; the periodic kinds are NX's *Closed* (xref:sketching.adoc#studio-spline[Studio Spline]).
 
 == Drafting
 

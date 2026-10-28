@@ -2,6 +2,7 @@
 """NX sketch constraints in FreeCAD terms: element names, Collinear's roles, the gallery (no FreeCAD needed)."""
 
 import json
+import math
 import os
 import sys
 import unittest
@@ -79,6 +80,16 @@ class Gallery(unittest.TestCase):
                          [("Horizontal", "Sketcher_ConstrainDistanceX"), ("Vertical", "Sketcher_ConstrainDistanceY"),
                           ("Point-to-Point", "Sketcher_ConstrainDistance")])
 
+    def test_studio_spline_defaults_to_through_points(self):
+        """NX's Studio Spline defaults to Type Through Points: FreeCAD's B-spline by interpolation, as the group
+        button's default; By Poles (control points) and the closed kinds stay in the group's drop-down."""
+        with open(RIBBON, encoding="utf-8") as fh:
+            tab = json.load(fh)["tabs"][0]
+        item = next(i for g in tab["groups"] for i in g["items"] if i.get("label") == "Studio Spline")
+        self.assertEqual(item["cmd"][0], "Sketcher_CompCreateBSpline")
+        self.assertEqual(item["default"], "Sketcher_CreateBSplineByInterpolation")
+        self.assertIn(item["default"], item["cmd"])        # without the group: the Through Points command itself
+
 
 class OnViewFields(unittest.TestCase):
     def test_fields_matched_to_the_cursor_whatever_their_order(self):
@@ -91,6 +102,22 @@ class OnViewFields(unittest.TestCase):
 
     def test_too_few_fields(self):
         self.assertIsNone(core.xy_fields([3.0], (3.0, 0.0)))
+
+    def test_spline_steps_of_the_die_cavity(self):
+        """Exercise 4.10.4's spline: after (-50, 0) each point is a length and an angle from the one before."""
+        pts = [(-50, 0), (-25, 1), (25, -8), (50, 0)]
+        steps = [core.spline_step(a, b) for a, b in zip(pts, pts[1:])]
+        self.assertAlmostEqual(steps[0][0], 25.019992006393608, places=12)
+        self.assertAlmostEqual(steps[1][1], -10.203973721731684, places=12)   # downhill: a negative angle
+        x, y = pts[0]
+        for (length, angle), want in zip(steps, pts[1:]):
+            x, y = x + length * math.cos(math.radians(angle)), y + length * math.sin(math.radians(angle))
+            self.assertLess(math.hypot(x - want[0], y - want[1]), 1e-12)
+
+    def test_spline_step_fields_whatever_their_order(self):
+        # pointer near (-25, 1) after (-50, 0): about 25 long at about 2.3 degrees
+        self.assertEqual(core.spline_step_fields([2.3, 25.0], (-25.1, 1.0), (-50, 0)), (1, 0))
+        self.assertEqual(core.spline_step_fields([25.0, 2.3], (-25.1, 1.0), (-50, 0)), (0, 1))
 
 
 class ConstraintVisibility(unittest.TestCase):
@@ -179,6 +206,62 @@ class TrimLosses(unittest.TestCase):
         before = constraints(["Tangent 1/0 0/0", "Tangent 1/0 0/0"])
         after = constraints(["Tangent 1/0 0/0"])
         self.assertEqual(core.trim_losses(before, after, 0, [0], {}), [("Tangent", 1, 0)])
+
+
+class ExactDatum(unittest.TestCase):
+    """FreeCAD writes typed on-view values through '%f'; the typed number comes back."""
+
+    def test_angles_typed_in_degrees_come_back_in_radians(self):
+        self.assertEqual(core.exact_datum(1.570796, [(63.5, False), (90.0, True)]), math.pi / 2)
+        self.assertEqual(core.exact_datum(3.141593, [(180.0, True)]), math.pi)
+        self.assertEqual(core.exact_datum(-1.308997, [(75.0, True)]), -math.radians(75))   # the sign FreeCAD wrote
+
+    def test_lengths_with_more_than_six_decimals(self):
+        typed = math.hypot(38.1, 63.5)
+        self.assertEqual(core.exact_datum(core.printf_f(typed), [(typed, False)]), typed)
+        self.assertEqual(core.exact_datum(-13.147908, [(-13.1479076, False)]), -13.1479076)
+
+    def test_left_alone(self):
+        self.assertIsNone(core.exact_datum(63.5, [(63.5, False)]))             # '%f' kept it exactly
+        self.assertIsNone(core.exact_datum(1.570796, []))                      # nothing typed
+        self.assertIsNone(core.exact_datum(1.5708, [(90.0, True)]))            # not the '%f' image of a typed value
+        self.assertIsNone(core.exact_datum(1.570796, [(1.570796, False)]))     # typed as it stands
+
+    def test_the_nearest_of_two_typed_values(self):
+        self.assertEqual(core.exact_datum(2.0, [(2.0000004, False), (1.9999998, False)]), 1.9999998)
+
+
+class MissingJoins(unittest.TestCase):
+    """The smoke's two arcs and line: arc 0 from (0, 63.5) to (-63.5, 0), arc 1 on to (-38.1, 0), line 2 back."""
+
+    POINTS = {(0, 1): (0.0, 63.5), (0, 2): (-63.5, 2.1e-5), (0, 3): (0.0, 0.0),
+              (1, 1): (-63.5, 4.4e-6), (1, 2): (-38.1, 0.0), (1, 3): (-50.8, 0.0),
+              (2, 1): (-38.1, 0.0), (2, 2): (0.0, 63.5)}
+
+    def test_each_new_point_on_an_older_one(self):
+        self.assertEqual(core.missing_joins(self.POINTS, {2}, [((1, 1), (0, 2))], 1e-4),
+                         [((2, 1), (1, 2)), ((2, 2), (0, 1))])
+
+    def test_points_already_joined_are_left_alone(self):
+        links = [((1, 1), (0, 2)), ((2, 1), (1, 2)), ((2, 2), (0, 1))]
+        self.assertEqual(core.missing_joins(self.POINTS, {2}, links, 1e-4), [])
+
+    def test_joined_through_another_point(self):
+        pts = {(0, 2): (5.0, 0.0), (1, 1): (5.0, 0.0), (2, 1): (5.0, 0.0)}
+        self.assertEqual(core.missing_joins(pts, {2}, [((2, 1), (1, 1)), ((1, 1), (0, 2))], 1e-4), [])
+
+    def test_tolerance(self):
+        arcs = {k: v for k, v in self.POINTS.items() if k[0] != 2}             # before the line is drawn
+        self.assertEqual(core.missing_joins(arcs, {1}, [], 1e-4), [((1, 1), (0, 2))])
+        self.assertEqual(core.missing_joins(arcs, {1}, [], 1e-6), [])          # 2.1e-5 apart: '%f' angles
+
+    def test_an_older_curve_first_and_one_join_per_place(self):
+        pts = {(0, 2): (5.0, 0.0), (1, 1): (5.0, 0.0), (2, 1): (5.0, 0.0)}
+        # curves 1 and 2 are new: both go on the old curve's point, not on each other as well
+        self.assertEqual(core.missing_joins(pts, {1, 2}, [], 1e-4), [((1, 1), (0, 2)), ((2, 1), (0, 2))])
+
+    def test_a_curve_is_not_joined_to_itself(self):
+        self.assertEqual(core.missing_joins({(0, 1): (0.0, 0.0), (0, 2): (0.0, 0.0)}, {0}, [], 1e-4), [])
 
 
 if __name__ == "__main__":

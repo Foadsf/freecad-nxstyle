@@ -43,6 +43,11 @@ class Smoke:
         self.checks = []
         self.info = {}
         self.steps = list(self.plan())
+        only = [s for s in os.environ.get("NXSTYLE_SMOKE_ONLY", "").split(",") if s]
+        if only:                         # a developer's quick run: Strata's wait, then only the named steps
+            self.steps = [(fn, d) for fn, d in self.steps if fn.__name__ == "s_wait_strata" or fn.__name__ in only]
+            self.steps += [(getattr(self, s), 300) for s in only if s not in [fn.__name__ for fn, _ in self.steps]
+                           and hasattr(self, s)]
         self.planned = [fn.__name__ for fn, _ in self.steps]
         self.ran = []
 
@@ -124,6 +129,9 @@ class Smoke:
         yield self.s_sketch_trim, 300             # before Point on Curve: MB2 must not leave the trim's gate up
         yield self.s_sketch_constraints, 300
         yield self.s_sketch_point_typed, 300
+        yield self.s_sketch_typed_join, 300
+        yield self.s_sketch_typed_av, 300
+        yield self.s_sketch_studio_spline, 300
         yield self.s_sketch_linear_dimension, 300
         yield self.s_sketch_hide, 300
         yield self.s_sketch_datum, 300
@@ -151,6 +159,13 @@ class Smoke:
         yield self.s_laser_cut_result, 300
         yield self.s_laser_cut_back, 2000
         yield self.s_laser_cut_after, 100
+        yield self.s_dfm, 1500
+        yield self.s_dfm_check, 300
+        yield self.s_dfm_run_notched, 500
+        yield self.s_dfm_result_notched, 300
+        yield self.s_dfm_run_clean, 500
+        yield self.s_dfm_result_clean, 300
+        yield self.s_dfm_after, 100
         yield self.s_layout_persist, 2500          # switches applications: after the other switching steps
         yield self.s_layout_persist_check, 300
         yield self.s_ap242, 300
@@ -159,7 +174,11 @@ class Smoke:
         yield self.s_selection, 300
         yield self.s_extrude_key, 1500
         yield self.s_extrude_key_check, 300
+        yield self.s_section, 300
         yield self.s_primitives, 300
+        yield self.s_thread, 300
+        yield self.s_move, 300
+        yield self.s_show_key, 300
         yield self.s_geometry_oracle, 100
         yield self.s_validity, 300
         yield self.s_inspection, 300
@@ -1154,6 +1173,199 @@ class Smoke:
         sk.deleteAllGeometry()
         sk.Document.recompute()
 
+    def s_sketch_typed_join(self):
+        """Typed points that land on an existing end point join it, as NX infers a coincident point (smoke_typed.py)."""
+        from . import smoke_typed
+        smoke_typed.run(self)
+
+    def s_sketch_typed_av(self):
+        """Tutorial AV's arm drawn as its replay draws it, every value typed: two closed loops (smoke_typed.py)."""
+        from . import smoke_typed
+        smoke_typed.run_av(self)
+
+    def s_sketch_studio_spline(self):
+        """NX's Studio Spline (S) is Type Through Points: exercise 4.10.4's spline, (-50, 0), (-25, 1), (25, -8) and
+        (50, 0) typed, then MB2, makes a cubic through all four (FreeCAD's B-spline by interpolation). The same
+        points as By Poles (FreeCAD's control points, which S started before) leave the inner two off the curve.
+        Within 1e-6, not 1e-12: FreeCAD writes each typed length as a Distance with six decimals ('%f'), and the
+        solver moves the later points by the rounding (7.1e-7 mm at the last point, measured)."""
+        import math
+        import Part
+        import Sketcher
+        from pivy import coin
+        from . import sketch_ui
+        from .ribbon import CommandButton, command_actions, trigger
+        from .tutorial import qtest, settle_view
+        name = "Studio Spline (S): Through Points, four typed points and MB2 make a cubic through all four"
+        sk = sketch_ui.edited_sketch()
+        if sk is None:
+            self.check(name, False, "no sketch in edit")
+            return
+        doc, V = sk.Document, App.Vector
+        pts = [(-50.0, 0.0), (-25.0, 1.0), (25.0, -8.0), (50.0, 0.0)]
+        view, f = self.view(), self.nav()
+        w = f.widget
+        settle_view(view)
+        cam = view.getCameraNode()
+        d = cam.orientation.getValue().multVec(coin.SbVec3f(0, 0, -1))
+        g = sk.getGlobalPlacement().multVec(V(0, 0, 0))
+        cam.position.setValue(coin.SbVec3f(g.x, g.y, g.z) - d * cam.focalDistance.getValue())
+        # FreeCAD looks for auto-constraints at a typed point as at a click: a curve within its pick radius (5 px)
+        # gets one. Point 2 is 1 mm above the X axis: at 3.75 px/mm it went onto the axis, the spline with it.
+        # So the four points fill the width (the length and angle fields sit between two points, on screen)
+        if hasattr(cam, "height"):
+            cam.height.setValue(w.height() * 115.0 / max(w.width(), 1))
+        QtWidgets.QApplication.processEvents()
+        dpr = w.devicePixelRatioF() if hasattr(w, "devicePixelRatioF") else 1.0
+
+        def at(x, y):
+            sx, sy = view.getPointOnViewport(sk.getGlobalPlacement().multVec(V(x, y, 0)))
+            return QtCore.QPoint(int(round(sx / dpr)), int(round(w.height() - sy / dpr)))
+
+        self.info["Studio Spline: view px per mm, FreeCAD pick radius px"] = (
+            round((at(10, 0).x() - at(0, 0).x()) / 10, 2),
+            App.ParamGet("User parameter:BaseApp/Preferences/View").GetFloat("PickRadius", 5.0), w.width(), w.height())
+        away = QtCore.QPoint(w.width() // 2 - 60, w.height() // 2 - 70)       # where MB2 ends a tool
+
+        def running(p):
+            self.send(f, QtCore.QEvent.MouseMove, p, Qt.NoButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            return f.sketch_tool_active()
+
+        def tool_type():
+            """The B-spline tool's construction method as its drop-down in the task panel shows it."""
+            for c in Gui.getMainWindow().findChildren(QtWidgets.QComboBox):
+                if c.isVisible() and "From knots" in [c.itemText(i) for i in range(c.count())]:
+                    return c.currentText()
+            return None
+
+        def end(away):
+            """MB2, as a user ends the tool; Esc after it only so that no tool is left for the next checks."""
+            self.send(f, QtCore.QEvent.MouseMove, away, Qt.NoButton, Qt.NoButton)
+            self.send(f, QtCore.QEvent.MouseButtonPress, away, Qt.MiddleButton, Qt.MiddleButton)
+            self.send(f, QtCore.QEvent.MouseButtonRelease, away, Qt.MiddleButton, Qt.NoButton)
+            QtWidgets.QApplication.processEvents()
+            ended = not running(away)
+            for _ in range(3):
+                if not running(away):
+                    break
+                qtest().keyClick(w, Qt.Key_Escape)
+                QtWidgets.QApplication.processEvents()
+            return ended
+
+        def draw(start):
+            mw = Gui.getMainWindow()
+            app = QtWidgets.QApplication.instance()
+            if app.activeWindow() is None and hasattr(app, "setActiveWindow"):
+                app.setActiveWindow(mw)
+            w.setFocus()
+            g0 = len(sk.Geometry)
+            start()
+            QtWidgets.QApplication.processEvents()
+            out = {"started": f.sketch_tool_active(), "type": tool_type(), "typed": []}
+            prev = None
+            for x, y in pts:
+                near = at(x, y) + QtCore.QPoint(10, -45)     # near the point, clear of it and of the axes
+                self.send(f, QtCore.QEvent.MouseMove, near, Qt.NoButton, Qt.NoButton)
+                qtest().qWait(200)
+                out["typed"].append(sketch_ui.type_spline_point(sk, w, near, (x, y), prev))
+                prev = (x, y)
+            out["ended"] = end(away)
+            doc.recompute()
+            new = list(range(g0, len(sk.Geometry)))
+            curves = [i for i in new if sk.Geometry[i].TypeId == "Part::GeomBSplineCurve"]
+            out["spline"] = curves[0] if len(curves) == 1 else None
+            out["new"] = new
+            if out["spline"] is not None:
+                e = sk.Geometry[out["spline"]].toShape()
+                out["off"] = [e.distToShape(Part.Vertex(V(x, y, 0)))[0] for x, y in pts]
+                out["degree"] = sk.Geometry[out["spline"]].Degree
+            return out
+
+        buttons = {b.nx_label: b for b in self.shell.ribbon.findChildren(CommandButton)}
+        btn = buttons.get("Studio Spline")
+        entries = [a.objectName() for a in command_actions(btn.command)] if btn is not None else []
+        group = command_actions(btn.command)[0].actionGroup() if entries else None
+        index = group.parent().property("defaultAction") if group is not None else None
+        default = entries[index] if isinstance(index, int) and 0 <= index < len(entries) else None
+        clicked = None
+        if btn is not None:
+            w.setFocus()
+            btn.click()
+            QtWidgets.QApplication.processEvents()
+            clicked = (f.sketch_tool_active(), tool_type())
+            # FreeCAD's keys inside the tool: M switches the type, R toggles Periodic (R is also NX's Rectangle)
+            keys = {}
+            for k, label in ((Qt.Key_M, "M"), (Qt.Key_R, "R")):
+                w.setFocus()
+                qtest().keyClick(w, k)
+                QtWidgets.QApplication.processEvents()
+                box = next((b for b in Gui.getMainWindow().findChildren(QtWidgets.QCheckBox)
+                            if b.isVisible() and "Periodic" in b.text()), None)
+                keys[label] = (tool_type(), box.isChecked() if box is not None else None)
+            self.info["Studio Spline: after M, after R (type, Periodic)"] = keys
+            end(away)
+        self.check("Sketch tab: the Studio Spline button runs Through Points (FreeCAD's B-spline by interpolation, "
+                   "'From knots'); By Poles and the closed kinds are in its drop-down",
+                   btn is not None and default == "Sketcher_CreateBSplineByInterpolation"
+                   and clicked == (True, "From knots") and "Sketcher_CreateBSpline" in entries,
+                   f"button {btn.command if btn else None}, default entry {default}, entries {entries}; click: tool "
+                   f"running and its type {clicked}")
+        try:
+            got = draw(lambda: qtest().keyClick(w, Qt.Key_S))
+            self.info["Studio Spline (S), Through Points"] = got
+            off = got.get("off") or []
+            self.check(name, got["started"] and got["type"] == "From knots" and got["ended"] and off
+                       and max(off) < 1e-6 and got.get("degree") == 3,
+                       f"S started the tool {got['started']}, type {got['type']!r}; typed {got['typed']}; MB2 ended it "
+                       f"{got['ended']}; degree {got.get('degree')}; off the curve (mm) "
+                       f"{[f'{x:.1e}' for x in off]}")
+            sp = got["spline"]
+            knots = {}
+            for i in got["new"]:
+                if "Point" in sk.Geometry[i].TypeId:
+                    q = sk.getPoint(i, 1)
+                    knots[min(range(4), key=lambda k: math.hypot(q.x - pts[k][0], q.y - pts[k][1]))] = i
+            held = [(c.Type, c.First, c.FirstPos, c.Second, c.SecondPos, round(c.Value, 6)) for c in sk.Constraints
+                    if c.First in got["new"] or c.Second in got["new"]]
+            self.info["Studio Spline: constraints FreeCAD keeps (Type, First, Pos, Second, Pos, Value)"] = held
+            self.info["Studio Spline: through points (FreeCAD's knot points), curve"] = (knots, sp)
+            self.info["Studio Spline: through points, solved (x, y)"] = [
+                (repr(sk.getPoint(i, 1).x), repr(sk.getPoint(i, 1).y)) for _k, i in sorted(knots.items())]
+            dims = {}
+            if sp is not None and 1 in knots and 2 in knots:
+                c0 = len(sk.Constraints)
+                sk.addConstraint(Sketcher.Constraint("DistanceY", -1, 1, knots[1], 1, 2.0))
+                doc.recompute()
+                q = sk.getPoint(knots[1], 1)
+                on = sk.Geometry[sp].toShape().distToShape(Part.Vertex(q))[0]
+                dims["DistanceY 2 mm on point 2"] = (round(q.y, 9), f"{on:.1e} mm off", sk.solve())
+                ln = sk.addGeometry(Part.LineSegment(V(25, -30, 0), V(26, -12, 0)), False)
+                sk.addConstraint(Sketcher.Constraint("Coincident", ln, 2, knots[2], 1))
+                doc.recompute()
+                q = sk.getPoint(ln, 2)
+                on2 = sk.Geometry[sp].toShape().distToShape(Part.Vertex(q))[0]
+                dims["line end Coincident with point 3"] = ((round(q.x, 9), round(q.y, 9)), f"{on2:.1e} mm off",
+                                                             sk.solve())
+                ok = abs(dims["DistanceY 2 mm on point 2"][0] - 2) < 1e-6 and on < 1e-6 and on2 < 1e-6 \
+                    and sk.solve() == 0 and len(sk.Constraints) == c0 + 2
+            else:
+                ok = False
+            self.check("a through point takes a dimension and a Coincident, and the curve follows it", ok, dims)
+            sk.deleteAllGeometry()
+            doc.recompute()
+            poles = draw(lambda: trigger("Sketcher_CreateBSpline"))
+            self.info["Studio Spline, By Poles"] = poles
+            off = poles.get("off") or []
+            self.check("By Poles (FreeCAD's control points; S's old mapping): the same typed points leave the inner "
+                       "two off the curve", poles["type"] == "From control points" and off and max(off[0], off[3])
+                       < 1e-6 and min(off[1], off[2]) > 0.1,
+                       f"type {poles['type']!r}; typed {poles['typed']}; MB2 ended it {poles['ended']}; off the curve "
+                       f"(mm) {[f'{x:.1e}' for x in off]}")
+        finally:
+            sk.deleteAllGeometry()
+            doc.recompute()
+
     def s_sketch_linear_dimension(self):
         """NX's Linear Dimension (Sketch tab, Constraints): Horizontal and Vertical between the origin and a point
         make FreeCAD's horizontal and vertical distances."""
@@ -1238,9 +1450,18 @@ class Smoke:
         key(Qt.Key_B, Qt.ControlModifier)
         by_key = [bool(sk.getVirtualSpace(i)) for i in dims]
         after_key = sk.ViewObject.Visibility
-        # MB3 on empty space with the other dimension picked: FreeCAD's sketch menu, with NX-Style's Hide
+        # MB3 on empty space with the other dimension picked: FreeCAD's sketch menu, with NX-Style's Hide. MB3 comes
+        # right after the pick, before FreeCAD's command-state timer runs (the AG replay's "0 of 6 hidden": Hide was
+        # still greyed from the empty selection). NX-Style's Hide no longer waits for the selection; FreeCAD's own
+        # Hide Selection, refreshed by the same timer, shows whether the pick came before the timer
+        Gui.Selection.clearSelection()
+        hide_action = Gui.Command.get("Std_HideSelection").getAction()
+        for _ in range(30):                    # FreeCAD's timer greys Hide Selection for the empty selection
+            if not any(a.isEnabled() for a in hide_action):
+                break
+            qtest().qWait(100)
         pick(dims[1:2])
-        seen = {}
+        seen = {"stale": [a.isEnabled() for a in hide_action]}
 
         def read_menu():
             m = QtWidgets.QApplication.activePopupWidget()
@@ -1249,6 +1470,7 @@ class Smoke:
                 hide = next((a for a in m.actions() if a.text().replace("&", "") == "Hide"), None)
                 seen["hide"] = hide is not None
                 if hide is not None:
+                    seen["enabled"] = hide.isEnabled()
                     m.close()
                     hide.trigger()
                     seen["Hide changed"] = sketch_ui.COMMANDS["NXStyle_Hide"].last
@@ -1257,7 +1479,7 @@ class Smoke:
             elif seen.setdefault("tries", 0) < 20:
                 seen["tries"] += 1
                 QtCore.QTimer.singleShot(100, read_menu)
-        QtCore.QTimer.singleShot(150, read_menu)
+        QtCore.QTimer.singleShot(0, read_menu)
         corner = QtCore.QPoint(25, w.height() - 25)
         self.send(f, QtCore.QEvent.MouseMove, corner, Qt.NoButton, Qt.NoButton)
         self.send(f, QtCore.QEvent.MouseButtonPress, corner, Qt.RightButton, Qt.RightButton)
@@ -1271,9 +1493,14 @@ class Smoke:
         vis = (before, after_key, sk.ViewObject.Visibility)
         self.check("Hide on sketch dimensions: Ctrl+B and MB3 > Hide put them in FreeCAD's virtual space; the sketch "
                    "object's own visibility is untouched", by_key == [True, False] and by_menu == [True, True]
-                   and len(set(vis)) == 1 and seen.get("Hide changed", {}).get("others") == [],
+                   and len(set(vis)) == 1 and (seen.get("Hide changed") or {}).get("others") == [],
                    f"after Ctrl+B {by_key}; MB3 menu {seen.get('items')}; after MB3 > Hide {by_menu}; sketch "
                    f"visibility before / after Ctrl+B / after MB3 {vis}; last Hide {seen.get('Hide changed')}")
+        self.check("MB3 right after picking a dimension: the menu's Hide is enabled and works, though FreeCAD's "
+                   "command-state timer has not run since the pick", seen.get("stale") == [False]
+                   and seen.get("enabled") is True and by_menu[1],
+                   f"Std_HideSelection enabled just after the pick {seen.get('stale')} (must be [False], else this check "
+                   f"does not reach the race); in the menu {seen.get('enabled')}; dimension hidden {by_menu[1]}")
         doc.undo()
         undone = [bool(sk.getVirtualSpace(i)) for i in dims]
         key(Qt.Key_U, Qt.ControlModifier | Qt.ShiftModifier)
@@ -1827,6 +2054,162 @@ class Smoke:
         if "SmokeLaserCut" in App.listDocuments():
             App.closeDocument("SmokeLaserCut")
 
+    # ------------------------------------------------- Molded Part Validation (DFM add-on)
+    DFM_BUTTONS = {"DFM_SetupAnalysis": "Moldability Validation", "DFM_ThicknessAnalysis": "Check Wall Thickness",
+                   "DFM_DraftAnalysis": "Draft Analysis", "DFM_ProcessLibrary": "Process Library"}
+    DFM_RULE = "Sharp Internal Corners"
+
+    def dfm_want(self):
+        return os.environ.get("NXSTYLE_DFM_EXPECTED", "1") == "1"
+
+    def s_dfm(self):
+        """DFM (github.com/ryankembrey/FreeCAD-DFM-Workbench), on by default once its OCP is installed: two
+        30 x 20 x 10 blocks with a 15 x 5 step, one with the step's inside edge sharp (a known Sharp
+        Internal Corner), one with it filleted R2 (none)."""
+        if not self.dfm_want():
+            return
+        import Part
+        doc = App.newDocument("SmokeDFM")
+        notched = Part.makeBox(30, 20, 10).cut(Part.makeBox(15, 20, 5, App.Vector(15, 0, 5)))
+        inner = [i for i, e in enumerate(notched.Edges)
+                 if all(abs(v.X - 15) < 1e-6 and abs(v.Z - 5) < 1e-6 for v in e.Vertexes)]
+        clean = notched.makeFillet(2.0, [notched.Edges[i] for i in inner])
+        a = doc.addObject("Part::Feature", "Notched")
+        a.Shape = notched
+        b = doc.addObject("Part::Feature", "Filleted")
+        b.Shape = clean
+        b.Placement.Base = App.Vector(0, 40, 0)
+        doc.recompute()
+        self.info["dfm sharp edge"] = [f"Edge{i + 1}" for i in inner]
+        self.shell.switch_application("modeling")
+        self.shell.ribbon.select("Analysis")
+
+    def s_dfm_check(self):
+        cmds = Gui.listCommands()
+        if not self.dfm_want():
+            self.check("DFM off as asked: no Molded Part Validation group",
+                       not any(c in cmds for c in self.DFM_BUTTONS)
+                       and not any(c in self.shell.ribbon.locations for c in self.DFM_BUTTONS),
+                       [c for c in self.DFM_BUTTONS if c in cmds])
+            return
+        r = self.shell.ribbon
+        where = {c: r.locations.get(c) for c in self.DFM_BUTTONS}
+        buttons = {c: self.lc_button(c) for c in self.DFM_BUTTONS}
+        state = {c: None if b is None else (b.text().replace("\n", " "), b.isEnabled()) for c, b in buttons.items()}
+        self.check("DFM add-on loaded: its commands in Analysis > Molded Part Validation, buttons enabled",
+                   all(c in cmds for c in self.DFM_BUTTONS)
+                   and all(w == "Analysis › Molded Part Validation" for w in where.values())
+                   and all(s is not None and s[1] for s in state.values()), {"where": where, "buttons": state})
+        tip = buttons["DFM_SetupAnalysis"].toolTip() if buttons["DFM_SetupAnalysis"] else ""
+        self.check("Molded Part Validation buttons carry NX names, the add-on's own name in the tooltip",
+                   all(s is not None and s[0] == self.DFM_BUTTONS[c] for c, s in state.items())
+                   and "FreeCAD: DFM Analysis" in tip, tip)
+        found = {t: self.shell.finder.find(t) for t in ("Moldability Validation", "Check Wall Thickness")}
+        self.check("Command Finder finds Moldability Validation and Check Wall Thickness",
+                   "DFM_SetupAnalysis" in found["Moldability Validation"]
+                   and "DFM_ThicknessAnalysis" in found["Check Wall Thickness"], found)
+        report = [ln for ln in self.report_text().splitlines()
+                  if ("DFM" in ln or "OCP" in ln) and ("Error" in ln or "Traceback" in ln or "failed" in ln)]
+        self.check("DFM loaded without errors in the Report view", not report, report[:5])
+
+    def dfm_widget(self, kind, name):
+        """The add-on's live task-panel widget of that name (an earlier panel's may wait for deletion)."""
+        found = [w for w in Gui.getMainWindow().findChildren(kind, name) if w.isVisible()]
+        return found[-1] if found else None
+
+    def dfm_run(self, target):
+        """Select the part, Moldability Validation on the ribbon, then the add-on's own panel: material
+        Default (category and process are its only ones and fill themselves), Run Analysis."""
+        doc = App.listDocuments().get("SmokeDFM")
+        b = self.lc_button("DFM_SetupAnalysis")
+        if doc is None or b is None:
+            return
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+        App.setActiveDocument(doc.Name)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.getObject(target))
+        b.click()
+        QtWidgets.QApplication.processEvents()
+        target_box = self.dfm_widget(QtWidgets.QLineEdit, "leSelectModel")
+        material = self.dfm_widget(QtWidgets.QComboBox, "cbMaterial")
+        run = self.dfm_widget(QtWidgets.QPushButton, "pbRunAnalysis")
+        state = {"dialog": bool(Gui.Control.activeDialog()), "target": target_box.text() if target_box else None}
+        if material is not None:
+            material.setCurrentIndex(material.findText("Default"))
+            state["material"] = material.currentText()
+        if run is not None:
+            state["run enabled"] = run.isEnabled()
+            run.click()                 # the add-on analyses in the click, then opens its results panel
+        self.info[f"dfm run {target}"] = state
+
+    def dfm_findings(self):
+        """What the results panel shows: {rule: [geometry of each finding]} and the rules listed as Passed."""
+        tree = self.dfm_widget(QtWidgets.QTreeView, "tvResults")
+        if tree is None:
+            return None, None
+        model, kind, label = tree.model(), Qt.UserRole + 1, Qt.UserRole + 2
+        findings, passed = {}, []
+
+        def walk(parent, under):
+            for row in range(model.rowCount(parent)):
+                i = model.index(row, 0, parent)
+                what, name = i.data(kind), i.data(label)
+                if what == "finding":
+                    findings.setdefault(under, []).append(name)
+                elif under == "Passed" and what == "rule":
+                    passed.append(name)
+                walk(i, "Passed" if name == "Passed" else name if what == "rule" else under)
+        walk(QtCore.QModelIndex(), None)
+        return findings, passed
+
+    def dfm_close(self):
+        """The results panel's Close button, as a user would (the add-on restores the part's colours)."""
+        close = next((bt for bt in Gui.getMainWindow().findChildren(QtWidgets.QPushButton)
+                      if bt.isVisible() and bt.text().replace("&", "") == "Close"), None)
+        if close is not None:
+            close.click()
+        if Gui.Control.activeDialog():
+            Gui.Control.closeDialog()
+
+    def s_dfm_run_notched(self):
+        if self.dfm_want():
+            self.dfm_run("Notched")
+
+    def s_dfm_result_notched(self):
+        if not self.dfm_want():
+            return
+        findings, passed = self.dfm_findings()
+        self.info["dfm notched"] = {"findings": findings, "passed": passed, "run": self.info.get("dfm run Notched")}
+        sharp = (findings or {}).get(self.DFM_RULE, [])
+        self.check("Moldability Validation from the ribbon flags the sharp inside edge of a stepped block "
+                   "(Sharp Internal Corners, that edge only)",
+                   findings is not None and sharp == self.info.get("dfm sharp edge"),
+                   {"expected": self.info.get("dfm sharp edge"), "findings": findings})
+        if findings is not None:
+            self.shot("11_dfm_moldability.png")
+        self.dfm_close()
+
+    def s_dfm_run_clean(self):
+        if self.dfm_want():
+            self.dfm_run("Filleted")
+
+    def s_dfm_result_clean(self):
+        if not self.dfm_want():
+            return
+        findings, passed = self.dfm_findings()
+        self.info["dfm filleted"] = {"findings": findings, "passed": passed, "run": self.info.get("dfm run Filleted")}
+        self.check("negative control: the same block with that edge filleted R2 has no Sharp Internal Corner "
+                   "(the rule listed as Passed)",
+                   findings is not None and self.DFM_RULE not in findings and self.DFM_RULE in passed,
+                   {"findings": findings, "passed": passed})
+        self.dfm_close()
+
+    def s_dfm_after(self):
+        if "SmokeDFM" in App.listDocuments():
+            App.closeDocument("SmokeDFM")
+        self.shell.ribbon.select("Home")
+
     def s_expressions(self):
         Gui.runCommand("NXStyle_Expressions")
 
@@ -2298,11 +2681,35 @@ class Smoke:
         from . import smoke_selection
         smoke_selection.run(self)
 
+    def s_section(self):
+        """Extrude and Revolve on picked curves of the impeller casing sketch: the wall revolved, the edge extruded
+        -Z, the flange revolved, then Cancel (smoke_section.py)."""
+        from . import smoke_section
+        smoke_section.run(self)
+
     def s_primitives(self):
         """Block, Cylinder, Cone and Sphere from their ribbon buttons: typed values, the vector, a point snapped at
         an arc centre, each Boolean, one undo step, Apply, Cancel and Esc, Edit Parameters (smoke_primitives.py)."""
         from . import smoke_primitives
         smoke_primitives.run(self)
+
+    def s_thread(self):
+        """Thread from its ribbon button and a click on the book's 0.25 in shank: Detailed against a Part API build
+        of the same helix, the hand, one undo step, Edit Parameters, Cancel, Symbolic (smoke_thread.py)."""
+        from . import smoke_thread
+        smoke_thread.run(self)
+
+    def s_move(self):
+        """Move Object by Ctrl+T on the book's L-bar (4.7.3) and cylinder (4.6.9): Distance, Angle with Apply, Point
+        to Point, Copy Original with 2 copies, Cancel and Esc, one undo step, negative controls (smoke_move.py)."""
+        from . import smoke_move
+        smoke_move.run(self)
+
+    def s_show_key(self):
+        """NX's Show (Ctrl+Shift+K) by its key right after a pick, and with nothing selected; Hide, Show All and
+        Invert by theirs (smoke_show.py)."""
+        from . import smoke_show
+        smoke_show.run(self)
 
     def press(self, seq):
         """A key press through Qt's shortcut map, on the graphics window, as a user types it."""

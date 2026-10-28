@@ -2,7 +2,7 @@
 :description: The 2D sketch of a holder: circles about the origin, an outline trimmed with Quick Trim, a cross and three lugs copied round the origin with Rotate Curve (NX 12 for Engineering Design, exercise 3.6.2).
 
 [horizontal]
-Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 3.6.2. The book gives only the dimensioned figure; the steps here are ours. Chapter 4 models the holder in 3D from this sketch.
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 3.6.2. The book gives only the dimensioned figure; the steps here are ours. Chapter 4 models the holder in 3D from this sketch: xref:tutorials/aw.adoc[tutorial AW].
 You learn:: circles and their diameters, a reference curve, Quick Trim, a cross and lugs drawn once and copied with Rotate Curve (NX: Pattern Curve, circular), tangent arcs in Profile
 Sizes:: the book's, in inches, typed in millimetres. Circles Ø0.75, Ø2.00 and Ø2.76 about the origin. The outline is a Ø3.50 circle and a 5.50 × 3.50 rectangle to its right, opened by a 0.50 slot along the X axis. A cross 0.25 wide runs from the Ø0.75 circle to the Ø2.76 circle. Three lugs sit on a Ø4.50 bolt circle, 120° apart. Each lug is a Ø0.38 hole in an R0.38 end, and its sides are tangent to the end and 1.00 apart where they meet the Ø3.50 circle.
 

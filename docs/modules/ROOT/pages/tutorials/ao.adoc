@@ -1,78 +1,73 @@
-= Tutorial AO: Release to manufacturing: the guide bush into Carbon
-:description: The guide bush released in tutorial V sent to Carbon (ERP, MES and quality): the connection, a review before anything is written, the publish, and the shop's stock and a non-conformance read back.
+= Tutorial AO: Impeller Lower Casing, Extrude and Revolve
+:description: The casing sketch of tutorial AG made solid: its wall revolved 180° about XC from curves picked one by one, its edge extruded 0.5 along -ZC and mirrored, and its flange revolved (NX 12 for Engineering Design, 4.4).
 
 [horizontal]
-Source:: The hand-over from engineering to manufacturing: a released revision becomes the item manufacturing builds, with its model, drawings and inspection plan; the shop's results come back to engineering
-You learn:: PLM › Manufacturing Connection, Publish to Manufacturing with Review, Manufacturing Status
-Needs:: xref:tutorials/v.adoc[Tutorial V] first, which needs xref:tutorials/t.adoc[Tutorial T] (the replay runs both), and a Carbon to connect to (xref:manufacturing.adoc#_setting_it_up[setting it up])
-Background:: xref:manufacturing.adoc[Manufacturing with Carbon], xref:release-package.adoc[Release packages]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 4.4 (Swept Features). It continues the casing sketch of section 3.5.2, xref:tutorials/ag.adoc[tutorial AG]; xref:tutorials/ax.adoc[tutorial AX] turns it into the upper casing.
+You learn:: the Curve Rule (Single Curve), Revolve with Specify Vector, Specify Point and the angle limits, Extrude of picked curves as a body of its own, QuickPick for curves that lie on a solid, Mirror Feature
+Sizes:: the book's, in inches, typed in millimetres. The wall and the flange revolved about XC through (0, 0, 0) from 0 to 180°. The edge extruded 0.5 (12.7 mm) along -ZC.
 
-Tutorial V released the guide bush twice: BUSH-100 rev A, then rev B after the engineering change that opened the bore from H7 to F7, with rev A made obsolete.
-Manufacturing now builds rev B.
-Its manufacturing system is https://github.com/crbnos/carbon[Carbon]: items and revisions, bills of materials, stock, jobs, inspection and non-conformances.
+The replay runs tutorial AG first and opens the part it saved.
 
 == Step by step
 
-=== 1. Connect to Carbon
+=== 1. The wall
 
-*PLM › Manufacturing Connection*.
-Type the server (for Carbon Cloud `https://app.carbon.ms`) and the API key from Carbon's *Settings › API Keys*, then *Test Connection*: it names the company the key belongs to.
-*Save*.
+Open `Impeller_lower_casing`, the part of tutorial AG.
+Click *Revolve*.
+FreeCAD first offers its list of sketch planes; you don't need it, because picking a curve of the sketch closes the list and opens the Revolve dialog with that curve.
 
-The server goes into `nxstyle.json`; the key goes into a file of its own, `carbon.key`, readable only by you.
+Set the Curve Rule on the Top Border Bar (beside the Selection Filter) to *Single Curve*.
+The default, Inferred Curves, would take the whole sketch, which is not one closed profile.
+Click the 10 curves of the wall: the inner curve's four, the four of the curve 0.5 above it, and the two short lines that close its ends.
 
-image::tutorial-AO-01-connection.png[Manufacturing Connection: server, key, and the company Test Connection found]
+In the dialog choose *XC* in Specify Vector, keep Specify Point at (0, 0, 0), and type Start 0 and End 180.
+Click *OK*.
 
-=== 2. Review what Carbon would get
+image::tutorial-AO-01-wall.png[The wall of the casing, revolved half a turn about XC]
 
-*PLM › Publish to Manufacturing*.
-The dialog lists the part's releases and picks the newest *Released* one: BUSH-100 rev B.
-Rev A is obsolete and is not offered as the default.
+=== 2. The edge
 
-*Review* makes rev B's release package (the part as released, not the working copy, checked against its manifest) and lists what Carbon would get, without writing anything:
+Click *Extrude*, keep *Single Curve*, and click the 10 curves of the edge: the inner curve's four again, the four of the curve 1.5 below it, and the two lines that close its ends.
+Most of these curves now lie on a face or an edge of the wall as well. Press and hold MB1 on the curve, as the book's note says, and choose the sketch curve in QuickPick.
 
-* the part BUSH-100 at revision B;
-* the STEP AP242 with its PMI as the item's CAD model;
-* the native file, the drawing as PDF, the PMI tables, the stack-up, the mass properties and the manifest as the item's documents;
-* an inspection plan with one characteristic for each row of the PMI inspection plan.
+Keep Boolean *None*.
+Type 12.7 mm (0.5 in) as the length and tick *Reversed* in FreeCAD's panel, which turns the extrusion to -ZC.
+Click *OK*.
 
-image::tutorial-AO-02-review.png[Publish to Manufacturing: release BUSH-100 rev B and the review of what Carbon would get]
+The edge becomes a body of its own.
+With Unite it would touch the wall only along a line, which would leave two solids in one body, so the dialog does not allow it.
 
-=== 3. Publish
+image::tutorial-AO-02-edge.png[The edge extruded down from the sketch plane]
 
-OK (or MB2).
-The Information window lists what was written.
+=== 3. The edge on the other side
 
-In Carbon the bush is now item BUSH-100 _Guide bush_ (the name of its first release; rev B's description, _ECO-001: bore F7_, becomes the item's description) at revision B, its 3D model is the release's STEP, and its inspection plan holds the characteristics with their limits: the bore Ø16 F7 is nominal 16 with +0.034 and −(−0.016), that is 16.016 to 16.034 mm, as in tutorial V's package.
+Make the edge's body the work body, select its Extrude in the Part Navigator, and click *Mirror Feature* (Home › Pattern).
+Choose the plane *XZ*, the plane through the casing's centre line, and press MB2.
 
-image::tutorial-AO-03-published.png[What Publish to Manufacturing wrote into Carbon]
+image::tutorial-AO-03-mirror.png[The edge mirrored to the other side of the casing]
 
-=== 4. Publish again
+=== 4. The flange
 
-*Publish to Manufacturing*, OK, a second time: nothing is written.
-Carbon has the part, its model, its documents and its characteristics, and the release's manifest, named after rev B's Strata commit, says this release is there already: the package is made again (its files carry new time stamps), but none of it is sent twice.
+Click *Revolve* again and, with *Single Curve*, click the 4 sides of the flange at the casing's smaller opening.
+Two of them lie on lines of the wall and of the edge: QuickPick lists both, and you choose the flange's.
+Choose *XC*, keep (0, 0, 0), and type Start 0 and End 180.
+The Boolean is *Unite*, with the wall, by itself; click *OK*.
 
-=== 5. What manufacturing reports back
+image::tutorial-AO-04-casing.png[The lower casing with its flange]
 
-The shop builds 25 bushes on a job: 23 are good, 2 are rejected for a bore below 16.016 mm, and quality opens a non-conformance.
-That happens in Carbon, on its shop-floor and quality side.
-
-*PLM › Manufacturing Status* reads it back for the open part: the revision Carbon builds, the stock (23 on hand, 2 rejected), the inspection plan and the open non-conformance.
-
-image::tutorial-AO-04-status.png[Manufacturing Status: revision, stock and the open non-conformance]
+Save the part.
 
 == The replay
-
-The replay's Carbon is the stand-in server of the unit tests (`tests/carbon_fake.py`): it runs on the same computer, answers over HTTP, and refuses any request that Carbon's published API schemas refuse.
-The dialogs, the requests and the checks are the same as with a real Carbon; the shop's stock and non-conformance (step 5) are written into the stand-in by script.
 
 include::partial$generated/tutorial-AO.adoc[]
 
 include::partial$outcome-legend.adoc[]
 
+The finished casing is compared with the book's curves revolved and extruded by FreeCAD's Part API: the wall with its flange, and the edge on both sides.
+
 == What differs from NX
 
-* NX hands a part to manufacturing through Teamcenter and Siemens' own manufacturing systems; here it goes from Strata's release to Carbon, an open-source ERP, MES and QMS, over Carbon's API.
-* Publish to Manufacturing sends the release package, so Carbon gets the same verified files a supplier gets.
-* A later revision is created in Carbon inactive, and a released make method is never edited: manufacturing decides when a new revision goes live (xref:manufacturing.adoc#_what_it_never_does[what it never does]).
-* The replay's Carbon is a stand-in: see xref:manufacturing.adoc#_what_is_tested[what is tested].
+* NX's Revolve and Extrude start with the Section selection. In FreeCAD a feature without a sketch first offers the sketch planes; picking a curve instead closes that list.
+* NX's Extrude limits give the direction. Here the length and the direction are set in FreeCAD's panel under the NX dialog: 12.7 mm with Reversed is NX's 0.5 in along -ZC.
+* The book mirrors the edge with Edit > Transform > Mirror Through a Plane and Copy, which makes an unparametrised copy. NX-Style uses Mirror Feature, so the copy follows the edge when it changes.
+* Mirror Feature mirrors a feature inside its body: the edge's body then holds both edges, two separate solids.

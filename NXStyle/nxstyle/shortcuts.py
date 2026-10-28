@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from .qt import QAction, QtGui, QtWidgets, Qt
+from .qt import QAction, QtCore, QtGui, QtWidgets, Qt
 
 
 @dataclass
@@ -84,7 +84,8 @@ TABLE = [
     # ---- Modeling
     Entry("Extrude", "X", ["NXStyle_Extrude", "PartDesign_Pad"], nx_id="UG_MODELING_EXTRUDED_FEATURE",
           note="with nothing selected: sketch first, Finish Sketch continues into the Extrude dialog"),
-    Entry("Move Object", "Ctrl+T", "Std_TransformManip"),
+    Entry("Move Object", "Ctrl+T", ["NXStyle_MoveObject", "Std_TransformManip"],
+          note="Distance, Angle, Point to Point; Dynamic is FreeCAD's Transform dragger"),
     # ---- Sketch (sketch edit mode)
     Entry("Profile", "Z", "Sketcher_CreatePolyline", "sketch", nx_id="UG_SKETCH_PROFILE"),
     Entry("Rectangle", "R", "Sketcher_CreateRectangle", "sketch", nx_id="UG_SKETCH_RECTANGLE"),
@@ -92,7 +93,9 @@ TABLE = [
     Entry("Arc", "A", "Sketcher_CreateArc", "sketch", nx_id="UG_SKETCH_ARC"),
     Entry("Circle", "O", "Sketcher_CreateCircle", "sketch", nx_id="UG_SKETCH_CIRCLE"),
     Entry("Polygon", "P", ["Sketcher_CreateRegularPolygon", "Sketcher_CreateHexagon"], "sketch"),
-    Entry("Studio Spline", "S", "Sketcher_CreateBSpline", "sketch"),
+    Entry("Studio Spline", "S", ["Sketcher_CreateBSplineByInterpolation", "Sketcher_CreateBSpline"], "sketch",
+          note="Type Through Points (the spline passes through the points); By Poles is 'From control points' "
+               "in the tool's drop-down; MB2 ends it"),
     Entry("Quick Trim", "T", "Sketcher_Trimming", "sketch"),
     Entry("Quick Extend", "E", "Sketcher_Extend", "sketch"),
     Entry("Fillet", "F", "Sketcher_CreateFillet", "sketch"),
@@ -106,7 +109,8 @@ TABLE = [
     Entry("Show and Hide Panel", "Ctrl+W", "NXStyle_ShowHide"),
     Entry("Immediate Hide", "Ctrl+Shift+I", "NXStyle_ImmediateHide", note="pick objects to hide them; Esc to finish"),
     Entry("Show Panel", "Ctrl+Shift+K", ["NXStyle_Show", "Std_ShowSelection"],
-          note="select the hidden objects in the Part Navigator (in a sketch, the constraint list) first"),
+          note="shows the objects selected in the Part Navigator (in a sketch, the dimensions selected in the "
+               "constraint list); with nothing selected, a list of the hidden objects to pick from"),
     Entry("Show All", "Ctrl+Shift+U", ["NXStyle_ShowAll", "Std_ShowObjects"],
           note="in a sketch, the hidden dimensions and constraints too"),
     Entry("Invert Show/Hidden", "Ctrl+Shift+B", "NXStyle_InvertVisibility"),
@@ -157,6 +161,58 @@ def resolve(entry, known):
     return ""
 
 
+def enable_if_active(name, act=None):
+    """Give a command's action the state its command reports now. FreeCAD sets it on a timer after a selection
+    change (Gui.updateCommands() only schedules that), so right after a pick the action of a command that needs a
+    selection is still disabled: Qt drops its key, and trigger() does nothing. True when it was enabled here."""
+    try:
+        cmd = Gui.Command.get(name)
+        acts = [act] if act is not None else list(cmd.getAction() or [])
+        if not acts or all(a.isEnabled() for a in acts) or not cmd.isActive():
+            return False
+        for a in acts:
+            a.setEnabled(True)
+        return True
+    except Exception:
+        return False
+
+
+def event_key(ev):
+    """The key of a QKeyEvent as norm() writes it ('Ctrl+Shift+K')."""
+    mods = ev.modifiers() & (Qt.ShiftModifier | Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)
+    try:
+        seq = QtGui.QKeySequence(QtCore.QKeyCombination(mods, Qt.Key(ev.key())))
+    except (AttributeError, TypeError):              # Qt 5: an int
+        seq = QtGui.QKeySequence(int(mods) | int(ev.key()))
+    return seq.toString()
+
+
+class KeyGate(QtCore.QObject):
+    """Qt sends ShortcutOverride to the focus widget before it looks a key up in its shortcut map: there, the
+    action of an NX key's command gets the state its command reports now (enable_if_active). Without it, a key
+    pressed right after a pick in the Part Navigator did nothing (tutorial AX: Ctrl+B, Ctrl+Shift+K).
+
+    Only the part-level keys ("doc" context): in a sketch FreeCAD greys a creation tool while it hands over from
+    the last one, and isActive() does not say so. Enabling Profile (Z) there right after the last Profile ended
+    started it half-way (smoke: "Profile left open", measured 2026-10-28)."""
+
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+        self.last = None             # (key, command) the gate last enabled, for tests
+
+    def eventFilter(self, obj, ev):
+        if ev.type() == QtCore.QEvent.ShortcutOverride:
+            try:
+                key = event_key(ev)
+                name = self.owner.commands.get(key)
+                if name and enable_if_active(name, self.owner.targets.get(key)):
+                    self.last = (key, name)
+            except Exception:
+                pass
+        return False
+
+
 def _cmd_actions():
     """id(QAction) -> command name, for actions that belong to a FreeCAD command."""
     out = {}
@@ -177,7 +233,9 @@ class Shortcuts:
         self.mw = Gui.getMainWindow()
         self.aliases = {}       # key -> QAction
         self.targets = {}       # key -> QAction that should fire
+        self.commands = {}      # key -> command whose own action is the target (not an alias)
         self.rows = []          # report rows
+        self.gate = KeyGate(self)
 
     # ---------------------------------------------------------------- apply
     def apply(self):
@@ -205,11 +263,14 @@ class Shortcuts:
             if act in self.aliases.values():
                 act.setShortcut(QtGui.QKeySequence(key))
             else:
+                if e.context == "doc":
+                    self.commands[key] = e.resolved
                 cmd = Gui.Command.get(e.resolved)
                 cmd.setShortcut(key)
                 if norm(act.shortcut().toString()) != key:
                     act.setShortcut(QtGui.QKeySequence(key))
         self.attach_to_window()
+        QtWidgets.QApplication.instance().installEventFilter(self.gate)
         self.rows = [self._row(k, e) for k, e in wanted]
         return self.rows
 
@@ -252,6 +313,8 @@ class Shortcuts:
             e.resolved = resolve(e, _known())
         if e.resolved:
             commands.remember(e.resolved)
+            if e.context == "doc":                # else trigger() on the still disabled action does nothing
+                enable_if_active(e.resolved)
             trigger(e.resolved)
         elif e.message:
             QtWidgets.QMessageBox.information(self.mw, e.nx, e.message)
@@ -306,6 +369,8 @@ _instance = None
 
 def apply(shell):
     global _instance
+    if _instance is not None:
+        QtWidgets.QApplication.instance().removeEventFilter(_instance.gate)
     _instance = Shortcuts(shell)
     return _instance.apply()
 

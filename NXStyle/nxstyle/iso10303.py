@@ -31,9 +31,12 @@ Part 111 and most of Part 55 but 3 of the 65 Part 108 entities; AP214 edition 3 
 bom() reads the product structure any of these APs carry (PRODUCT, PRODUCT_DEFINITION and
 NEXT_ASSEMBLY_USAGE_OCCURRENCE): the assembly tree with quantities, and the parts list.
 
-On top of express.check() (well-formedness against the schemas), rules() evaluates the WHERE rules and
-informal propositions of Parts 55, 108 and 111 that decide whether parametric and procedural data means
-anything, each cited by entity and rule label. Other WHERE rules are not evaluated.
+On top of express.check() (well-formedness against the schemas), express_eval evaluates every WHERE,
+UNIQUE and global rule of the schemas the file is checked against, with their FUNCTIONs; a rule it cannot
+decide is reported as not evaluated, with the reason, and the check ends with the count of rules
+evaluated, violated and not evaluated. Where the standards contradict themselves, a violation that is the
+contradiction and nothing else is a warning that says so (express_eval.KNOWN). rules() adds the informal
+propositions of ISO 10303-108 that no WHERE rule states.
 """
 
 import argparse
@@ -41,7 +44,7 @@ import json
 import os
 import sys
 
-from . import express, p21
+from . import express, express_eval, p21
 
 DICTIONARY = os.path.join(os.path.dirname(__file__), "resources", "iso10303", "dictionary.json")
 PART = {  # schema -> where it is defined
@@ -149,7 +152,7 @@ def dictionary_for(f, extra=()):
                 _AP_DICTS[path] = express.Dictionary.load(path)
             d = _AP_DICTS[path]
             if extra:
-                d = express.Dictionary(dict(d.entities), dict(d.types), dict(d.short_names), list(d.sources))
+                d = d.copy()
                 for p in extra:
                     with open(p, encoding="utf-8", errors="replace") as fh:
                         d.merge(express.Dictionary.from_text(fh.read()))
@@ -170,7 +173,7 @@ def dictionary(extra=()):
         _DICT = express.Dictionary.load(DICTIONARY)
     d = _DICT
     if extra:
-        d = express.Dictionary(dict(d.entities), dict(d.types), dict(d.short_names), list(d.sources))
+        d = d.copy()
         for path in extra:
             with open(path, encoding="utf-8", errors="replace") as f:
                 d.merge(express.Dictionary.from_text(f.read()))
@@ -239,30 +242,10 @@ class _Model:
         return [i for i in self.f if self.isa(i, name)]
 
 
-def _refs(v):
-    out = []
-    p21._refs(v, out)
-    return out
-
-
-def _used_variables(m, ref, seen=None):
-    """ISO 13584-20 used_variables: the generic_variable instances an expression tree uses."""
-    seen = seen if seen is not None else set()
-    if int(ref) in seen:
-        return set()
-    seen.add(int(ref))
-    if m.isa(ref, "generic_variable"):
-        return {int(ref)}
-    out = set()
-    inst = m.f.get(ref)
-    if inst is not None and m.isa(inst, "generic_expression"):
-        for r in m.f.references(inst):
-            out |= _used_variables(m, r, seen)
-    return out
-
-
 def rules(f, d=None):
-    """WHERE rules and propositions of Parts 55, 108 and 111 that express.check() does not evaluate."""
+    """What express_eval cannot evaluate: the informal propositions of ISO 10303-108 that decide whether
+    parametric data means anything (the attribute an instance_attribute_reference names exists, holds a
+    number and belongs to the owning instance; every variational item is in a variational representation)."""
     d = d or dictionary()
     bd = dictionary()                               # the resource schemas, for schema names
     m = _Model(f, d)
@@ -271,28 +254,7 @@ def rules(f, d=None):
     def bad(inst, msg):
         out.append(express.Issue("error", inst.id, msg))
 
-    # ISO 10303-108 clause 4 (Cor.1): parameters and their binding
-    envs = {}
-    for e in m.all_of("environment"):
-        envs.setdefault(int(m.get(e, "syntactic_representation") or 0), []).append(e)
-    for p in m.all_of("variational_parameter"):
-        if m.get(p, "representation_item.name") != m.get(p, "maths_variable.name"):
-            bad(p, "variational_parameter WR2: maths_variable.name differs from representation_item.name "
-                   "(ISO 10303-108 Cor.1, 4.4.1)")
-        mine = envs.get(p.id, [])
-        want = "bound_parameter_environment" if m.isa(p, "bound_variational_parameter") else \
-            "unbound_parameter_environment"
-        if len(mine) != 1 or not m.isa(mine[0], want):
-            bad(p, f"{want.split('_parameter')[0]}_variational_parameter WR1: its "
-                   f"interpretation (the environment whose syntactic_representation it is) must be one "
-                   f"{want}; found {len(mine)} (ISO 10303-108 Cor.1, 4.4.2-4.4.3)")
-    for e in m.all_of("bound_parameter_environment"):
-        if not m.isa(m.get(e, "semantics"), "instance_attribute_reference"):
-            bad(e, "bound_parameter_environment WR1: semantics must be an instance_attribute_reference")
-    for e in m.all_of("unbound_parameter_environment"):
-        if not m.isa(m.get(e, "semantics"), "unbound_variational_parameter_semantics"):
-            bad(e, "unbound_parameter_environment WR1: semantics must be an "
-                   "unbound_variational_parameter_semantics")
+    # ISO 10303-108 4.4.6 informal proposition: the attribute an instance_attribute_reference names
     for r in m.all_of("instance_attribute_reference"):
         name, owner = m.get(r, "attribute_name"), m.get(r, "owning_instance")
         parts = name.split(".") if isinstance(name, str) else []
@@ -317,102 +279,25 @@ def rules(f, d=None):
             if v is not None and not isinstance(v, (int, float)) and v is not p21.DERIVED:
                 out.append(express.Issue("warning", r.id, f"{name} of #{int(owner)} is not a number"))
 
-    # clause 5: constraints between parameters
-    for c in m.all_of("explicit_constraint"):
-        cons, refs = m.get(c, "constrained_elements") or [], m.get(c, "reference_elements") or []
-        if m.isa(c, "equal_parameter_constraint") and len(cons) + len(refs) < 2:
-            bad(c, "equal_parameter_constraint WR1: needs at least two parameters")
-        if m.isa(c, "free_form_constraint"):
-            expr = m.get(c, "constraining_expression")
-            used = _used_variables(m, expr) if isinstance(expr, p21.Ref) else set()
-            if m.isa(c, "free_form_assignment"):
-                if any(int(x) in used for x in cons):
-                    bad(c, "free_form_assignment WR1: a constrained element occurs in its own expression")
-                if any(int(x) not in used for x in refs):
-                    bad(c, "free_form_assignment WR2: a reference element is not used by the expression")
-                if not refs:
-                    bad(c, "free_form_assignment WR3: needs at least one reference element")
-            if m.isa(c, "free_form_relation"):
-                if not m.isa(expr, "boolean_expression"):
-                    bad(c, "free_form_relation WR1: the expression must be a boolean_expression")
-                if any(int(x) not in used for x in list(cons) + list(refs)):
-                    bad(c, "free_form_relation WR2: every element must occur in the expression")
-
-    # clause 6: variational representations
+    # ISO 10303-108 6.3.4 WR4 as its prose states it: "the type list of the variational representation shall
+    # be identical to that of the related current result except that it shall also include variational
+    # representation". The EXPRESS is a one-way difference, which a sketch's wrapper meets; the prose it
+    # cannot, since a NEUTRAL_SKETCH_REPRESENTATION wrapper could hold no constraints (8.4.9).
     for rel in m.all_of("variational_current_representation_relationship"):
-        r1, r2, cur = (m.get(rel, "rep_1"), m.get(rel, "rep_2"), m.get(rel, "current_result"))
-        if int(cur or 0) != int(r2 or 0):
-            bad(rel, "variational_current_representation_relationship WR5: current_result must be rep_2")
-        c1, c2 = m.get(r1, "context_of_items"), m.get(r2, "context_of_items")
-        if c1 is not None and c2 is not None and c1 != c2:
-            bad(rel, "variational_current_representation_relationship WR2: the two representations must "
-                     "share their context")
-        items1 = {int(x) for x in m.get(r1, "items") or []}
-        items2 = {int(x) for x in m.get(r2, "items") or []}
-        if any(m.isa(x, "variational_representation_item") for x in items2):
-            bad(rel, "variational_current_representation_relationship WR3: the current result holds "
-                     "variational items")
-        if {x for x in items1 if not m.isa(x, "variational_representation_item")} != items2:
-            bad(rel, "variational_current_representation_relationship WR1: the non-variational items of "
-                     "rep_1 must be exactly the items of the current result")
-        if m.types(r1) - m.types(r2) != {"variational_representation"} or \
-                m.types(r2) - m.types(r1):
-            if m.isa(r2, "neutral_sketch_representation") and not m.isa(r1, "neutral_sketch_representation"):
-                out.append(express.Issue("warning", rel.id, "variational_current_representation_relationship WR4 "
-                           "not met: a NEUTRAL_SKETCH_REPRESENTATION wrapper could hold no constraints (its "
-                           "items are points and curves, 8.4.9); the two rules of ISO 10303-108 conflict"))
-            else:
-                bad(rel, "variational_current_representation_relationship WR4: rep_1's type list must be "
-                         "rep_2's plus variational_representation")
-    holders = {}
+        r1, r2 = m.get(rel, "rep_1"), m.get(rel, "rep_2")
+        if m.types(r1) and m.types(r2) - m.types(r1):
+            out.append(express.Issue("warning", rel.id, "variational_current_representation_relationship WR4 as "
+                       f"stated in prose not met: rep_1 lacks {', '.join(sorted(m.types(r2) - m.types(r1)))}"
+                       + ("; a NEUTRAL_SKETCH_REPRESENTATION wrapper could hold no constraints (8.4.9), so the "
+                          "prose and 8.4.9 conflict" if m.isa(r2, "neutral_sketch_representation") else "")))
+    # ISO 10303-108 6.3.1: a variational item belongs to a variational representation (a note, not a rule)
+    holders = set()
     for rep in m.all_of("variational_representation"):
-        for x in m.get(rep, "items") or []:
-            holders.setdefault(int(x), []).append(rep)
+        holders |= {int(x) for x in m.get(rep, "items") or []}
     for it in m.all_of("variational_representation_item"):
-        users = [u for u in m.users(it.id) if m.isa(u, "representation")]
-        if any(not m.isa(u, "variational_representation") for u in users):
-            bad(it, "variational_representation_item WR1: used by a representation that is not a "
-                    "variational_representation (ISO 10303-108 6.3.1)")
-        if not holders.get(it.id):
+        if it.id not in holders:
             out.append(express.Issue("warning", it.id, "variational item not listed in the items of any "
                                                        "variational_representation (6.3.1)"))
-
-    # ISO 10303-55: procedural representations
-    for s in m.all_of("procedural_representation_sequence"):
-        el = {int(x) for x in m.get(s, "elements") or []}
-        if any(int(x) not in el for x in m.get(s, "suppressed_items") or []):
-            bad(s, "procedural_representation_sequence WR1: suppressed items must be elements "
-                   "(ISO 10303-55 4.3.4)")
-        if m.isa(s, "procedural_shape_representation_sequence"):
-            for x in el:
-                if m.types(x) and not (m.isa(x, "geometric_representation_item")
-                                       or m.isa(x, "topological_representation_item")):
-                    bad(s, f"procedural_shape_representation_sequence WR1: element #{x} is not a shape "
-                           "representation item")
-        if m.isa(s, "procedural_solid_representation_sequence") and not m.isa(s, "solid_model"):
-            bad(s, "procedural_solid_representation_sequence WR1: SOLID_MODEL must be in its type list, i.e. "
-                   "a complex instance with SOLID_MODEL() (ISO 10303-55 5.4.5)")
-    for rel in m.all_of("explicit_procedural_representation_relationship"):
-        r2 = m.get(rel, "rep_2")
-        if m.isa(r2, "procedural_representation") or m.isa(r2, "variational_representation"):
-            bad(rel, "explicit_procedural_representation_relationship WR1: rep_2 must be explicit")
-        c1, c2 = m.get(m.get(rel, "rep_1"), "context_of_items"), m.get(r2, "context_of_items")
-        if c1 is not None and c2 is not None and c1 != c2:
-            bad(rel, "explicit_procedural_representation_relationship WR2: both representations must share "
-                     "one context")
-    for u in m.all_of("user_selected_shape_elements"):
-        for x in m.get(u, "picked_items") or []:
-            if m.types(x) and not (m.isa(x, "geometric_representation_item")
-                                   or m.isa(x, "topological_representation_item")):
-                bad(u, f"user_selected_shape_elements WR1: #{int(x)} is not a shape element")
-
-    # ISO 10303-111: stepped holes (aggregate bounds given by an attribute)
-    for h in m.all_of("solid_with_stepped_round_hole"):
-        n = m.get(h, "segments")
-        for a in ("segment_radii", "segment_depths"):
-            v = m.get(h, a)
-            if isinstance(n, int) and isinstance(v, list) and len(v) != n:
-                bad(h, f"solid_with_stepped_round_hole: {a} has {len(v)} values for {n} segments")
     return out
 
 
@@ -425,7 +310,17 @@ def check(path_or_file, extra=()):
     if note:
         issues.append(express.Issue("info", None, note))
     issues += express.check(f, d)
+    rd = d
+    if not d.has_rules:
+        rd = dictionary()
+        issues.append(express.Issue("info", None, "the cached schema was compiled before rules were kept; the "
+                                                  "rules of the resource parts are evaluated (fetch or add the "
+                                                  "schema again for the AP's own rules)"))
+    res = express_eval.rules(f, rd, part=lambda sc: PART.get(sc, (sc or "?").upper()))
+    issues += res.issues
     issues += rules(f, d)
+    issues.append(express.Issue("info", None, f"rules: {res.evaluated} evaluated, {res.violated} violated, "
+                                              f"{sum(c for c, _ in res.unevaluated.values())} not evaluated"))
     return issues
 
 

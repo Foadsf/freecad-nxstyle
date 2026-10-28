@@ -1,5 +1,5 @@
 {
-  "_comment": "NX Modeling application. 'cmd' is a FreeCAD command name or a list of candidates (first one that exists wins). 'label' is the NX name shown on the button. size: large | small.",
+  "_comment": "NX Modeling application. 'cmd' is a FreeCAD command name or a list of candidates (first one that exists wins). 'label' is the NX name shown on the button. size: large | small. Analysis > Molded Part Validation runs the bundled DFM add-on (github.com/ryankembrey/FreeCAD-DFM-Workbench), whose commands exist from start-up without its workbench; its items are optional, so the group is gone when the add-on is off.",
   "title": "Modeling",
   "workbench": "PartDesignWorkbench",
   "preload": ["SketcherWorkbench", "PartWorkbench", "SurfaceWorkbench", "AssemblyWorkbench", "SpreadsheetWorkbench"],
@@ -38,6 +38,7 @@
         {"cmd": "NXStyle_Cylinder", "label": "Cylinder"},
         {"cmd": "NXStyle_Cone", "label": "Cone"},
         {"cmd": "NXStyle_Sphere", "label": "Sphere"},
+        {"cmd": "NXStyle_Thread", "label": "Thread"},
         {"cmd": "PartDesign_AdditiveLoft", "label": "Through Curves"},
         {"cmd": "PartDesign_AdditivePipe", "label": "Sweep along Guide"},
         {"cmd": "PartDesign_AdditiveHelix", "label": "Helix Feature"},
@@ -149,6 +150,12 @@
       ]},
       {"name": "Check", "items": [
         {"cmd": "Part_CheckGeometry", "label": "Examine Geometry", "size": "large"}
+      ]},
+      {"name": "Molded Part Validation", "items": [
+        {"cmd": "DFM_SetupAnalysis", "label": "Moldability Validation", "size": "large", "optional": true},
+        {"cmd": "DFM_ThicknessAnalysis", "label": "Check Wall Thickness", "size": "large", "optional": true},
+        {"cmd": "DFM_DraftAnalysis", "label": "Draft Analysis", "size": "large", "optional": true},
+        {"cmd": "DFM_ProcessLibrary", "label": "Process Library", "optional": true}
       ]},
       {"name": "Section", "items": [
         {"cmd": ["Part_SectionCut", "Std_SectionCut"], "label": "Edit Section", "size": "large"},

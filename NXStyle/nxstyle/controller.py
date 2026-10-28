@@ -14,15 +14,21 @@ command by its name; the command hands over to this controller. The controller o
 - validation and error state: what cannot be built is shown in the panel and OK is unavailable until it can;
 - typed lengths read back from the backend's fields (a misread decimal separator is reported).
 
-The geometry is made by a backend adapter. Extrude is the first: FreeCAD's PartDesign Pad and Pocket, whose
-own parameter panel stays the place where limits are typed. The controller adds the NX command box above
-it with the section, the body and the Boolean (New Body, Unite, Subtract; Intersect shown and refused).
+The geometry is made by a backend adapter. Extrude is FreeCAD's PartDesign Pad and Pocket, Revolve its
+Revolution and Groove; their own parameter panel stays the place where limits are typed. The controller adds
+the NX command box above it with the section, the body and the Boolean (New Body, Unite, Subtract; Intersect
+shown and refused), and for Revolve the axis (Specify Vector, Specify Point) and the Start and End angle.
+
+The section is NX's Section collector: a whole sketch, or curves of one sketch picked with the Selection bar's
+Curve Rule (Single, Tangent or Connected Curves; Inferred Curves takes the whole sketch). Curves can be picked
+before the command or while it runs; the feature's Profile is those curves only.
 """
 
 import FreeCAD as App
 import FreeCADGui as Gui
 
 from . import command_core as core
+from . import selection_core
 from . import selection_filter
 from .qt import QtCore, QtWidgets, Qt
 
@@ -90,22 +96,136 @@ def _status(text, ms=6000):
     App.Console.PrintMessage(text + "\n")
 
 
+def _tasks_dock():
+    return Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+
+
+def _plane_pick_open():
+    """FreeCAD's 'select a plane for the sketch' panel (PartDesign_NewSketch with nothing selected) is open."""
+    dock = _tasks_dock()
+    w = dock.findChild(QtWidgets.QWidget, "PartDesignGui__TaskFeaturePick") if dock is not None else None
+    return w is not None and w.isVisible()
+
+
+def _sketch_in_edit():
+    try:
+        vp = Gui.ActiveDocument.getInEdit() if Gui.ActiveDocument else None
+        return vp is not None and vp.Object.isDerivedFrom("Sketcher::SketchObject")
+    except Exception:
+        return False
+
+
 # --------------------------------------------------------------------------
-# Extrude adapter: PartDesign Pad (New Body, Unite) and Pocket (Subtract)
+# Sections: a whole sketch, or curves of one sketch
 # --------------------------------------------------------------------------
-class ExtrudeAdapter:
-    name = "Extrude"
-    TYPES = ("PartDesign::Pad", "PartDesign::Pocket")
-    CARRY = ("Type", "Length", "Length2", "Midplane")       # kept when the Boolean changes the backend
-    LENGTH_FIELDS = ("length", "offset")                    # backend fields whose typed text is read back
+class Section:
+    """What the Section collector holds: a sketch and its picked curves (edges None: the whole sketch)."""
+
+    def __init__(self, sketch, edges=None, refused=()):
+        self.sketch, self.edges, self.refused = sketch, edges, list(refused)
+
+
+def sketch_pick(doc, obj, sub):
+    """(sketch, element) for a pick of a sketch or one of its curves, else None; element '' is the whole sketch.
+    Outside sketch edit a curve's 'EdgeN' follows the sketch shape's edge order, as the Profile's names do."""
+    try:
+        pick = selection_filter.Resolved(doc, obj, sub)
+    except Exception:
+        return None
+    leaf = pick.leaf
+    if leaf is None or not leaf.isDerivedFrom("Sketcher::SketchObject"):
+        return None
+    if pick.element and not pick.element.startswith("Edge"):
+        return None                                  # a point of the sketch
+    return leaf, pick.element
+
+
+def edge_records(sketch):
+    from .collector_ui import edge_records as records
+    try:
+        return records(sketch.Shape)
+    except Exception:
+        return {}
+
+
+def expand(sketch, element, rule):
+    """The curves one pick adds to a section under the curve rule; None for the whole sketch."""
+    if not element or rule == "inferred":
+        return None
+    if rule == "single":
+        return [element]
+    return selection_core.chain(edge_records(sketch), element, rule) or [element]
+
+
+def section_of_selection(rule=None):
+    """The Section the selection gives, or None when it holds no sketch and no sketch curve (a face or a plane:
+    the command sketches on it). Picks of a second sketch are refused (FreeCAD's Profile is one object)."""
+    rule = rule or selection_filter.manager().curve_rule
+    picks = []
+    for s in Gui.Selection.getSelectionEx("", 0):
+        for sub in (s.SubElementNames or ("",)):
+            sp = sketch_pick(s.DocumentName, s.ObjectName, sub)
+            if sp is not None:
+                picks.append(sp)
+    if not picks:
+        return None
+    objs = {sk.Name: sk for sk, _ in picks}
+    named = []
+    for sk, el in picks:
+        curves = expand(sk, el, rule)
+        named += [(sk.Name, "")] if curves is None else [(sk.Name, e) for e in curves]
+    name, edges, refused = core.section_from_picks(named)
+    return Section(objs[name], edges, sorted({objs[n].Label for n, _ in refused}))
+
+
+def _origin_axis(body, axis):
+    for o in body.Origin.OriginFeatures:
+        if getattr(o, "Role", "") == f"{axis}_Axis" or o.Name.startswith(f"{axis}_Axis"):
+            return o
+    raise core.CommandError(f"{body.Label} has no {axis} axis")
+
+
+def _sketch_line(sketch, sub):
+    """(point, direction) of a sketch axis or line, in global coordinates."""
+    pl = sketch.getGlobalPlacement()
+    if sub in ("H_Axis", "V_Axis"):
+        local = App.Vector(1, 0, 0) if sub == "H_Axis" else App.Vector(0, 1, 0)
+        return pl.Base, pl.Rotation.multVec(local)
+    e = sketch.Shape.getElement(sub)                 # the shape is placed already
+    a, b = e.Vertexes[0].Point, e.Vertexes[-1].Point
+    d = b - a
+    d.normalize()
+    return a, d
+
+
+def is_line(sketch, sub):
+    try:
+        return sketch.Shape.getElement(sub).Curve.TypeId == "Part::GeomLine"
+    except Exception:
+        return False
+
+
+# --------------------------------------------------------------------------
+# Adapters: Extrude (Pad, Pocket) and Revolve (Revolution, Groove)
+# --------------------------------------------------------------------------
+class SectionAdapter:
+    """What Extrude and Revolve share: a section, the Boolean, a feature in the sketch's Body or a new one."""
+    name = ""
+    TYPES = ()
+    CARRY = ()                       # kept when the Boolean changes the backend
+    LENGTH_FIELDS = ()               # backend fields whose typed text is read back
+    KEY_PROPS = ()                   # properties whose change is validated again
+    NOUN = ""
+    OPTIONS = core.EXTRUDE_OPTIONS
+    NOTE = core.SHORT_NOTE
+    TIP_NOTE = core.DIRECTION_NOTE
 
     def accepts(self, obj):
         return obj is not None and obj.TypeId in self.TYPES and body_of(obj) is not None
 
     @staticmethod
     def preselected_section():
-        from .commands import _selected_sketch
-        return _selected_sketch()
+        return section_of_selection()
 
     def mode_of(self, feature):
         return core.mode_of(feature.TypeId, getattr(feature, "BaseFeature", None) is not None)
@@ -118,27 +238,50 @@ class ExtrudeAdapter:
                 out[p] = getattr(v, "Value", v)
         return out
 
+    def plan(self, mode, has_body, has_solid, label):
+        raise NotImplementedError
+
+    def setup(self, s, feature, body, profile):
+        """Adapter properties before the first recompute."""
+
+    def read(self, s, feature):
+        """Session state from an existing feature (Edit Parameters)."""
+
+    def rows(self, box, form, s):
+        """The adapter's own rows in the command box."""
+
+    def refresh(self, box, s):
+        pass
+
+    def problem(self, s):
+        """An adapter input that cannot be built (shown as the error), or None."""
+        return None
+
+    def sync(self, s, feature):
+        """The box's state from what FreeCAD's panel changed."""
+
+    @staticmethod
+    def binder_support(s):
+        body, sk = s.sketch_body, s.sketch
+        if s.edges is None:
+            # the sketch through its own Body, as FreeCAD's binder command links it: placement stays global
+            return [(body, (sk.Name + ".",))] if body is not None else [(sk, ("",))]
+        return [(body, tuple(f"{sk.Name}.{e}" for e in s.edges))] if body is not None else [(sk, tuple(s.edges))]
+
     def build(self, s, plan):
         """Make the feature for plan inside the open transaction; returns it."""
         doc = s.doc
         if plan["body"] == "new":
             body = doc.addObject("PartDesign::Body", "Body")
             profile = body.newObject("PartDesign::SubShapeBinder", "Section")
-            # the sketch through its own Body, as FreeCAD's binder command links it: placement stays global
-            profile.Support = [(s.sketch_body, (s.sketch.Name + ".",))] if s.sketch_body is not None \
-                else [(s.sketch, ("",))]
+            profile.Support = self.binder_support(s)
         else:
             body = s.sketch_body
             profile = s.sketch
         prev = solid_tip(body)
-        feature = body.newObject(plan["feature"], "Pocket" if plan["feature"].endswith("Pocket") else "Pad")
-        feature.Profile = (profile, [""])
-        if profile is not s.sketch:
-            # a binder's face may point either way (measured: opposite to the sketch normal on XZ); NX
-            # extrudes along the section's normal, so say so as the Pad's custom direction
-            normal = s.sketch.getGlobalPlacement().Rotation.multVec(App.Vector(0, 0, 1))
-            feature.UseCustomVector = True
-            feature.Direction = body.getGlobalPlacement().Rotation.inverted().multVec(normal)
+        feature = body.newObject(plan["feature"], plan["feature"].split("::")[-1])
+        feature.Profile = (profile, list(s.edges) if profile is s.sketch and s.edges else [""])
+        self.setup(s, feature, body, profile)
         for k, v in s.carried.items():
             if k not in feature.PropertiesList:
                 continue
@@ -148,7 +291,12 @@ class ExtrudeAdapter:
                 setattr(feature, k, v)
             except Exception:
                 pass
-        for o in (profile, s.sketch) if profile is not s.sketch else (profile,):
+        # a whole sketch goes out of sight, as FreeCAD's commands do; a sketch used in part stays shown (NX keeps
+        # it, and its other curves are still to be picked)
+        hide = [profile] if profile is not s.sketch else []
+        if s.edges is None:
+            hide.append(s.sketch)
+        for o in hide:
             if getattr(o, "ViewObject", None) is not None:
                 o.ViewObject.Visibility = False
         if prev is not None and getattr(prev, "ViewObject", None) is not None:
@@ -161,8 +309,264 @@ class ExtrudeAdapter:
         doc.recompute()
         return feature
 
+    def apply_section(self, s, feature):
+        """The section changed while the panel is open: the Profile (or the new Body's binder) follows."""
+        prof = feature.Profile[0] if feature.Profile else None
+        if prof is not None and prof.TypeId == "PartDesign::SubShapeBinder":
+            prof.Support = self.binder_support(s)
+        else:
+            feature.Profile = (s.sketch, list(s.edges) if s.edges else [""])
+        s.doc.recompute()
 
-ADAPTERS = {"Extrude": ExtrudeAdapter()}
+
+class ExtrudeAdapter(SectionAdapter):
+    name = "Extrude"
+    TYPES = ("PartDesign::Pad", "PartDesign::Pocket")
+    CARRY = ("Type", "Length", "Length2", "Midplane")
+    LENGTH_FIELDS = ("length", "offset")
+    KEY_PROPS = ("Type", "Length", "Length2", "Midplane", "Reversed", "UpToFace", "TaperAngle")
+    NOUN = "extrusion"
+
+    def plan(self, mode, has_body, has_solid, label):
+        return core.plan_extrude(mode, has_body, has_solid, label)
+
+    def setup(self, s, feature, body, profile):
+        if profile is not s.sketch:
+            # a binder's face may point either way (measured: opposite to the sketch normal on XZ); NX
+            # extrudes along the section's normal, so say so as the Pad's custom direction
+            normal = s.sketch.getGlobalPlacement().Rotation.multVec(App.Vector(0, 0, 1))
+            feature.UseCustomVector = True
+            feature.Direction = body.getGlobalPlacement().Rotation.inverted().multVec(normal)
+
+
+class RevolveAdapter(SectionAdapter):
+    """NX Revolve on PartDesign Revolution (None, Unite) and Groove (Subtract). The NX box's Axis and Limits drive
+    FreeCAD's panel, whose own values are what its OK writes (measured: a property set while the panel is open is
+    overwritten on OK). An axis FreeCAD's axis list does not hold is set before the panel opens: the command is
+    rebuilt for it, as for a change of Boolean."""
+    name = "Revolve"
+    TYPES = ("PartDesign::Revolution", "PartDesign::Groove")
+    CARRY = ("Midplane",)
+    KEY_PROPS = ("Type", "Angle", "Angle2", "Midplane", "Reversed", "ReferenceAxis", "UpToFace")
+    NOUN = "revolved section"
+    OPTIONS = core.REVOLVE_OPTIONS
+    NOTE = core.REVOLVE_NOTE
+    TIP_NOTE = ""
+
+    def plan(self, mode, has_body, has_solid, label):
+        return core.plan_revolve(mode, has_body, has_solid, label)
+
+    # ------------------------------------------------------------ axis
+    def reference(self, s, body, ref):
+        """The ReferenceAxis link for an axis of core.revolve_axis in the feature's Body."""
+        if ref["kind"] == "origin":
+            return (_origin_axis(body, ref["axis"]), [""])
+        if ref["kind"] == "sketch" and body is s.sketch_body:
+            return (s.sketch, [ref["sub"]])
+        if ref["kind"] == "sketch":
+            # a new Body cannot link the other Body's sketch: the same line as a datum line of its own
+            point, direction = _sketch_line(s.sketch, ref["sub"])
+        else:
+            point, direction = App.Vector(*ref["point"]), App.Vector(*ref["direction"])
+        line = body.newObject("PartDesign::Line", "RevolveAxis")
+        line.MapMode = "Deactivated"
+        line.Placement = body.getGlobalPlacement().inverse().multiply(
+            App.Placement(point, App.Rotation(App.Vector(0, 0, 1), direction)))
+        return (line, [""])
+
+    def carry(self, feature):
+        out = super().carry(feature)
+        if self.axis_of(None, feature)[0] is None and getattr(feature, "ReferenceAxis", None):
+            out["ReferenceAxis"] = feature.ReferenceAxis    # one from FreeCAD's list the box has no entry for
+            out["Reversed"] = feature.Reversed
+        return out
+
+    def setup(self, s, feature, body, profile):
+        lim = core.revolve_limits(*s.limits)
+        feature.Type = lim["Type"]
+        feature.Angle = lim["Angle"]
+        if "Angle2" in feature.PropertiesList:
+            feature.Angle2 = lim["Angle2"]
+        if s.axis["vector"] == "other":
+            return                                       # carried as it was
+        ref = core.revolve_axis(s.axis["vector"], s.axis["point"])
+        feature.ReferenceAxis = self.reference(s, body, ref)
+        feature.Reversed = ref["reversed"] != lim["flip"]
+
+    def axis_reversed(self, s):
+        try:
+            return core.revolve_axis(s.axis["vector"], s.axis["point"])["reversed"]
+        except core.CommandError:
+            return False
+
+    def axis_of(self, s, feature):
+        """The Specify Vector entry and point the feature's ReferenceAxis stands for."""
+        ref = getattr(feature, "ReferenceAxis", None)
+        if not ref or ref[0] is None:
+            return None, (0.0, 0.0, 0.0)
+        obj, subs = ref[0], ref[1]
+        sub = subs[0] if subs else ""
+        body = body_of(feature)
+        if body is not None and obj in body.Origin.OriginFeatures:
+            return core.vector_of("origin", getattr(obj, "Role", obj.Name), False), (0.0, 0.0, 0.0)
+        if obj.isDerivedFrom("Sketcher::SketchObject"):
+            return core.vector_of("sketch", sub, False), (0.0, 0.0, 0.0)
+        if obj.isDerivedFrom("PartDesign::Line"):
+            pl = obj.getGlobalPlacement()
+            d = pl.Rotation.multVec(App.Vector(0, 0, 1))
+            p = pl.Base
+            for key, _l, axis, rev in core.VECTORS:
+                v = core.AXIS_DIRS[axis]
+                if (App.Vector(*v) * (-1 if rev else 1) - d).Length < 1e-9:
+                    return key, (p.x, p.y, p.z)
+        return None, (0.0, 0.0, 0.0)
+
+    @staticmethod
+    def _limits(feature, flip):
+        angle2 = feature.Angle2.Value if "Angle2" in feature.PropertiesList else 0.0
+        return core.limits_of(feature.Type, feature.Angle.Value, angle2, flip, feature.Midplane)
+
+    def read(self, s, feature):
+        vector, point = self.axis_of(s, feature)
+        s.axis = {"vector": vector or "other", "point": point}
+        s.limits = self._limits(feature, feature.Reversed) or s.limits
+
+    @staticmethod
+    def _same_axis(a, b):
+        try:
+            ra, rb = core.revolve_axis(a["vector"], a["point"]), core.revolve_axis(b["vector"], b["point"])
+        except core.CommandError:
+            return False
+        key = ("kind", "axis", "sub")
+        if any(ra.get(k) != rb.get(k) for k in key):
+            return False
+        return all(abs(x - y) < 1e-6 for x, y in zip(ra.get("point", ()), rb.get("point", ())))
+
+    def sync(self, s, feature):
+        """FreeCAD's panel may have changed the axis or the angles: the box follows. A reversed vector and a
+        reversed sweep are one Reversed property: the box keeps its vector while the axis is the one it set."""
+        vector, point = self.axis_of(s, feature)
+        if not (vector and self._same_axis(s.axis, {"vector": vector, "point": point})):
+            s.axis = {"vector": vector or "other", "point": point}
+        lim = self._limits(feature, feature.Reversed != self.axis_reversed(s))
+        if lim is not None and not s.limit_error:
+            s.limits = lim
+
+    # ------------------------------------------------------------ the box
+    def rows(self, box, form, s):
+        box.vector = QtWidgets.QComboBox(box)
+        box.vector.setObjectName("nxSpecifyVector")
+        box.vector.setToolTip("Specify Vector: the direction of the axis; with Specify Point it is the axis")
+        for key, label, _a, _r in core.VECTORS:
+            box.vector.addItem(label, key)
+        for key, label, _sub in core.SKETCH_AXES:
+            box.vector.addItem(label, key)
+        box.pick_line = QtWidgets.QToolButton(box)
+        box.pick_line.setObjectName("nxPickAxisLine")
+        box.pick_line.setText("Line…")
+        box.pick_line.setCheckable(True)
+        box.pick_line.setToolTip("Pick a line of the sketch as the axis")
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(box.vector, 1)
+        row.addWidget(box.pick_line)
+        form.addRow("Specify Vector", row)
+        box.point = []
+        prow = QtWidgets.QHBoxLayout()
+        for c in "XYZ":
+            sb = QtWidgets.QDoubleSpinBox(box)
+            sb.setObjectName(f"nxPoint{c}")
+            sb.setRange(-1e7, 1e7)
+            sb.setDecimals(6)
+            sb.setSuffix(" mm")
+            sb.setKeyboardTracking(False)
+            sb.setToolTip(f"Specify Point {c} (absolute, mm): the axis passes through this point")
+            box.point.append(sb)
+            prow.addWidget(sb)
+        form.addRow("Specify Point", prow)
+        box.start, box.end = QtWidgets.QDoubleSpinBox(box), QtWidgets.QDoubleSpinBox(box)
+        for sb, name, tip in ((box.start, "nxLimitStart", "Start angle"), (box.end, "nxLimitEnd", "End angle")):
+            sb.setObjectName(name)
+            sb.setRange(-360.0, 360.0)
+            sb.setDecimals(6)
+            sb.setSuffix(" °")
+            sb.setKeyboardTracking(False)
+            sb.setToolTip(f"{tip}, degrees about the axis (right hand rule)")
+        lrow = QtWidgets.QHBoxLayout()
+        lrow.addWidget(QtWidgets.QLabel("Start", box))
+        lrow.addWidget(box.start, 1)
+        lrow.addWidget(QtWidgets.QLabel("End", box))
+        lrow.addWidget(box.end, 1)
+        form.addRow("Limits", lrow)
+        ctl = box.ctl
+        box.vector.activated.connect(lambda i: ctl.change_axis(box.vector.itemData(i), None))
+        for sb in box.point:
+            sb.editingFinished.connect(lambda: ctl.change_axis(None, tuple(w.value() for w in box.point)))
+        box.start.editingFinished.connect(lambda: ctl.change_limits(box.start.value(), box.end.value()))
+        box.end.editingFinished.connect(lambda: ctl.change_limits(box.start.value(), box.end.value()))
+        box.pick_line.toggled.connect(ctl.pick_axis_line)
+        if s.edit:
+            for w in [box.vector, box.pick_line] + box.point:
+                w.setEnabled(False)
+                w.setToolTip("Change the axis of an existing Revolve in FreeCAD's axis list below")
+
+    def refresh(self, box, s):
+        vector = s.axis["vector"]
+        i = box.vector.findData(vector)
+        if i < 0 and vector:
+            label = (f"Line {vector[5:]}" if vector.startswith("line:") else "Datum or edge (FreeCAD's axis list)")
+            box.vector.addItem(label, vector)
+            i = box.vector.findData(vector)
+        for w, value in [(box.vector, None)] + list(zip(box.point, s.axis["point"])) + \
+                [(box.start, s.limits[0]), (box.end, s.limits[1])]:
+            w.blockSignals(True)
+            if value is None:
+                w.setCurrentIndex(i)
+            elif not w.hasFocus():
+                w.setValue(value)
+            w.blockSignals(False)
+        box.pick_line.blockSignals(True)
+        box.pick_line.setChecked(s.axis_pick)
+        box.pick_line.blockSignals(False)
+
+    def problem(self, s):
+        return s.limit_error or s.axis_error
+
+    # ------------------------------------------------------------ FreeCAD's panel
+    @staticmethod
+    def _panel_widgets(s):
+        a = _tasks_dock()                                # FreeCAD's names; the NX box's own differ
+        if a is None:
+            return None
+        found = {"mode": a.findChild(QtWidgets.QComboBox, "changeMode"),
+                 "angle": a.findChild(QtWidgets.QAbstractSpinBox, "revolveAngle"),
+                 "angle2": a.findChild(QtWidgets.QAbstractSpinBox, "revolveAngle2"),
+                 "reversed": a.findChild(QtWidgets.QCheckBox, "checkBoxReversed")}
+        return found if all(found.values()) else None
+
+    def drive(self, s, feature, lim, reversed_):
+        """Type, angles and Reversed into FreeCAD's panel, as typed there; False when its fields are not found."""
+        w = self._panel_widgets(s)
+        if w is None:
+            return False
+        from . import precise_input
+        from .quantity_core import decimals_needed
+        types = feature.getEnumerationsOfProperty("Type")
+        idx = types.index(lim["Type"])
+        if w["mode"].currentIndex() != idx:
+            w["mode"].setCurrentIndex(idx)
+            try:
+                w["mode"].activated.emit(idx)            # FreeCAD 1.1 dialogs react to 'activated'
+            except Exception:
+                w["mode"].activated[int].emit(idx)
+        for field, value in ((w["angle"], lim["Angle"]), (w["angle2"], lim["Angle2"])):
+            q = App.Units.Quantity(f"{value!r} deg")
+            precise_input.show_with(field, q, max(decimals_needed(value), precise_input.preference_decimals()))
+        if w["reversed"].isChecked() != reversed_:
+            w["reversed"].setChecked(reversed_)
+        return True
+
+
+ADAPTERS = {"Extrude": ExtrudeAdapter(), "Revolve": RevolveAdapter()}
 
 
 def adapter_for(obj):
@@ -177,9 +581,16 @@ class Session:
         self.adapter = adapter
         self.requested = requested
         self.edit = feature is not None
-        self.stage = "select"            # select -> build -> parameterize -> committed | cancelled | failed
+        self.stage = "select"            # select (-> switching) -> build -> parameterize -> committed | cancelled | failed
         self.doc = feature.Document if feature is not None else App.ActiveDocument
         self.sketch = self.sketch_body = self.body = None
+        self.edges = None                # the section's curves of the sketch; None: the whole sketch
+        self.picks = []                  # picks waiting for the controller: ('add' | 'remove', sketch, element)
+        self.picking = False             # the controller is selecting the section itself (not a user's pick)
+        self.axis = {"vector": "sketch_v", "point": (0.0, 0.0, 0.0)}   # Revolve: FreeCAD's default axis
+        self.limits = (0.0, 360.0)
+        self.axis_pick = False           # Revolve: the next sketch line picked is the axis
+        self.limit_error = self.axis_error = None
         self.has_body = self.has_solid = False
         self.feature_name = feature.Name if feature is not None else None
         self.mode = None
@@ -217,12 +628,69 @@ class Session:
         except Exception:
             return None
 
+    def section_text(self):
+        if self.sketch is None:
+            return "-"
+        if self.edges is None:
+            return self.sketch.Label
+        return f"{self.sketch.Label}: {len(self.edges)} curve{'s' if len(self.edges) != 1 else ''}"
+
 
 STYLE = {"error": "color: #B00020;", "warning": "color: #8A5A00;", "ok": "color: #0B6E79;"}
 
 
+class SectionLine(QtWidgets.QWidget):
+    """NX's Section collector in the command box: '✔ Select Curve (10)' (the curves in its tooltip), the Curve Rule,
+    and the latest refused pick."""
+
+    def __init__(self, collector, parent):
+        super().__init__(parent)
+        self.collector = collector
+        self.setObjectName("nxSectionCurves")
+        lay = QtWidgets.QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        row = QtWidgets.QHBoxLayout()
+        self.status = QtWidgets.QLabel(self)
+        self.status.setObjectName("nxSectionCount")
+        self.rule = QtWidgets.QComboBox(self)
+        self.rule.setObjectName("nxCurveRule")
+        self.rule.setToolTip("Curve Rule (as on the Selection bar): what one pick adds to the section")
+        for label, key in selection_core.SECTION_RULES:
+            self.rule.addItem(label, key)
+        row.addWidget(self.status, 1)
+        row.addWidget(self.rule)
+        lay.addLayout(row)
+        self.message = QtWidgets.QLabel(self)
+        self.message.setObjectName("nxSectionMessage")
+        self.message.setWordWrap(True)
+        self.message.setStyleSheet("color: #C62828;")
+        lay.addWidget(self.message)
+        self.refresh()
+
+    def set_rule(self, key):
+        i = self.rule.findData(key)
+        if i >= 0 and i != self.rule.currentIndex():
+            self.rule.setCurrentIndex(i)
+
+    def refresh(self):
+        c = self.collector
+        mark = "✔" if c.valid else "✱"
+        text = f"{mark} {c.status()}"
+        if self.status.text() != text:
+            self.status.setText(text)
+            self.status.setStyleSheet("color: #1B7F3A;" if c.valid else "color: #C62828;")
+        tip = "\n".join(p.label for p in c.items) or c.problem()
+        if self.status.toolTip() != tip:
+            self.status.setToolTip(tip)
+        refused = f"Refused {c.rejected[-1][0]}: {c.rejected[-1][1]}" if c.rejected else ""
+        if self.message.text() != refused:
+            self.message.setText(refused)
+        self.message.setVisible(bool(refused))
+
+
 class CommandBox(QtWidgets.QGroupBox):
-    """NX's command dialog header: section, body, Boolean, what is not supported, and the error state."""
+    """NX's command dialog header: section, body, Boolean, the adapter's rows, what is not supported, and the
+    error state."""
 
     def __init__(self, ctl, s):
         super().__init__(s.adapter.name)
@@ -231,6 +699,14 @@ class CommandBox(QtWidgets.QGroupBox):
         form = QtWidgets.QFormLayout(self)
         self.section = QtWidgets.QLabel()
         self.section.setObjectName("nxSection")
+        self.collector = selection_core.Collector("Select Curve", ["curve", "sketch"], minimum=1,
+                                                  command=s.adapter.name)
+        # The Section collector is a line, not collector_ui.CollectorWidget: with that widget in the box, typed values
+        # in FreeCAD's panel below were lost (measured in tutorial A: the main window was no longer active when the
+        # length was typed; without the widget it was). The curves are in the line's tooltip.
+        self.curves = SectionLine(self.collector, self)
+        self.curves.rule.activated.connect(
+            lambda i: selection_filter.manager().set_curve_rule(self.curves.rule.itemData(i)))
         self.body = QtWidgets.QLabel()
         self.body.setObjectName("nxBody")
         self.boolean = QtWidgets.QComboBox()
@@ -245,11 +721,11 @@ class CommandBox(QtWidgets.QGroupBox):
                     self.boolean.setItemData(i, 0, Qt.UserRole - 1)
         if s.edit:
             self.boolean.setEnabled(False)
-            self.boolean.setToolTip(dict((n, why) for n, _, why in core.EXTRUDE_OPTIONS)[
+            self.boolean.setToolTip(dict((n, why) for n, _, why in s.adapter.OPTIONS)[
                 "Change the Boolean when editing"])
         self.boolean.activated.connect(self._activated)
-        self.note = QtWidgets.QLabel(core.SHORT_NOTE)
-        self.note.setToolTip(core.options_tooltip())
+        self.note = QtWidgets.QLabel(s.adapter.NOTE)
+        self.note.setToolTip(core.options_tooltip(s.adapter.OPTIONS, s.adapter.TIP_NOTE))
         self.note.setObjectName("nxUnsupported")
         self.note.setWordWrap(True)
         self.note.setStyleSheet("color: #5A5A5A;")
@@ -257,8 +733,10 @@ class CommandBox(QtWidgets.QGroupBox):
         self.status.setObjectName("nxStatus")
         self.status.setWordWrap(True)
         form.addRow("Section", self.section)
+        form.addRow(self.curves)
         form.addRow("Body", self.body)
         form.addRow("Boolean", self.boolean)
+        s.adapter.rows(self, form, s)
         form.addRow(self.note)
         form.addRow(self.status)
         self.refresh(s)
@@ -267,7 +745,17 @@ class CommandBox(QtWidgets.QGroupBox):
         self.ctl.change_boolean(self.boolean.itemData(index))
 
     def refresh(self, s):
-        self.section.setText(s.sketch.Label if s.sketch is not None else "-")
+        self.section.setText(s.section_text())
+        c = self.collector
+        c.items = []
+        if s.sketch is not None:
+            subs = [""] if s.edges is None else s.edges
+            for e in subs:
+                label = f"{e} of {s.sketch.Label}" if e else f"{s.sketch.Label} (all curves)"
+                c.items.append(selection_core.Pick(s.doc.Name, s.sketch.Name, e, "curve" if e else "sketch",
+                                                   label=label))
+        self.curves.set_rule(selection_filter.manager().curve_rule)
+        self.curves.refresh()
         f = s.feature()
         body = body_of(f) if f is not None else None
         new = " (new)" if s.mode == "new_body" and body is not None and body is not s.sketch_body else ""
@@ -275,6 +763,7 @@ class CommandBox(QtWidgets.QGroupBox):
         i = self.boolean.findData(s.mode)
         if i >= 0 and self.boolean.currentIndex() != i:
             self.boolean.setCurrentIndex(i)
+        s.adapter.refresh(self, s)
         if s.error:
             kind, text = "error", s.error
         elif s.warnings:
@@ -351,6 +840,39 @@ class _Observer:
             pass
 
 
+class _SectionPicks:
+    """The Section collector's ears: sketch curves picked while the command runs. The picks are handled after
+    FreeCAD has finished the selection change (its panel may take a pick as its own reference first)."""
+
+    def __init__(self, ctl):
+        self.ctl = ctl
+
+    def _queue(self, what, doc, obj, sub):
+        s = self.ctl.session
+        if s is None or s.picking or s.stage in ("committed", "cancelled", "failed") or _sketch_in_edit():
+            return
+        sp = sketch_pick(doc, obj, sub)
+        self.ctl.log(f"pick {what} {obj}.{selection_core.plain(sub)} at {s.stage}: "
+                     f"{(sp[0].Name, sp[1]) if sp is not None else 'not a sketch curve'}")
+        if sp is None:
+            return
+        s.picks.append((what, sp[0], sp[1]))
+        QtCore.QTimer.singleShot(0, self.ctl.take_picks)
+
+    def addSelection(self, doc, obj, sub, _pnt=None):
+        self._queue("add", doc, obj, sub)
+
+    def removeSelection(self, doc, obj, sub):
+        self._queue("remove", doc, obj, sub)
+
+    # a cleared selection is no deselection: FreeCAD clears it on a plain click and when a panel opens
+    def setSelection(self, doc):
+        pass
+
+    def clearSelection(self, doc):
+        pass
+
+
 # --------------------------------------------------------------------------
 # The controller
 # --------------------------------------------------------------------------
@@ -361,6 +883,7 @@ class Controller:
         self.timer = None
         self.observer = None
         self.cancel_filter = None
+        self.picks = None
         self.trace = []                  # the last lifecycle events, for the Report view and the replay
 
     def log(self, text):
@@ -379,7 +902,8 @@ class Controller:
             self._finish(force=True)
 
     def begin(self, adapter, requested=None):
-        """select: with a sketch selected go straight on; otherwise sketch first (NX: sketch in the command)."""
+        """select: with a section selected go straight on; otherwise sketch first (NX: sketch in the command), and
+        a sketch curve picked meanwhile is taken as the section instead."""
         self._settle()
         if self.session is not None:
             self._end("cancelled", "replaced by a new command")
@@ -418,11 +942,15 @@ class Controller:
         adapter = s.adapter
         self._suspend_gate()
         self._start_timer()
-        sketch = adapter.preselected_section()
+        self._listen()
+        section = adapter.preselected_section()
         self.log(f"begin {adapter.name} ({s.requested or 'inferred'}): {len(s.selection)} selected, "
-                 f"section {sketch.Name if sketch is not None else None}")
-        if sketch is not None:
-            return self._parameterize(sketch)
+                 f"section {section.sketch.Name if section is not None else None} "
+                 f"{'whole' if section is None or section.edges is None else len(section.edges)}")
+        if section is not None:
+            if section.refused:
+                s.notice = f"{', '.join(section.refused)} left out: {core.SECTION_ONE_SKETCH}"
+            return self._parameterize(section.sketch, section.edges)
         from . import commands
         commands.pending_feature["command"] = self._section_done
         commands.pending_feature["sketch"] = None
@@ -466,9 +994,9 @@ class Controller:
             return False
         return self._guarded(self.session, lambda s: self._parameterize(sketch))
 
-    def _parameterize(self, sketch):
+    def _parameterize(self, sketch, edges=None):
         s = self.session
-        s.sketch, s.doc = sketch, sketch.Document
+        s.sketch, s.doc, s.edges = sketch, sketch.Document, (list(edges) if edges is not None else None)
         s.sketch_body = body_of(sketch)
         s.has_body = s.sketch_body is not None
         s.has_solid = solid_tip(s.sketch_body) is not None
@@ -476,13 +1004,13 @@ class Controller:
         s.mode = core.infer_boolean(s.requested, s.has_body, s.has_solid)
         label = s.sketch_body.Label if s.sketch_body is not None else "the Body"
         try:
-            plan = core.plan_extrude(s.mode, s.has_body, s.has_solid, label)
+            plan = s.adapter.plan(s.mode, s.has_body, s.has_solid, label)
         except core.CommandError as e:
             # the requested Boolean cannot be built (Subtract with nothing to cut): start with what NX would
             # infer, and say so in the panel
             s.notice = f"{e}; started as {core.LABELS[core.infer_boolean(None, s.has_body, s.has_solid)]}"
             s.mode = core.infer_boolean(None, s.has_body, s.has_solid)
-            plan = core.plan_extrude(s.mode, s.has_body, s.has_solid, label)
+            plan = s.adapter.plan(s.mode, s.has_body, s.has_solid, label)
         return self._build(plan)
 
     def _build(self, plan):
@@ -524,19 +1052,25 @@ class Controller:
         adapter = s.adapter
         s.body = s.sketch_body = body_of(feature)
         prof = feature.Profile[0] if getattr(feature, "Profile", None) else None
+        subs = [e for e in (feature.Profile[1] if prof is not None else []) if e]
         s.sketch = prof
         if prof is not None and prof.TypeId == "PartDesign::SubShapeBinder" and prof.Support:
             try:
-                parent, subs = prof.Support[0]
-                s.sketch = parent.getSubObject(subs[0], 1) if subs and subs[0] else parent
+                parent, bsubs = prof.Support[0]
+                s.sketch = parent.getSubObject(bsubs[0], 1) if bsubs and bsubs[0] else parent
+                subs = [b.split(".")[-1] for b in bsubs if b.split(".")[-1]]
+                s.sketch_body = body_of(s.sketch)
             except Exception:
                 pass
+        s.edges = core.sort_edges(subs) if subs else None
         s.mode = adapter.mode_of(feature)
+        adapter.read(s, feature)
         base = getattr(feature, "BaseFeature", None)
         s.base_volume, s.base_solids = _volume(base), len(_solids(base))
         s.remember_visibility(feature, base, prof, s.sketch)
         self._suspend_gate()
         self._start_timer()
+        self._listen()
         App.setActiveTransaction("Edit " + adapter.name, True)
         s.stage = "parameterize"
         self._watch()
@@ -544,7 +1078,161 @@ class Controller:
         QtCore.QTimer.singleShot(0, self._attach)
         return True
 
-    # ---------------------------------------------------------- Boolean
+    # ---------------------------------------------------------- section picks
+    def _listen(self):
+        if self.picks is None:
+            self.picks = _SectionPicks(self)
+            Gui.Selection.addObserver(self.picks)
+
+    def _unlisten(self):
+        if self.picks is not None:
+            try:
+                Gui.Selection.removeObserver(self.picks)
+            except Exception:
+                pass
+            self.picks = None
+
+    def take_picks(self):
+        """Sketch curves picked while the command runs: into the section (or, for Revolve's Line…, the axis)."""
+        s = self.session
+        if s is None or not s.picks:
+            return
+        if s.stage == "select":
+            what, sketch, element = s.picks.pop(0)
+            from . import commands
+            # only while FreeCAD asks for the plane: once the command's own sketch exists, finishing it selects
+            # that sketch (measured in tutorial AE), and the sketch-first path carries on with it
+            if what != "add" or commands.pending_feature["sketch"] is not None or not _plane_pick_open():
+                s.picks.clear()
+                return
+            self._switch_to_section(s, sketch, expand(sketch, element, selection_filter.manager().curve_rule))
+            return
+        if s.stage != "parameterize" or s.swapping or not _alive(s.box):
+            return                                       # kept until the panel is up (_attach takes them)
+        f = s.feature()
+        rule = selection_filter.manager().curve_rule
+        changed, refused, rehighlight = False, [], False
+        while s.picks:
+            what, sketch, element = s.picks.pop(0)
+            if s.axis_pick and what == "add" and element:
+                self._axis_line(s, sketch, element)
+                return
+            ref = getattr(f, "ReferenceAxis", None) if f is not None else None
+            if ref and ref[0] is sketch and element and list(ref[1]) == [element]:
+                continue                                 # FreeCAD's 'Select reference…' took it as the axis
+            if sketch is not s.sketch:
+                if what == "add":
+                    refused.append(sketch.Label)
+                continue
+            if what == "add":
+                if not element and rule != "inferred" and s.edges:
+                    # the whole sketch picked while collecting curves: a click on a curve that is already selected
+                    # (the section's highlight) selects FreeCAD's whole object (measured: 'clear', 'add Sketch.').
+                    # Only Inferred Curves turns a curve section into the whole sketch; the highlight comes back
+                    self.log("whole sketch picked during a curve section: left out (Curve Rule is not Inferred)")
+                    _status(f"{s.adapter.name}: the whole sketch is taken with the Curve Rule on Inferred Curves")
+                    rehighlight = True
+                    continue
+                curves = expand(sketch, element, rule)
+                new = None if curves is None else core.add_to_section(s.edges, curves)
+                if new == s.edges:
+                    continue
+                s.edges, changed = new, True
+            elif s.edges is not None and element in s.edges:
+                s.edges, changed = core.remove_from_section(s.edges, [element]), True
+        for label in refused:
+            self.box_reject(s, f"a curve of {label}", core.SECTION_ONE_SKETCH)
+        if changed:
+            self.log(f"section: {s.section_text()} {s.edges if s.edges is not None else 'whole'}")
+            if s.edges is None or s.edges:
+                s.adapter.apply_section(s, f)
+                if s.edges is None and s.sketch.ViewObject is not None:
+                    s.sketch.ViewObject.Visibility = False
+            self._highlight(s)
+            s.key = None
+            self.validate(force=True)
+        elif rehighlight:
+            self._highlight(s)
+
+    def box_reject(self, s, label, reason):
+        if _alive(s.box):
+            s.box.collector.reject(label, reason)
+            s.box.curves.refresh()
+        _status(f"{s.adapter.name}: {label} refused: {reason}")
+
+    def _highlight(self, s):
+        """The section's curves stay selected, so they show as NX's section does; a sketch used whole is hidden."""
+        if s.edges is None or s.sketch is None:
+            return
+        s.picking = True
+        try:
+            if s.sketch.ViewObject is not None and not s.sketch.ViewObject.Visibility:
+                s.sketch.ViewObject.Visibility = True
+            Gui.Selection.clearSelection()
+            for e in s.edges:
+                if s.sketch_body is not None:
+                    Gui.Selection.addSelection(s.doc.Name, s.sketch_body.Name, f"{s.sketch.Name}.{e}")
+                else:
+                    Gui.Selection.addSelection(s.doc.Name, s.sketch.Name, e)
+        except Exception as e:
+            self.log(f"highlight: {e}")
+        finally:
+            s.picking = False
+
+    @staticmethod
+    def _highlighted(s):
+        """The selection is the section's highlight and nothing else."""
+        try:
+            got = set()
+            for x in Gui.Selection.getSelectionEx("", 0):
+                for sub in (x.SubElementNames or ("",)):
+                    sp = sketch_pick(x.DocumentName, x.ObjectName, sub)
+                    if sp is None or sp[0] is not s.sketch:
+                        return False
+                    got.add(sp[1])
+            return got == set(s.edges)
+        except Exception:
+            return False
+
+    def _switch_to_section(self, s, sketch, edges):
+        """A sketch curve picked while FreeCAD asks for the plane of a new sketch: it is NX's Section collector
+        taking a curve, not a plane. FreeCAD's plane pick is cancelled and the command builds from the curves."""
+        from . import commands
+        s.stage = "switching"
+        commands.pending_feature["command"] = None
+        self.log(f"select: {sketch.Name} {edges if edges is not None else 'whole'} picked instead of a plane")
+        self._press_cancel()
+        self._after_panel(lambda: self._guarded(s, lambda s: self._parameterize(sketch, edges)))
+
+    @staticmethod
+    def _press_cancel():
+        dock = _tasks_dock()
+        for box in dock.findChildren(QtWidgets.QDialogButtonBox) if dock is not None else []:
+            b = box.button(QtWidgets.QDialogButtonBox.Cancel)
+            if b is not None and b.isVisible() and b.isEnabled():
+                b.click()
+                return
+        try:
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+        except Exception:
+            pass
+
+    def _after_panel(self, then, tries=0):
+        """then(), once no task panel is open and nothing is in edit (at most two seconds)."""
+        s = self.session
+        if s is None:
+            return
+        try:
+            busy = bool(Gui.Control.activeDialog()) or Gui.getDocument(s.doc.Name).getInEdit() is not None
+        except Exception:
+            busy = False
+        if busy and tries < 40:
+            QtCore.QTimer.singleShot(50, lambda: self._after_panel(then, tries + 1))
+            return
+        then()
+
+    # ---------------------------------------------------------- Boolean, axis, limits
     def change_boolean(self, mode):
         """New Body, Unite or Subtract chosen in the box: rebuild with the matching backend feature, in a new
         transaction (the first one is aborted, so nothing of it is left)."""
@@ -552,17 +1240,22 @@ class Controller:
         if s is None or s.stage != "parameterize" or s.swapping or mode == s.mode:
             return False
         if s.edit:
-            s.error = "Changing the Boolean of an existing Extrude is not supported"
+            s.error = f"Changing the Boolean of an existing {s.adapter.name} is not supported"
             self._show()
             return False
         label = s.sketch_body.Label if s.sketch_body is not None else "the Body"
         try:
-            plan = core.plan_extrude(mode, s.has_body, s.has_solid, label)
+            plan = s.adapter.plan(mode, s.has_body, s.has_solid, label)
         except core.CommandError as e:
             s.notice = f"{core.LABELS.get(mode, mode)} refused: {e}"
             s.key = None
             self.validate(force=True)
             return False
+        self._restart(mode, plan)
+        return True
+
+    def _restart(self, mode, plan):
+        s = self.session
         f = s.feature()
         s.carried = s.adapter.carry(f) if f is not None else {}
         s.swapping = True
@@ -571,7 +1264,67 @@ class Controller:
         self._close_panel()
         self._restore_visibility(s)
         self._rebuild(mode, plan, 0)
+
+    def change_axis(self, vector=None, point=None):
+        """Revolve: Specify Vector or Specify Point changed in the box. FreeCAD's panel takes an axis only from
+        its own list or from the feature it opens with, so the command is rebuilt with the new axis."""
+        s = self.session
+        if s is None or s.stage != "parameterize" or s.swapping or s.edit or vector == "other":
+            return False
+        axis = {"vector": vector or s.axis["vector"], "point": tuple(point) if point is not None else s.axis["point"]}
+        if axis == s.axis:
+            return False
+        try:
+            core.revolve_axis(axis["vector"], axis["point"])
+        except core.CommandError as e:
+            s.axis_error = str(e)
+            self.validate(force=True)
+            return False
+        s.axis, s.axis_error, s.axis_pick = axis, None, False
+        self.log(f"axis: {axis}")
+        self._restart(s.mode, s.adapter.plan(s.mode, s.has_body, s.has_solid,
+                                             s.sketch_body.Label if s.sketch_body is not None else "the Body"))
         return True
+
+    def change_limits(self, start, end):
+        """Revolve: Start or End angle typed in the box; they go into FreeCAD's panel as typed there."""
+        s = self.session
+        if s is None or s.stage != "parameterize" or s.swapping:
+            return False
+        if (start, end) == tuple(s.limits) and not s.limit_error:
+            return False
+        try:
+            lim = core.revolve_limits(start, end)
+        except core.CommandError as e:
+            s.limit_error = str(e)
+            s.key = None
+            self.validate(force=True)
+            return False
+        s.limit_error, s.limits = None, (float(start), float(end))
+        f = s.feature()
+        reversed_ = s.adapter.axis_reversed(s) != lim["flip"]
+        if f is None or not s.adapter.drive(s, f, lim, reversed_):
+            s.limit_error = "FreeCAD's angle fields were not found: type the angles in its panel below"
+        self.log(f"limits: {start:g}..{end:g} -> {lim}")
+        s.key = None
+        self.validate(force=True)
+        return True
+
+    def pick_axis_line(self, on):
+        s = self.session
+        if s is None or s.stage != "parameterize":
+            return
+        s.axis_pick = bool(on)
+        if on:
+            _status("Revolve: pick a line of the sketch as the axis")
+
+    def _axis_line(self, s, sketch, element):
+        if sketch is not s.sketch or not is_line(sketch, element):
+            s.axis_pick = False
+            self.box_reject(s, f"{element} of {sketch.Label}", "the axis is a straight line of the section's sketch")
+            self._show()
+            return
+        self.change_axis(f"line:{element}", (0.0, 0.0, 0.0))
 
     def cancel(self):
         """cancel: abort the command's transaction (previews and new bodies go), then close the panel."""
@@ -652,16 +1405,19 @@ class Controller:
         lay = parent.layout() if parent is not None else None
         if lay is None:
             return
+        s.anchor = anchor
+        f = s.feature()
+        if f is not None:
+            s.adapter.sync(s, f)
         s.box = CommandBox(self, s)
         lay.insertWidget(max(lay.indexOf(anchor), 0), s.box)
-        s.anchor = anchor
         if self.cancel_filter is None:
             self.cancel_filter = _CancelFilter(self)
         try:
             Gui.Control.activeTaskDialog().setEscapeButtonEnabled(False)
         except Exception:
             pass
-        dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+        dock = _tasks_dock()
         s.filtered = [QtWidgets.QApplication.instance()]
         if dock is not None:
             s.filtered += [bb.button(QtWidgets.QDialogButtonBox.Cancel)
@@ -674,8 +1430,11 @@ class Controller:
             if any(n in name for n in s.adapter.LENGTH_FIELDS) and w.lineEdit() is not None:
                 w.lineEdit().textEdited.connect(lambda text, n=w.objectName(): s.typed.__setitem__(n, text))
                 w.editingFinished.connect(lambda w=w: self._read_back(w))
+        self._highlight(s)
         s.key = None
         self.validate(force=True)
+        if s.picks:                                      # picked while the panel was opening
+            QtCore.QTimer.singleShot(0, self.take_picks)
 
     def _read_back(self, w):
         s = self.session
@@ -695,7 +1454,7 @@ class Controller:
         self.validate(force=True)
 
     def _ok_button(self):
-        dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+        dock = _tasks_dock()
         for box in dock.findChildren(QtWidgets.QDialogButtonBox) if dock is not None else []:
             b = box.button(QtWidgets.QDialogButtonBox.Ok)
             if b is not None:
@@ -710,21 +1469,29 @@ class Controller:
         f = s.feature()
         if f is None:
             return
-        key = (tuple(str(getattr(f, p, "")) for p in ("Type", "Length", "Length2", "Midplane", "Reversed",
-                                                       "UpToFace", "TaperAngle")), str(f.State))
+        props = s.adapter.KEY_PROPS + ("Profile",)
+        key = (tuple(str(getattr(f, p, "")) for p in props), str(f.State), tuple(s.edges or ()), s.limit_error,
+               s.axis_error)
         if key == s.key and not force:
             self._show()
             return
         s.key = key
+        s.adapter.sync(s, f)
         error, warnings = None, []
-        if not f.isValid() or "Invalid" in f.State:
+        section = core.section_problem(edge_records(s.sketch), s.edges) if s.sketch is not None else ""
+        if section:
+            error = f"Section: {section}"
+        elif s.adapter.problem(s):
+            error = s.adapter.problem(s)
+        elif not f.isValid() or "Invalid" in f.State:
             error = f"FreeCAD cannot build it: {f.getStatusString() or 'invalid parameters'}"
         elif s.mode in ("unite", "subtract"):
             solids = _solids(f)
             if s.mode == "unite" and len(solids) > s.base_solids:
-                error = "Unite would leave a separate solid: the extrusion does not touch the part (choose None for a new body)"
+                error = (f"Unite would leave a separate solid: the {s.adapter.NOUN} does not touch the part "
+                         "(choose None for a new body)")
             else:
-                w = core.result_warning(s.mode, s.base_volume, _volume(f))
+                w = core.result_warning(s.mode, s.base_volume, _volume(f), noun=s.adapter.NOUN)
                 if w:
                     warnings.append(w)
         if s.notice:
@@ -853,6 +1620,7 @@ class Controller:
         if self.timer is not None:
             self.timer.stop()
         self._unwatch()
+        self._unlisten()
         if s is None:
             return
         self._remove_box(s)
@@ -865,8 +1633,18 @@ class Controller:
             # refused the next sketch). The selection is left alone too: the next command may already have
             # been given one (a face picked right after OK reaches here before this command noticed).
             s.result_body = body_of(f).Name if body_of(f) is not None else None
+            if s.edges is not None:
+                if self._highlighted(s):
+                    Gui.Selection.clearSelection()       # only the section's highlight: a next X must not reuse it
+                # PartDesign's OK hides the profile; a sketch used in part stays as it was (NX), its other curves
+                # are still to be picked
+                vo = getattr(s.sketch, "ViewObject", None)
+                if vo is not None and s.visibility.get(s.sketch.Name):
+                    vo.Visibility = True
         elif outcome in ("cancelled", "failed") and doc_open:
             self._restore_visibility(s)
+            if s.edges is not None:
+                Gui.Selection.clearSelection()           # the section's highlight, not a pick of the user's
             if not Gui.Selection.getSelectionEx("", 0):       # nothing picked since: put the old selection back
                 for d, o, sub in s.selection:
                     try:
@@ -883,6 +1661,8 @@ class Controller:
         result = {"command": s.adapter.name, "edit": s.edit, "outcome": outcome, "mode": s.mode,
                   "document": s.doc.Name if doc_open else None, "body": s.result_body,
                   "feature": s.feature_name if f is not None else None,
+                  "section": (s.sketch.Name if s.sketch is not None and doc_open else None,
+                              list(s.edges) if s.edges is not None else None),
                   "undo": (s.doc.UndoNames[0] if doc_open and s.doc.UndoNames else None),
                   # from the names: a full undo list keeps its count when a step is added
                   "undo_steps": core.undo_steps_added(s.undo_names, s.doc.UndoNames) if doc_open else None,
@@ -945,17 +1725,17 @@ CONTROLLER = Controller()
 # Part Navigator / graphics window MB3 menu
 # --------------------------------------------------------------------------
 class ContextMenu:
-    """Adds Edit Parameters (through the controller, or the primitives' NX dialog) to the MB3 menu of a feature
-    it can edit."""
+    """Adds Edit Parameters (through the controller, or the primitives' or Thread's NX dialog) to the MB3 menu of a
+    feature it can edit."""
 
     def modifyContextMenu(self, recipient):
-        from . import primitive_ui
+        from . import primitive_ui, thread_ui
         try:
             sel = Gui.Selection.getSelection()
         except Exception:
             return []
-        if len(sel) == 1 and (adapter_for(sel[0]) is not None or primitive_ui.editable(sel[0]) is not None) \
-                and not CONTROLLER.busy():
+        if len(sel) == 1 and (adapter_for(sel[0]) is not None or primitive_ui.editable(sel[0]) is not None
+                              or thread_ui.editable(sel[0]) is not None) and not CONTROLLER.busy():
             return [{"insert": "NXStyle_EditParameters", "menuItem": "Std_ToggleVisibility"}]
         return []
 
