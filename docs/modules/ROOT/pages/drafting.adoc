@@ -106,7 +106,7 @@ When the part is documented in 3D (xref:pmi.adoc[PMI]), select a view and click 
 == Center marks, notes, hatches
 
 * *Center Mark* draws centre lines for the selected circles; TechDraw adds none by itself.
-* *Note*: select the view edge the leader ends on (NX's terminating object), click *Note*, type the text; *Ø*, *°* and *±* are on the Symbols buttons. The lettering height and the leader's stub length are fields of the dialog (NX sets them in the note's Settings afterwards). With no edge selected the note has no leader.
+* *Note*: select the view edge the leader ends on (NX's terminating object), click *Note*, type the text; *Ø*, *°* and *±* are on the Symbols buttons. The lettering height and the leader's stub length are fields of the dialog (NX sets them in the note's Settings afterwards). The leader runs outward, away from the view. With no edge selected the note has no leader.
 * ID Symbol (Balloon), Leader, Weld Symbol and Surface Finish are on the Annotation group; *Rich Text Note* is FreeCAD's own note.
 * *Hatch* and *Crosshatch* fill faces and sections.
 

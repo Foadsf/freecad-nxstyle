@@ -727,7 +727,7 @@ class MstImpellerPMITutorials(DraftingSteps):
             App.ActiveDocument.recompute()
             self.dz_edges(right, "ba right", 120000)
             self.wait_for("ba right: hidden lines", lambda: len(right.getHiddenEdges()) > 0, 60000)
-        iso, _ = self.dz_base(self._ba_page, [self._ba_body], *ISO, 330.0, 90.0)
+        iso, _ = self.dz_base(self._ba_page, [self._ba_body], *ISO, 330.0, 200.0)     # clear of the title block
         if iso is not None:
             self.dz_edges(iso, "ba iso", 120000)
         modes = []
@@ -965,9 +965,10 @@ class MstBoltDrawingTutorials(DraftingSteps):
         v = self._bb_front
         s = drafting_ui.scale_of(v)
         vx, vy = drafting_ui.sheet_xy(v)
-        # the thread's flank nearest the middle of the shank's right side, as the book's click on the threaded shaft
+        # the thread's flank nearest the middle of the shank's left side: the book's figure has the note left of the
+        # front view, clear of the right view
         from . import pmi_ui
-        target = pmi_ui.view_xy(v, App.Vector(AQ_SHANK[0] / 2, 0, AQ_SHANK[1] / 2))
+        target = pmi_ui.view_xy(v, App.Vector(-AQ_SHANK[0] / 2, 0, AQ_SHANK[1] / 2))
         best = None
         for i, e in self.view_edges(v):
             m = e.valueAt((e.FirstParameter + e.LastParameter) / 2)

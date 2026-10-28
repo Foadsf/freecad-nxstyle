@@ -311,7 +311,10 @@ class NotePanel:
             return False
         doc = self.page.Document
         doc.openTransaction("Note")
-        note, leader = make_note(self.page, lines, self.height.value(), self.tip, stub=self.stub.value())
+        offset = (20.0, 12.0)
+        if self.view is not None and self.tip is not None and self.tip[0] < sheet_xy(self.view)[0]:
+            offset = (-20.0, 12.0)            # the leader runs outward, away from the view
+        note, leader = make_note(self.page, lines, self.height.value(), self.tip, offset, stub=self.stub.value())
         doc.commitTransaction()
         NOTES.append({"text": lines, "tip": self.tip, "view": self.view.Name if self.view else None,
                       "edge": self.sub, "note": note.Name, "leader": leader.Name if leader else None})
