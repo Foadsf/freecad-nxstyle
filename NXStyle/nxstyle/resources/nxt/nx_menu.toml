@@ -1,0 +1,18 @@
+# NX-Style's additions to FreeCAD-Nxt's Part Navigator menu, registered with Nxt's own
+# freecad.nxt.menus.register() while Nxt is on (nxstyle/nxt.py). The format is Nxt's
+# resources/menus/default.toml.
+#
+# NX's MB3 menu on a feature starts with Edit Parameters, which opens NX-Style's command panels
+# (Extrude, Revolve, the primitives' and Thread's dialogs) and FreeCAD's own for the rest.
+# Nxt's Roll back / Roll forward to here are NX's Make Current Feature (nx_names.ts).
+
+version = 1
+
+[[menu]]
+id = "nxstyle-edit-parameters"
+when = { type = ["PartDesign::Feature", "Part::Primitive"], count = 1 }
+
+[menu.section]
+Model = [
+    { command = "NXStyle_EditParameters", before = "nxt:recompute_object" },
+]

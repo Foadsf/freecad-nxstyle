@@ -108,7 +108,7 @@ The vertical bar on the left opens the panels; the open ones share one tab strip
 |===
 | Button | Panel
 
-| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu. Above the tree: the work part, the active body, suppressed and failed features, and what is selected (xref:selection.adoc#_part_navigator_status[]).
+| Part Navigator | The model tree: features in order, with their names. kbd:[F2] renames; MB3 has the object menu. Above the tree: the work part, the active body, suppressed and failed features, and what is selected (xref:selection.adoc#_part_navigator_status[]). With xref:nxt.adoc[FreeCAD-Nxt] on, the Part Navigator is Nxt's tree, with a rollback bar and NX's Dependencies and Details panels.
 | History | Recently opened parts; double-click one to open it.
 | Information | FreeCAD's report view: messages, warnings, the output of Object Information (kbd:[Ctrl+I]) and Measure Bodies.
 | Journal (Python) | FreeCAD's Python console.

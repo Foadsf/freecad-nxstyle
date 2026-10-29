@@ -16,7 +16,7 @@ import os
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import (commands, config, navigation, navigator_status, prefs, ribbon_layout, selection_filter,
+from . import (commands, config, navigation, navigator_status, nxt, prefs, ribbon_layout, selection_filter,
                shortcuts, theme)
 from .finder import CommandFinder
 from .qt import QtCore, QtGui, QtWidgets, Qt
@@ -28,7 +28,7 @@ OUR_TOOLBARS = {"NXRibbonBar", "NXTopBorderBar", "NXResourceBar"}
 GLOBAL_TOOLBARS = {"File", "Edit", "Clipboard", "Workbench", "Macro", "View", "Individual views",
                    "Structure", "Help", "Navigation", "Selection"}
 THEME_MARK = "/* NXStyle theme */"
-LEFT_PANELS = ["Model", "Tasks", "NXHistory", "Selection view"]
+LEFT_PANELS = ["Model", "Tasks", "NXHistory", "Selection view", "NxtModelPanel"]   # the last: --nxt
 BOTTOM_PANELS = ["Report view", "Python console"]
 
 
@@ -840,6 +840,8 @@ class Shell(QtCore.QObject):
             text = f"<span style='color:#C62828'>{html.escape(refused)}</span>"
         if self.cue.text() != text:
             self.cue.setText(text)
+        if nxt.expected() and nxt.navigator() is None:
+            nxt.tick(self)             # FreeCAD-Nxt's panel becomes the Part Navigator once it is up
         if getattr(self, "navigator_status", None) is not None:
             try:
                 self.navigator_status.refresh()
@@ -903,7 +905,7 @@ class Shell(QtCore.QObject):
         return hidden
 
     def show_part_navigator(self):
-        model = self.mw.findChild(QtWidgets.QDockWidget, "Model")
+        model = nxt.navigator_dock() or self.mw.findChild(QtWidgets.QDockWidget, "Model")
         if model is not None and model.isVisible():
             model.raise_()
 

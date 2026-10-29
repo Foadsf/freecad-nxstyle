@@ -12,6 +12,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 from . import nxt
+from .nxt_navigator import FREECAD_TREE
 from .qt import QtCore, QtWidgets
 
 GIZMOS = "User parameter:BaseApp/Preferences/Gui/Gizmos"
@@ -102,6 +103,7 @@ def run(smoke):
         _double_click(smoke, info, doc, pad)
         _open_profile(info, doc)
         if on:
+            _navigator_panels(smoke, info, doc, pad)
             _features(smoke, info, doc, pad, box)
     finally:
         if Gui.Control.activeDialog():
@@ -139,8 +141,33 @@ def _setup(smoke, info):
         "tabbed with Model": model is not None and panel in mw.tabifiedDockWidgets(model),
         "front left tab": smoke.shell.current_left_tab()}
     smoke.check("Nxt's model panel opens", panel is not None and panel.isVisible(), info["panel"])
-    smoke.check("Part Navigator stays the front left tab with Nxt on", smoke.shell.current_left_tab()
-                == "Part Navigator", smoke.shell.current_left_tab())
+    # step 2: Nxt's panel is the Part Navigator, FreeCAD's tree a tab behind it (nxt_navigator.py)
+    nav = nxt.navigator()
+    tb = mw.findChild(QtWidgets.QToolBar, nxt.TOOLBAR)
+    _wait(300)                              # the shell hides a shown toolbar on the next turn of the event loop
+    act = smoke.shell.resource_actions.get("Part Navigator")
+    strips = [[b.tabText(i) for i in range(b.count())] for b in mw.findChildren(QtWidgets.QTabBar)]
+    left = next((t for t in strips if "Part Navigator" in t), [])
+    info["navigator"] = {
+        "left tabs": left,
+        "Nxt dock": None if panel is None else panel.windowTitle(),
+        "FreeCAD's tree": None if model is None else model.windowTitle(),
+        "front left tab": smoke.shell.current_left_tab(),
+        "Resource Bar button opens": None if act is None else act.parent().objectName(),
+        "status strip in it": nav is not None and nav.isAncestorOf(smoke.shell.navigator_status),
+        "Nxt toolbar shown": tb is not None and tb.isVisible(),
+        "Nxt toolbar": None if tb is None else {"hooked": tb.property("nxHooked"), "parent": type(
+            tb.parentWidget()).__name__, "native ui": smoke.shell.native_ui},
+        "problems": list(nxt.problems)}
+    smoke.check("Nxt's panel is the Part Navigator, in front; FreeCAD's tree is the FreeCAD Tree tab behind it",
+                nav is not None and panel.windowTitle() == "Part Navigator" and model.windowTitle() == "FreeCAD Tree"
+                and smoke.shell.current_left_tab() == "Part Navigator" and nav.isAncestorOf(nav.tree)
+                and left[:1] == ["Part Navigator"] and FREECAD_TREE in left
+                and info["navigator"]["status strip in it"], info["navigator"])
+    smoke.check("the Resource Bar's Part Navigator button opens Nxt's panel",
+                act is not None and act is panel.toggleViewAction(), info["navigator"]["Resource Bar button opens"])
+    smoke.check("Nxt's Fillet/Chamfer toolbar stays hidden, like FreeCAD's toolbars", not (tb and tb.isVisible()),
+                info["navigator"]["Nxt toolbar shown"])
     th = services.theme()
     if th is not None:
         info["theme"] = {"nxt accent": th.accent.name(), "nx accent": nx_theme.color("accent"),
@@ -163,27 +190,71 @@ def _keys(smoke, info, doc, pad, panel):
         Gui.runCommand(cmd)
         want = _settled()
         smoke.check(f"{name} in the 3D view runs {cmd}", got == want, {"got": got, "want": want})
-    # with the focus in Nxt's tree it claims Home and End (NxtTree.qml Keys.onShortcutOverride)
+    # with the focus in Nxt's tree: Nxt claims Home and End in its ShortcutOverride, NXStyle gives them back
     views = [w for w in (panel.findChildren(QtWidgets.QWidget) if panel is not None else [])
              if "QQuickWidget" in w.metaObject().className()]
     if views:
-        for key, name in ((QtCore.Qt.Key_Home, "Home"), (QtCore.Qt.Key_End, "End")):
+        for key, cmd, name in ((QtCore.Qt.Key_Home, "Std_ViewTrimetric", "Home"),
+                               (QtCore.Qt.Key_End, "Std_ViewIsometric", "End")):
+            Gui.runCommand(cmd)
+            want = _settled()
             Gui.SendMsgToActiveView("ViewFront")
             front = _settled()
             _key(views[0], key)
-            info[f"{name} in Nxt's tree turns the view"] = _settled() != front
-    # Space in the 3D view on a picked face of the Pad: FreeCAD's Std_ToggleVisibility, or Nxt's SpaceInView
+            got = _settled()
+            info[f"{name} in Nxt's tree turns the view"] = got != front
+            smoke.check(f"{name} with the focus in Nxt's tree is still NX's {cmd[8:]} view", got == want,
+                        {"got": got, "want": want, "front": front})
+        # F2 in Nxt's tree: its name editor (a Qt Quick text field) takes the focus
+        try:
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Name, pad.Name)
+            _wait(300)
+            _key(views[0], QtCore.Qt.Key_F2)
+            _wait(300)
+            item = views[0].quickWindow().activeFocusItem()
+            editor = item.metaObject().className() if item is not None else None
+            from .tutorial import qtest
+            qtest().keyClick(views[0], QtCore.Qt.Key_Escape)
+            _wait(200)
+        except Exception as e:
+            editor = repr(e)
+        info["F2 in Nxt's tree: focus on"] = editor
+        smoke.check("F2 in Nxt's tree opens its name editor", "Text" in str(editor), editor)
+        Gui.Selection.clearSelection()
+    # Space in the 3D view on a picked face of the Pad: FreeCAD's Std_ToggleVisibility with Nxt on or off. FreeCAD
+    # enables the command's action a moment after the pick, so the key waits as a user's would.
     sketch = pad.Profile[0] if isinstance(pad.Profile, tuple) else pad.Profile
     body = doc.getObject("Body")
+
+    def shown():
+        return body.ViewObject.Visibility, pad.ViewObject.Visibility, sketch.ViewObject.Visibility
+
+    vis0 = shown()
+    after = {}
+    for how in ("Space", "Std_ToggleVisibility"):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Body", "Pad.Face6")
+        _wait(800)
+        if how == "Space":
+            _key(gl, QtCore.Qt.Key_Space)
+        else:
+            Gui.runCommand(how)
+            _wait(150)
+        after[how] = shown()
+        body.ViewObject.Visibility, pad.ViewObject.Visibility, sketch.ViewObject.Visibility = vis0
+    nxt_space = None
+    if nxt.expected():
+        from freecad.nxt.app import services
+        nxt_space = type(getattr(services.instance(), "_space", None)).__name__
+    info["Space on a picked Pad face: (Body, Pad, Sketch) shown"] = {"before": vis0, **after,
+                                                                     "Nxt's Space handler": nxt_space}
+    smoke.check("Space in the graphics window is FreeCAD's Show/Hide (Std_ToggleVisibility); Nxt's own is out",
+                after["Space"] == after["Std_ToggleVisibility"] != vis0 and nxt_space in (None, "NoneType"),
+                info["Space on a picked Pad face: (Body, Pad, Sketch) shown"])
     Gui.Selection.clearSelection()
-    Gui.Selection.addSelection(doc.Name, "Body", "Pad.Face6")
-    vis0 = (body.ViewObject.Visibility, pad.ViewObject.Visibility, sketch.ViewObject.Visibility)
-    _key(gl, QtCore.Qt.Key_Space)
-    vis1 = (body.ViewObject.Visibility, pad.ViewObject.Visibility, sketch.ViewObject.Visibility)
-    info["Space on a picked Pad face: (Body, Pad, Sketch) shown"] = {"before": vis0, "after": vis1}
-    body.ViewObject.Visibility, pad.ViewObject.Visibility, sketch.ViewObject.Visibility = vis0
-    Gui.Selection.clearSelection()
-    # F2 in the Part Navigator (FreeCAD's tree) opens the name editor, as tutorial.rename does
+    # F2 in FreeCAD's tree (the Part Navigator with Nxt off, the FreeCAD Tree tab with it on) opens the name editor,
+    # as tutorial.rename does
     from .tutorial import qtest
     tree = next((t for t in Gui.getMainWindow().findChildren(QtWidgets.QTreeWidget)
                  if t.isVisible() and t.findItems("Box", QtCore.Qt.MatchExactly | QtCore.Qt.MatchRecursive)), None)
@@ -265,6 +336,106 @@ def _open_profile(info, doc):
     doc.recompute()
     info["open profile (0.01 mm gap)"] = {"Pad valid at first": before, "Pad valid after 1.5 s": pad.isValid(),
                                          "constraints added": [c.Type for c in sk.Constraints[n0:]]}
+
+
+def _navigator_panels(smoke, info, doc, pad):
+    """Step 2: Dependencies and Details under Nxt's tree, Make Current Feature and its rollback bar, NX's names in
+    Nxt's menu."""
+    from freecad.nxt.core import settings
+    from freecad.nxt.tree import menu_actions, panel as nxt_panel
+    from .nxt_navigator import PARAM
+    nav, bridge = nxt.navigator(), nxt_panel.bridge()
+    if nav is None or bridge is None:
+        smoke.check("Part Navigator panels (Dependencies, Details)", False, "Nxt's panel was not adopted")
+        return
+    res = info.setdefault("navigator panels", {})
+    was = (nav.dep_section.is_open(), nav.det_section.is_open())
+    sketch = pad.Profile[0] if isinstance(pad.Profile, tuple) else pad.Profile
+    # the status strip grows by its Selected line on a pick; Nxt's view must keep its size (a resize makes it lay
+    # out and draw again: 25 picks took 100 s against 4 s when it did)
+    strip = smoke.shell.navigator_status
+    Gui.Selection.clearSelection()
+    strip.refresh(force=True)
+    _wait(200)
+    sizes = [nav.tree.size().toTuple()]
+    Gui.Selection.addSelection(doc.Name, pad.Name)
+    strip.refresh(force=True)
+    _wait(200)
+    sizes.append(nav.tree.size().toTuple())
+    res["Nxt's view size, no pick then a pick"] = sizes
+    smoke.check("The status strip's Selected line does not resize Nxt's tree", sizes[0] == sizes[1]
+                and "Selected" in strip.text(), {"sizes": sizes, "strip": strip.text()})
+    try:
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, pad.Name)
+        nav.dep_section.set_open(True)
+        nav.det_section.set_open(True)
+        _wait(600)
+        nav.refresh()
+        deps = nav.rows(nav.deps)
+        res["Dependencies of the Pad"] = deps
+        res["Nxt's arrows"] = {"DependencyArrows": settings.get("DependencyArrows"), "links": bridge.linkArrows}
+        parents = [r for r, d in deps if d == 2]
+        smoke.check("Dependencies: the Pad's parent is its Sketch (Geometry), and Nxt draws its arrows while the "
+                    "panel is open", [sketch.Label, "Geometry"] in parents and settings.get("DependencyArrows")
+                    and bridge.linkArrows.get("source", -1) >= 0, res["Dependencies of the Pad"])
+        det = nav.rows(nav.details)
+        res["Details of the Pad"] = det
+        smoke.shot("nxt_navigator.png")
+        length = next((nav.details.topLevelItem(i) for i in range(nav.details.topLevelItemCount())
+                       if nav.details.topLevelItem(i).text(0) == "Length"), None)
+        undo0 = doc.UndoCount
+        if length is not None:
+            length.setText(1, "12 mm")
+            _wait(400)
+        res["Length typed 12 mm in Details"] = {"Pad.Length": pad.Length.Value, "undo steps": doc.UndoCount - undo0}
+        smoke.check("Details: the Pad's Length, Type and Reversed; a Length typed there sets the Pad, one undo step",
+                    [r[0][0] for r in det][:3] == ["Length", "Type", "Reversed"] and abs(pad.Length.Value - 12) < 1e-9
+                    and doc.UndoCount - undo0 == 1, {"rows": det, **res["Length typed 12 mm in Details"]})
+        if doc.UndoCount - undo0 == 1:
+            doc.undo()
+            doc.recompute()
+        nav.dep_section.set_open(False)
+        _wait(300)
+        smoke.check("Nxt's dependency arrows go with the Dependencies panel", not settings.get("DependencyArrows"),
+                    settings.get("DependencyArrows"))
+        # Make Current Feature (the ribbon's PartDesign_MoveTip) moves Nxt's rollback bar: rolled back to the Sketch
+        # with Nxt's bar, then the Pad made current from the ribbon's command
+        body = doc.getObject("Body")
+        bridge.setTip(body.Name, sketch.Name)
+        _wait(500)
+        rolled = getattr(body.Tip, "Name", None)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, pad.Name)
+        Gui.runCommand("PartDesign_MoveTip")
+        _wait(800)
+        bar = next((x for x in bridge.tipBars if x["body"] == body.Name), {})
+        res["Make Current Feature on the Pad"] = {"rolled back to": rolled, "tip": getattr(body.Tip, "Name", None),
+                                                  "bar": bar, "Pad row": bridge.treeModel.row_of(pad.Name)}
+        smoke.check("Make Current Feature moves Nxt's rollback bar to the feature",
+                    rolled == sketch.Name and getattr(body.Tip, "Name", None) == pad.Name
+                    and bar.get("pos") == bridge.treeModel.row_of(pad.Name), res["Make Current Feature on the Pad"])
+        menu = menu_actions.build(bridge, [pad.Name])
+        items = [(i["command"], i["label"]) for s in menu.get("sections", []) for i in s["items"]]
+        res["Nxt's menu on the Pad"] = {"lead": (menu.get("lead") or {}).get("label"), "items": items}
+        names = {"dock": nxt_panel.instance().windowTitle(),
+                 "Roll back to here": App.Qt.translate("NxtMenu", "Roll back to here"),
+                 "Roll forward to here": App.Qt.translate("NxtMenu", "Roll forward to here"),
+                 "toast": App.Qt.translate("Nxt", "Tip of %s moved to %s")}
+        res["NX names for Nxt's words"] = names
+        smoke.check("Nxt's menu has NX's Edit Parameters on a feature, and its Roll back/forward is Make Current "
+                    "Feature", ("NXStyle_EditParameters", "Edit Parameters") in items
+                    and names["Roll back to here"] == names["Roll forward to here"] == "Make Current Feature"
+                    and names["dock"] == "Part Navigator", {**res["Nxt's menu on the Pad"], **names})
+    except Exception as e:
+        import traceback
+        smoke.check("Part Navigator panels (Dependencies, Details)", False, traceback.format_exc()[-600:] or repr(e))
+    finally:
+        nav.dep_section.set_open(was[0])
+        nav.det_section.set_open(was[1])
+        App.ParamGet(PARAM).SetBool("Dependencies", was[0])
+        App.ParamGet(PARAM).SetBool("Details", was[1])
+        Gui.Selection.clearSelection()
 
 
 def _features(smoke, info, doc, pad, box):
