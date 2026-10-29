@@ -99,6 +99,8 @@ def run(smoke):
     doc, pad, box = _probe_doc()
     try:
         _keys(smoke, info, doc, pad, panel)
+        _double_click(smoke, info, doc, pad)
+        _open_profile(info, doc)
         if on:
             _features(smoke, info, doc, pad, box)
     finally:
@@ -206,11 +208,88 @@ def _keys(smoke, info, doc, pad, panel):
     Gui.Selection.clearSelection()
 
 
+def _close_edit(doc):
+    if Gui.Control.activeDialog():
+        doc.abortTransaction()
+        Gui.Control.closeDialog()
+    if Gui.ActiveDocument.getInEdit() is not None:
+        Gui.ActiveDocument.resetEdit()
+    _wait(300)
+
+
+def _double_click(smoke, info, doc, pad):
+    """A double-click on the Pad's top face in the graphics window: what opens (Nxt edits the feature behind it)."""
+    from .qt import Qt
+    view = Gui.ActiveDocument.ActiveView
+    Gui.SendMsgToActiveView("ViewIsometric")
+    Gui.SendMsgToActiveView("ViewFit")
+    _settled()
+    x, y = view.getPointOnViewport(App.Vector(10, 5, 10))
+    hit = view.getObjectInfo((x, y))
+    f = smoke.nav()
+    dpr = f.widget.devicePixelRatioF()
+    p = QtCore.QPoint(round(x / dpr), round((view.getSize()[1] - y) / dpr))
+    Gui.Selection.clearSelection()
+    for kind in (QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonRelease, QtCore.QEvent.MouseButtonDblClick,
+                 QtCore.QEvent.MouseButtonRelease):
+        held = Qt.LeftButton if kind in (QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonDblClick) \
+            else Qt.NoButton
+        smoke.send(f, kind, p, Qt.LeftButton, held)
+        _wait(30)
+    _wait(1500)
+    editing = Gui.ActiveDocument.getInEdit()
+    info["double-click on the Pad's top face"] = {
+        "hit": (hit or {}).get("Component") or (hit or {}).get("Object"), "sub": (hit or {}).get("SubName"),
+        "in edit": getattr(getattr(editing, "Object", None), "Name", None),
+        "dialog": bool(Gui.Control.activeDialog())}
+    _close_edit(doc)
+    Gui.Selection.clearSelection()
+
+
+def _open_profile(info, doc):
+    """A Pad on a rectangle with a 0.01 mm gap at one corner: FreeCAD fails it; Nxt's sketch repair closes it."""
+    import Part
+    body = doc.addObject("PartDesign::Body", "GapBody")
+    sk = body.newObject("Sketcher::SketchObject", "GapSketch")
+    pts = [App.Vector(0, 30, 0), App.Vector(20, 30, 0), App.Vector(20, 40, 0), App.Vector(0, 40, 0)]
+    for i in range(4):
+        end = pts[(i + 1) % 4] + (App.Vector(0.01, 0, 0) if i == 3 else App.Vector())
+        sk.addGeometry(Part.LineSegment(pts[i], end))
+    pad = body.newObject("PartDesign::Pad", "GapPad")
+    pad.Profile = sk
+    pad.Length = 5
+    n0 = len(sk.Constraints)
+    doc.recompute()
+    before = pad.isValid()
+    _wait(1500)
+    doc.recompute()
+    info["open profile (0.01 mm gap)"] = {"Pad valid at first": before, "Pad valid after 1.5 s": pad.isValid(),
+                                         "constraints added": [c.Type for c in sk.Constraints[n0:]]}
+
+
 def _features(smoke, info, doc, pad, box):
     from freecad.nxt.app import services
     from freecad.nxt.core import settings
     res = info.setdefault("features", {})
     body = doc.getObject("Body")
+    # its commands in NX-Style's Menu (the hidden menu bar's View menu)
+    view_menu = next((a.menu() for a in Gui.getMainWindow().menuBar().actions()
+                      if a.menu() is not None and a.text().replace("&", "") == "View"), None)
+    res["menu"] = {"View > FreeCAD-Nxt": view_menu is not None and any(
+        "FreeCAD-Nxt" in a.text() for a in view_menu.actions())}
+    # the rollback bar: move the Body's tip back to the Sketch and forward again
+    from freecad.nxt.tree import panel as nxt_panel
+    bridge = nxt_panel.bridge()
+    try:
+        _wait(500)
+        bridge.setTip("Body", "Sketch")
+        _wait(500)
+        back = getattr(body.Tip, "Name", None)
+        bridge.setTip("Body", "Pad")
+        _wait(500)
+        res["rollback"] = {"tip after rolling back": back, "tip after rolling forward": getattr(body.Tip, "Name", None)}
+    except Exception as e:
+        res["rollback"] = {"error": repr(e)}
     # Isolate (NX's Show Only)
     Gui.Selection.clearSelection()
     Gui.Selection.addSelection(doc.Name, "Box")
