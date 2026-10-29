@@ -124,7 +124,7 @@ In Nxt's tree kbd:[Space] shows or hides the selected rows, as in FreeCAD's tree
 
 | kbd:[F2]
 | Renames the selected feature in Nxt's tree, as in FreeCAD's.
-(Nxt's tree does not keep the key for itself, so FreeCAD's _Rename_ command used to take it and rename in the FreeCAD Tree tab; NX-Style hands it to Nxt's tree.)
+(Nxt's tree does not claim the key ahead of the window's shortcuts, and without that it never reached the tree; NX-Style claims it for Nxt's tree.)
 
 | Toolbars
 | Nxt adds a toolbar of its own (*Nxt Fillet/Chamfer*) when Part Design starts. NX-Style hides it like FreeCAD's toolbars; its commands are under *Menu › View › FreeCAD-Nxt*.

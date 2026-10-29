@@ -121,8 +121,8 @@ class _NxKeys(QtCore.QObject):
     """Keys in Nxt's tree, decided before Qt's shortcuts see them (ShortcutOverride):
     - Home and End: Nxt's QML claims them; keeping the event from it lets NX's Std_ViewTrimetric and
       Std_ViewIsometric run, as everywhere else.
-    - F2: Nxt's QML renames on it but does not claim it, so FreeCAD's Rename shortcut took it and renamed in its
-      own tree, behind the Part Navigator's tab; claiming it hands the key to Nxt's tree."""
+    - F2: Nxt's QML renames on it but does not claim it, and without the claim the key never reached it (measured:
+      the focus stayed on the row); claiming it hands the key to Nxt's tree."""
 
     def eventFilter(self, obj, ev):
         if ev.type() != QtCore.QEvent.ShortcutOverride or ev.modifiers() & (

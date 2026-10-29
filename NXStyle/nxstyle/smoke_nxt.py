@@ -211,6 +211,11 @@ def _keys(smoke, info, doc, pad, panel):
                 c for c in Gui.listCommands() if Gui.Command.get(c).getShortcut().replace(" ", "") == "F2")
         except Exception as e:
             info["F2 is the shortcut of"] = repr(e)
+        from .qt import QtGui
+        info["actions with F2"] = [(a.objectName(), a.text(), type(a.parent()).__name__,
+                                    getattr(a.parent(), "objectName", lambda: "")())
+                                   for a in Gui.getMainWindow().findChildren(QtGui.QAction)
+                                   if any(s.toString() == "F2" for s in a.shortcuts())]
         try:
             Gui.Selection.clearSelection()
             Gui.Selection.addSelection(doc.Name, pad.Name)
