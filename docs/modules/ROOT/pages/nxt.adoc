@@ -38,7 +38,7 @@ With Nxt on, Nxt's model panel is the Part Navigator:
 
 * It is the first tab of the left tab strip, and the Resource Bar's *Part Navigator* button opens it.
   The status strip (work part, active body, suppressed and failed features) sits above its tree, three lines high; it scrolls when there is more.
-  It keeps that height because every change of the tree's size makes Nxt's panel lay out and draw again: with the strip growing and shrinking on each pick, making and picking 25 blocks took 100 s instead of 4 s.
+  It keeps that height: with the strip growing and shrinking right above Nxt's tree on each pick, making and picking 25 blocks took 100 s instead of 4 s.
 * FreeCAD's own tree stays one tab behind it, as *FreeCAD Tree*.
 * Nxt's *rollback bar* is NX's *Make Current Feature*.
   Drag the bar, or use *Make Current Feature* in the MB3 menu or on the ribbon: either sets the Body's current feature, and the bar follows.

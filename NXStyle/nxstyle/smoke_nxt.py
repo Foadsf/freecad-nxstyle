@@ -205,7 +205,12 @@ def _keys(smoke, info, doc, pad, panel):
             info[f"{name} in Nxt's tree turns the view"] = got != front
             smoke.check(f"{name} with the focus in Nxt's tree is still NX's {cmd[8:]} view", got == want,
                         {"got": got, "want": want, "front": front})
-        # F2 in Nxt's tree: its name editor (a Qt Quick text field) takes the focus
+        # F2 in Nxt's tree: its name editor (a Qt Quick text field) takes the focus. Which FreeCAD command has F2:
+        try:
+            info["F2 is the shortcut of"] = sorted(
+                c for c in Gui.listCommands() if Gui.Command.get(c).getShortcut().replace(" ", "") == "F2")
+        except Exception as e:
+            info["F2 is the shortcut of"] = repr(e)
         try:
             Gui.Selection.clearSelection()
             Gui.Selection.addSelection(doc.Name, pad.Name)
@@ -351,8 +356,8 @@ def _navigator_panels(smoke, info, doc, pad):
     res = info.setdefault("navigator panels", {})
     was = (nav.dep_section.is_open(), nav.det_section.is_open())
     sketch = pad.Profile[0] if isinstance(pad.Profile, tuple) else pad.Profile
-    # the status strip grows by its Selected line on a pick; Nxt's view must keep its size (a resize makes it lay
-    # out and draw again: 25 picks took 100 s against 4 s when it did)
+    # the status strip grows by its Selected line on a pick; Nxt's view must keep its size (when it did not, making
+    # and picking 25 boxes took 100 s against 4 s; nxt_navigator.Navigator._status_holder)
     strip = smoke.shell.navigator_status
     Gui.Selection.clearSelection()
     strip.refresh(force=True)

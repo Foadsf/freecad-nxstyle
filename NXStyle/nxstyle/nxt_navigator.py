@@ -127,9 +127,10 @@ class Navigator(QtWidgets.QWidget):
     STATUS_LINES = 3        # work part, active body, selected; suppressed and failed features scroll into view
 
     def _status_holder(self, status):
-        """The status strip in a box of fixed height. The strip grows and shrinks as the selection changes, and
-        every change of the tree's size makes Nxt's Qt Quick view lay out and draw again: measured on FreeCAD
-        1.1.4, 25 boxes made and picked took 100 s with the strip right above Nxt's tree, 4.6 s without it."""
+        """The status strip in a box of fixed height. The strip grows and shrinks as the selection changes;
+        measured on FreeCAD 1.1.4, making and picking 25 boxes took 100 s with the strip laid out right above Nxt's
+        tree, 4.3 s in this box (4.6 s without the strip). A plain resize of Nxt's panel measured 0.1 s, so the
+        cost is in what the strip's size changes set off, not yet pinned down."""
         holder = QtWidgets.QScrollArea(self)
         holder.setObjectName("NXNavStatusHolder")
         holder.setWidgetResizable(True)
