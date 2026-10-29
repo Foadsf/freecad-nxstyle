@@ -132,6 +132,11 @@ In Nxt's tree kbd:[Space] shows or hides the selected rows, as in FreeCAD's tree
 | Model panel
 | Nxt's panel is the Part Navigator; FreeCAD's tree is the *FreeCAD Tree* tab behind it.
 
+| Speed
+| Nxt's tree does more work on each change of the document while it is on screen, and as the Part Navigator it usually is.
+Changing and picking an object took 0.34 s with Nxt's tree shown against 0.24 s with it behind a tab, in a part of 150 objects; at 20 objects there was no difference.
+The self-test, which builds large parts, runs about twice as long as with Nxt's panel behind FreeCAD's tree.
+
 | Colours
 | Nxt takes its colours from the window around it: background `#f0f0f0`, text `#1e2329`, but a grey accent (`#606060`) where NX-Style uses teal (`#0B6E79`).
 

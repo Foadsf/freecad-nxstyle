@@ -31,6 +31,7 @@ NX_VIEW_KEYS = (Qt.Key_Home, Qt.Key_End)
 _translator = None
 _navigator = None
 _keys = None
+_toolbar_hooked = False
 
 
 def expected():
@@ -77,9 +78,18 @@ def navigator_dock():
 
 
 def tick(shell):
-    """From the shell's tick: once Nxt's panel exists, make it the Part Navigator and settle the keys."""
-    global _navigator
-    if _navigator is not None or not expected() or not loaded():
+    """From the shell's tick: hide Nxt's toolbar as soon as Nxt has made it; once Nxt's panel exists, make it the
+    Part Navigator and settle the keys."""
+    global _navigator, _toolbar_hooked
+    if not expected() or not loaded():
+        return _navigator
+    if not _toolbar_hooked:
+        try:
+            _toolbar_hooked = _hide_toolbar(shell)
+        except Exception as e:
+            _toolbar_hooked = True
+            problems.append(repr(e))
+    if _navigator is not None:
         return _navigator
     from . import nxt_navigator
     try:
@@ -90,7 +100,7 @@ def tick(shell):
     if nav is None:
         return None
     _navigator = nav
-    for step in (_register_menu, lambda: _settle_keys(nav), lambda: _hide_toolbar(shell)):
+    for step in (_register_menu, lambda: _settle_keys(nav)):
         try:
             step()
         except Exception as e:
@@ -140,8 +150,11 @@ def _settle_keys(nav):
 
 
 def _hide_toolbar(shell):
-    """Nxt makes its toolbar on the first workbench switch after it starts, which may come after this; making it
-    now (Nxt's own test_toolbar._toolbar) lets the shell hook it like FreeCAD's: hidden whenever Nxt shows it."""
+    """Nxt makes and shows its toolbar from a timer after each workbench switch, after the shell has hidden
+    FreeCAD's; making it now (Nxt's own test_toolbar._toolbar) lets the shell hook it like FreeCAD's: hidden
+    whenever Nxt shows it. True once hooked."""
     from freecad.nxt.app import test_toolbar
-    if test_toolbar._toolbar() is not None:
-        shell.enforce_ui()
+    if test_toolbar._toolbar() is None:
+        return False
+    shell.enforce_ui()
+    return True

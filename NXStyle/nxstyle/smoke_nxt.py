@@ -448,11 +448,17 @@ def _features(smoke, info, doc, pad, box):
     from freecad.nxt.core import settings
     res = info.setdefault("features", {})
     body = doc.getObject("Body")
-    # its commands in NX-Style's Menu (the hidden menu bar's View menu)
-    view_menu = next((a.menu() for a in Gui.getMainWindow().menuBar().actions()
-                      if a.menu() is not None and a.text().replace("&", "") == "View"), None)
-    res["menu"] = {"View > FreeCAD-Nxt": view_menu is not None and any(
-        "FreeCAD-Nxt" in a.text() for a in view_menu.actions())}
+    # its commands in NX-Style's Menu (the hidden menu bar's View menu). FreeCAD rebuilds its menus, so a menu
+    # found here may be deleted a moment later: its entries are read at once, and a deleted one is retried
+    found = None
+    for _ in range(3):
+        try:
+            found = any("FreeCAD-Nxt" in b.text() for a in Gui.getMainWindow().menuBar().actions()
+                        if a.menu() is not None and a.text().replace("&", "") == "View" for b in a.menu().actions())
+            break
+        except RuntimeError:
+            _wait(200)
+    res["menu"] = {"View > FreeCAD-Nxt": found}
     # the rollback bar: move the Body's tip back to the Sketch and forward again
     from freecad.nxt.tree import panel as nxt_panel
     bridge = nxt_panel.bridge()

@@ -840,8 +840,8 @@ class Shell(QtCore.QObject):
             text = f"<span style='color:#C62828'>{html.escape(refused)}</span>"
         if self.cue.text() != text:
             self.cue.setText(text)
-        if nxt.expected() and nxt.navigator() is None:
-            nxt.tick(self)             # FreeCAD-Nxt's panel becomes the Part Navigator once it is up
+        if nxt.expected():
+            nxt.tick(self)             # FreeCAD-Nxt's toolbar hidden, its panel the Part Navigator, once they are up
         if getattr(self, "navigator_status", None) is not None:
             try:
                 self.navigator_status.refresh()
