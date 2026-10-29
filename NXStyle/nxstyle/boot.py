@@ -48,6 +48,12 @@ def schedule():
     except Exception:
         import traceback
         App.Console.PrintError("NXStyle: preparing Strata failed:\n" + traceback.format_exc() + "\n")
+    try:   # before Nxt's init_gui (a freecad.* package, loaded after every InitGui.py) reads its settings
+        from . import nxt
+        nxt.prepare()
+    except Exception:
+        import traceback
+        App.Console.PrintError("NXStyle: preparing Nxt failed:\n" + traceback.format_exc() + "\n")
     try:   # before any LCInterlocking panel module is imported (its workbench, or a document that has one)
         from . import lcinterlocking
         lcinterlocking.install()

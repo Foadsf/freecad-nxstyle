@@ -185,6 +185,7 @@ class Smoke:
         yield self.s_validity, 300
         yield self.s_inspection, 300
         yield self.s_expressions, 800
+        yield self.s_nxt, 300                    # last: drives Nxt's commands on a document of its own
         yield self.s_final, 100
 
     def s_wait_strata(self):
@@ -2688,6 +2689,12 @@ class Smoke:
         -Z, the flange revolved, then Cancel (smoke_section.py)."""
         from . import smoke_section
         smoke_section.run(self)
+
+    def s_nxt(self):
+        """FreeCAD-Nxt, off by default: with --nxt its features tried once and its clashes with NX's keys and
+        layout measured; off, a check that it stayed out (smoke_nxt.py)."""
+        from . import smoke_nxt
+        smoke_nxt.run(self)
 
     def s_primitives(self):
         """Block, Cylinder, Cone and Sphere from their ribbon buttons: typed values, the vector, a point snapped at

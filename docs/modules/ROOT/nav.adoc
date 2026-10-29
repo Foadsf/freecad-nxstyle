@@ -25,6 +25,7 @@
 * xref:dfm.adoc[Molded part validation (DFM)]
 * xref:algorithmic-modeling.adoc[Algorithmic Modeling (Katydid)]
 * xref:data-management.adoc[Data management (Strata)]
+* xref:nxt.adoc[FreeCAD-Nxt (trial)]
 * xref:release-package.adoc[Release packages]
 * xref:settings.adoc[Settings]
 

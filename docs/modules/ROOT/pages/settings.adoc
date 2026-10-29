@@ -55,6 +55,7 @@ include::partial$generated/settings.adoc[]
 | No Laser Cut (LCInterlocking add-on) | `"laser_cut": "none"`
 | No Molded Part Validation (DFM Workbench) | `"dfm": "none"`
 | No Manufacturing commands (Carbon) | `"manufacturing": "none"`
+| The FreeCAD-Nxt add-on, a trial (off by default; xref:nxt.adoc[]) | `"nxt": true`
 | Send parts to Carbon without a Strata release | `"carbon": {"allow_unreleased": true}`
 |===
 

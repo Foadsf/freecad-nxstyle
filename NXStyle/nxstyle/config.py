@@ -56,6 +56,7 @@ DEFAULTS = {
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
     "sheet_metal": "sheetmetal",       # NX Sheet Metal: FreeCAD's "sheetmetal" add-on (bundled), or "none"
     "laser_cut": "lcinterlocking",     # Laser Cut: the "lcinterlocking" add-on (bundled), or "none"
+    "nxt": False,                      # the FreeCAD-Nxt add-on (model panel, Property Inspector), trial: off by default
     "manufacturing": "carbon",         # manufacturing ERP/MES/quality: "carbon" (a Carbon server), or "none"
     "carbon": {                        # The Carbon connection; PLM › Manufacturing Connection sets it, never the API key.
         "url": "",                     # url: https://app.carbon.ms (Carbon Cloud) or your own server.

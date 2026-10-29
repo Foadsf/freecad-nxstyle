@@ -13,3 +13,6 @@
 [submodule "vendor/FreeCAD-DFM-Workbench"]
 	path = vendor/FreeCAD-DFM-Workbench
 	url = https://github.com/ryankembrey/FreeCAD-DFM-Workbench.git
+[submodule "vendor/FreeCAD-Nxt"]
+	path = vendor/FreeCAD-Nxt
+	url = https://github.com/obelisk79/FreeCAD-Nxt
