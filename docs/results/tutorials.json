@@ -3942,7 +3942,7 @@
    "nx": "Rapid Dimension: the radii 1.5 and 0.5 at the ends, 18 and 15 between",
    "replay": "arc + ribbon 'Radius / Diameter', the value typed in FreeCAD's dialog, 4 times",
    "outcome": "same",
-   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 2.3e-13 mm of the solved figure (centres, radii, ends)"
+   "detail": "R18, R15, R1.5, R0.5; DoF 0 ('Fully constrained'); every arc within 1.9e-13 mm of the solved figure (centres, radii, ends)"
   },
   {
    "tutorial": "AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)",
@@ -4550,7 +4550,7 @@
    "nx": "Create a new file (Impeller_hexa-bolt)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']"
+   "detail": "new document ['Unnamed1']"
   },
   {
    "tutorial": "AQ: Hexagonal Screw (NX 12 for Engineering Design, 4.7.1; book in inches, typed in mm)",
@@ -4902,7 +4902,7 @@
    "nx": "Create a new file (Arborpress_rack)",
    "replay": "Ctrl+N, Model template",
    "outcome": "same",
-   "detail": "new document ['Unnamed']"
+   "detail": "new document ['Unnamed2']"
   },
   {
    "tutorial": "AT: Arbor Press Rack (NX 12 for Engineering Design, 4.7.4; book in inches, typed in mm)",
@@ -5575,6 +5575,310 @@
    "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
    "outcome": "same",
    "detail": "Die_cavity.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Open Arborpress_rack (tutorial AT's part)",
+   "replay": "File > Open (by script)",
+   "outcome": "same",
+   "detail": "tutorial AT's rack: same solid as the reference: 0 mm³ differ, box within 2.3e-12 mm, 84 faces (84 in the reference)"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "File > Drafting",
+   "replay": "Ctrl+Shift+D",
+   "outcome": "same",
+   "detail": "TechDrawWorkbench"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Sheet: Standard Size B 11 x 17, Custom Scale 1:25, OK",
+   "replay": "ribbon 'Home › Drawing > New Sheet'; the sheet's Template, Scale and Projection",
+   "outcome": "differs",
+   "detail": "ANSIB_Landscape.svg: 431.8 x 279.4 mm (the book's 17 x 11 in), scale 0.04, Third angle. NX asks for size, scale and projection in one Sheet dialog; FreeCAD's New Sheet uses the default template and these are the sheet's properties"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Base View: Model View to Use Front, Scale 1:25, a click to place it",
+   "replay": "body selected + ribbon 'Home › View > Base View', MB2 on the sheet; the view's Direction Front",
+   "outcome": "differs",
+   "detail": "edges span (6096.0, 508.0) mm, the Part API (6096.0, 508.0) (240 x 20 in); scale 0.04 from the sheet. NX lists the model views in the Base View dialog; TechDraw's view takes its direction as a property"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Projected View: move the cursor above and to the right of the front view and click; Close",
+   "replay": "front view selected + ribbon 'Home › View > Projected View', Above and Right, MB2",
+   "outcome": "same",
+   "detail": "{'top': {'direction': (-0.0, 0.0, 1.0), 'span': (6096.0, 635.0), 'Part API': (6096.0, 635.0), 'scale': 0.04, 'at': (175.0, 182.86)}, 'right': {'direction': (1.0, 0.0, 0.0), 'span': (635.0, 508.0), 'Part API': (635.0, 508.0), 'scale': 0.04, 'at': (329.62, 140.0)}}; the right view shows the hole as a circle (Ø254 mm): True; each lined up with the front view at its scale"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Drafting Preferences > View: Display Borders off, OK",
+   "replay": "nothing to press: the sheet's Show Frames is off",
+   "outcome": "differs",
+   "detail": "Show Frames False. NX shows the borders until this is unchecked; FreeCAD's sheet starts with Show Frames off. Its Turn View Frames On/Off stays greyed in FreeCAD 1.1.4, so NX-Style has no Display Borders button; how the sheet looks was not measured"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Dimensions: 240 and 34.8 on the top view; 6.000, 3.396 and 5.034 on the front view; 20 and 25 on the right view; each dragged clear of its view",
+   "replay": "two vertices picked + ribbon 'Horizontal' or 'Vertical' (the inferred direction of NX's Rapid)",
+   "outcome": "differs",
+   "detail": "(view, ribbon, book in, drawing mm, model mm): [('top', 'Horizontal', 240.0, 6096.0, 6096.0), ('top', 'Horizontal', 34.8, 883.92, 883.92), ('front', 'Horizontal', 6.0, 152.4, 152.4), ('front', 'Horizontal', 3.396, 86.2644, 86.2644), ('front', 'Vertical', 5.034, 127.8636, 127.8636), ('right', 'Vertical', 20.0, 508.0, 508.0), ('right', 'Horizontal', 25.0, 635.0, 635.0)]. All are the book's numbers x 25.4. NX infers horizontal or vertical from the pointer; here the button says which. Where the view has no vertex at a point (a slot's foot), a cosmetic vertex is put on the edge there first, as in tutorials H and N. The book's text puts the 240 on the front view, its figures on the top view: the figures are followed"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Section View: a click under the front view's middle (arrows up), drag the section below it, MB1",
+   "replay": "front view selected + ribbon 'Home › View > Section View', direction 'pbUp', MB2 = OK; the section moved below the front view",
+   "outcome": "differs",
+   "detail": "cut plane normal (0.0, 0.0, -1.0) through (3048.0, 317.5, 254.0) (the hole's axis is at z = 254); the hole's walls in the section are 254.0 apart (Ø254: the cut is through its axis); section spans (6096.0, 635.0). TechDraw cuts through the middle of the view as the book's click does, and puts the new view on top of its base view: it is moved afterwards"
+  },
+  {
+   "tutorial": "AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Save and close the model (the drawing is saved in the part)",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Arborpress_rack.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Open Impeller_impeller (tutorial AU's part)",
+   "replay": "File > Open (by script)",
+   "outcome": "same",
+   "detail": "tutorial AU's impeller: same solid as the reference: 0 mm³ differ, box within 5.9e-13 mm, 31 faces (31 in the reference)"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "File > PMI (check mark on): the PMI tab",
+   "replay": "the Modeling ribbon's PMI tab",
+   "outcome": "differs",
+   "detail": "tab 'PMI'. NX 12 turns the PMI application on from File; NX-Style's PMI tab is always there"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Rapid: the impeller's two end surfaces, the linear dimension 16.25",
+   "replay": "Face4, Face7 selected + ribbon 'PMI › Dimension > Rapid Dimension'; nothing typed; MB2 = OK",
+   "outcome": "same",
+   "detail": "412.750: 16.2500 in, the end faces 16.2500 in apart (the book's 16.25)"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Linear: the bore's depth 16",
+   "replay": "Face4, Face31 selected + ribbon 'PMI › Dimension > Linear'; nothing typed; MB2 = OK",
+   "outcome": "same",
+   "detail": "406.400: 16.0000 in from the large end to the bore's floor (the book's 16)"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "The diameters are read down the axis: Right as the work view",
+   "replay": "double-click 'Right' under Model Views in the Part Navigator",
+   "outcome": "differs",
+   "detail": "the book does not say; a PMI goes into the work view, and a drawing view looking down the axis inherits those (Aligned to Drawing)"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Radial: Ø15, the large end",
+   "replay": "Edge4 selected + ribbon 'PMI › Dimension > Radial'; Method Diameter; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø381.000"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Radial: Ø8, the small end",
+   "replay": "Edge11 selected + ribbon 'PMI › Dimension > Radial'; Method Diameter; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø203.200"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Radial: Ø4, the bore",
+   "replay": "Face25 selected + ribbon 'PMI › Dimension > Radial'; Method Diameter; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø101.600"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Radial: Ø0.275, the pin hole",
+   "replay": "Face26 selected + ribbon 'PMI › Dimension > Radial'; Method Diameter; MB2 = OK",
+   "outcome": "differs",
+   "detail": "Ø6.985"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "The centerline and the note in Front",
+   "replay": "double-click 'Front' under Model Views",
+   "outcome": "differs",
+   "detail": "the view the sizes along the axis are in"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Supplemental Geometry > Centerline: the inner surface of the impeller",
+   "replay": "Face25 selected + ribbon 'PMI › Supplemental Geometry > Centerline'; the bore's face; MB2 = OK",
+   "outcome": "same",
+   "detail": "from x = -3.2800 to 15.2800 in on the XC axis: the bore (-2 to 14 in) and 8% past each end"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Note: 'Five impeller blades', its leader on a blade",
+   "replay": "Face29 selected + ribbon 'PMI › Annotation > Note'; the text typed; MB2 = OK",
+   "outcome": "same",
+   "detail": "'Five impeller blades', its leader on Face29 (a blade; 0.0e+00 mm from it)"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 13,
+   "nx": "The trimetric view with the PMI; save the file",
+   "replay": "Show All PMI, Trimetric; file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Impeller_impeller.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 14,
+   "nx": "File > Drafting",
+   "replay": "Ctrl+Shift+D",
+   "outcome": "same",
+   "detail": "TechDrawWorkbench"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 15,
+   "nx": "Drawing sheet: as in 5.2 (B 11 x 17), here at 1:10",
+   "replay": "ribbon 'Home › Drawing > New Sheet'; the sheet's Template, Scale and Projection",
+   "outcome": "differs",
+   "detail": "ANSIB_Landscape.svg: 431.8 x 279.4 mm (the book's 17 x 11 in), scale 0.1, Third angle. NX asks for size, scale and projection in one Sheet dialog; FreeCAD's New Sheet uses the default template and these are the sheet's properties"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 16,
+   "nx": "Drawing views (View Creation Wizard): Front, Right and Isometric; Inherit PMI, Aligned to Drawing (Entire Part), Inherit PMI onto Drawing",
+   "replay": "body selected + ribbon 'Home › View > Base View' (Front, then Isometric), 'Home › View > Projected View' Right; the views' NX_InheritPMI",
+   "outcome": "differs",
+   "detail": "Right looks down the axis (1.0, 0.0, 0.0), with hidden lines; inherit modes ['Aligned to Drawing (Entire Part)', 'Aligned to Drawing (Entire Part)']. NX's wizard asks for the PMI option; here it is each view's NX_InheritPMI property (NX: Settings > Common > PMI)"
+  },
+  {
+   "tutorial": "BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)",
+   "n": 17,
+   "nx": "Inherit PMI onto Drawing: the PMI and the note on the views",
+   "replay": "each view selected + ribbon 'Inherit PMI'",
+   "outcome": "differs",
+   "detail": "front view: lengths [16.0, 16.25] in (the PMI [16.0, 16.25]), the note [['Five impeller blades']], the centerline at y = 151.94158625194856 (the axis: 151.9416); right view: diameters [0.275, 4.0, 8.0, 15.0] in (the PMI [0.275, 4.0, 8.0, 15.0]). Skipped: front [], right []. NX inherits in the wizard; here the Inherit PMI button does it per view"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 1,
+   "nx": "Open Impeller_hexa-bolt (tutorial AQ's part)",
+   "replay": "File > Open (by script)",
+   "outcome": "same",
+   "detail": "tutorial AQ's screw (3 bodies): 1.7032 in long, 0.4920 across the head (the book's 1.7032 and 0.492); head same solid as the reference: 0 mm³ differ, box within 8e-14 mm, 9 faces (9 in the reference)"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 2,
+   "nx": "File > Drafting",
+   "replay": "Ctrl+Shift+D",
+   "outcome": "same",
+   "detail": "TechDrawWorkbench"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 3,
+   "nx": "Sheet: E-34 X 44, Scale 8.0 : 1.0, OK",
+   "replay": "ribbon 'Home › Drawing > New Sheet'; the sheet's Template, Scale and Projection",
+   "outcome": "differs",
+   "detail": "ANSIE_Landscape.svg: 1118.0 x 864.0 mm (the book's 44 x 34 in), scale 8.0, Third angle. NX asks for size, scale and projection in one Sheet dialog; FreeCAD's New Sheet uses the default template and these are the sheet's properties"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 4,
+   "nx": "Base View: Front, a click to place it",
+   "replay": "the screw's bodies selected + ribbon 'Home › View > Base View', MB2 on the sheet; the view's Direction Front",
+   "outcome": "differs",
+   "detail": "edges span (12.4968, 43.2841) mm unscaled (the screw: 43.261 tall); scale 8.0. As in tutorial AZ, the direction is the view's property"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 5,
+   "nx": "Add the orthographic views Right and Top",
+   "replay": "front view selected + ribbon 'Home › View > Projected View', Right and Above, MB2",
+   "outcome": "same",
+   "detail": "directions {'right': (1.0, 0.0, 0.0), 'top': (-0.0, 0.0, 1.0)}"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 6,
+   "nx": "Preferences > Drafting > View: Display Borders off",
+   "replay": "nothing to press: the sheet's Show Frames is off",
+   "outcome": "differs",
+   "detail": "Show Frames False. NX shows the borders until this is unchecked; FreeCAD's sheet starts with Show Frames off. Its Turn View Frames On/Off stays greyed in FreeCAD 1.1.4, so NX-Style has no Display Borders button; how the sheet looks was not measured"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 7,
+   "nx": "Select the views, RMB > Settings > Hidden Lines: Process Hidden Lines, Dashed Lines, OK",
+   "replay": "the three views selected; their Hard Hidden property on",
+   "outcome": "differs",
+   "detail": "the top view shows the shank under the head as a dashed circle (radius 3.175 mm among its hidden circles [2.4876, 3.175, 4.9149]). NX's view Settings dialog; TechDraw's Hard Hidden draws them dashed"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 8,
+   "nx": "Insert > Dimensions > Linear: vertical dimensions 1.703, 0.188 and 0.065 on the front view, 0.016 on the right view",
+   "replay": "two vertices picked + ribbon 'Vertical'",
+   "outcome": "differs",
+   "detail": "(view, book in, drawing in, model in): [('front', 1.703, 1.7032, 1.7032), ('front', 0.065, 0.0647, 0.0647), ('front', 0.188, 0.1876, 0.1876), ('right', 0.016, 0.0156, 0.0156)]. The 0.065 runs to where the head's sphere meets the hexagon's corners. Points with no vertex of their own (the screw's end, cut by the thread) get a cosmetic vertex on the edge there"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 9,
+   "nx": "Note: 'Right Hand Ø0.20 x 1.5', 'Pitch 0.05, Angle 60°' (Ø and ° from the Symbols tab), a leader from the threaded shaft; Settings: Lettering Height and the leader's length increased",
+   "replay": "a thread edge of the front view selected + ribbon 'Home › Annotation > Note', the text typed with the Ø and ° buttons, Lettering height 7 and Stub length 12.7 mm, MB2",
+   "outcome": "differs",
+   "detail": "note ['Right Hand Ø0.20 x 1.5', 'Pitch 0.05, Angle 60°'], height 7.0 mm; the arrow ends at model (x, z) (-3.1683, 18.8254) mm: on the shank's thread (radius 3.175). NX drags the leader from the shaft and sets height and length in Settings afterwards; here they are fields of the dialog"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 10,
+   "nx": "Radial: click the circle of the bolt in the top view",
+   "replay": "the head's top circle selected + ribbon 'Home › Dimension > Radial'",
+   "outcome": "differs",
+   "detail": "R0.201 in (5.107310329165429 mm), the circle where the head's sphere meets its top face (radius 0.2011 in from the model). The book's figure labels this circle Ø0.200, the size of its radius; TechDraw's Radial gives R"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 11,
+   "nx": "Base View: Isometric, placed beside the others",
+   "replay": "the screw's bodies selected + ribbon 'Home › View > Base View', MB2; Direction isometric",
+   "outcome": "same",
+   "detail": "direction (0.57735, -0.57735, 0.57735), 668 edges, scale 4.0 (half the sheet's, to fit beside the views)"
+  },
+  {
+   "tutorial": "BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)",
+   "n": 12,
+   "nx": "Save",
+   "replay": "file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key",
+   "outcome": "same",
+   "detail": "Impeller_hexa-bolt.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt"
   },
   {
    "tutorial": "BC: Release to manufacturing: the guide bush into Carbon",

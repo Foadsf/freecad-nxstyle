@@ -1,0 +1,75 @@
+= Tutorial BB: Hex Bolt Drawing
+:description: The hexagonal screw of tutorial AQ on an E sheet at 8:1: front, right and top views with hidden lines dashed, vertical dimensions, a thread note with a leader, a radial dimension and an isometric view (NX 12 for Engineering Design, 5.6).
+
+[horizontal]
+Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), section 5.6 (example).
+You learn:: a large sheet at an enlarging scale, Projected View, hidden lines, vertical dimensions, a Note with a leader and symbols, Radial, an isometric Base View
+Part:: tutorial xref:tutorials/aq.adoc[AQ]'s screw, `Impeller_hexa-bolt`. The replay runs AQ first.
+Sizes:: the book's, in inches, typed in millimetres.
+
+5.7, the last section of the chapter, is an open exercise: draft the chapter 4 parts.
+It is not replayed; tutorials AZ and BB cover the commands it would use.
+
+== Step by step
+
+=== 1. Sheet and views
+
+Open `Impeller_hexa-bolt`, press kbd:[Ctrl+Shift+D] and click *New Sheet*.
+Choose the template `ANSIE_Landscape.svg` (E, 34 x 44 in), the scale 8 and *Third angle*.
+
+Select the screw's bodies and click *Base View*, direction Front: the screw stands with its head up.
+Select the view, click *Projected View*, then *Right* and *Above*, and press MB2.
+The view above is the top view: the hexagon.
+Display Borders is already off, as in xref:tutorials/az.adoc[tutorial AZ].
+
+Select the three views and turn on their *Hard Hidden*: hidden lines are drawn dashed.
+The top view now shows the shank under the head as a dashed circle.
+
+=== 2. Dimensions
+
+Pick two vertices and click *Vertical*:
+
+[cols="1,3,1",options="header"]
+|===
+| View | Length | Book (in)
+| Front | the whole screw, from its end to the top of the head | 1.703
+| Front | the head | 0.188
+| Front | from the top of the head down to where the sphere meets the hexagon's corners | 0.065
+| Right | the step under the head | 0.016
+|===
+
+=== 3. The thread note
+
+Select an edge of the thread on the front view and click *Note*.
+Type `Right Hand`, click the *Ø* button, type `0.20 x 1.5`, press kbd:[Enter], type `Pitch 0.05, Angle 60` and click the *°* button.
+Set the lettering height to 7 mm and the stub length to 12.7 mm, and press MB2.
+The leader runs from the thread to the note.
+
+=== 4. Radial and the isometric view
+
+Select the circle on top of the head in the top view and click *Radial*.
+Select the screw's bodies again, click *Base View*, and set the direction to isometric.
+
+image::tutorial-BB-01-drawing.png[The screw's drawing: front, right and top views with hidden lines, the dimensions, the thread note and an isometric view]
+
+Save the part.
+
+== The replay
+
+include::partial$generated/tutorial-BB.adoc[]
+
+include::partial$outcome-legend.adoc[]
+
+The views' directions are checked, and the top view must show a hidden circle of the shank's radius.
+Each dimension is compared with the screw's own geometry: its height, the head, the step, and where the head's sphere meets the hexagon.
+It must also match the book's number to its three decimals.
+The note's arrow is traced back from the sheet into the model and must end on the threaded shank.
+
+== What differs from NX
+
+* As in xref:tutorials/az.adoc[tutorial AZ], the sheet's size, scale and projection are properties, and a view's direction is a property.
+* NX sets the hidden line style in the views' Settings dialog. TechDraw's *Hard Hidden* draws hidden lines dashed.
+* NX drags the leader from the shaft and sets the lettering height and leader length in Settings afterwards. Here they are fields of the Note dialog.
+* The note's text is the book's. It gives Ø0.20, while AQ's thread is the book's 1/4-20 UNC on a Ø0.25 shank.
+* The book's figure labels the circle on top of the head Ø0.200, which is the size of its radius (0.201). TechDraw's *Radial* shows it as a radius.
+* TechDraw computes hidden lines for the detailed thread, so these views take longer to appear than plain ones.
