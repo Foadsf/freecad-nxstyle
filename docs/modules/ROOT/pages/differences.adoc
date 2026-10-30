@@ -41,7 +41,7 @@ This page lists the differences found by working through the xref:tutorials/inde
 * Mirror Feature: select the feature first, then the command.
 * Patterns are separate buttons (Pattern Feature for linear, Circular Pattern, Multi-Transform); NX's negative pitch is spacing with *Reverse*; Direction 2 is a tick box.
 * Design changes reopen the feature's dialog (*Edit Parameters*) rather than editing a dimension shown on the model.
-* Parent/child links are properties (Attachment, Base Feature), not a Dependencies panel. Unsuppressing a child does not bring its parent back.
+* Parent/child links are properties (Attachment, Base Feature), not a Dependencies panel; with xref:nxt.adoc[FreeCAD-Nxt] on, the Part Navigator has one. Unsuppressing a child does not bring its parent back.
 * Expressions live in a spreadsheet (kbd:[Ctrl+E]); a dimension uses `=Expressions.name`. Names that are unit symbols (`N`, the newton) are refused.
 * Assign Material applies at once and closes with *Close*; FreeCAD 1.1 gives the body the material's colour.
 

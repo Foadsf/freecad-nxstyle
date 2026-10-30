@@ -15,16 +15,44 @@ image::nxt-section.png[Nxt's section view in NX-Style: the cut faces are hatched
 * `"nxt": true` in the xref:settings.adoc[settings] switches it on for good.
 
 It needs FreeCAD 1.1 or newer; on FreeCAD 1.0 the launcher says so and starts without it.
-Its commands are under *Menu › View › FreeCAD-Nxt*, and its panel is the *Model (Nxt)* tab beside the Part Navigator.
+Its commands are under *Menu › View › FreeCAD-Nxt*, and its panel becomes the Part Navigator (below).
 A copy of Nxt installed in the NX profile's own `Mod` folder (through the Addon Manager) is used instead of the bundled one, so it never loads twice; FreeCAD loads that copy whether or not `--nxt` is given.
 
 Nxt is not a workbench: it is a `freecad.nxt` package that adds its panel and commands to every workbench.
 
 === What NX-Style changes in it
 
-Nothing in Nxt's code.
-In the NX profile, NX-Style sets one of Nxt's own preferences before Nxt starts: *CheckAddonUpdates* off.
-Nxt otherwise looks for updates of every installed add-on after start-up and offers the Addon Manager's _Update all_ dialog; NX-Style's add-ons are pinned versions, updated with NX-Style itself.
+Nothing in Nxt's code. In the NX profile, NX-Style:
+
+* sets one of Nxt's own preferences before Nxt starts: *CheckAddonUpdates* off.
+  Nxt otherwise looks for updates of every installed add-on after start-up and offers the Addon Manager's _Update all_ dialog; NX-Style's add-ons are pinned versions, updated with NX-Style itself.
+* gives a few of Nxt's words NX's names, through a Qt translation file (`resources/nxt/nx_names.ts`): its panel is the *Part Navigator*, and *Roll back to here* and *Roll forward to here* are *Make Current Feature*.
+* adds *Edit Parameters* to Nxt's MB3 menu on a feature, through Nxt's own menu files (`resources/nxt/nx_menu.toml`).
+* arranges Nxt's panel as the Part Navigator, and settles the keys both handle (below).
+
+== Nxt's panel as the Part Navigator
+
+image::nxt-navigator.png[The Part Navigator with Nxt on: Nxt's tree with its rollback bar, and NX's Dependencies and Details panels below it]
+
+With Nxt on, Nxt's model panel is the Part Navigator:
+
+* It is the first tab of the left tab strip, and the Resource Bar's *Part Navigator* button opens it.
+  The status strip (work part, active body, suppressed and failed features) sits above its tree, three lines high; it scrolls when there is more.
+  It keeps that height: with the strip growing and shrinking right above Nxt's tree on each pick, making and picking 25 blocks took 100 s instead of 4 s.
+* FreeCAD's own tree stays one tab behind it, as *FreeCAD Tree*.
+* Nxt's *rollback bar* is NX's *Make Current Feature*.
+  Drag the bar, or use *Make Current Feature* in the MB3 menu or on the ribbon: either sets the Body's current feature, and the bar follows.
+  Nxt confirms with a note (_Current feature of Body: Pad_) that has an Undo button.
+* Below the tree are NX's *Dependencies* and *Details* panels, folded away until you open them, as in NX.
+  They describe the one selected object.
+** *Dependencies* lists its parents (what it is built from) and its children (what uses it), each with the kind of link: Geometry, Attachment, Expression or Link.
+   These are the links Nxt's dependency arrows show, and Nxt draws the arrows in the tree while the panel is open.
+   A sketch shown under its Pad, which gets no arrow, is still listed as its parent.
+   Double-click a row to select that object.
+** *Details* lists the values that define it: those Nxt's detail strip shows, such as an Extrude's Length, Type and Reversed.
+   Type a value (or `=` and an expression) and press kbd:[Enter]; each change is one undo step.
+   _All properties_ opens Nxt's Property Inspector.
+* The MB3 menu of a feature in Nxt's tree has NX-Style's *Edit Parameters*, which opens NX-Style's Extrude, Revolve, primitive and Thread dialogs.
 
 == What works on FreeCAD 1.1.4
 
@@ -34,7 +62,9 @@ Measured with the self-test (`--smoke-test --nxt`) on FreeCAD 1.1.4 (Qt 6.8.3), 
 |===
 | Nxt feature | FreeCAD 1.1.4 | What was seen
 
-| Model panel (tree, timeline) | works | Opens as the *Model (Nxt)* tab in the left tab strip; the Part Navigator stays in front.
+| Model panel (tree, timeline) | works | Is the Part Navigator (above).
+| Dependency arrows | works | Drawn while the Dependencies panel is open.
+| Detail strip values | works | The same values are in the Details panel, editable there.
 | Property Inspector | works | Opens beside the panel for the selected feature.
 | Isolate | works | Shows only the selection; leaving it shows everything again.
 | Section view, filled cut faces | works | The cut faces are hatched; the plane can be dragged, with an Offset box.
@@ -49,7 +79,7 @@ image::nxt-pad-handles.png[A Pad in edit with Nxt on: FreeCAD's drag handles, wi
 
 Nxt's drag handles are FreeCAD's own ("gizmos"), which FreeCAD 1.1 already has; nothing above needed a FreeCAD 26.x build.
 Nxt's author works on FreeCAD 26.3 (Qt 6.11); its context menu uses a Qt 6.8 feature, which FreeCAD 1.1.4 ships.
-Not exercised yet: drag reorder, dependency arrows, the detail strip, face snapping and the context menu, which need real mouse work in Nxt's Qt Quick panel; they come with the next steps.
+Not exercised yet: drag reorder in the tree and face snapping, which need real mouse work in Nxt's Qt Quick panel and the graphics window.
 
 == The tutorials with Nxt on
 
@@ -82,24 +112,30 @@ Measured with the self-test, Nxt on against Nxt off:
 
 [cols="1,3",options="header"]
 |===
-| Where | What happens with Nxt on
+| Where | With Nxt on
 
 | kbd:[Space] in the graphics window
-| Nxt takes it: it hides or shows the _feature_ behind the pick (a Pad, not its Body).
-FreeCAD's own Space command (Show/Hide, `Std_ToggleVisibility`) no longer gets the key.
+| FreeCAD's Show/Hide (`Std_ToggleVisibility`), as with Nxt off.
+Nxt has its own Space there, which hides the _feature_ behind the pick; NX-Style takes it out, so a key does the same with Nxt on or off.
+In Nxt's tree kbd:[Space] shows or hides the selected rows, as in FreeCAD's tree.
 
-| kbd:[Home], kbd:[End] in Nxt's panel
-| While Nxt's panel has the keyboard focus, Nxt keeps them for its own list; they do not turn the view to Trimetric and Isometric.
-In the graphics window they keep their NX meaning.
+| kbd:[Home], kbd:[End]
+| NX's Trimetric and Isometric views, also while Nxt's tree has the keyboard focus (Nxt keeps them there to move to the first or last row; NX-Style gives them back).
 
 | kbd:[F2]
-| In the Part Navigator it still opens the name editor.
+| Renames the selected feature in Nxt's tree, as in FreeCAD's.
+(Nxt's tree does not claim the key ahead of the window's shortcuts, and without that it never reached the tree; NX-Style claims it for Nxt's tree.)
 
 | Toolbars
-| Nxt adds a toolbar of its own (*Nxt Fillet/Chamfer*) when Part Design starts. It shows above the ribbon, where NX-Style hides FreeCAD's toolbars.
+| Nxt adds a toolbar of its own (*Nxt Fillet/Chamfer*) when Part Design starts. NX-Style hides it like FreeCAD's toolbars; its commands are under *Menu › View › FreeCAD-Nxt*.
 
 | Model panel
-| Nxt tabs its panel beside FreeCAD's Model dock, so the Part Navigator, Dialog and Versions strip gains a *Model (Nxt)* tab.
+| Nxt's panel is the Part Navigator; FreeCAD's tree is the *FreeCAD Tree* tab behind it.
+
+| Speed
+| Nxt's tree does more work on each change of the document while it is on screen, and as the Part Navigator it usually is.
+Changing and picking an object took 0.34 s with Nxt's tree shown against 0.24 s with it behind a tab, in a part of 150 objects; at 20 objects there was no difference.
+The self-test, which builds large parts, runs about twice as long as with Nxt's panel behind FreeCAD's tree.
 
 | Colours
 | Nxt takes its colours from the window around it: background `#f0f0f0`, text `#1e2329`, but a grey accent (`#606060`) where NX-Style uses teal (`#0B6E79`).
