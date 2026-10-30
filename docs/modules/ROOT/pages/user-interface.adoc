@@ -161,3 +161,25 @@ NX-Style layers one light theme over FreeCAD's own *FreeCAD Light* stylesheet: a
 Every colour of the theme is a token defined once in `NXStyle/nxstyle/theme.py`.
 The stylesheets (`nx_theme.qss`, `ribbon.qss`) name a token as `@nx-accent`, `@nx-chrome` and so on, and the Python code reads the same table.
 Set `"theme": "none"` in the xref:settings.adoc[settings] to keep FreeCAD's look.
+
+=== Command icons
+
+Modeling and Sketch use an original, NX-inspired SVG icon set: blue solids, gold feature faces,
+red sketch curves and consistent outlines. These are independently authored illustrations,
+not Siemens icon files or a claim of pixel-identical NX 2212 artwork.
+The same command action supplies the ribbon, native menus and toolbars, Command Finder and radial menu.
+Grouped tools keep the icon of their remembered subcommand; tools without replacement artwork retain
+their native FreeCAD icon. Other applications continue to use their own workbench icons.
+
+.Original Modeling and Sketch icons at toolbar sizes, with disabled states
+image::nx-icon-theme.png[NXStyle icon catalogue at 16, 24, 32 and 44 pixels]
+
+Set `"icon_theme": "freecad"` in `nxstyle.json` and restart to restore native command icons.
+The default is `"icon_theme": "nx"`; this setting is independent of `theme` and changes no commands,
+shortcuts, selection behavior or model data. Qt supplies disabled/active states and SVG rendering at
+the ribbon's normal and Touch Mode sizes.
+
+Developers extend `NXStyle/nxstyle/resources/icon-theme.json`, which maps artwork names to command IDs,
+and put original SVGs in `resources/icons/nx/`. Keep the native fallback and add the command's aliases,
+not its translated label. Run `python tools/preview_icons.py --out .tmp/icon-preview.png` with PySide6
+to render a contact sheet at 16, 24, 32 and 44 pixels before accepting new artwork.

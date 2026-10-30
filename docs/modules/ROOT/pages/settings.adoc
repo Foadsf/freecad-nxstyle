@@ -46,6 +46,7 @@ include::partial$generated/settings.adoc[]
 | Keep FreeCAD's units choice | `"units": "freecad"`
 | Feature dialogs float over the graphics window, as in NX | `"floating_task_panel": true`
 | FreeCAD's own look | `"theme": "none"`
+| FreeCAD's own command icons | `"icon_theme": "freecad"` (independent of the chrome theme)
 | Start in Drafting | `"default_application": "drafting"`
 | FreeCAD 1.1's own NX mouse style | `"navigation": "native"`
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
