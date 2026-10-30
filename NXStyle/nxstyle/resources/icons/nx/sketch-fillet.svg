@@ -1,0 +1,10 @@
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later; original NXStyle artwork -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 5v22h22" stroke="#6b94b4" stroke-width="1.15" stroke-dasharray="2 2"/>
+  <path d="M5 5v12a10 10 0 0 0 10 10h12" stroke="#bc5054" stroke-width="1.8"/>
+  <path d="M5 17a10 10 0 0 0 10 10" stroke="#d5a448" stroke-width="2.5"/>
+  <path d="M15 17 8 24m1-4-1 4 4-1" stroke="#6b94b4" stroke-width="1.15"/>
+  <circle cx="15" cy="17" r="1.4" fill="#6b94b4"/>
+  <circle cx="5" cy="5" r="1.5" fill="#fff" stroke="#bc5054" stroke-width="1.15"/>
+  <circle cx="27" cy="27" r="1.5" fill="#fff" stroke="#bc5054" stroke-width="1.15"/>
+</svg>

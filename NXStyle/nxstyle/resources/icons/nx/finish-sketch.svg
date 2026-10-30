@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later; original NXStyle artwork. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#354d63" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="top" x1="0" y1="0" x2="0.8" y2="1"><stop stop-color="#d9ebf5"/><stop offset="1" stop-color="#91bad4"/></linearGradient>
+    <linearGradient id="left" x1="0" y1="0" x2="1" y2="0.8"><stop stop-color="#8eb7d0"/><stop offset="1" stop-color="#5f8eaf"/></linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6695b5"/><stop offset="1" stop-color="#3f7399"/></linearGradient>
+    <linearGradient id="feature" x1="0" y1="0" x2="0.8" y2="1"><stop stop-color="#fff0b9"/><stop offset="1" stop-color="#d5a448"/></linearGradient>
+    <radialGradient id="sphere" cx=".32" cy=".24" r=".8"><stop stop-color="#e0f0f8"/><stop offset=".5" stop-color="#8fb9d3"/><stop offset="1" stop-color="#3f7399"/></radialGradient>
+  </defs>
+  <g>
+    <polygon points="3,11 17,5 26,18 12,24" fill="#dfebf4" stroke="#698ea8"/>
+    <path d="M7 13 14 10 19 15 15 20 10 21Z" fill="none" stroke="#bc5054" stroke-width="1.85" />
+    <path d="m14 23 4 4L29 14" fill="none" stroke="#335d4d" stroke-width="4.8" />
+    <path d="m14 23 4 4L29 14" fill="none" stroke="#7cb391" stroke-width="2.8" />
+  </g>
+</svg>
