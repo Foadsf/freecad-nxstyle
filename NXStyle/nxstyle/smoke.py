@@ -102,6 +102,7 @@ class Smoke:
         """Yields (callable, delay_ms_after)."""
         yield self.s_wait_strata, 200
         yield self.s_static, 200
+        yield self.s_icon_theme, 200
         yield self.s_document, 1500
         yield self.s_gates, 100
         yield self.s_layout_matrix, 300
@@ -264,6 +265,10 @@ class Smoke:
             self.shot("09_strata_plm.png")
             model.raise_()
             self.shell.ribbon.select("Home")
+
+    def s_icon_theme(self):
+        from . import smoke_icons
+        smoke_icons.run(self)
 
     def s_static(self):
         sh = self.shell

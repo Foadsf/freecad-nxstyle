@@ -3,7 +3,7 @@
 
 import FreeCADGui as Gui
 
-from . import config, ribbon_layout, theme
+from . import config, icon_theme, ribbon_layout, theme
 from .qt import QAction, QtCore, QtGui, QtWidgets, Qt, exec_menu
 
 LARGE = 32
@@ -68,22 +68,28 @@ def resolve(spec, known=None):
 HOST_ACTIONS = {}
 
 
+def _themed_actions(actions, name):
+    for action in actions:
+        icon_theme.bind(action, action.objectName() or name)
+    return actions
+
+
 def command_actions(name):
     """FreeCAD's Command.getAction(): a plain command's own QAction, or a group command's entries (not the
     group's own action, see command_action); empty until FreeCAD has made the action (see provide_actions)."""
     if name in HOST_ACTIONS:
-        return [HOST_ACTIONS[name]]
+        return _themed_actions([HOST_ACTIONS[name]], name)
     try:
         cmd = Gui.Command.get(name)
     except Exception:
         cmd = None
     if cmd is not None:
         try:
-            return list(cmd.getAction() or [])
+            return _themed_actions(list(cmd.getAction() or []), name)
         except Exception:
             return []
     sub = sub_actions().get(name)
-    return [sub] if sub is not None else []
+    return _themed_actions([sub], name) if sub is not None else []
 
 
 def command_action(name):
@@ -104,7 +110,7 @@ def command_action(name):
     # findChild hands back a wrapper whose C++ object counts as deleted (measured in FreeCAD 1.1.4)
     for child in owner.children() if owner is not None else []:
         if isinstance(child, QAction) and child.objectName() == name:
-            return child
+            return icon_theme.bind(child, name, entries=acts, owner=owner)
     return first
 
 
