@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Laser Cut :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/laser-cut.html">
+    <link rel="prev" href="sheet-metal.html">
+    <link rel="next" href="pmi.html">
+    <meta name="description" content="Flat panels joined by tabs and slots, cross halvings and living hinges, then laid flat for the laser cutter, on the LCInterlocking add-on.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="laser-cut.html">Laser Cut (LCInterlocking)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/laser-cut.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Laser Cut</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Application › Laser Cut</strong> opens an application for parts cut from sheet, such as plywood, MDF or acrylic, on a laser cutter or a CNC router.
+NX has no such application. Its features come from <a href="https://github.com/execuc/LCInterlocking">LCInterlocking</a> (execuc, LGPL-2.1), which NX-Style bundles in <code>vendor/LCInterlocking</code> and the launcher loads.
+The bundled copy is <a href="https://github.com/Foadsf/LCInterlocking">a fork</a> with two fixes for FreeCAD 1.1, described under <a href="#qt6">FreeCAD 1.1 (Qt 6)</a>.
+NX-Style gives it a ribbon with NX-style names. The add-on&#8217;s own command name is shown in each button&#8217;s tooltip (<strong>FreeCAD: Slots</strong> under <strong>Tabs and Slots</strong>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/tutorial-AD-02-tray.png" alt="A tray of five 3 mm panels joined by tabs and slots">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_home_tab"><a class="anchor" href="#_the_home_tab"></a>The Home tab</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Button</th>
+<th class="tableblock halign-left valign-top">Add-on command</th>
+<th class="tableblock halign-left valign-top">Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Sketch</strong>, <strong>Extrude</strong>, <strong>Block</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketcher, Part Extrude, Part Box</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The panels: a sketched outline extruded by the sheet&#8217;s thickness, or a block.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Panel Box</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Box</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The six panels of a box (four sides, top and bottom) from its sizes and the thickness, not yet joined.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Rounded Panel Box</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rounded box</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The panels of a many-sided box, ready for living hinges at its corners.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Tabs and Slots</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Slots</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Joins panels that meet: a face of one panel gets tabs, and the panel it touches gets the slots. Each joint&#8217;s type is <strong>Tab</strong>, <strong>Screw</strong> (a T-slot for a screw and nut) or <strong>Continuous</strong> (finger joints along the whole edge). It sets the number, width and position of the tabs, dog bones and the kerf.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Cross Halving</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Crosspiece</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Two panels that cross each other, each slotted halfway (egg-crate joints).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Living Hinge</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Living hinges</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Joins panels round a curved corner into one flat part with a pattern of cuts there, so the sheet bends.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Export Flat Parts</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Export</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new document with the selected parts laid flat side by side, and their outlines as 2D views. Export these with <strong>File › Export</strong> as (flattened) SVG or DXF.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The <strong>Analysis</strong>, <strong>View</strong>, <strong>Tools</strong>, <strong>PLM</strong> and <strong>Application</strong> tabs are those of Modeling.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_a_joint_is_made"><a class="anchor" href="#_how_a_joint_is_made"></a>How a joint is made</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Model each panel as its own solid, with the sheet&#8217;s thickness. Panels that meet must touch: one panel&#8217;s face lies on the other&#8217;s.</p>
+</li>
+<li>
+<p><strong>Tabs and Slots</strong>. In the task panel, select the panels and click <strong>Add parts</strong>. The add-on finds each panel&#8217;s thickness from its two largest faces.</p>
+</li>
+<li>
+<p>Select the faces that carry the tabs, choose the joint type, and click <strong>Add faces</strong>. Select a joint in the list to set its tabs. <strong>Preview</strong> shows the result in a separate document.</p>
+</li>
+<li>
+<p>OK, or MB2. The joined parts are new solids (<code>&lt;panel&gt;_tab</code>). The original panels are kept, hidden, in a group, and <strong>Edit</strong> on the MultiJoin brings the panel back.</p>
+</li>
+<li>
+<p>Select the joined parts, <strong>Export Flat Parts</strong>, then <strong>File › Export</strong> the outlines.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Each tab comes out wider than its slot by the kerf (<strong>Laser beam diameter</strong>, thickness ÷ 15 by default), so the parts press-fit once the laser has burnt that much away.
+<a href="tutorials/ad.html" class="xref page">Tutorial AD</a> joins a five-panel tray this way, checks every joined part, and exports the outlines.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_switching_it_off"><a class="anchor" href="#_switching_it_off"></a>Switching it off</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>python launch_nx.py --no-lcinterlocking</code>, or <code>"laser_cut": "none"</code> in <code>nxstyle.json</code>, starts without the add-on, and Laser Cut is then not offered.
+An LCInterlocking already installed in the NX profile&#8217;s <code>Mod</code> folder is used instead of the bundled one, never both.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="qt6"><a class="anchor" href="#qt6"></a>FreeCAD 1.1 (Qt 6)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Upstream LCInterlocking 1.5.1 has two errors on FreeCAD 1.1, which uses Qt 6:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>opening the <strong>Tabs and Slots</strong> or <strong>Cross Halving</strong> task panel prints a <code>TypeError</code> about <code>StandardButton</code> in the Report view. The panel still gets its OK and Cancel buttons (<a href="https://github.com/execuc/LCInterlocking/issues/78">issue 78</a>);</p>
+</li>
+<li>
+<p><strong>Add parts</strong> or <strong>Add faces</strong> with nothing selected prints a <code>TypeError</code> instead of doing nothing (<a href="https://github.com/execuc/LCInterlocking/issues/75">issue 75</a>).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The bundled fork fixes both in <code>panel/treepanel.py</code> (its <code>qt6-fixes</code> branch, offered upstream as <a href="https://github.com/execuc/LCInterlocking/pull/82">pull request 82</a>).
+If you install upstream LCInterlocking into the NX profile with the Addon Manager instead, NX-Style applies the same two fixes when the add-on&#8217;s task panel code loads (<code>nxstyle/lcinterlocking.py</code>), without changing its files.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_limits"><a class="anchor" href="#_limits"></a>Limits</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Make the panels as Part solids (<strong>Block</strong>, <strong>Extrude</strong> from the Part tools, imported STEP). The add-on ignores a PartDesign Body&#8217;s own placement, so a moved Body is joined in the wrong place (<a href="https://github.com/execuc/LCInterlocking/issues/38">issue 38</a>).</p>
+</li>
+<li>
+<p>The add-on&#8217;s icons are 16-pixel bitmaps, so its ribbon buttons are small ones.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="sheet-metal.html">Sheet Metal</a></span>
+  <span class="next"><a href="pmi.html">PMI and technical product documentation</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

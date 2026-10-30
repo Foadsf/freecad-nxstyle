@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial S: Tolerance stack-up of a grooved pin :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/s.html">
+    <link rel="prev" href="r.html">
+    <link rel="next" href="t.html">
+    <meta name="description" content="Fischer's Example 7.1 and 8.1 as a stack-up measured from the model: worst case, RSS, adjusted RSS, Monte Carlo, a requirement, a better dimensioning scheme, and a design change the stack-up follows.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="s.html">S: Tolerance stack-up of a pin</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/s.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial S: Tolerance stack-up of a grooved pin</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Book
+</td>
+<td class="hdlist2">
+<p>Bryan R. Fischer, <em>Mechanical Tolerance Stackup and Analysis</em>, 2nd ed., Example 7.1 (worst case, fig. 7.11 and 7.12) and Example 8.1 (statistical, fig. 8.16 and 8.17)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>Analysis › Tolerance Stackup, measured contributors, the stack direction, worst case against RSS, a requirement, fewer contributors, associativity</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>The book&#8217;s axial sizes: 45 ±0.5 overall, 30 ±0.2 from the head end to the groove, 13.2 ±0.5 from the tip to the groove, so a groove 1.8 wide. Its diameters are not given: the pin here has a Ø14 × 5 head, a Ø10 shank and a Ø8.6 groove root.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The question is the book&#8217;s: how wide can the groove be, at least and at most, when the pin is made to these three dimensions?</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_pin"><a class="anchor" href="#_1_the_pin"></a>1. The pin</h3>
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>, <strong>Revolve</strong> with nothing selected, the XY plane, and the half section with <strong>Profile</strong> (<kbd>Z</kbd>).
+Dimension it fully; name the groove&#8217;s width <code>GrooveWidth</code>.
+<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span> continues into the Revolve dialog: the X axis, 360°, OK.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_loop"><a class="anchor" href="#_2_the_loop"></a>2. The loop</h3>
+<div class="paragraph">
+<p><strong>Analysis › Tolerance Stackup</strong>.
+Pick the groove&#8217;s side towards the head (point A) and the head&#8217;s end face, then <strong>Add Measured</strong>: 30.000, against the stack direction.
+Then the head end and the tip (45.000, +), and the tip and the groove&#8217;s other side (point B: 13.200, −).
+The stack direction is the outward normal of A, across the groove.</p>
+</div>
+<div class="paragraph">
+<p>Type the descriptions and the tolerances into the table: ±0.2, ±0.5, ±0.5.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-S-02-dialog.png" alt="The Tolerance Stackup dialog: the three contributors and the live report">
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">Fischer</th>
+<th class="tableblock halign-left valign-top">NX-Style</th>
+<th class="tableblock halign-left valign-top">Min to max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nominal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.8000</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Worst case</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">±1.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">±1.2000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.6000 to 3.0000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RSS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">±0.74</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">±0.7348</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.0652 to 2.5348</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Adjusted RSS (1.5 × RSS)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">±1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">±1.1023</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.6977 to 2.9023</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The book rounds; the numbers are the same.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_a_requirement"><a class="anchor" href="#_3_a_requirement"></a>3. A requirement</h3>
+<div class="paragraph">
+<p>The groove has to take a DIN 471 retaining ring for a Ø10 shaft, which needs a groove at least 1.1 wide.
+Tick <strong>Minimum</strong> and type 1.1.
+Worst case (0.6) and adjusted RSS (0.70) fail; the Monte Carlo run of 100 000 pins finds about 2 000 per million too narrow.
+With three contributors the report recommends the worst-case result, as Fischer does.</p>
+</div>
+<div class="paragraph">
+<p>OK puts the report in the Information window; the loop stays in the graphics window beside the pin, numbered as in the table.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-S-03-loop.png" alt="The stack-up loop drawn beside the pin" width="seen from above">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_fewer_contributors"><a class="anchor" href="#_4_fewer_contributors"></a>4. Fewer contributors</h3>
+<div class="paragraph">
+<p>Fischer&#8217;s remedy is not tighter tolerances but a better dimensioning scheme: dimension what the function needs, with the fewest dimensions in the loop.
+Select the stack-up and click <strong>Tolerance Stackup</strong> to edit it, <strong>Remove</strong> the three rows, and add the groove&#8217;s width itself: A to B, ±0.1.
+The worst case is now 1.7 to 1.9 and passes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_a_design_change"><a class="anchor" href="#_5_a_design_change"></a>5. A design change</h3>
+<div class="paragraph">
+<p>Change <code>GrooveWidth</code> in the sketch to 2.0.
+The stack-up follows: it measures the faces, it does not keep a copy of the numbers.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-S-04-pin.png" alt="The pin after the design change" width="with its one-contributor stack-up">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">File &gt; New (Ctrl+N), Model template</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+N</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Revolve, nothing selected</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature &gt; Revolve'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch on the XY plane</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">plane row + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">XY-plane (Base plane)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Profile (Z): the pin&#8217;s half section, 10 lines, MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Z key + 11 MB1 clicks + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tool True; 10 curves; ended True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rapid Dimension: 45 overall, groove 30 from the head and 1.8 wide; Ø14 head, Ø10 shank, Ø8.6 groove root</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">values applied (the groove width named GrooveWidth)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">solver 0 (0 = fully constrained)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Revolve about the X axis, 360°, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axis 'Base X-axis', MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 3874.5 mm^3, expected 3874.5; 1 solid(s)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Analysis &gt; Tolerance Stackup</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Analysis › Tolerance &gt; Tolerance Stackup'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">NXStyle&#8217;s own command: FreeCAD has no stack-up tool (NX&#8217;s is the separate Tolerance Stackup Validation)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pick groove side A to the head end, Add Measured</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">two MB1 picks + 'Add Measured'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">measured -30.000 mm along (1.0, 0.0, 0.0)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pick head end to tip, Add Measured</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">two MB1 picks + 'Add Measured'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">measured +45.000 mm along (1.0, 0.0, 0.0)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pick tip to groove side B, Add Measured</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">two MB1 picks + 'Add Measured'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">measured -13.200 mm along (1.0, 0.0, 0.0)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tolerances ±0.2, ±0.5, ±0.5: worst case 0.6 to 3.0, RSS ±0.74, adjusted RSS ±1.1 (0.7 to 2.9)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">typed into the table&#8217;s cells</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">nominal 1.8000; worst case 0.6000 to 3.0000; RSS ±0.7348; adjusted 0.6977 to 2.9023: Fischer&#8217;s figures 7.12 and 8.17</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Requirement: the groove takes a DIN 471 ring for a Ø10 shaft, so A-B &gt;= 1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minimum ticked, 1.1 typed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">verdict: worst case FAILS, adjusted RSS FAILS; Monte Carlo 2,230 ppm out (100000 assemblies). The book states no requirement: this one shows what the numbers mean</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OK: the stack-up report</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MB2 = OK; the report in the Information window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the stack-up stays in the Part Navigator and recomputes with the part</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Change the dimensioning: the groove&#8217;s width dimensioned directly, 1.8 ±0.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">three rows removed, A to B added, ±0.1 typed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">worst case 1.700 to 1.900; worst case OK, adjusted RSS OK. One contributor instead of three (Fischer: dimension what the function needs, with the fewest dimensions in the loop)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Design change: the groove widened to 2.0 in the model</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the sketch&#8217;s GrooveWidth = 2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the stack-up follows: nominal 2.000, worst case 1.900 to 2.100 (it measures the faces, not a copy of the numbers)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The pin and its stack-up loop in the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">render of the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.9% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX&#8217;s stack-up tool (Tolerance Stackup Validation) is a separate product working from PMI; NX-Style&#8217;s measures the model directly, takes PMI too (<a href="t.html" class="xref page">tutorial T</a>), and is a feature of the part.</p>
+</li>
+<li>
+<p>The dimensions are set through FreeCAD&#8217;s API, the equivalent of typing them into Rapid Dimension.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="r.html">R: Tube and attractor frames (Katydid)</a></span>
+  <span class="next"><a href="t.html">T: A guide bush to ISO GPS (PMI)</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

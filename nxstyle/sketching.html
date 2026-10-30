@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Sketching :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/sketching.html">
+    <link rel="prev" href="keyboard-shortcuts.html">
+    <link rel="next" href="modeling.html">
+    <meta name="description" content="NX's sketch task environment in FreeCAD's Sketcher: keys, the Sketch tab, constraints and what differs.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="sketching.html">Sketching</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/sketching.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Sketching</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="_images/ui-sketch.png" alt="The Sketch tab while a sketch is edited">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_starting_a_sketch"><a class="anchor" href="#_starting_a_sketch"></a>Starting a sketch</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As in NX, you usually start a feature, not a sketch:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>With nothing selected, <kbd>X</kbd> (Extrude), <strong>Revolve</strong> or <strong>Hole</strong> asks for a plane or face, then opens a sketch on it.</p>
+</li>
+<li>
+<p>With a face or datum plane selected, the sketch opens on it at once.</p>
+</li>
+<li>
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span> (<strong>Finish Sketch</strong>) carries straight on into the feature&#8217;s dialog.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Home › Direct Sketch › Sketch</strong> makes a sketch on its own, as NX&#8217;s Sketch command does.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_sketch_tab"><a class="anchor" href="#_the_sketch_tab"></a>The Sketch tab</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>While a sketch is open, the contextual <strong>Sketch</strong> tab comes to the front.
+It holds the Sketch, Curve, Edit Curve and Constraints groups with NX&#8217;s names; <a href="nx-to-freecad.html" class="xref page">NX command to FreeCAD command</a> lists them.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_keys"><a class="anchor" href="#_keys"></a>Keys</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Key</th>
+<th class="tableblock halign-left valign-top">NX command</th>
+<th class="tableblock halign-left valign-top">FreeCAD tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>Z</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Profile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polyline (press <kbd>M</kbd> while drawing to switch to arcs; NX drags MB1)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>R</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rectangle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rectangle</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>L</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Line</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Line</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>A</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Arc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Arc (centre and two end points)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>O</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circle</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>P</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polygon</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Regular polygon</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>S</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Studio Spline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B-spline by interpolation: Type Through Points (see <a href="#studio-spline">Studio Spline</a>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>T</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quick Trim</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Trim</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>E</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quick Extend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>F</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fillet</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fillet (pick the two curves, then the radius)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>D</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rapid Dimension</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dimension</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>C</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Geometric Constraints</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">NX&#8217;s constraint gallery as a menu; the choice runs FreeCAD&#8217;s tool (see below)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="keyseq"><kbd>Shift</kbd>+<kbd>F8</kbd></span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Orient View to Sketch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">View sketch</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Finish Sketch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Leave sketch</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>MB2</strong> ends the active curve tool, as in NX.
+FreeCAD&#8217;s <kbd>Esc</kbd> ends an open profile first and the tool only with a second press; MB2 ends both at once.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Profile</dt>
+<dd>
+<p>A click on the profile&#8217;s first point closes it, as in NX: the last line gets a coincidence with the first point and the profile is done.
+Lines get Horizontal or Vertical when they are drawn within 2° of it.
+After an arc, FreeCAD carries on with a line held tangent to the arc and infers no Horizontal or Vertical on it.
+NX&#8217;s book clicks <strong>Line</strong> in the Profile dialog there; in FreeCAD press <kbd>M</kbd> twice (tangent line, perpendicular line, line) to get the plain line, then add <strong>Tangent</strong> if you want it.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_typed_coordinates"><a class="anchor" href="#_typed_coordinates"></a>Typed coordinates</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>NX&#8217;s curve and point tools take typed XC and YC values in boxes beside the pointer.
+NX-Style sets FreeCAD&#8217;s on-view parameters to <strong>Position and dimensions</strong> (setting <code>sketch_input</code>), so the first point of a tool shows X and Y fields as well as the length and angle fields.
+Type a value, press <kbd>Enter</kbd> for the next field, and the point lands exactly there: <strong>Point</strong>, then 298.45 <kbd>Enter</kbd> 152.4 <kbd>Enter</kbd> makes a point at (298.45, 152.4) mm.
+FreeCAD keeps typed coordinates as constraints: horizontal and vertical distances from the axes, or Coincident with the origin for (0, 0).
+For a point on the origin, click the origin instead of typing 0 and 0: FreeCAD 1.1.4 then adds the Coincident twice, and the solver reports the second as redundant.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Typed points that meet</dt>
+<dd>
+<p>In NX a point typed onto an existing end point is that point: NX infers the coincidence, so the book&#8217;s typed arcs and lines make a closed profile.
+FreeCAD 1.1.4 loses both halves of that, and NX-Style puts them back when each curve tool finishes:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The value typed is kept.</strong> FreeCAD writes each typed value&#8217;s constraint with six decimals, angles in radians: a typed 90° sweep becomes 1.570796 rad, and the end of an R63.5 arc lands 2e-5 mm off the point typed.
+NX-Style gives the constraint the number typed (π/2 here).</p>
+</li>
+<li>
+<p><strong>A point typed onto an end point joins it.</strong> FreeCAD finds the end point under a typed point, but it adds the typed constraints first; those already hold the point, so it drops the Coincident as redundant (the report view says "Autoconstraints cause redundancy" or "Redundant constraint is not an autoconstraint &#8230;&#8203; Please report!").
+When it keeps an inferred constraint, FreeCAD checks it before solving; where two arcs meet tangentially (tutorial AV&#8217;s R0.50 end between its R1.50 and R2.50 bands), the solved sketch can then be redundant, and it fails to solve from that curve on ("Solving the sketch failed").
+NX-Style adds the Coincident for each point of the new curve that lies within 1e-4 mm of a point of another curve or of the origin (Validate Sketch&#8217;s default tolerance for missing coincidences), then puts back FreeCAD&#8217;s inferred constraints and the typed values, keeping each only if the solved sketch still needs it, as FreeCAD itself intends.
+At a tangential join that can leave out the second arc&#8217;s radius dimension: the join and the first arc then hold it.</p>
+<div class="paragraph">
+<p>The repair adds no undo step: Undo takes back the curve as before.
+The self-test draws two arcs and a line this way, and tutorial AV&#8217;s arm (7 arcs and a line), and checks that they make closed loops with no gap above 1e-7 mm (1e-9 mm for AV) and no redundant constraint; with the repair off, FreeCAD alone leaves gaps of 3.3e-5 mm and no Coincident.</p>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Set <code>sketch_input</code> to <code>dimensions</code> for FreeCAD&#8217;s default (no position fields), <code>none</code>, or <code>freecad</code> to leave FreeCAD&#8217;s own choice alone.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="studio-spline"><a class="anchor" href="#studio-spline"></a>Studio Spline</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><kbd>S</kbd> and <strong>Studio Spline</strong> on the Sketch tab start NX&#8217;s default type, <strong>Through Points</strong>: the spline passes through every point you click or type.
+It is FreeCAD&#8217;s B-spline by interpolation, a cubic (degree 3).
+<strong>MB2</strong> ends the spline and the tool, as in NX; at least two points make a spline.</p>
+</div>
+<div class="paragraph">
+<p>NX&#8217;s dialog options are in FreeCAD&#8217;s tool panel (<strong>B-Spline Parameters</strong>) while the tool runs:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX</th>
+<th class="tableblock halign-left valign-top">FreeCAD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Type: Through Points</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">First drop-down, <strong>From knots</strong> (the default here)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Type: By Poles</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">First drop-down, <strong>From control points</strong>, or <kbd>M</kbd> to switch while drawing; the button&#8217;s drop-down arrow starts it directly</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Degree</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Degree</strong> field, <kbd>U</kbd> and <kbd>J</kbd> (By Poles only: FreeCAD&#8217;s Through Points is always cubic)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Closed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Periodic</strong> check box; the button&#8217;s drop-down has both closed kinds</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>FreeCAD&#8217;s own key for <strong>Periodic</strong>, <kbd>R</kbd>, is NX&#8217;s Rectangle here: it ends the spline tool and starts Rectangle, so tick the check box instead.</p>
+</div>
+<div class="paragraph">
+<p>The button&#8217;s drop-down remembers the last kind picked, as FreeCAD&#8217;s toolbar does; <kbd>S</kbd> is always Through Points.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Typed points</dt>
+<dd>
+<p>The first point takes X and Y, the next ones take the <strong>length and angle</strong> from the point before (FreeCAD has no X and Y fields after the first point).
+For the first point type X, click into the Y field, type Y and press <kbd>Enter</kbd>: FreeCAD places the point as soon as either field gets <kbd>Enter</kbd> or <kbd>Tab</kbd>, and the other then holds the pointer&#8217;s value.
+For each next point type the length, <kbd>Enter</kbd>, the angle in degrees from the X axis, <kbd>Enter</kbd>.
+Exercise 4.10.4&#8217;s spline through (-50, 0), (-25, 1), (25, -8) and (50, 0) is: -50, 0; then 25.0199920063936 and 2.29061004263853; 50.8035431835222 and -10.2039737217317; 26.2488094968134 and 17.7446716250569.</p>
+<div class="paragraph">
+<p>Two FreeCAD habits move typed points:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>FreeCAD looks for automatic constraints at a typed point as it does at a click: a curve within its pick radius (5 pixels) of the point gets one. Zoomed out to 3.75 pixels per mm, the point typed 1 mm above the X axis went <strong>onto</strong> the axis, and the spline with it. Zoom in until the point is several pixels clear of nearby curves before typing it.</p>
+</li>
+<li>
+<p>FreeCAD stores each typed length as a distance with six decimals, so a length typed with more digits is rounded to 1e-6 mm, and the solver moves the later points by the rounding: in the exercise the last point ends 0.7e-6 mm from its typed X. Dimension the points afterwards (below) for exact positions.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Dimensions on through points</dt>
+<dd>
+<p>FreeCAD keeps each through point as a construction point on the spline (an internal knot alignment).
+Dimension and constrain those points as any sketch point: a <strong>Distance</strong> or <strong>Coincident</strong> on one moves it, and the spline follows through it.
+Typed values become constraints: the first point&#8217;s X and Y as distances from the axes, each typed length as a distance between two points.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dimensions"><a class="anchor" href="#_dimensions"></a>Dimensions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Rapid Dimension</strong> (<kbd>D</kbd>) is FreeCAD&#8217;s Dimension tool, which infers the kind from the pick.
+<strong>Linear Dimension</strong> on the Sketch tab offers NX&#8217;s measurement methods: <strong>Horizontal</strong> and <strong>Vertical</strong> (FreeCAD&#8217;s horizontal and vertical distance) and <strong>Point-to-Point</strong> (FreeCAD&#8217;s Distance, also the <strong>Distance</strong> button).</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Hide</dt>
+<dd>
+<p>Select dimensions or constraints and press <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>B</kbd></span>, or MB3 &gt; <strong>Hide</strong>, as in NX.
+FreeCAD hides them in its "virtual space"; its constraint list still shows them.
+<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></span> (<strong>Show</strong>) brings back the ones selected in that list, <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></span> (<strong>Show All</strong>) all of them.
+FreeCAD&#8217;s own Hide Selection does not hide sketch dimensions.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_geometric_constraints"><a class="anchor" href="#_geometric_constraints"></a>Geometric constraints</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><kbd>C</kbd> (or <strong>Geometric Constraints</strong> on the Sketch tab) opens NX&#8217;s gallery: Coincident, Point on Curve, Tangent, Parallel, Perpendicular, Horizontal, Vertical, Horizontal and Vertical Alignment, Midpoint, Collinear, Concentric, Equal Length and Equal Radius, Fixed and Fully Fixed.
+A choice applies to what is selected; with nothing selected FreeCAD&#8217;s tool starts and you pick the curves, as in NX&#8217;s dialog.
+Some have no FreeCAD tool of their own and use the one that does the same with that pick: Horizontal or Vertical with two points aligns them, Symmetric with a line and a point is Midpoint, Coincident on two arcs or circles is Concentric, and Equal covers lengths and radii.</p>
+</div>
+<div class="paragraph">
+<p><strong>Point on Curve</strong> and <strong>Collinear</strong> are on the Sketch tab too.
+NX gives neither a key, and neither has one here.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Collinear</dt>
+<dd>
+<p>FreeCAD has no collinear constraint.
+Select the line to move, then the line to align it with, then <strong>Collinear</strong>: both ends of the first line go on the line through the second, as point-on-curve constraints.
+When the two lines are already parallel (both horizontal, say), one end is enough and only one is added, so the sketch gets no redundant constraint.
+It is one undo step.
+Collinear takes a selection; it does not start a pick mode as FreeCAD&#8217;s own tools do.</p>
+</dd>
+<dt class="hdlist1">Not offered</dt>
+<dd>
+<p>NX&#8217;s Constant Length, Constant Angle, Point on String, Uniform and Non-Uniform Scale and Slope of Curve have no FreeCAD equivalent; a driving dimension does what Constant Length and Constant Angle do.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_constraints_and_degrees_of_freedom"><a class="anchor" href="#_constraints_and_degrees_of_freedom"></a>Constraints and degrees of freedom</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>NX&#8217;s status line says when a sketch is fully defined; FreeCAD&#8217;s Dialog panel says the same:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Under-constrained: N Degrees of Freedom</strong> while something can still move;</p>
+</li>
+<li>
+<p><strong>Fully constrained</strong> when nothing can.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="tutorials/j.html" class="xref page">Tutorial J</a> follows the book&#8217;s triangle constraint by constraint, and the state matches the book&#8217;s at every step.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Fully Fixed</strong> on the Sketch tab is FreeCAD&#8217;s Block constraint; <strong>Relax Constraint</strong> switches a constraint off without deleting it (FreeCAD&#8217;s Toggle Active Constraint).</p>
+</li>
+<li>
+<p>Dimensions get names in their properties (NX numbers them p0, p1 …). A dimension takes a formula after <code>=</code>, for example <code>=Constraints.width / 5 * 1.6</code>, or a value from the Expressions table, <code>=Expressions.L</code> (<a href="tutorials/k.html" class="xref page">Tutorial K</a>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_things_that_work_differently"><a class="anchor" href="#_things_that_work_differently"></a>Things that work differently</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Project Curve</dt>
+<dd>
+<p>FreeCAD 1.1 projects a picked edge as <strong>defining</strong> geometry: it becomes part of the profile.
+A circle drawn across a projected edge then fails to extrude ("Wire is not closed") until the projected edge is turned into reference geometry with <strong>Convert To/From Reference</strong>.
+NX makes regions from the circle and the edge.</p>
+</dd>
+<dt class="hdlist1">Fillet</dt>
+<dd>
+<p>FreeCAD&#8217;s sketch fillet makes the arc tangent but does not dimension its radius, so a later change can grow it.
+Add a radius dimension to keep it.
+A fillet also removes its corner, and with it what held the corner (a right angle, a snap to the origin); put back the horizontal, vertical or on-origin constraint it held.</p>
+</dd>
+<dt class="hdlist1">Offset Curve</dt>
+<dd>
+<p>FreeCAD takes the side and the distance from an MB1 click; type the exact distance into the offset dimension afterwards.
+With <strong>Add offset constraint</strong> on, FreeCAD 1.1.4 gives a closed loop one redundant constraint, so the sketch does not solve.
+Use <strong>Sketch › Select Redundant Constraints</strong> and delete it (see <a href="known-issues.html" class="xref page">Known issues</a>).</p>
+</dd>
+<dt class="hdlist1">Dynamic dimensions</dt>
+<dd>
+<p>NX shows a sketch&#8217;s dimensions while you draw and offers to scale the whole sketch to the first one; FreeCAD&#8217;s dimension tool asks for one value at a time.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also"><a class="anchor" href="#_see_also"></a>See also</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="tutorials/i.html" class="xref page">Tutorial I</a>&#8201;&#8212;&#8201;Extend, Quick Trim, Fillet and an associative offset.</p>
+</li>
+<li>
+<p><a href="tutorials/j.html" class="xref page">Tutorial J</a>&#8201;&#8212;&#8201;constraints, degrees of freedom and formulas.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="keyboard-shortcuts.html">Keyboard shortcuts</a></span>
+  <span class="next"><a href="modeling.html">Modeling</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

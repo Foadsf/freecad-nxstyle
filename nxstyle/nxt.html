@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>FreeCAD-Nxt (trial) :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/nxt.html">
+    <link rel="prev" href="data-management.html">
+    <link rel="next" href="release-package.html">
+    <meta name="description" content="The FreeCAD-Nxt add-on next to NX-Style: what it adds, how to turn it on, and where it meets NX's keys and layout.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="nxt.html">FreeCAD-Nxt (trial)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/nxt.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">FreeCAD-Nxt (trial)</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://github.com/obelisk79/FreeCAD-Nxt">FreeCAD-Nxt</a> is a FreeCAD add-on by Joe (obelisk79), in the style of Fusion and Onshape and built on Qt Quick.
+It adds a model panel with a rollback bar, a Property Inspector, drag-handle value boxes, its own fillet and chamfer, a section view with filled cut faces, Isolate and Quick Mass.
+NX-Style bundles it, unmodified, as a git submodule (<code>vendor/FreeCAD-Nxt</code>, version 0.5.15), and it is <strong>off by default</strong>.
+This is the first of several steps that bring parts of it into NX&#8217;s commands; for now it runs beside NX-Style as it is.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/nxt-section.png" alt="Nxt&#8217;s section view in NX-Style: the cut faces are hatched" width="the plane has an Offset box">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_turning_it_on"><a class="anchor" href="#_turning_it_on"></a>Turning it on</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><code>python launch_nx.py --nxt</code> starts with it once.</p>
+</li>
+<li>
+<p><code>"nxt": true</code> in the <a href="settings.html" class="xref page">settings</a> switches it on for good.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>It needs FreeCAD 1.1 or newer; on FreeCAD 1.0 the launcher says so and starts without it.
+Its commands are under <strong>Menu › View › FreeCAD-Nxt</strong>, and its panel becomes the Part Navigator (below).
+A copy of Nxt installed in the NX profile&#8217;s own <code>Mod</code> folder (through the Addon Manager) is used instead of the bundled one, so it never loads twice; FreeCAD loads that copy whether or not <code>--nxt</code> is given.</p>
+</div>
+<div class="paragraph">
+<p>Nxt is not a workbench: it is a <code>freecad.nxt</code> package that adds its panel and commands to every workbench.</p>
+</div>
+<div class="sect2">
+<h3 id="_what_nx_style_changes_in_it"><a class="anchor" href="#_what_nx_style_changes_in_it"></a>What NX-Style changes in it</h3>
+<div class="paragraph">
+<p>Nothing in Nxt&#8217;s code. In the NX profile, NX-Style:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>sets one of Nxt&#8217;s own preferences before Nxt starts: <strong>CheckAddonUpdates</strong> off.
+Nxt otherwise looks for updates of every installed add-on after start-up and offers the Addon Manager&#8217;s <em>Update all</em> dialog; NX-Style&#8217;s add-ons are pinned versions, updated with NX-Style itself.</p>
+</li>
+<li>
+<p>gives a few of Nxt&#8217;s words NX&#8217;s names, through a Qt translation file (<code>resources/nxt/nx_names.ts</code>): its panel is the <strong>Part Navigator</strong>, and <strong>Roll back to here</strong> and <strong>Roll forward to here</strong> are <strong>Make Current Feature</strong>.</p>
+</li>
+<li>
+<p>adds <strong>Edit Parameters</strong> to Nxt&#8217;s MB3 menu on a feature, through Nxt&#8217;s own menu files (<code>resources/nxt/nx_menu.toml</code>).</p>
+</li>
+<li>
+<p>arranges Nxt&#8217;s panel as the Part Navigator, and settles the keys both handle (below).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_nxts_panel_as_the_part_navigator"><a class="anchor" href="#_nxts_panel_as_the_part_navigator"></a>Nxt&#8217;s panel as the Part Navigator</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="_images/nxt-navigator.png" alt="The Part Navigator with Nxt on: Nxt&#8217;s tree with its rollback bar" width="and NX's Dependencies and Details panels below it">
+</div>
+</div>
+<div class="paragraph">
+<p>With Nxt on, Nxt&#8217;s model panel is the Part Navigator:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>It is the first tab of the left tab strip, and the Resource Bar&#8217;s <strong>Part Navigator</strong> button opens it.
+The status strip (work part, active body, suppressed and failed features) sits above its tree, three lines high; it scrolls when there is more.
+It keeps that height: with the strip growing and shrinking right above Nxt&#8217;s tree on each pick, making and picking 25 blocks took 100 s instead of 4 s.</p>
+</li>
+<li>
+<p>FreeCAD&#8217;s own tree stays one tab behind it, as <strong>FreeCAD Tree</strong>.</p>
+</li>
+<li>
+<p>Nxt&#8217;s <strong>rollback bar</strong> is NX&#8217;s <strong>Make Current Feature</strong>.
+Drag the bar, or use <strong>Make Current Feature</strong> in the MB3 menu or on the ribbon: either sets the Body&#8217;s current feature, and the bar follows.
+Nxt confirms with a note (<em>Current feature of Body: Pad</em>) that has an Undo button.</p>
+</li>
+<li>
+<p>Below the tree are NX&#8217;s <strong>Dependencies</strong> and <strong>Details</strong> panels, folded away until you open them, as in NX.
+They describe the one selected object.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Dependencies</strong> lists its parents (what it is built from) and its children (what uses it), each with the kind of link: Geometry, Attachment, Expression or Link.
+These are the links Nxt&#8217;s dependency arrows show, and Nxt draws the arrows in the tree while the panel is open.
+A sketch shown under its Pad, which gets no arrow, is still listed as its parent.
+Double-click a row to select that object.</p>
+</li>
+<li>
+<p><strong>Details</strong> lists the values that define it: those Nxt&#8217;s detail strip shows, such as an Extrude&#8217;s Length, Type and Reversed.
+Type a value (or <code>=</code> and an expression) and press <kbd>Enter</kbd>; each change is one undo step.
+<em>All properties</em> opens Nxt&#8217;s Property Inspector.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>The MB3 menu of a feature in Nxt&#8217;s tree has NX-Style&#8217;s <strong>Edit Parameters</strong>, which opens NX-Style&#8217;s Extrude, Revolve, primitive and Thread dialogs.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_works_on_freecad_1_1_4"><a class="anchor" href="#_what_works_on_freecad_1_1_4"></a>What works on FreeCAD 1.1.4</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Measured with the self-test (<code>--smoke-test --nxt</code>) on FreeCAD 1.1.4 (Qt 6.8.3), Windows 11.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 16.6666%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Nxt feature</th>
+<th class="tableblock halign-left valign-top">FreeCAD 1.1.4</th>
+<th class="tableblock halign-left valign-top">What was seen</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Model panel (tree, timeline)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Is the Part Navigator (above).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dependency arrows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drawn while the Dependencies panel is open.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Detail strip values</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same values are in the Details panel, editable there.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Property Inspector</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Opens beside the panel for the selected feature.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Isolate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Shows only the selection; leaving it shows everything again.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Section view, filled cut faces</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cut faces are hatched; the plane can be dragged, with an Offset box.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quick Mass</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The mass bar appears at the bottom of the graphics window.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drag handles with value boxes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Editing a Pad shows FreeCAD&#8217;s two arrows and two taper handles, with Nxt&#8217;s <strong>Length</strong> and <strong>Taper</strong> boxes beside them.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt fillet and chamfer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Opens its task panel and makes an <code>NxtFillet</code> feature that recomputes cleanly.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rollback (the Body&#8217;s tip)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt&#8217;s panel moves the tip back to the Sketch and forward to the Pad.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Menu entry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">works</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Menu › View › FreeCAD-Nxt</strong> lists Nxt&#8217;s commands.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="_images/nxt-pad-handles.png" alt="A Pad in edit with Nxt on: FreeCAD&#8217;s drag handles" width="with Nxt's Length and Taper boxes">
+</div>
+</div>
+<div class="paragraph">
+<p>Nxt&#8217;s drag handles are FreeCAD&#8217;s own ("gizmos"), which FreeCAD 1.1 already has; nothing above needed a FreeCAD 26.x build.
+Nxt&#8217;s author works on FreeCAD 26.3 (Qt 6.11); its context menu uses a Qt 6.8 feature, which FreeCAD 1.1.4 ships.
+Not exercised yet: drag reorder in the tree and face snapping, which need real mouse work in Nxt&#8217;s Qt Quick panel and the graphics window.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_tutorials_with_nxt_on"><a class="anchor" href="#_the_tutorials_with_nxt_on"></a>The tutorials with Nxt on</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Nxt is not ready to be on by default: with it on, NX-Style&#8217;s own Extrude and Revolve dialogs lose what is typed into them.
+All 48 tutorial replays were run with Nxt off and on, each group of tutorials in a fresh FreeCAD 1.1.4.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">Steps run</th>
+<th class="tableblock halign-left valign-top">FAILED</th>
+<th class="tableblock halign-left valign-top">Steps not run after a failure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt off</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">771</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt on</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">742</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">40</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The six with Nxt off fail with Nxt on too, the same way, and have nothing to do with Nxt (three Ctrl+S save checks, an Orient View, and two steps of the Carbon tutorial that tutorial AN runs).
+The regressions with Nxt on:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Extrude and Revolve values are lost</strong> (tutorials AE, AF, AJ: an End of 20 or 60 mm gives FreeCAD&#8217;s default 10 mm; AO: Revolve takes none of the 10 picked curves).
+Nxt replaces FreeCAD&#8217;s Pad, Pocket and Revolve parameter boxes with its own cards; with that replacement removed, tutorial AE replays as with Nxt off, while switching off only Nxt&#8217;s floating value boxes does not help.
+Revolve&#8217;s box is replaced the same way; that AO fails for the same reason is likely but was not tested on its own.
+Nxt has no setting for the replacement yet.</p>
+</li>
+<li>
+<p><strong>Offset Curve in a sketch</strong> (tutorial I): the <em>Add offset constraint</em> option does not take, so the offset loop stays where the click put it (14.6 mm instead of 15). It repeats; the cause is not yet known.</p>
+</li>
+<li>
+<p><strong>Datum Plane, Datum Axis and Hole</strong> (tutorial AN): a typed offset reads 0, the datum axis stays unattached, and the Hole&#8217;s sketch does not start. The cause is not yet known.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The other tutorials (A to H, J to Z, AA to AD, AG, AH, AK, AP to AY) replay as with Nxt off.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_where_it_meets_nx_style"><a class="anchor" href="#_where_it_meets_nx_style"></a>Where it meets NX-Style</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Measured with the self-test, Nxt on against Nxt off:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Where</th>
+<th class="tableblock halign-left valign-top">With Nxt on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>Space</kbd> in the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD&#8217;s Show/Hide (<code>Std_ToggleVisibility</code>), as with Nxt off.
+Nxt has its own Space there, which hides the <em>feature</em> behind the pick; NX-Style takes it out, so a key does the same with Nxt on or off.
+In Nxt&#8217;s tree <kbd>Space</kbd> shows or hides the selected rows, as in FreeCAD&#8217;s tree.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>Home</kbd>, <kbd>End</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">NX&#8217;s Trimetric and Isometric views, also while Nxt&#8217;s tree has the keyboard focus (Nxt keeps them there to move to the first or last row; NX-Style gives them back).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><kbd>F2</kbd></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Renames the selected feature in Nxt&#8217;s tree, as in FreeCAD&#8217;s.
+(Nxt&#8217;s tree does not claim the key ahead of the window&#8217;s shortcuts, and without that it never reached the tree; NX-Style claims it for Nxt&#8217;s tree.)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Toolbars</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt adds a toolbar of its own (<strong>Nxt Fillet/Chamfer</strong>) when Part Design starts. NX-Style hides it like FreeCAD&#8217;s toolbars; its commands are under <strong>Menu › View › FreeCAD-Nxt</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Model panel</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt&#8217;s panel is the Part Navigator; FreeCAD&#8217;s tree is the <strong>FreeCAD Tree</strong> tab behind it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Speed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt&#8217;s tree does more work on each change of the document while it is on screen, and as the Part Navigator it usually is.
+Changing and picking an object took 0.34 s with Nxt&#8217;s tree shown against 0.24 s with it behind a tab, in a part of 150 objects; at 20 objects there was no difference.
+The self-test, which builds large parts, runs about twice as long as with Nxt&#8217;s panel behind FreeCAD&#8217;s tree.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Colours</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt takes its colours from the window around it: background <code>#f0f0f0</code>, text <code>#1e2329</code>, but a grey accent (<code>#606060</code>) where NX-Style uses teal (<code>#0B6E79</code>).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drag-handle preferences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">On its first run Nxt sets two FreeCAD preferences that no FreeCAD page shows: a plain drag moves in fine steps and <kbd>Ctrl</kbd> gives coarse ones (FreeCAD: coarse first, <kbd>Shift</kbd> for fine).
+Nxt records what it replaced and puts it back when it is disabled or removed.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch profiles</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt&#8217;s sketch repair is on, and changes the sketch without asking: a Pad on a rectangle with a 0.01 mm gap, which fails with Nxt off, is valid with Nxt on, because Nxt added a Coincident constraint. It offers Undo afterwards.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Task dialogs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nxt replaces the parameter boxes of FreeCAD&#8217;s Pad, Pocket and Revolve dialogs, which NX-Style&#8217;s Extrude and Revolve drive (see the tutorials above).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_turning_it_off_again"><a class="anchor" href="#_turning_it_off_again"></a>Turning it off again</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Leave out <code>--nxt</code>, or set <code>"nxt": false</code> (the default).
+Nxt&#8217;s own settings stay in the NX profile&#8217;s <code>user.cfg</code> under <code>Mod/Nxt</code>; they do nothing while Nxt is off.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_licence"><a class="anchor" href="#_licence"></a>Licence</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>FreeCAD-Nxt is LGPL-2.1-or-later, as NX-Style is, and included unmodified.
+Changes it needs go to <a href="https://github.com/obelisk79/FreeCAD-Nxt">its own repository</a>.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="data-management.html">Data management (Strata)</a></span>
+  <span class="next"><a href="release-package.html">Release packages</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

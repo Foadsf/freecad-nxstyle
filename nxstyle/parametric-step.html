@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Parametric STEP (ISO 10303-55, -108, -111) :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/parametric-step.html">
+    <link rel="prev" href="pmi.html">
+    <link rel="next" href="tolerance-analysis.html">
+    <meta name="description" content="STEP with the design intent: construction history, sketch constraints and parameters next to the B-rep, read back as an editable FreeCAD part; and a checker for STEP files against ISO 10303.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/parametric-step.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Parametric STEP (ISO 10303-55, -108, -111)</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A STEP file from FreeCAD, as from most CAD systems, holds the finished shape: faces, edges and surfaces (ISO 10303-42), with nothing about how it was made.
+Change a dimension in the receiving system and there is nothing to change: the history, the sketch constraints and the parameters stayed behind.</p>
+</div>
+<div class="paragraph">
+<p>ISO 10303 has parts for exactly that, and NX-Style writes and reads them:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Part</th>
+<th class="tableblock halign-left valign-top">What it carries</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The file itself: header, data sections, instances (read and written in full, second edition)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">EXPRESS, the language the schemas are written in: NX-Style reads the schemas and checks files against them</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-42, -43</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Geometry, topology, solids, representations: the B-rep, and the profiles and picked edges of the history</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-55</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The construction history: an ordered sequence of operations, picked edges and faces, and the dual model (history and B-rep in one file)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-108 (with Cor.1 and Cor.2)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Parameters, the expressions between them, geometric constraints, sketches</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-111</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Feature operations on solids: blends, chamfers, shells, extrusions with trim conditions and draft</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO 10303-112</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2D sketch commands: a Part 112 sketch from another system is evaluated into a FreeCAD sketch; on request, each sketch is also written as Part 112 commands (below)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AP203, AP214, AP242</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The application protocols: recognised from the file, and checked against their own long-form schemas once those are in the schema cache (below); the product structure (BOM) is read from any of them</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_on_the_ribbon"><a class="anchor" href="#_on_the_ribbon"></a>On the ribbon</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Modeling › PMI tab › Exchange:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Button</th>
+<th class="tableblock halign-left valign-top">Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>STEP with Parameters</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The selected Body (or Part solid, or sketch) as STEP AP242. OpenCASCADE writes the B-rep and the product structure, the file any CAD system opens; the history, sketches, constraints and spreadsheet parameters go into the same file. The Information window lists what went in, by part of ISO 10303, the result of the file check, and anything that could not be written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Import STEP with Parameters</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rebuilds what such a file carries: a PartDesign Body (into the open part&#8217;s Body while it is empty, as after <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>; or Part CSG objects), its sketches with their constraints, a <strong>Parameters</strong> spreadsheet, and the expressions that tie them. When the file also has the B-rep, the rebuilt solid is compared with it. A file without parametric data comes in as its B-rep.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Check STEP</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any STEP file against ISO 10303-21 and the schemas of Parts 42, 43, 55, 108, 111 and 112, and against its application protocol&#8217;s schema when that is in the cache (tick <strong>Download the AP&#8217;s schema</strong> to get it once). The report names the AP and lists the product structure (BOM).</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>STEP with Parameters</strong> has <strong>Also write each sketch as ISO 10303-112 commands</strong>: every sketch then also goes into the file as Part 112 modelling commands, paired with its constrained Part 108 form.
+It is off by default, because no edition of AP242 includes Part 112 (see the table below): a strict AP242 reader would not know those entities.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_is_written"><a class="anchor" href="#_what_is_written"></a>What is written</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">FreeCAD</th>
+<th class="tableblock halign-left valign-top">ISO 10303</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Spreadsheet aliases (lengths, angles, numbers)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>UNBOUND_VARIATIONAL_PARAMETER</code> (108)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An expression on a feature property or a sketch constraint, using those aliases</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>BOUND_VARIATIONAL_PARAMETER</code> on the attribute it drives (<code>INSTANCE_ATTRIBUTE_REFERENCE</code>), and an <code>EQUAL_PARAMETER_CONSTRAINT</code> or a <code>FREE_FORM_ASSIGNMENT</code> with the expression in ISO 13584-20 terms (+ − × ÷ ^, sin … sqrt, min, max)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch: lines, arcs, circles, points, construction geometry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NEUTRAL_SKETCH_REPRESENTATION</code> in a <code>VARIATIONAL_REPRESENTATION</code>, placed by <code>REPOSITIONED_NEUTRAL_SKETCH</code>; each closed profile a <code>FACE_SURFACE</code> in a <code>POSITIONED_SKETCH</code> (108 clause 8)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Coincident, Point on Object</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INCIDENCE_GEOMETRIC_CONSTRAINT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Horizontal, Vertical, Parallel, Perpendicular, Tangent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PARALLEL_</code> (to the sketch axes), <code>PERPENDICULAR_</code>, <code>TANGENT_GEOMETRIC_CONSTRAINT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Equal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CURVE_LENGTH_</code> (lines) or <code>RADIUS_GEOMETRIC_CONSTRAINT</code> (circles, arcs)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distance, Horizontal/Vertical Distance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CLGC_WITH_DIMENSION</code> (a line&#8217;s length), <code>PDGC_WITH_DIMENSION</code> (to a point, a line, or an auxiliary line through the anchor point)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Radius, Diameter, Angle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>RGC_WITH_DIMENSION</code>, <code>AGC_WITH_DIMENSION</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Symmetric (about a line), Block</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SYMMETRY_</code>, <code>FIXED_ELEMENT_GEOMETRIC_CONSTRAINT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A sketch attached to an origin plane, a datum plane or a planar face (Flat face)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The sketch&#8217;s plane on the support&#8217;s plane: <code>INCIDENCE_GEOMETRIC_CONSTRAINT</code>, or <code>PARALLEL_GEOMETRIC_CONSTRAINT</code> and <code>SDGC_WITH_DIMENSION</code> at an offset (108 7.4); a supporting face as a <code>FACE_SURFACE</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pad, Pocket (length, two sides, symmetric, through all, taper)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EXTRUDED_FACE_SOLID_WITH_TRIM_CONDITIONS</code> (<code>_WITH_DRAFT_ANGLE</code>) (111), united or subtracted by <code>BOOLEAN_RESULT</code> (42)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pad, Pocket up to face, up to first, up to last, with an offset</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The same, its first trim condition the face reached (a <code>FACE_SURFACE</code>, also picked as <code>USER_SELECTED_SHAPE_ELEMENTS</code>), intent <code>.UP_TO_NEXT.</code> (up to first), <code>.UNSPECIFIED.</code> (up to a face, up to last) or <code>.OFFSET.</code> with the offset (111 4.4.48)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Revolution, Groove (also up to face)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>REVOLVED_FACE_SOLID</code> (<code>_WITH_TRIM_CONDITIONS</code>, the face as trim condition)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hole: simple (flat or drill point), counterbore, countersink, through all</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Per position of its sketch, in a nested sequence: <code>SOLID_WITH_FLAT_BOTTOM_ROUND_HOLE</code>, <code>SOLID_WITH_CONICAL_BOTTOM_ROUND_HOLE</code> (half the drill point angle), <code>SOLID_WITH_STEPPED_ROUND_HOLE</code> with <code>SOLID_WITH_THROUGH_DEPRESSION</code> and its exit face; two segments for a counterbore, a <code>CONICAL_STEPPED_HOLE_TRANSITION</code> at the entrance for a countersink (<code>_AND_CONICAL_TRANSITIONS</code>) (111 4.4.19-27)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fillet, Chamfer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>USER_SELECTED_SHAPE_ELEMENTS</code> (55) with the picked edges, then <code>SOLID_WITH_CONSTANT_RADIUS_EDGE_BLEND</code>, <code>SOLID_WITH_SINGLE_OFFSET_</code> / <code>DOUBLE_OFFSET_</code> / <code>ANGLE_BASED_CHAMFER</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Thickness</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SHELLED_SOLID</code> with the removed faces</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linear pattern, polar pattern, Mirrored, of one or more features</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A nested sequence of <code>SOLID_REPLICA</code> operations, each feature through every placement; a mirror is a <code>CARTESIAN_TRANSFORMATION_OPERATOR_3D</code> with left-handed axes (42 4.4.21)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MultiTransform</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A nested sequence per step, holding the new placements of that step (it applied to all before it)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pipe (Standard mode, along a tangent-continuous sketch path, the profile normal to the path at its start)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SURFACE_CURVE_SWEPT_AREA_SOLID</code> (42 6.4.39): the swept area a <code>CURVE_BOUNDED_SURFACE</code> on the sketch&#8217;s plane moved into <em>z</em> = 0 of the sweep&#8217;s frame (<em>x</em> along the path plane&#8217;s normal, <em>z</em> along the tangent), bounded by <code>OUTER_BOUNDARY_CURVE</code> / <code>BOUNDARY_CURVE</code> of <code>BOUNDED_PCURVE`s whose 2D curves, in a `DEFINITIONAL_REPRESENTATION</code>, are the sketch&#8217;s own; the path a <code>COMPOSITE_CURVE</code>, the path&#8217;s plane the reference surface (AP242 has no <code>SURFACE_CURVE_SWEPT_FACE_SOLID</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Draft, Loft, other Pipes and Holes, a pattern of holes or fillets, other features with a solid</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A hybrid step (55 5.2.2): a nested sequence whose rationale names the feature, with what was picked (drafted faces, neutral plane, the loft&#8217;s sketches) and the feature&#8217;s explicit solid (<code>MANIFOLD_SOLID_BREP</code>), on its own or added or subtracted by <code>BOOLEAN_RESULT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Additive and subtractive primitives; Part Box, Cylinder, Cone, Sphere, Torus; Cut, Fuse, Common</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BLOCK</code>, <code>RIGHT_CIRCULAR_CYLINDER</code>, <code>RIGHT_CIRCULAR_CONE</code>, <code>SPHERE</code>, <code>TORUS</code>, <code>BOOLEAN_RESULT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The whole history</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROCEDURAL_SOLID_REPRESENTATION_SEQUENCE</code> in a <code>PROCEDURAL_SHAPE_REPRESENTATION</code>, tied to the B-rep by <code>EXPLICIT_PROCEDURAL_SHAPE_REPRESENTATION_RELATIONSHIP</code> (55)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Some features have no entity in ISO 10303-42 or -111, and are written as hybrid steps: their result as an explicit solid, so that the history goes on past them.
+Draft has none: <code>EXTRUDED_FACE_SOLID_WITH_DRAFT_ANGLE</code> drafts an extrusion as it is made, not chosen faces of a solid.
+Loft has none: <code>SECTIONED_SPINE</code> leaves the shape between its sections undefined and is no solid.
+A Pipe is Part 42&#8217;s sweep only in Standard mode along a planar, tangent-continuous path with the profile normal to it; Fixed, Frenet, Auxiliary or Binormal modes, several sections and corner transitions are hybrid steps.
+Threaded, tapered and counterdrilled holes are hybrid steps too, and so is a pattern of holes or fillets (a replica needs a tool solid; Part 111&#8217;s own patterns of placed features are not used).
+A system that does not know the step still gets its shape; NX-Style rebuilds Draft, Loft and Pipe steps as FreeCAD features from what they record (the rationale carries FreeCAD&#8217;s angle, mode or ruled flag), and stops at other hybrid steps.
+No ISO 10303 attribute carries a draft angle, and hole radii and depths are lists, so expressions on those are not written.
+The report names every hybrid step and anything else that was not written.</p>
+</div>
+<div class="paragraph">
+<p>The placing of a hole points out of the hole entrance, as ISO 10303-111 4.4.22 defines it.
+Part 111&#8217;s offset of an up-to extent is unsigned; the side is taken from the reached extent, which goes in the extrusion&#8217;s depth.
+A sketch attached to an origin plane, or to a face that is found again on the rebuilt features by its geometry, comes back attached (Flat face, with the attachment offset that keeps it in place); other attachment modes, and supports that are not found, leave it placed where it was.
+Picked edges and faces are found again on the rebuilt solid by their geometry, which is what Part 55&#8217;s user-selected elements are for, and a hole&#8217;s sketch is the one whose circles sit at its positions.</p>
+</div>
+<div class="paragraph">
+<p><a href="tutorials/al.html" class="xref page">Tutorial AL</a> goes through it on the ribbon.
+The round trip is tested in FreeCAD 1.1.4 (<code>tests/fc_parametric_step.py</code>): a plate with a constrained sketch, Pad, Fillet, Chamfer, a Pocket through all, a linear pattern and a Revolution; holes of each kind on sketches attached to a face; a Mirrored, a linear pattern of two features and a MultiTransform; extrusions up to a face, up to the first face and with an offset; a Draft followed by a Fillet, a Pipe, a Fixed-mode Pipe and a Loft; and a Part CSG tree.
+Exported, checked (no errors), imported into a new document: the rebuilt solids equal the originals exactly, and still do after the same parameter change in both.
+The holes, replicas and sweep are also built from the ISO definitions alone (Part 111&#8217;s segments and cones, Part 42&#8217;s sweep frame) and compared with FreeCAD&#8217;s.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_check_step"><a class="anchor" href="#_check_step"></a>Check STEP</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python -m nxstyle.iso10303 check part.stp
+python -m nxstyle.iso10303 entities part.stp
+python -m nxstyle.iso10303 attributes PDGC_WITH_DIMENSION</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run from the <code>NXStyle</code> folder; no FreeCAD needed.
+<code>check</code> reads the file (a Part 21 syntax error stops it with the place) and reports:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the header rules: the three header entities in order, the implementation level, the time stamp, the schema names, the data sections;</p>
+</li>
+<li>
+<p>for every instance of an entity in the loaded schemas: unknown or abstract entities, missing or extra attributes, <code>$</code> for an attribute that is not optional, <code>*</code> where nothing is derived (and its absence where a subtype re-derives the attribute), values of the wrong type down to enumeration values, SELECT alternatives, aggregate bounds and duplicates, references to missing instances or to instances of the wrong entity, complex instances that lack a supertype record, break a ONEOF or leave an abstract supertype without a subtype;</p>
+</li>
+<li>
+<p>every rule of the schemas, evaluated by an EXPRESS interpreter (<code>express_eval</code>): the WHERE rules of each entity of an instance, supertypes included; the WHERE rules of the defined types its values have; aggregate bounds given by an attribute (<code>LIST [1:segments]</code>); the UNIQUE rules over the file; the cardinalities of INVERSE attributes; and the global RULEs. The schemas' own FUNCTIONs are run, with the built-in functions of ISO 10303-11 (TYPEOF, USEDIN, QUERY and the rest), derived and inverse attributes and entity constructors;</p>
+</li>
+<li>
+<p>the informal propositions of ISO 10303-108 that no rule states: an attribute reference names a real SCHEMA.ENTITY.ATTRIBUTE of the instance it points at and that holds a number, and every variational item is in a variational representation.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A value the file does not give is indeterminate, and only a rule that comes out FALSE is reported; UNKNOWN is not a violation (ISO 10303-11 9.2.2.2).
+The check ends with a count, for example <code>rules: 3177 evaluated, 0 violated, 0 not evaluated</code>.
+A rule is <strong>not evaluated</strong>, with the reason, when it calls a function the loaded schemas do not declare, when it would need the references of an entity they do not define (an AP&#8217;s own B-rep entities, if the AP&#8217;s schema is not in the cache), or when it runs past a step budget (2 million steps for a rule, 5 million for a global rule; on a large assembly, <code>compatible_dimension</code> can run past it).
+Entities of other parts (an application protocol&#8217;s product structure, PMI) are counted, not checked, until the AP&#8217;s schema is in the cache.
+<code>--exp file.exp</code> adds more EXPRESS, and then those are checked too.</p>
+</div>
+<div class="sect2">
+<h3 id="_proved_with_an_independent_tool"><a class="anchor" href="#_proved_with_an_independent_tool"></a>Proved with an independent tool</h3>
+<div class="paragraph">
+<p>STEPcode&#8217;s validator (<code>p21read</code>, built for the AP242 long form) reads what <strong>STEP with Parameters</strong> writes and reports no errors, except for one kind of instance it cannot read: the parameters, complex instances of 16 partial records (<code>UNBOUND_VARIATIONAL_PARAMETER</code> with <code>MATHS_REAL_VARIABLE</code> and its supertypes), on which it crashes inside its own complex-entity matcher.
+With those written as simple parameters in a copy, it validates every other instance; the only two errors it then reports are the assignments whose expression is now no longer a numeric expression, which shows that it type-checks references.
+A broken copy is rejected by both: a <code>LINE</code> whose point is a <code>DIRECTION</code> by STEPcode and by NX-Style, a circle with a negative radius by NX-Style only, because <code>p21read</code> checks form and not WHERE rules.
+NIST&#8217;s STEP File Analyzer needs Windows; it was not run.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_application_protocols"><a class="anchor" href="#_application_protocols"></a>Application protocols</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A STEP file is written to an application protocol (AP), named in its header.
+NX-Style recognises AP203 (edition 1, <code>CONFIG_CONTROL_DESIGN</code>, and edition 2), AP214 (<code>AUTOMOTIVE_DESIGN</code>, with the version its object identifier gives) and AP242 (<code>AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF</code>).
+An AP&#8217;s own entities, such as the product structure, the B-rep shape representations, PMI and presentation, are checked against the AP&#8217;s long-form schema once it is in the schema cache:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python -m nxstyle.iso10303 schema fetch AP242      # also AP203, AP203E2, AP214
+python -m nxstyle.iso10303 schema add mim_lf.exp   # any other long form, e.g. another AP242 edition
+python -m nxstyle.iso10303 schema list
+python -m nxstyle.iso10303 bom assembly.stp</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>fetch</code> takes AP242&#8217;s long form from <code>standards.iso.org</code> (ISO/TS 10303-442 edition 7) and AP203 and AP214&#8217;s from the STEPcode project, compiles it and keeps it in the user&#8217;s cache folder (<code>~/.cache/freecad-nxstyle/iso10303</code>, <code>%LOCALAPPDATA%\FreeCAD-NXStyle\iso10303</code>; <code>NXSTYLE_ISO10303_SCHEMAS</code> overrides).
+The cache holds one schema per name, so the AP242 editions replace each other; the last one added is the one used.
+The schemas are not in this repository.</p>
+</div>
+<div class="paragraph">
+<p>What the APs' long forms contain, counted entity by entity (the PMI column: ten entities semantic PMI rests on, such as <code>datum_system</code>, <code>dimensional_size</code>, <code>limits_and_fits</code>, <code>position_tolerance</code>; AP203 edition 2 and AP214 edition 3 lack the two of AP242&#8217;s datum reference frames, <code>datum_system</code> and <code>datum_reference_compartment</code>):</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 28.5714%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2858%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Schema</th>
+<th class="tableblock halign-left valign-top">Part 55 (15)</th>
+<th class="tableblock halign-left valign-top">Part 108 (65)</th>
+<th class="tableblock halign-left valign-top">Part 111 (52)</th>
+<th class="tableblock halign-left valign-top">Part 112 (43)</th>
+<th class="tableblock halign-left valign-top">PMI (10)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AP203 edition 1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AP203 edition 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">49</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AP214 edition 3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AP242 editions 2, 3 and current</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">65</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">49</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Everything <strong>STEP with Parameters</strong> writes for Parts 55, 108 and 111 is in AP242, and its files check without an error against AP242&#8217;s own schema.
+Part 112 is in none of them.</p>
+</div>
+<div class="paragraph">
+<p><a href="tutorials/am.html" class="xref page">Tutorial AM</a> checks a supplier&#8217;s assembly against AP242&#8217;s schema, reads its parts list, and rebuilds a sketch sent as Part 112 commands.</p>
+</div>
+<div class="paragraph">
+<p><strong>bom</strong> (and <strong>Check STEP</strong>) reads the product structure: products, their definitions and the next-assembly-usage occurrences, as the assembly tree with quantities and the parts list with the totals.</p>
+</div>
+<div class="paragraph">
+<p>Lengths and plane angles are read in the file&#8217;s units (millimetres, metres, inches, radians, degrees: SI and conversion-based units); numbers inside expressions are taken as they are.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_where_iso_10303_contradicts_itself"><a class="anchor" href="#_where_iso_10303_contradicts_itself"></a>Where ISO 10303 contradicts itself</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Writing data that every rule accepts, and evaluating every rule, turned up places where the standards cannot all be met at once.
+NX-Style&#8217;s choice in each case, and what the checker says about it.
+Where a rule cannot be met, its violation is a <strong>warning that says so</strong>, and only when the violation is that contradiction and nothing else; any other cause stays an error.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Sketch wrapper.</strong> The prose of ISO 10303-108 6.3.4 WR4 wants the variational wrapper of a sketch to have the sketch&#8217;s types, but <code>NEUTRAL_SKETCH_REPRESENTATION</code> only admits points and curves as items (8.4.9), so it could hold no constraint. The wrapper is a plain shape representation. Its EXPRESS is a one-way difference, which the wrapper meets; the checker warns that the prose is not met.</p>
+</li>
+<li>
+<p><strong>Constraints on shared geometry.</strong> <code>variational_representation</code> WR2 (through <code>invalidate_vrep_item</code>) wants a constraint&#8217;s elements used by exactly the representations that use the constraint. But 6.3.4 WR1 makes the current result share the wrapper&#8217;s geometry, and WR3 keeps constraints out of it, so no constraint on a sketch&#8217;s own curves can pass. The same holds for a history&#8217;s bound parameters, whose feature is also in the procedural representation (55 4.3.3), and for a construction line used as a symmetry&#8217;s mirror, which <code>symmetry_geometric_constraint</code> WR1 forbids to be a reference element. Warning.</p>
+</li>
+<li>
+<p><strong>Neutral sketch dimension.</strong> Cor.2 rewrites <code>neutral_sketch_representation</code> WR1 to demand three-dimensional items, against the clause&#8217;s own statement ("the dimensionality &#8230;&#8203; shall be 2") and the 2005 rule; as printed it is also ill-typed (AND binds tighter than IN). The dictionary takes it bracketed as the AP242 long form prints it; sketches stay two-dimensional, with a warning.</p>
+</li>
+<li>
+<p><strong>Countersunk through holes.</strong> ISO 10303-111 writes <code>solid_with_stepped_round_hole_and_conical_transitions</code> WR2 with XOR where its statement reads "either a through hole or no more transitions than segments", so a through hole with no exit transition breaks it as printed. Warning. WR1 of <code>solid_with_through_depression</code> lists the flat-bottom hole twice and omits the conical one; no bottom is written, as the text intends.</p>
+</li>
+<li>
+<p><strong>Bound parameters.</strong> Cor.1 derives a bound parameter&#8217;s current value as <code>?</code>, and ISO 10303-50&#8217;s <code>member_of</code> makes <code>?</code> a member of the generics space only, so <code>variational_parameter</code> WR1 holds only with that space; <code>maths_real_variable</code> WR1 wants a space of reals. Bound parameters are therefore simple instances on <code>ELEMENTARY_SPACE(.ES_GENERICS.)</code>. They are never operands, only assigned to.</p>
+</li>
+<li>
+<p><strong>Plain references.</strong> An unbound parameter in a variational representation must be used by a free-form constraint (<code>invalidate_vrep_item</code>), which <code>EQUAL_PARAMETER_CONSTRAINT</code> is not; a reference to a parameter is a <code>FREE_FORM_ASSIGNMENT</code> whose expression is the parameter. A parameter that drives nothing cannot be a variational parameter at all (6.3.1 WR1 allows it in no other representation), so it is written as a named value (<code>VALUE_REPRESENTATION_ITEM</code>, ISO 10303-43), without its description.</p>
+</li>
+<li>
+<p><strong>Sketch origin.</strong> <code>representation_map</code> WR1 (43) wants the map&#8217;s origin in the sketch&#8217;s context, but the sketch may hold only points and curves and its wrapper must hold exactly the sketch&#8217;s geometry; a plain representation in the sketch&#8217;s context holds the origin.</p>
+</li>
+<li>
+<p>ISO 10303-55 5.4.4 and 5.4.5 require a solid sequence to be a <code>SOLID_MODEL</code> and its elements to be geometric items, which <code>USER_SELECTED_SHAPE_ELEMENTS</code> is not; Part 55&#8217;s own example (annex E) writes both as simple instances. NX-Style writes complex instances that meet the rules. A procedural representation may only hold sequences (55 4.3.3), so parameters of the history wrap a shape representation that holds the sequence.</p>
+</li>
+<li>
+<p>ISO 10303-108 Cor.1 annex F writes the current value of a parameter untyped (<code>3.0</code>), where ISO 10303-21 10.1.8 asks for a typed value, and uses parameters as operands of <code>MULT_EXPRESSION</code>, which ISO 13584-20 narrows to numeric expressions. NX-Style writes <code>MATHS_REAL(3.0)</code> and parameters that are also <code>MATHS_REAL_VARIABLE`s (ISO 10303-50). The examples of annex F also have slips: `#550</code> names itself as its value space (for <code>#540</code>), <code>#410</code> uses <code>#360</code> (for <code>#400</code>), and <code>UNBOUND_PARAMETER_SEMANTICS</code> is the pre-corrigendum name of <code>UNBOUND_VARIATIONAL_PARAMETER_SEMANTICS</code>.</p>
+</li>
+<li>
+<p>ISO 10303-112&#8217;s own example (4.2.2) uses <code>SKETCH_OPERATE_FILLET</code>, which the schema does not define (the command is <code>create_fillet</code>, with seven attributes), and writes <code>$</code> for a sequence&#8217;s suppressed items, which is not optional. Its ellipse commands say the second semi-axis is "the projection onto the line defined by the first two points", which would lie along the first axis; NX-Style takes the distance from that line. A near point (<code>near_point_relationship</code>) is used by no representation item, so <code>representation_item</code> WR1 (43) wants it held by a representation of its own.</p>
+</li>
+<li>
+<p>ISO 10303-50&#8217;s <code>maths_simple_atom</code> lists <code>maths_number</code> twice and omits <code>maths_integer</code>. ISO 10303-108 Cor.1 says <code>non_negative_length_measure</code> "has been moved to ISO 10303-41", but ISO 10303-41:2005 does not declare it (<code>supplement.exp</code> does).</p>
+</li>
+<li>
+<p>Writers: OpenCASCADE names the protocol <code>'ap242_managed_model_based_3d_engineering'</code> in <code>APPLICATION_PROTOCOL_DEFINITION</code>, but every AP242 long form from edition 2 on requires <code>'ap242_managed_model_based_3d_engineering_mim_lf'</code> (rule <code>ap242_application_protocol_definition_required</code>); NX-Style corrects it in the B-rep it merges. AP214 edition 3&#8217;s long form makes <code>presentation_style_assignment</code> a subtype of <code>founded_item</code> and then forbids founded items other than three kinds (<code>subtype_mandatory_founded_item</code>), so every styled AP214 file breaks it.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_schemas"><a class="anchor" href="#_the_schemas"></a>The schemas</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>NXStyle/nxstyle/resources/iso10303/dictionary.json</code> holds the schemas as the interpreter needs them: entities, supertypes, attributes and their types, short names, and the WHERE and UNIQUE rules, DERIVE expressions, INVERSE declarations, FUNCTIONs, RULEs and CONSTANTs. <code>tools/iso10303_dictionary.py</code> builds it from the parts themselves:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python tools/iso10303_dictionary.py --part 41=part41.pdf --part 42=part42.pdf --part 43=part43.pdf \
+    --part 50=part50.pdf --part 55=part55.pdf --part 108=part108.pdf --cor 108=cor1.pdf --cor 108=cor2.pdf \
+    --part 111=part111.pdf --part 112=part112.pdf --part 13584-20=iso13584-20.pdf</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It takes the EXPRESS from between the <code>*)</code> and <code>(*</code> lines the parts print around it, drops page headers and footers, joins string literals a page layout split, applies Cor.1 (the renaming of <code>model_parameter</code> to <code>variational_parameter</code>, the replaced entities) and Cor.2, applies the one erratum it lists (the Cor.2 WR1 above, bracketed as AP242 prints it), and adds <code>supplement.exp</code>, the one declaration the parts leave out.
+The result: 772 entities, 153 types, 286 functions, 29 constants, 577 entity and 28 type WHERE rules.
+The parts' prose is not in this repository; their EXPRESS is, as it is in the AP242 long form ISO publishes at <code>standards.iso.org</code> for implementations.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="pmi.html">PMI and technical product documentation</a></span>
+  <span class="next"><a href="tolerance-analysis.html">Tolerance analysis</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

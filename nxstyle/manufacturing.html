@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Manufacturing with Carbon :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/manufacturing.html">
+    <meta name="description" content="PLM › Manufacturing: the released part into Carbon (ERP, MES, quality), with its revision, CAD model, documents, BOM and inspection plan, and the stock and quality status back.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li><a href="manufacturing.html">Manufacturing with Carbon</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/manufacturing.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Manufacturing with Carbon</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Next to NX and Teamcenter, a factory runs a manufacturing system: the item master, bills of materials and routings, inventory, jobs on the shop floor, inspection and non-conformances.
+Siemens sells its own for that role.
+NX-Style uses <a href="https://github.com/crbnos/carbon">Carbon</a>, an open-source ERP, MES and QMS, for it.</p>
+</div>
+<div class="paragraph">
+<p><a href="data-management.html" class="xref page">Strata</a> stays the data management: it releases the part with a part number, a revision letter and an approval.
+Carbon takes the released part and makes it.
+The commands are on the <strong>PLM</strong> tab, in the <strong>Manufacturing</strong> group:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Command</th>
+<th class="tableblock halign-left valign-top">Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Publish to Manufacturing</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The release into Carbon: the part at its revision, the CAD model, the drawings and documents, the assembly&#8217;s bill of materials and the inspection plan. <strong>Review</strong> lists what would be written first.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Manufacturing Status</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">What Carbon has for the open part: its revisions, stock at a location, inspection plans and open issues.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Manufacturing Connection</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Carbon server and the API key.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><a href="tutorials/bc.html" class="xref page">Tutorial BC</a> goes through it with tutorial V&#8217;s guide bush.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_setting_it_up"><a class="anchor" href="#_setting_it_up"></a>Setting it up</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You need a Carbon to connect to, and an API key from it.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Carbon Cloud</strong>: sign up at <a href="https://app.carbon.ms" class="bare">app.carbon.ms</a>. The API is part of Carbon&#8217;s Business plan; on the Starter plan every API call is refused (HTTP 402 or 403).</p>
+</li>
+<li>
+<p><strong>Your own Carbon</strong>: Carbon&#8217;s <a href="https://carbon.ms/self-hosted">self-hosting guide</a> (Docker with Caddy, or AWS). Carbon says that using API keys on a self-hosted Carbon needs its commercial licence; check that against your case.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Then:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In Carbon, open <strong>Settings › API Keys</strong>, create a key and give it the scopes parts (view, create, update), quality (view, create, update), resources (view) and settings (view). Carbon shows the key once.
+Every operation NX-Style calls is one Carbon classifies as READ or WRITE; none is DESTRUCTIVE.</p>
+</li>
+<li>
+<p>In NX-Style, <strong>PLM › Manufacturing Connection</strong>: the server (for example <code><a href="https://app.carbon.ms" class="bare">app.carbon.ms</a></code>), the key, and optionally the stock location <strong>Manufacturing Status</strong> reports.</p>
+</li>
+<li>
+<p><strong>Test Connection</strong> names the companies the key belongs to. <strong>Save</strong>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The key is a bearer secret.
+NX-Style keeps it in <code>carbon.key</code> in the profile&#8217;s <code>config</code> folder, readable only by you, and never in <code>nxstyle.json</code>.
+An environment variable <code>CARBON_API_KEY</code> is used instead when it is set.
+The key is only sent over https; plain http is refused except to this computer (<code>localhost</code>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_publish_to_manufacturing"><a class="anchor" href="#_publish_to_manufacturing"></a>Publish to Manufacturing</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Release the part in Strata (<strong>PLM › Releases</strong>).</p>
+</li>
+<li>
+<p><strong>PLM › Publish to Manufacturing</strong>. The dialog lists the part&#8217;s releases and picks the newest <strong>Released</strong> one.</p>
+</li>
+<li>
+<p><strong>Review</strong>: the list of what Carbon would get, and what it already has. Nothing is written.</p>
+</li>
+<li>
+<p><strong>OK</strong> publishes.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The dialog makes the <a href="release-package.html" class="xref page">release package</a> of that release first: the part exactly as it was released, taken from Strata&#8217;s history, with its STEP AP242 (with PMI), native file, drawings and inspection plan, and a manifest of SHA-256 checksums.
+That package is checked against its manifest, and Carbon is given what the manifest lists.
+A package that does not verify is not sent.</p>
+</div>
+<div class="paragraph">
+<p>A part that has no release is not sent: manufacturing builds released revisions.
+<code>"carbon": {"allow_unreleased": true}</code> in the <a href="settings.html" class="xref page">settings</a> lets the open document go as it is (its part number and revision from the NX attributes <code>DB_PART_NO</code> and <code>DB_PART_REV</code>, else its name and <code>0</code>).</p>
+</div>
+<div class="sect2">
+<h3 id="_what_goes_where"><a class="anchor" href="#_what_goes_where"></a>What goes where</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX-Style</th>
+<th class="tableblock halign-left valign-top">Carbon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Part number, revision (Strata release)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An item of type Part, with that part number as its <strong>Part ID</strong> and that revision. A part number Carbon does not know yet is created; a new revision of one it knows is created from the revision below (<strong>Create revision</strong>), with its method copied.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The part&#8217;s name (its first release&#8217;s description) and the release&#8217;s description</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The item&#8217;s name and description (a later release&#8217;s description says what changed, so it is not the name)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">STEP AP242 of the release</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The item&#8217;s CAD model (Carbon renders its 3D view and thumbnail from it)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Native <code>.FCStd</code>, drawing PDFs, <code>pmi/</code> tables, stack-ups, mass properties, the manifest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The item&#8217;s documents (<strong>Files</strong>), named after their path in the package; the manifest after the release (<code>&lt;part number&gt;_&lt;revision&gt;_manifest_&lt;commit&gt;.json</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assembly components (links to other documents)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The lines of the assembly&#8217;s make method: each component with its own part number and revision (from its document&#8217;s release, or its NX attributes), the quantities of the same part added up, link arrays counted; a component with no revision known takes the one Carbon has (the active one)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sub-assemblies</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Items with a make method of their own, filled the same way</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Components Carbon does not know</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Created as parts: <strong>Make</strong> when they have components, otherwise the <code>new_part</code> defaults (Make, Make to Order, tracked as Inventory, unit EA)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inspection plan (<a href="pmi.html" class="xref page">PMI</a>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Carbon inspection plan on the item, drawing number = part number; one characteristic per plan row: its number (and frame segment) as the label, the requirement, feature, datums and method as the description, the nominal, the plus and minus tolerance, the unit, type Measurement</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_what_it_never_does"><a class="anchor" href="#_what_it_never_does"></a>What it never does</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>It deletes nothing.</strong> BOM lines and characteristics someone added in Carbon by hand stay; the review lists them as kept.</p>
+</li>
+<li>
+<p><strong>It never edits a released make method.</strong> When the assembly&#8217;s method in Carbon is <strong>Active</strong> and the BOM differs, a new <strong>Draft</strong> version of the method takes the change, the way Carbon&#8217;s own CAD integrations do. The Active version stays live until manufacturing activates the Draft.</p>
+</li>
+<li>
+<p><strong>A new revision starts inactive.</strong> Revision B of a part Carbon builds at revision A is created inactive: the shop floor keeps building A until manufacturing releases B in Carbon (activating the item, or with a change notice).</p>
+</li>
+<li>
+<p><strong>It sends nothing twice.</strong> The release&#8217;s manifest goes to Carbon last, named after the release&#8217;s Strata commit (<code>PLT-100_B_manifest_3f2a9c1d4e5b.json</code>). Once Carbon has it, the release is in Carbon: publishing it again uploads nothing, although a package made again differs in time stamps (FreeCAD writes them into the FCStd, the STEP and the PDFs). Without a release, a model or document with the same name and size is not uploaded again, and a changed one is.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_manufacturing_status"><a class="anchor" href="#_manufacturing_status"></a>Manufacturing Status</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For the open part (its newest release, else its NX attributes, else its name):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>PLT-100 rev B: Guide plate
+  active, Design; Make, Make to Order, tracked as Inventory
+  revisions in Carbon: A, B (inactive)
+  stock at Main Shop: 12 EA on hand, 1 on hold, 2 rejected; 0 on production orders, 0 on purchase orders
+  inspection plans: PLT-100 (5 characteristics)
+  open issues: 1
+    NCR-7 Bore oversize (In Progress)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Open issues are Carbon&#8217;s non-conformances that name the part and are not closed.
+The location is the one set in <strong>Manufacturing Connection</strong>, else Carbon&#8217;s first.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_from_the_command_line"><a class="anchor" href="#_from_the_command_line"></a>From the command line</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The same flows run without FreeCAD, on any release package:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python -m nxstyle.carbon --url https://app.carbon.ms check</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python -m nxstyle.carbon --url https://app.carbon.ms publish "Release packages/PLT-100_B" --dry-run</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python -m nxstyle.carbon --url https://app.carbon.ms status PLT-100 --revision B</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run them from the <code>NXStyle</code> folder with the key in <code>CARBON_API_KEY</code> (or <code>--key-file</code>); <code>CARBON_URL</code> can stand for <code>--url</code>.
+<code>--json</code> prints the result as JSON.
+For an assembly the command line takes the BOM from the package&#8217;s STEP product structure; FreeCAD&#8217;s STEP writer names the products after the objects, so the dialog, which reads each component&#8217;s own part number from its document, is the better route for assemblies.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_a_connection_not_a_bundled_copy"><a class="anchor" href="#_why_a_connection_not_a_bundled_copy"></a>Why a connection, not a bundled copy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Carbon is a server application (TypeScript and Postgres, with its own database, storage and background jobs), not a FreeCAD add-on, so there is nothing to load into FreeCAD.
+It is licensed under the AGPL-3.0, and its Enterprise files (<code>packages/ee</code> and files named <code><strong>.ee.</strong></code>) under a commercial licence; NX-Style is LGPL-2.1.
+NX-Style therefore does not include or copy any of Carbon.
+It talks to a Carbon you run or rent, through Carbon&#8217;s published HTTP API (<code>POST /api/v1/&lt;module&gt;/&lt;operation&gt;</code>, the same operations its MCP server offers), with a client of its own in <code>nxstyle/carbon.py</code>.
+This keeps both licences apart and lets the same NX-Style work with Carbon Cloud or your own server.
+"Carbon" is a trademark of Carbon Manufacturing Systems Corporation; it is named here to say what the integration connects to.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_without_carbon"><a class="anchor" href="#_without_carbon"></a>Without Carbon</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><code>python launch_nx.py --no-carbon</code> starts without the Manufacturing commands once.</p>
+</li>
+<li>
+<p><code>"manufacturing": "none"</code> in the <a href="settings.html" class="xref page">settings</a> switches them off for good.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The launcher&#8217;s start-up lines say how it will connect (<code>Carbon: <a href="https://app.carbon.ms" class="bare">app.carbon.ms</a>, API key from …</code>), never the key.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_is_tested"><a class="anchor" href="#_what_is_tested"></a>What is tested</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>The unit tests (<code>tests/test_carbon.py</code>) run every flow against a stand-in Carbon server on this computer (<code>tests/carbon_fake.py</code>). It checks each request against Carbon&#8217;s published OpenAPI schemas (the operations used are copied in <code>tests/data/carbon-openapi.json</code>; <code>python tools/carbon_spec.py</code> refreshes them) and behaves as Carbon documents: a new part gets a Draft make method, an Active method refuses changes, a new revision copies the method below it, files go to signed storage URLs.</p>
+</li>
+<li>
+<p><code>freecadcmd tests/fc_carbon.py</code> builds an assembly of links to other documents in a real FreeCAD, reads its BOM, makes its release package and publishes it to the stand-in server.</p>
+</li>
+<li>
+<p>The self-test drives the dialogs: Review, Publish to Manufacturing, Manufacturing Status and Test Connection, against the stand-in server.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Not tested against a running Carbon yet (2026-10-27): the stand-in follows Carbon&#8217;s published schemas and source, but a real server can still differ, for example in the storage upload or in the rules Carbon checks on BOM lines.
+Report what a real Carbon refuses, with the message <strong>Review</strong> or <strong>OK</strong> shows.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

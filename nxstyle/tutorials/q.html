@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial Q: Faceted planter :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/q.html">
+    <link rel="prev" href="p.html">
+    <link rel="next" href="r.html">
+    <meta name="description" content="Two polygons, the top one turned by 360/2N, triangle facets between them, a closed solid, and a shell.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="q.html">Q: Faceted planter (Katydid)</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/q.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial Q: Faceted planter</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Video
+</td>
+<td class="hdlist2">
+<p><a href="https://www.youtube.com/watch?v=5WAzp1-SHh4">Rhino Grasshopper Tutorial (Beginner)</a> (YouTube, channel Rhino Grasshopper)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Application
+</td>
+<td class="hdlist2">
+<p><a href="../algorithmic-modeling.html" class="xref page">Algorithmic Modeling</a> (Katydid), then <a href="../modeling.html" class="xref page">Modeling</a> for the shell</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>Rotating by a formula, lists and data trees (Shift, Graft, Flatten), facets from points, joining faces into a solid, a shell</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>Millimetres: a pentagon of radius 30, 60 high, walls 3 thick</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For the facets to be triangles, each top corner must sit over the middle of a base edge.
+The angle between corners is 360°/N, so the top polygon turns by half of it: 36° for a pentagon.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_base_polygon"><a class="anchor" href="#_1_the_base_polygon"></a>1. The base polygon</h3>
+<div class="paragraph">
+<p><strong>Regular Polygon</strong> with a <strong>Radius</strong> slider (10 to 50, here 30) and a <strong>Segments</strong> slider (3 to 8, here 5).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-Q-01-polygon.png" alt="A pentagon of radius 30">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_top_polygon"><a class="anchor" href="#_2_the_top_polygon"></a>2. The top polygon</h3>
+<div class="paragraph">
+<p><strong>Move</strong> it up by a <strong>Height</strong> slider (60) and <strong>Rotate</strong> it by an <strong>Expression</strong> <code>360/x/2</code>, with the Segments slider as <strong>x</strong>.
+The video uses two <strong>Division</strong> components and a <strong>Unit Z</strong> vector; Katydid&#8217;s Move takes the height directly, and Rotate works in degrees.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-Q-02-top.png" alt="The top pentagon" width="raised and turned by 36 degrees">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_corners_and_their_neighbours"><a class="anchor" href="#_3_corners_and_their_neighbours"></a>3. Corners and their neighbours</h3>
+<div class="paragraph">
+<p>The video <strong>Explodes</strong> both polygons and trims the repeated closing vertex with <strong>Shortest List</strong>.
+Katydid&#8217;s <strong>Divide Curve</strong> into <strong>Segments</strong> gives the corners without the repeat, so no Shortest List is needed.</p>
+</div>
+<div class="paragraph">
+<p><strong>Shift List</strong> by 1 gives each corner&#8217;s neighbour.
+Then come the data trees:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Graft</strong> the corner lists (right-click an output › <strong>Graft</strong>): each corner gets its own branch, so the next component builds one facet per corner.</p>
+</li>
+<li>
+<p><strong>Flatten</strong> Shift List&#8217;s input first: Shift List adds a level to the path, and without the Flatten its branches would not line up with the others.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_the_facets"><a class="anchor" href="#_4_the_facets"></a>4. The facets</h3>
+<div class="paragraph">
+<p>The video uses <strong>Extrude Point</strong> (an edge drawn to a point).
+Here a closed <strong>Polyline</strong> through three corners does the same, then <strong>Planar Surface</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>lower facets: base corner, next base corner, top corner;</p>
+</li>
+<li>
+<p>upper facets: top corner, next top corner, next base corner.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The shifted lists keep the facets from twisting: ten triangles.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-Q-03-facets.png" alt="Ten triangular facets">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_a_closed_solid"><a class="anchor" href="#_5_a_closed_solid"></a>5. A closed solid</h3>
+<div class="paragraph">
+<p>The video caps the openings with <strong>Boundary Surfaces</strong> and joins everything with <strong>Brep Join</strong>.
+Here <strong>Solid Union</strong>, its input Flattened, joins the ten facets into one shell, and <strong>Cap Holes</strong> closes the top and the bottom: a valid solid of 12 faces and 138,495.8 mm³, exactly what FreeCAD&#8217;s Part API gives for the same faces.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-Q-04-solid.png" alt="The closed faceted solid">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_6_bake_and_shell"><a class="anchor" href="#_6_bake_and_shell"></a>6. Bake and shell</h3>
+<div class="paragraph">
+<p>The video&#8217;s <strong>Option A</strong> bakes the solid and runs Rhino&#8217;s <strong>Shell</strong>.
+Here the same happens with FreeCAD:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Select <strong>Cap Holes</strong> and click <strong>Home › Algorithm › Bake</strong>.</p>
+</li>
+<li>
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>M</kbd></span> (Modeling), click the top face of the baked solid.</p>
+</li>
+<li>
+<p><strong>Surface › Surface Operations › Thicken</strong> (FreeCAD&#8217;s Part Thickness), type <code>-3 mm</code>, tick <strong>Intersection</strong>, <strong>MB2</strong>.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Without <strong>Intersection</strong>, FreeCAD 1.1.4 returns this faceted solid unchanged. With it, the planter is hollow and open at the top, its outside unchanged.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The video&#8217;s <strong>Option B</strong>, Pufferfish&#8217;s parametric <strong>Shell Polysurface</strong>, has no Katydid component yet.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-Q-05-baked.png" alt="The baked solid">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-Q-06-shell.png" alt="The hollow planter after Thicken">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Open Grasshopper</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+N + Application &gt; Algorithmic Modeling</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">an empty canvas on the new part</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polygon on the XY plane; sliders for Radius (10-50) and Segments (3-8)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Regular Polygon with 'Radius' 30 and 'Segments' 5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5 edges, corners 30.000 mm from the centre</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move it up by Unit Z x height; Rotate 3D by 360 / N / 2 degrees (two Divisions)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move with 'Height' in Z; Rotate with A = Expression 360/x/2 (x = Segments); Katydid&#8217;s Rotate takes degrees</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">top polygon at z = 60.0, first corner at 36.0 degrees (360 / 5 / 2 = 36): each top corner sits over the middle of a base edge</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Explode both polygons; Shortest List drops the repeated closing vertex; Shift List by 1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">stand-in for Explode: Divide Curve into Segments (corners, without the repeated closing one, so no Shortest List is needed); Shift List with its input Flattened; the lists for the facets Grafted, one corner per branch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">corners per list {'bv': 5, 'tv': 5, 'bs': 5, 'ts': 5}. Katydid has no Explode or Shortest List yet (asked for)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude Point: each base edge to a top corner, then each top edge to the shifted base corner</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">stand-in for Extrude Point: a closed Polyline through each branch&#8217;s three corners (base, next base, top / top, next top, next base), then Planar Surface</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10 triangular facets, 10628 mm^2; Shift List keeps them from twisting. Katydid has no Extrude Point yet (asked for)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Boundary Surfaces for the top and bottom caps; everything Flattened into Brep Join: a closed solid</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Solid Union with its input Flattened joins the ten facets into one shell; Cap Holes closes the top and bottom</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">valid solid, 12 faces, 138495.8 mm^3 (the same faces made directly with FreeCAD&#8217;s Part API: 138495.8). Cap Holes makes both caps, so no separate Boundary Surfaces are needed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bake the solid</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">select Cap Holes + ribbon 'Home › Algorithm &gt; Bake'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cap 0, 138495.8 mm^3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Q8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Shell: Rhino&#8217;s Shell command, the top face picked, thickness 5 (or Pufferfish&#8217;s Shell Polysurface)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the top face selected + ribbon 'Surface › Surface Operations &gt; Thicken' (FreeCAD&#8217;s Part Thickness), '-3 mm' typed, Intersection ticked, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">hollow planter 35097.5 mm^3 of 138495.8, outside unchanged True, 23 faces; value -3.0 mm. Option B (Pufferfish&#8217;s parametric Shell) has no Katydid component yet</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="p.html">P: Waffle canopy (Katydid)</a></span>
+  <span class="next"><a href="r.html">R: Tube and attractor frames (Katydid)</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>What differs from NX :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/differences.html">
+    <link rel="prev" href="nx-to-freecad.html">
+    <link rel="next" href="known-issues.html">
+    <meta name="description" content="What NX-Style can match, what stays FreeCAD's, and the differences you will meet in daily work.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Reference</li>
+    <li><a href="differences.html">Differences from NX</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/differences.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">What differs from NX</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>NX-Style matches NX&#8217;s layout, names, colours, mouse and keys.
+It cannot make FreeCAD identical to NX: FreeCAD remains the modeling engine and supplies the icons and many task panels.
+Some commands add NX-style dialogs and selection workflows; no Siemens assets are used.
+This page lists the differences found by working through the <a href="tutorials/index.html" class="xref page">tutorials</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parts_and_units"><a class="anchor" href="#_parts_and_units"></a>Parts and units</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Units are a preference, not a choice in the New dialog. NX-Style makes them metric (FreeCAD&#8217;s Standard schema: mm, kg) and switches an imperial schema back; <code>"units": "freecad"</code> leaves FreeCAD&#8217;s choice alone.</p>
+</li>
+<li>
+<p>Typed values keep their precision (3.175 mm stays 3.175).</p>
+</li>
+<li>
+<p>Files are <code>.FCStd</code>, not <code>.prt</code>. A new part is named at its first save.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sketching"><a class="anchor" href="#_sketching"></a>Sketching</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>FreeCAD asks for the sketch plane in the Dialog panel; clicking the plane in the graphics window also works.</p>
+</li>
+<li>
+<p>No dynamic dimensions while you draw, and no "scale the whole sketch to the first dimension?" prompt.</p>
+</li>
+<li>
+<p>Project Curve makes defining geometry; turn it into reference geometry before extruding a region across it.</p>
+</li>
+<li>
+<p>A sketch fillet does not dimension its radius, and removes the constraints that held its corner.</p>
+</li>
+<li>
+<p>Offset Curve takes side and distance from an MB1 click; type the exact distance afterwards.</p>
+</li>
+<li>
+<p>FreeCAD names a dimension in its properties and takes a formula after <code>=</code>; NX numbers dimensions p0, p1 ….</p>
+</li>
+<li>
+<p><a href="sketching.html#studio-spline" class="xref page">Studio Spline</a> Through Points is always cubic (NX takes a degree), and its points after the first are typed as length and angle from the point before, not as XC and YC. The first point takes X and Y, but <kbd>Enter</kbd> in either field places it. A typed point within FreeCAD&#8217;s pick radius of a curve (5 pixels at the current zoom) gets an automatic constraint to it, which moves the point.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_features"><a class="anchor" href="#_features"></a>Features</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="modeling.html#extrude" class="xref page">Extrude</a> and <a href="modeling.html#revolve" class="xref page">Revolve</a> have command boxes with None, Unite and Subtract; Intersect is unavailable.
+Unite and Subtract target the sketch&#8217;s Body. NX&#8217;s full limit, draft and target-body options are not available.</p>
+</li>
+<li>
+<p><a href="modeling.html#sections" class="xref page">Selected sections</a> can use curves from one sketch; multiple sketches and solid edges are not supported.</p>
+</li>
+<li>
+<p><a href="modeling.html#primitives" class="xref page">Block, Cylinder, Cone and Sphere</a> have NX-style dialogs and all four Booleans, including Intersect.
+Their supported creation methods and editing behavior are listed in the modeling guide.</p>
+</li>
+<li>
+<p><a href="modeling.html#thread" class="xref page">Thread</a> Detailed is a PartDesign Subtractive Helix of the basic thread profile, so it is real geometry and takes seconds to recompute.
+Symbolic is a feature that records the thread without NX&#8217;s dashed display.
+The thread starts at an end of the cylinder; the tables are ISO coarse and UNC only, single-start and straight.</p>
+</li>
+<li>
+<p><a href="modeling.html#move-object" class="xref page">Move Object</a> offers Distance, Angle and Point to Point typed in its dialog; Dynamic is FreeCAD&#8217;s Transform dragger in its own dialog.
+Copies are not associative (NX&#8217;s default): a Body&#8217;s copy is a new Body on a static copy of the solid. There is no Associative option, no Move Object feature, and no vector from a picked face.
+A Body whose features refer to its origin (a Revolve about the Z axis) moves by its Placement, and FreeCAD 1.1&#8217;s Unite / Subtract into it then ignores the move; the dialog warns.</p>
+</li>
+<li>
+<p>Hole drills at circle centres in a sketch; NX places hole points directly and adds their location dimensions.</p>
+</li>
+<li>
+<p>At Angle datum planes turn about the face&#8217;s own axes; NX lets you pick the hinge axis.</p>
+</li>
+<li>
+<p>Datum CSYS with nothing selected asks whether to continue; a Body already has its own origin.</p>
+</li>
+<li>
+<p>Mirror Feature: select the feature first, then the command.</p>
+</li>
+<li>
+<p>Patterns are separate buttons (Pattern Feature for linear, Circular Pattern, Multi-Transform); NX&#8217;s negative pitch is spacing with <strong>Reverse</strong>; Direction 2 is a tick box.</p>
+</li>
+<li>
+<p>Design changes reopen the feature&#8217;s dialog (<strong>Edit Parameters</strong>) rather than editing a dimension shown on the model.</p>
+</li>
+<li>
+<p>Parent/child links are properties (Attachment, Base Feature), not a Dependencies panel; with <a href="nxt.html" class="xref page">FreeCAD-Nxt</a> on, the Part Navigator has one. Unsuppressing a child does not bring its parent back.</p>
+</li>
+<li>
+<p>Expressions live in a spreadsheet (<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>); a dimension uses <code>=Expressions.name</code>. Names that are unit symbols (<code>N</code>, the newton) are refused.</p>
+</li>
+<li>
+<p>Assign Material applies at once and closes with <strong>Close</strong>; FreeCAD 1.1 gives the body the material&#8217;s colour.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_assemblies"><a class="anchor" href="#_assemblies"></a>Assemblies</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>One FreeCAD joint can do the work of two NX constraints (Touch Align plus an axis).</p>
+</li>
+<li>
+<p>No <strong>Show Degrees of Freedom</strong>; drag the part to see what moves.</p>
+</li>
+<li>
+<p>New Explosion moves parts by dragging a 3D handle only.</p>
+</li>
+<li>
+<p>The parts list is a spreadsheet (Bill of Materials), not a table on the drawing.</p>
+</li>
+<li>
+<p>NX names a new assembly in the New dialog, FreeCAD at the first save.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_drawings"><a class="anchor" href="#_drawings"></a>Drawings</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Sheet size, projection and scale are the sheet&#8217;s template and properties, not a Sheet dialog. FreeCAD&#8217;s default sheet is A4.</p>
+</li>
+<li>
+<p>Projected View is a projection group; a second Base View stands in for a view dragged off the base view.</p>
+</li>
+<li>
+<p>A new section view lands on top of its base view and is moved afterwards.</p>
+</li>
+<li>
+<p>Dimensions need vertices: add cosmetic vertices on hole centres first.</p>
+</li>
+<li>
+<p>A basic dimension is the <strong>Theoretical Exact</strong> property; hole limits show as a value ± tolerance.</p>
+</li>
+<li>
+<p>No <strong>Feature Parameters</strong>: reference dimensions measured from the view stand in.</p>
+</li>
+<li>
+<p>View styles, smooth edges and arrowheads are view and dimension properties.</p>
+</li>
+<li>
+<p>The sheet updates by itself; NX marks it out of date.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_cannot_be_matched"><a class="anchor" href="#_what_cannot_be_matched"></a>What cannot be matched</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX&#8217;s icons are Siemens' and are not copied; NX-Style uses FreeCAD&#8217;s icons and its own line icons.</p>
+</li>
+<li>
+<p>Synchronous modelling goes no further than <strong>Delete Face</strong> (FreeCAD&#8217;s Defeaturing).</p>
+</li>
+<li>
+<p>Feature dialogs are FreeCAD&#8217;s task panels, in the Dialog tab (or floating, with <code>floating_task_panel</code>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a></span>
+  <span class="next"><a href="known-issues.html">FreeCAD limits and known issues</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

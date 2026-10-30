@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Drafting :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/drafting.html">
+    <link rel="prev" href="assemblies.html">
+    <link rel="next" href="sheet-metal.html">
+    <meta name="description" content="Drawings in the Drafting application: sheets, views, dimensions, GD&amp;T and associative updates.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="drafting.html">Drafting and GD&amp;T</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/drafting.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Drafting</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>Drafting</strong> application is FreeCAD&#8217;s TechDraw workbench with NX&#8217;s ribbon.
+<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></span> switches to it.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/ui-drafting.png" alt="The Drafting application with its Home tab">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sheets"><a class="anchor" href="#_sheets"></a>Sheets</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Home › Drawing › New Sheet</strong> makes a sheet from the default template.
+NX asks for the size, projection and scale in one Sheet dialog; in FreeCAD they are the sheet&#8217;s properties:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX Sheet dialog</th>
+<th class="tableblock halign-left valign-top">FreeCAD sheet property</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Size (A-8.5X11, B-11X17 …)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Template</code>: pick an SVG, for example <code>ANSIA_Landscape.svg</code> or <code>ANSIB_Landscape.svg</code> from FreeCAD&#8217;s <code>Mod/TechDraw/Templates</code> folder. <strong>Sheet from Template</strong> asks for one.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Projection</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ProjectionType</code>: First angle or Third angle</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Scale</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Changing the template later keeps the views where they are, as NX&#8217;s <strong>Edit Sheet</strong> does.
+FreeCAD&#8217;s default sheet is A4.</p>
+</div>
+<div class="paragraph">
+<p>NX&#8217;s <strong>Drafting Preferences › View › Display Borders</strong> has no button here. A FreeCAD sheet starts with its <strong>Show Frames</strong> property off. FreeCAD&#8217;s own <strong>Turn View Frames On/Off</strong> stays greyed in FreeCAD 1.1.4.</p>
+</div>
+<div class="sect2">
+<h3 id="_title_block_and_revision_block"><a class="anchor" href="#_title_block_and_revision_block"></a>Title block and revision block</h3>
+<div class="paragraph">
+<p><strong>Home › Drawing › Populate Title Block</strong> fills the sheet&#8217;s title block the way NX fills it from the part&#8217;s attributes.
+A released drawing&#8217;s title block carries the part number, the revision, the title, the material, the scale, the sheet, the tolerancing note, and who made and approved it and when (Drake, <em>Dimensioning and Tolerancing Handbook</em>, ch. 4; ISO 7200).
+The values come from these sources; the first one that has a value wins:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>the part&#8217;s newest <a href="data-management.html" class="xref page">Strata</a> release: part number, revision, state, who released it, who approved it, and the date. The title is what the part&#8217;s first release called it, because a later release&#8217;s description says what changed.</p>
+</li>
+<li>
+<p>the document&#8217;s NX attributes <code>DB_PART_NO</code>, <code>DB_PART_REV</code>, <code>DB_PART_NAME</code> and <code>DB_PART_DESC</code>, in its <code>Meta</code>, as Teamcenter would fill them.</p>
+</li>
+<li>
+<p>the document itself: its label, author and company.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The drawing adds what it knows: the scale, the sheet number, the material and mass of the part it shows, and the general tolerance of its PMI (<code>ISO 2768-mK</code>).
+With no general tolerance, the field reads <code>ISO 8015</code> (or <code>ASME Y14.5-2018</code>). ISO 8015 needs no mention beside a general tolerance, because it applies whenever ISO GPS is invoked.
+The title block then states the tolerancing, so the note that <strong>Inherit PMI</strong> put on the sheet is removed and is not added again.
+The dialog shows the values to check before OK.</p>
+</div>
+<div class="paragraph">
+<p>If the sheet&#8217;s template has no title block fields, as FreeCAD&#8217;s default sheet has none, the dialog gives the sheet FreeCAD&#8217;s ISO 5457 template of the same size, with an ISO 7200 title block.
+The template&#8217;s sample texts are cleared.</p>
+</div>
+<div class="paragraph">
+<p><strong>Revision block</strong> puts the revision history in the sheet&#8217;s top right corner: one row per release, with its revision, its description (what changed), its date and who approved it.
+It is replaced when you run the command again.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/tutorial-AC-02-sheet.png" alt="The guide bush&#8217;s sheet: title block from release B" width="revision block with A and B">
+</div>
+</div>
+<div class="paragraph">
+<p><a href="tutorials/ac.html" class="xref page">Tutorial AC</a> fills the guide bush&#8217;s sheet after its two releases.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_views"><a class="anchor" href="#_views"></a>Views</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX</th>
+<th class="tableblock halign-left valign-top">Here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Base View</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Select the body, click <strong>Base View</strong>, press <strong>MB2</strong>. The view&#8217;s direction is a property.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Projected View</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Select the parent view (else the newest base view is taken), click <strong>Projected View</strong>, then <strong>Above</strong>, <strong>Right</strong>, <strong>Below</strong> or <strong>Left</strong> once for each view; <strong>MB2</strong>, <strong>OK</strong> or <strong>Esc</strong> ends it and keeps the views. Each view is the part turned for the sheet&#8217;s projection angle (third angle: the view above is the top view), at the parent&#8217;s scale and view style, lined up with it. One undo step removes them all.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Projection Group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD&#8217;s own projected views: a group made from the part, with its own anchor view.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Section View</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Select the base view, click <strong>Section View</strong>, pick the direction in the dialog, <strong>MB2</strong>. The new view lands on the base view; move it afterwards.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Detail View</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Detail View</strong> magnifies an area of a selected view.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>MB2</strong> presses OK in the open drawing dialog, as in the graphics window; MB2 drag still pans the sheet.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">View style</dt>
+<dd>
+<p>Hidden lines (<strong>Hard Hidden</strong>), line widths and smooth edges (<strong>Smooth Visible</strong>) are view properties; NX sets them in the view&#8217;s Settings dialog.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dimensions"><a class="anchor" href="#_dimensions"></a>Dimensions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Dimension group has Rapid Dimension, Linear, Horizontal, Vertical, Radial, Diameter and Angular.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>TechDraw dimensions attach to vertices, edges and circles.
+To dimension to a hole&#8217;s centre, add a <strong>cosmetic vertex</strong> there first; NX snaps to arc centres.</p>
+</li>
+<li>
+<p>A basic dimension is the dimension&#8217;s <strong>Theoretical Exact</strong> property; it draws the box.</p>
+</li>
+<li>
+<p>Tolerances and a count such as <code>4X</code> go in the dimension&#8217;s properties.</p>
+</li>
+<li>
+<p>Decimals are the dimension&#8217;s <strong>Format Spec</strong> (<code>%.2f</code> for two).</p>
+</li>
+<li>
+<p>Arrows out (NX&#8217;s <strong>Arrow Out</strong>) is the dimension&#8217;s <strong>FlipArrowheads</strong> property.</p>
+</li>
+<li>
+<p>The drafting standard (ISO, ASME) is in <strong>Preferences › TechDraw › Dimensions › Standard and Style</strong>. Set <strong>ASME Inlined</strong> for ANSI&#8217;s horizontal text.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>TechDraw has no <strong>Feature Parameters</strong>: it cannot bring a feature&#8217;s sketch dimensions onto a view.
+Its dimensions are reference dimensions measured from the view; they follow the model but do not drive it.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_gdt"><a class="anchor" href="#_gdt"></a>GD&amp;T</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>FreeCAD 1.1 has only fixed GD&amp;T pictures.
+NX-Style adds NX&#8217;s two dialogs on <strong>Home › Annotation</strong>:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Datum Feature Symbol</dt>
+<dd>
+<p>Select a view edge, click <strong>Datum Feature Symbol</strong>, type the letter, <strong>MB2</strong>.
+The symbol sits against the edge, outside the view.</p>
+</dd>
+<dt class="hdlist1">Feature Control Frame</dt>
+<dd>
+<p>Select a dimension or an edge, click <strong>Feature Control Frame</strong>, then choose the characteristic, the Ø zone, the tolerance, the material condition and up to three datums with their modifiers.
+A frame for a dimension goes under it.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The tolerance and the datum letters stay editable afterwards, as the symbol&#8217;s editable texts.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/tutorial-H-gdt-drawing.png" alt="GD&amp;T plate drawing: datums A" width="B and C" height="basic dimensions and three feature control frames">
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Inherit PMI</dt>
+<dd>
+<p>When the part is documented in 3D (<a href="pmi.html" class="xref page">PMI</a>), select a view and click <strong>Inherit PMI</strong>: the dimensions with their ISO classes and tolerances, the frames, the datum symbols and the tolerancing note come onto the sheet.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_center_marks_notes_hatches"><a class="anchor" href="#_center_marks_notes_hatches"></a>Center marks, notes, hatches</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Center Mark</strong> draws centre lines for the selected circles; TechDraw adds none by itself.</p>
+</li>
+<li>
+<p><strong>Note</strong>: select the view edge the leader ends on (NX&#8217;s terminating object), click <strong>Note</strong>, type the text; <strong>Ø</strong>, <strong>°</strong> and <strong>±</strong> are on the Symbols buttons. The lettering height and the leader&#8217;s stub length are fields of the dialog (NX sets them in the note&#8217;s Settings afterwards). The leader runs outward, away from the view. With no edge selected the note has no leader.</p>
+</li>
+<li>
+<p>ID Symbol (Balloon), Leader, Weld Symbol and Surface Finish are on the Annotation group; <strong>Rich Text Note</strong> is FreeCAD&#8217;s own note.</p>
+</li>
+<li>
+<p><strong>Hatch</strong> and <strong>Crosshatch</strong> fill faces and sections.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hide_and_show"><a class="anchor" href="#_hide_and_show"></a>Hide and show</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>B</kbd></span> hides the selection on the sheet as in the model.
+To show hidden items again, select them in the Part Navigator and press <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></span>. With nothing selected, <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></span> lists the hidden objects to pick from.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_associativity"><a class="anchor" href="#_associativity"></a>Associativity</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Change the model in Modeling (<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>M</kbd></span>) and come back with <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></span>: the sheet has updated by itself (the sheet&#8217;s <strong>Keep Updated</strong>).
+NX marks the drawing out of date and asks for <strong>Update</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_export"><a class="anchor" href="#_export"></a>Export</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Export PDF</strong>, <strong>Export SVG</strong>, <strong>Export DXF</strong> and <strong>Print</strong> are on the Home tab.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also"><a class="anchor" href="#_see_also"></a>See also</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="tutorials/d.html" class="xref page">Tutorial D</a>&#8201;&#8212;&#8201;base and section views.</p>
+</li>
+<li>
+<p><a href="tutorials/h.html" class="xref page">Tutorial H</a>&#8201;&#8212;&#8201;a GD&amp;T drawing with datums and feature control frames.</p>
+</li>
+<li>
+<p><a href="tutorials/n.html" class="xref page">Tutorial N</a>&#8201;&#8212;&#8201;sheet sizes, view styles, center marks and an associative change.</p>
+</li>
+<li>
+<p><a href="tutorials/t.html" class="xref page">Tutorial T</a>&#8201;&#8212;&#8201;a drawing made from the part&#8217;s PMI, to ISO GPS.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="assemblies.html">Assemblies</a></span>
+  <span class="next"><a href="sheet-metal.html">Sheet Metal</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

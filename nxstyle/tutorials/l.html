@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial L: The Locator :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/l.html">
+    <link rel="prev" href="k.html">
+    <link rel="next" href="m.html">
+    <meta name="description" content="Constructive solid geometry with sketched and placed features: block, boss, bore, hole and slot.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="l.html">L: The Locator</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/l.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial L: The Locator</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Book
+</td>
+<td class="hdlist2">
+<p>Shih, <em>Parametric Modeling with Siemens NX</em>, ch. 3 (a millimetre part)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>Unite and subtract with Extrude, Project Curve, Hole, Until Next</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>A 75 × 50 × 15 mm block; an R25 boss 40 mm high; a Ø30 bore; a Ø20 hole; a 20 mm slot. The text gives every size; the hole&#8217;s and the slot&#8217;s positions are in figures: the hole 25 mm from the right edge on the slot&#8217;s centre line, the slot 15 mm from the front edge.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-L-locator.png" alt="The Locator">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_in_short"><a class="anchor" href="#_in_short"></a>In short</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>, <kbd>X</kbd>, <strong>XY_Plane</strong>; <kbd>R</kbd>, 75 × 50, <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span>, 15 mm.</p>
+</li>
+<li>
+<p>The bottom face, Extrude; <strong>Project Curve</strong> on an edge; a circle through its midpoint and corner; the projected edge to reference; 40 mm.</p>
+</li>
+<li>
+<p>The cylinder&#8217;s top face, <strong>Extrude (Subtract)</strong>: Ø30 through all.</p>
+</li>
+<li>
+<p><strong>Hole</strong>: Ø20 through all.</p>
+</li>
+<li>
+<p>The right face, Extrude (Subtract): the 20 mm slot, <strong>To first</strong> (Until Next).</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">File &gt; New, Millimeters, Blank template, name Locator</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+N</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">NXStyle&#8217;s New is NX&#8217;s Model template (a part with a Body to sketch on); there is no Blank template, so the part is in Modeling already; the name is given at the first save</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">File &gt; Applications &gt; Modeling</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Application › Design &gt; Modeling'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">application modeling; the new part stays the active one: True (Unnamed1 : 1[*])</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude, Sketch Section, the default XY plane, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X key, plane row + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">picked XY-plane (Base plane)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rectangle &#174;: two corners, MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">R key + 2 MB1 clicks + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tool True; 4 curves; ended True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dimensions 75 and 50 ('scale the sketch?': Yes)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">values applied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">DoF 0; FreeCAD has no prompt to scale the whole sketch to the first dimension; the corner is put on the origin here (the book leaves the rectangle where it was drawn)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Finish Sketch, distance 15, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+Q, 'lengthEdit' = 15 mm, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 56250.0 mm^3, expected 56250.0; 1 solid(s)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude, the bottom face as the sketch plane</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">select Face5 + ribbon 'Home › Feature &gt; Extrude'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">More &gt; Project Curve: the bottom left edge, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Project Curve' + MB1 on each edge + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1 of 1 edges picked in the graphics window</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circle: centre on the edge&#8217;s midpoint, through the left corner, MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">O key + 2 MB1 clicks + MB2; midpoint and corner as constraints</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">DoF 0; the book: no dimension needed, the circle is defined by the midpoint and the corner. NX snaps while drawing, FreeCAD records the same as constraints</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(FreeCAD) the projected edge to reference</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Convert To/From Reference'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">profile edges 2 &#8594; 1. FreeCAD 1.1 projects a picked edge as defining geometry, which would leave an open wire; NX makes regions</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">End 40, Boolean Unite, Flip (upward), OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">'lengthEdit' = 40 mm, 'checkBoxReversed' on, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 120063.6 mm^3, expected 120063.6; 1 solid(s); height 0.0 .. 40.0 mm. Features in a Body unite by themselves (no Boolean option)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude, the top face of the cylinder</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">select Face6 + ribbon 'Home › Feature &gt; Extrude (Subtract)'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the subtracting extrude is its own button</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circle on the sketch origin, MB2; diameter 30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">O key + 2 MB1 clicks + MB2; diameter applied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">centre tied to the cylinder&#8217;s edge (Edge10): the sketch origin is not at the centre; DoF 0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Boolean Subtract, Through All, Flip (downward), OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">'Through all', MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 91789.3 mm^3, expected 91789.3; 1 solid(s); FreeCAD&#8217;s subtracting extrude goes into the part without a flip</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hole (a placed feature): Simple, a point on the base&#8217;s top face</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">select Face5 + ribbon 'Home › Feature &gt; Hole'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD&#8217;s Hole drills at circle centres in a sketch on the face: not placed without a sketch</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Location dimensions 25 and 30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">O key + 2 MB1 clicks + MB2; centre placed by values</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">centre at (50, 25): 25 from the right edge, on the slot&#8217;s centre line. NX adds the two location dimensions by itself</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Diameter 20, Depth Limit = Through Body, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">'Diameter' = 20 mm, 'Through all', MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 87076.9 mm^3, expected 87076.9; 1 solid(s)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude, the right vertical face of the base</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">select Face3 + ribbon 'Home › Feature &gt; Extrude (Subtract)'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">More &gt; Project Curve: the top and bottom edges, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Project Curve' + MB1 on each edge + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2 of 2 edges picked in the graphics window</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rectangle aligned to the top and bottom edges; dimensions 15 and 20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">R key + 2 MB1 clicks + MB2; on the projected edges; values applied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15 from the front edge, 20 wide, full height; DoF 12</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(FreeCAD) the projected edges to reference</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Convert To/From Reference'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">profile edges 6 &#8594; 4</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subtract, End = Until Next (into the hole), OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">'To first' (FreeCAD&#8217;s Until Next), MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">removed 300.0 mm^3 of the 5143.8 the slot holds: FreeCAD 1.1.4&#8217;s 'To first' stops 1 mm into the part instead of at the hole&#8217;s wall (measured headless too, the same with 'Up to face' on the hole&#8217;s face); NX stops at the next face. Workaround next</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workaround: the slot&#8217;s depth = 25 (to the hole&#8217;s axis)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">slot selected + ribbon 'Home › Edit Feature &gt; Edit Parameters', 'Dimension', 'lengthEdit' = 25 mm, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 81933.1 mm^3, expected 81933.1; 1 solid(s); the same part as NX&#8217;s Until Next here, because the slot is as wide as the hole and on its centre line</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The finished Locator is shown in the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">render of the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">22.5% of the view shows the part</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX-Style&#8217;s New is already the Model template; there is no Blank template to switch from.</p>
+</li>
+<li>
+<p>A projected edge is defining geometry: turn it into reference geometry before extruding.</p>
+</li>
+<li>
+<p>Hole drills at circle centres in a sketch; NX adds the location dimensions itself.</p>
+</li>
+<li>
+<p><strong>To first</strong> into the hole stops 1 mm into the part in FreeCAD 1.1.4 (L22); the workaround is a 25 mm depth, to the hole&#8217;s axis (L23).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="k.html">K: A part driven by expressions</a></span>
+  <span class="next"><a href="m.html">M: The U-Bracket</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

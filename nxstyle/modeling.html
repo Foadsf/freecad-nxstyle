@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Modeling :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/modeling.html">
+    <link rel="prev" href="sketching.html">
+    <link rel="next" href="assemblies.html">
+    <meta name="description" content="Building parts in the Modeling application: the feature workflow, datums, patterns, design changes, materials and mass.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>Using FreeCAD NX-Style</li>
+    <li><a href="modeling.html">Modeling</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/modeling.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Modeling</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>Modeling</strong> application is FreeCAD&#8217;s PartDesign workbench with NX&#8217;s ribbon.
+<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>M</kbd></span> switches to it from any other application.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/tutorial-E-saddle-bracket.png" alt="The Saddle Bracket in Modeling" width="features renamed in the Part Navigator">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_a_new_part"><a class="anchor" href="#_a_new_part"></a>A new part</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>N</kbd></span> works like NX&#8217;s <strong>Model</strong> template: the new part already has a Body, ready to sketch on.
+Units are millimetres and kilograms (FreeCAD&#8217;s Standard schema), whatever FreeCAD itself was set to; see <code>units</code> in <a href="settings.html" class="xref page">Settings</a>.</p>
+</div>
+<div class="paragraph">
+<p>The part gets its name at the first save (<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>).
+Files are FreeCAD <code>.FCStd</code> files, not <code>.prt</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_feature_workflow"><a class="anchor" href="#_the_feature_workflow"></a>The feature workflow</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Home tab&#8217;s <strong>Feature</strong> group works the NX way:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Start the feature: <kbd>X</kbd> for <strong>Extrude</strong>, or <strong>Revolve</strong>, <strong>Hole</strong>, <strong>Extrude (Subtract)</strong>, <strong>Revolve (Subtract)</strong>.</p>
+</li>
+<li>
+<p>With nothing selected, pick a plane or a face; a sketch opens on it.
+With a face or datum plane already selected, it opens there at once; with a sketch selected, the feature starts from that sketch.
+To use curves of an existing sketch instead, pick them (<a href="#sections">Sections</a>).</p>
+</li>
+<li>
+<p>Draw the section (<a href="sketching.html" class="xref page">Sketching</a>).</p>
+</li>
+<li>
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span> (<strong>Finish Sketch</strong>) carries straight on into the feature&#8217;s dialog.</p>
+</li>
+<li>
+<p>Type the values and press <strong>MB2</strong> (or <strong>OK</strong>).</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="extrude"><a class="anchor" href="#extrude"></a>Extrude</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Extrude works the same however it is started: <kbd>X</kbd>, the ribbon, the Command Finder, the radial menu, or <strong>Edit Parameters</strong> on an existing extrude.
+Its dialog has two parts.
+At the top, the NX command box shows the section, the body and the <strong>Boolean</strong>.
+Below it is FreeCAD&#8217;s own Pad or Pocket panel, where the limits, the direction and the draft are typed.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/tutorial-AE-02-unite.png" alt="The Extrude dialog: the NX command box above FreeCAD&#8217;s Pad panel">
+</div>
+</div>
+<div class="sect2">
+<h3 id="_boolean"><a class="anchor" href="#_boolean"></a>Boolean</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX Boolean</th>
+<th class="tableblock halign-left valign-top">What NX-Style builds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>None</strong> (a new body)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Pad that starts a solid. In a Body that has no solid yet, the Pad goes into that Body. Otherwise a new Body is made, with a sub-shape binder of the sketch, and the Pad goes in there. That Pad&#8217;s custom direction is set to the sketch normal, because the binder&#8217;s face can point the other way. The active Body does not change, so later extrudes still go to the body you were working on.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Unite</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Pad in the Body that holds the sketch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Subtract</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Pocket in the Body that holds the sketch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Intersect</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not supported. It is in the list, but greyed out, and choosing it gives the reason in the dialog. NX-Style does not approximate it.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The Boolean starts as NX infers it: <strong>Unite</strong> when the sketch&#8217;s Body already has a solid, otherwise <strong>None</strong> (a new body). The Boolean names follow NX 2212, as in Shih&#8217;s NX 2212 exercises.
+<strong>Extrude (Subtract)</strong> starts with <strong>Subtract</strong> chosen.
+Changing the Boolean replaces the preview Pad with a Pocket, or the reverse; the length typed so far is kept.
+Unite and Subtract always work on the Body that holds the sketch. NX lets you pick another target body; NX-Style does not.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<strong>Subtract</strong> cuts into the part, against the sketch normal, unless <strong>Reversed</strong> is ticked.
+NX keeps the same direction for every Boolean, so there you reverse it.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_errors_ok_and_cancel"><a class="anchor" href="#_errors_ok_and_cancel"></a>Errors, OK and Cancel</h3>
+<div class="paragraph">
+<p>The command box&#8217;s last line shows the state of the extrude.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An error leaves <strong>OK</strong> unavailable, and MB2 does nothing.
+For example: FreeCAD cannot build the feature from these values, or a Unite misses the part and would leave a separate solid (NX: “tool body does not intersect the target”), or Unite or Subtract is chosen when there is no solid to work on.</p>
+</li>
+<li>
+<p>A warning does not stop OK.
+For example: a Subtract that removes nothing, or a number the field read differently from what was typed. With a comma as the decimal separator, <code>3.175</code> is read as 3175 mm.</p>
+</li>
+<li>
+<p><strong>OK</strong> (or MB2) adds one undo step, named <strong>Extrude</strong>. Editing an extrude adds one named <strong>Edit Extrude</strong>.</p>
+</li>
+<li>
+<p><strong>Cancel</strong> or <kbd>Esc</kbd> removes the preview, and with it any new Body or binder. Visibility and the selection go back to how they were, and nothing is added to the undo list.
+The sketch drawn inside the command stays, as its own undo steps.</p>
+</li>
+<li>
+<p>While the dialog is open, the Type Filter is switched off so the command can pick what it needs. It comes back afterwards.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_not_supported_yet"><a class="anchor" href="#_not_supported_yet"></a>Not supported yet</h3>
+<div class="paragraph">
+<p>These NX Extrude options are not offered, and the command box lists them:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Intersect;</p>
+</li>
+<li>
+<p>choosing the target body;</p>
+</li>
+<li>
+<p>a start limit away from the sketch plane on one side (FreeCAD&#8217;s <strong>Two sided</strong> gives a length each way);</p>
+</li>
+<li>
+<p>Until Extended;</p>
+</li>
+<li>
+<p>draft from the section, asymmetric or with matched ends (FreeCAD has a single taper angle);</p>
+</li>
+<li>
+<p>NX&#8217;s section Offset (FreeCAD&#8217;s Offset belongs to Up to face);</p>
+</li>
+<li>
+<p>body type Sheet;</p>
+</li>
+<li>
+<p>changing the Boolean while editing an extrude. Delete it and extrude again;</p>
+</li>
+<li>
+<p>a section of curves from several sketches, or of edges of a solid.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Hole still opens FreeCAD&#8217;s own dialog directly. It does not have the command box yet.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unite_and_subtract_between_bodies"><a class="anchor" href="#_unite_and_subtract_between_bodies"></a>Unite and subtract between bodies</h3>
+<div class="paragraph">
+<p><strong>Unite / Subtract</strong> in the Feature group combines separate bodies.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_extrude_limits"><a class="anchor" href="#_extrude_limits"></a>Extrude limits</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX</th>
+<th class="tableblock halign-left valign-top">FreeCAD (in the Extrude dialog)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Value</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dimension</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start 0, End d, Reverse Direction</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dimension d, <strong>Reversed</strong> ticked (the book&#8217;s −ZC 0.5 in)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Symmetric Value</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Symmetric (the value is the total width, as in NX since NX 1926)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start and End limits on both sides</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Two sided (a length each way)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Until Next</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To first</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Until Selected</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Up to face</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Through All</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Through all</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<strong>To first</strong> and <strong>Up to face</strong> into a hole stop 1 mm into the part in FreeCAD 1.1.4 (<a href="known-issues.html" class="xref page">Known issues</a>).
+<a href="tutorials/l.html" class="xref page">Tutorial L</a> shows the workaround.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sections"><a class="anchor" href="#sections"></a>Sections</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Extrude and Revolve take their section as NX&#8217;s <strong>Section</strong> collector does: a whole sketch, or some curves of one sketch.
+The <strong>Curve Rule</strong> on the Top Border Bar, next to the Selection Scope, says what one pick adds.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Inferred Curves</strong> (the default) takes the whole sketch, as before.</p>
+</li>
+<li>
+<p><strong>Single Curve</strong> takes the picked curve.</p>
+</li>
+<li>
+<p><strong>Tangent Curves</strong> and <strong>Connected Curves</strong> take its chain (<a href="selection.html" class="xref page">Selecting</a>); Connected stops where three curves meet.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The curves can be picked before the command, or after it starts.
+With nothing selected the command asks for a sketch plane, as before; pick a sketch curve instead, and FreeCAD&#8217;s plane pick closes and the dialog opens with that curve.
+Every further pick adds to the section, and Ctrl+MB1 on a picked curve takes it out.
+A plain click on a picked curve changes nothing: FreeCAD would select the whole sketch there, and only <strong>Inferred Curves</strong> takes the whole sketch.
+The section&#8217;s curves stay selected, so they show which they are, and the command box counts them (<strong>Select Curve (10)</strong>); its tooltip names them.
+Where a solid&#8217;s face or edge lies on a curve, hold MB1 for QuickPick and choose the sketch&#8217;s curve.</p>
+</div>
+<div class="paragraph">
+<p>The feature&#8217;s Profile is those curves only, so one sketch can hold several loops that share curves or overlap, as the impeller casing of tutorial AG does.
+Until the curves close, the command box says where the section is open or branches, and OK is unavailable.
+A sketch used in part stays shown after OK, because its other curves are still to be used; a whole sketch is hidden, as before.
+A section of a new body (Boolean <strong>None</strong> when the sketch&#8217;s Body has a solid) is a binder of the picked curves only.</p>
+</div>
+<div class="paragraph">
+<p>FreeCAD names a curve after the sketch&#8217;s shape, not after its geometry number: outside the sketch, the first line drawn need not be <strong>Edge1</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="revolve"><a class="anchor" href="#revolve"></a>Revolve</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Revolve has the same command box as Extrude, over FreeCAD&#8217;s Revolution panel (Groove for <strong>Subtract</strong>).
+<strong>Revolve (Subtract)</strong> starts with <strong>Subtract</strong> chosen; <strong>Intersect</strong> is shown and refused.
+OK adds one undo step, named <strong>Revolve</strong>, and Cancel or <kbd>Esc</kbd> leaves nothing behind.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX</th>
+<th class="tableblock halign-left valign-top">What NX-Style builds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Specify Vector</strong> XC, YC, ZC through <strong>Specify Point</strong> (0, 0, 0)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Body&#8217;s own X, Y or Z axis. −XC, −YC and −ZC tick <strong>Reversed</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A vector through another point</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A datum line through that point, which the Revolve keeps (Cancel removes it).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Sketch H axis</strong>, <strong>Sketch V axis</strong>, <strong>Line…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The sketch&#8217;s axis, or the sketch line picked after <strong>Line…</strong>. <strong>Sketch V axis</strong> is the default, as in FreeCAD.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Limits</strong> Start 0, End 180</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Angle</strong> 180. With the Start on the other side of the sketch plane (Start −30, End 120): <strong>Two angles</strong>, 120 and 30.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start and End on one side of the sketch plane, neither 0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not supported: FreeCAD revolves from the sketch plane. The command box says so and OK is unavailable.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The box drives FreeCAD&#8217;s panel: what it sets shows there, and what is typed there shows in the box.
+A new axis rebuilds the preview, because FreeCAD&#8217;s panel takes an axis only from its list.
+When editing a Revolve, change its axis in FreeCAD&#8217;s axis list; the Boolean cannot change either.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="primitives"><a class="anchor" href="#primitives"></a>Primitives: Block, Cylinder, Cone, Sphere</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Block</strong>, <strong>Cylinder</strong>, <strong>Cone</strong> and <strong>Sphere</strong> are separate buttons in the Feature group (NX has them under <strong>More › Design Feature</strong>).
+Each opens NX&#8217;s dialog in the task panel: <strong>Type</strong>, the point (<strong>Origin</strong>, <strong>Axis</strong> or <strong>Center Point</strong>), <strong>Dimensions</strong> and <strong>Boolean</strong>.
+The solid is previewed as you type, and the last lengths, type and vector are kept for the next time.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Command</th>
+<th class="tableblock halign-left valign-top">NX types offered</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Block</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Origin and Edge Lengths, Height and Two Points, Two Diagonal Points</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Cylinder</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axis, Diameter, and Height</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Cone</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Diameters and Height</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Sphere</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Center Point and Diameter</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>Specify Vector</strong> offers XC, YC, ZC, −XC, −YC and −ZC, and <strong>Reverse Direction</strong>.
+XC, YC and ZC are FreeCAD&#8217;s absolute X, Y and Z, because FreeCAD has no movable WCS.</p>
+</div>
+<div class="sect2">
+<h3 id="_specify_point"><a class="anchor" href="#_specify_point"></a>Specify Point</h3>
+<div class="paragraph">
+<p>NX&#8217;s Point dialog is part of the command&#8217;s panel: its <strong>Type</strong> and the <strong>XC</strong>, <strong>YC</strong>, <strong>ZC</strong> output coordinates.
+Type the coordinates, or pick in the graphics window; the pick goes to the highlighted step and is snapped by the Type.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Inferred Point</strong>: a vertex, the centre of an arc or a sphere, the nearer end of another edge, or the picked spot on a face.</p>
+</li>
+<li>
+<p><strong>Existing Point</strong>, <strong>End Point</strong>, <strong>Point on Curve/Edge</strong>, <strong>Point on Face</strong>.</p>
+</li>
+<li>
+<p><strong>Arc/Ellipse/Sphere Center</strong>: an arc, circle or ellipse, a sphere, or a flat face bounded by a circle (click the top face of a cylinder for its centre).</p>
+</li>
+<li>
+<p><strong>Between Two Points</strong>: two picks, and the point midway.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The point is copied, not linked: NX&#8217;s primitives are not associative either.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_boolean_2"><a class="anchor" href="#_boolean_2"></a>Boolean</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX Boolean</th>
+<th class="tableblock halign-left valign-top">What NX-Style builds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>None</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An additive primitive (PartDesign Additive Box, Cylinder, Cone, Sphere) in a new Body. In a part whose Body has no solid yet, it goes into that Body.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Unite</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An additive primitive in the target body.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Subtract</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A subtractive primitive (PartDesign Subtractive Box, &#8230;&#8203;) in the target body.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Intersect</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The primitive in a new tool Body, hidden, and a PartDesign Boolean (<strong>Common</strong>) with that Body in the target body.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>With one body in the part, that body is the target.
+With several, <strong>Select Body</strong> is highlighted: pick the body in the graphics window, or choose it from the list.</p>
+</div>
+<div class="paragraph">
+<p>The result stays a feature in the body&#8217;s history.
+<strong>Edit Parameters</strong> (also on an Intersect&#8217;s Boolean) reopens the same dialog with the values; the Boolean cannot be changed there.
+Double-clicking the feature opens FreeCAD&#8217;s own primitive dialog instead.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ok_apply_cancel"><a class="anchor" href="#_ok_apply_cancel"></a>OK, Apply, Cancel</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>OK</strong> (or MB2) adds one undo step, named after the command (<strong>Block</strong>); one Undo takes the primitive back, with any Body or Boolean it made.</p>
+</li>
+<li>
+<p><strong>Apply</strong> commits the primitive and keeps the dialog open for the next one.</p>
+</li>
+<li>
+<p><strong>Cancel</strong> or <kbd>Esc</kbd> leaves nothing behind.</p>
+</li>
+<li>
+<p>An error leaves <strong>OK</strong> unavailable: a zero length, a Unite that would leave a separate solid, an Intersect that leaves nothing, or no target body.</p>
+</li>
+<li>
+<p>Typed lengths keep their decimals, and a unit may be typed (<code>0.75 in</code>).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_not_supported_yet_2"><a class="anchor" href="#_not_supported_yet_2"></a>Not supported yet</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Cylinder&#8217;s <strong>Arc and Height</strong>, Sphere&#8217;s <strong>Arc</strong>, and Cone&#8217;s half-angle types and <strong>Two Coaxial Arcs</strong>; use <strong>Arc/Ellipse/Sphere Center</strong> for the point and type the sizes.</p>
+</li>
+<li>
+<p>A vector from a picked face or edge.</p>
+</li>
+<li>
+<p>The Point dialog&#8217;s other types (Cursor Location, Control Point, Intersection Point, Quadrant Point, &#8230;&#8203;) and its Offset.</p>
+</li>
+<li>
+<p>When editing, a Block is shown as <strong>Origin and Edge Lengths</strong>, whatever type made it.</p>
+</li>
+<li>
+<p>The Boolean is not remembered between commands: each starts with <strong>None</strong>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="thread"><a class="anchor" href="#thread"></a>Thread</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Thread</strong> is a button in the Feature group (NX: <strong>Insert › Design Feature › Thread</strong>).
+Choose the <strong>Thread Type</strong>, then click the cylindrical face to thread: a shaft for an external thread, a hole&#8217;s wall for an internal one.
+A face selected before the command is taken as the cylinder.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Thread Type</th>
+<th class="tableblock halign-left valign-top">What NX-Style builds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Detailed</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A real helical thread: a PartDesign Subtractive Helix that sweeps the thread profile (a hidden sketch, <strong>ThreadProfile</strong>, in a plane through the axis) about the cylinder&#8217;s axis.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Symbolic</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cylinder keeps its shape. A <strong>SymbolicThread</strong> feature at the Body&#8217;s tip records the thread: its callout, diameters, pitch, angle, length and hand, in its <strong>NX Thread</strong> properties.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Both types carry the same <strong>NX Thread</strong> properties (<code>NX_Callout</code>, <code>NX_MajorDiameter</code>, <code>NX_Pitch</code>, &#8230;&#8203;), which drawings and PMI can read.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_values"><a class="anchor" href="#_the_values"></a>The values</h3>
+<div class="paragraph">
+<p>The click fills in the nearest standard thread, and the <strong>Standard</strong> list shows which one.
+Choosing another entry fills in its values; values that match no entry read <strong>Custom</strong>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A shaft is matched by its major diameter, a hole by its minor diameter (a hole is drilled at about the minor diameter).</p>
+</li>
+<li>
+<p>Parts are metric. A diameter that is an inch size takes the UNC thread, as NX&#8217;s inch table does: a 0.25 in (6.35 mm) shank gets <strong>1/4-20 UNC</strong>, pitch 1.27.
+Any other diameter takes the nearest ISO coarse thread: a 6 mm shank gets <strong>M6 x 1</strong>.</p>
+</li>
+<li>
+<p>The tables are ISO 261 coarse pitches (first and second choice diameters, M1 to M64) and ASME B1.1 UNC (#1 to 2 in).</p>
+</li>
+<li>
+<p><strong>Minor Diameter</strong> is the basic profile&#8217;s: major − 1.082532 × pitch (ISO 68-1 and ISO 724 D1; ASME B1.1).</p>
+</li>
+<li>
+<p><strong>Angle</strong> is 60°; <strong>Length</strong> is the cylinder&#8217;s length.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Rotation</strong> is <strong>Right Hand</strong> or <strong>Left Hand</strong>.
+<strong>Start</strong> is the end of the cylinder nearest the click; <strong>Select Start</strong> takes the face at the other end, and <strong>Reverse Thread Direction</strong> swaps the ends.</p>
+</div>
+<div class="paragraph">
+<p>The Detailed thread follows the basic profile: a crest flat of P/8 at the major diameter and flanks at half the Angle each side.
+It runs out through the start face and stops at <strong>Length</strong>; it never cuts past <strong>Length</strong>, so a thread up to a screw&#8217;s head leaves the head alone.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ok_apply_cancel_2"><a class="anchor" href="#_ok_apply_cancel_2"></a>OK, Apply, Cancel</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>OK</strong> (or MB2) adds one undo step, <strong>Thread</strong>; one Undo takes the thread back, with its profile sketch.</p>
+</li>
+<li>
+<p><strong>Apply</strong> commits the thread and keeps the dialog open for the next one.</p>
+</li>
+<li>
+<p><strong>Cancel</strong> or <kbd>Esc</kbd> leaves nothing behind.</p>
+</li>
+<li>
+<p>An error leaves <strong>OK</strong> unavailable: no cylinder picked, a <strong>Length</strong> past the cylinder&#8217;s end, a <strong>Minor Diameter</strong> the flanks cannot reach, or a thread that removes nothing.</p>
+</li>
+<li>
+<p>A warning says when the thread does not sit on the cylinder as a table thread would (a Major Diameter smaller than the shank leaves the crests on the shank).</p>
+</li>
+<li>
+<p><strong>Edit Parameters</strong> on the thread (or its profile sketch) reopens the dialog with the values: the diameters, pitch, angle, length, rotation and direction can change; the cylinder and the Thread Type cannot.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A Detailed thread takes a few seconds to recompute.
+The book&#8217;s hexagonal screw (NX 12 for Engineering Design, 4.7.1) threads its 0.25 in shank Detailed with the defaults; the self-test replays that case and checks the volume against a separate build of the same helix.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_not_supported_yet_3"><a class="anchor" href="#_not_supported_yet_3"></a>Not supported yet</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>A start on a face or datum plane part-way along the cylinder: the thread starts at an end.</p>
+</li>
+<li>
+<p>Symbolic&#8217;s <strong>Method</strong>, <strong>Form</strong>, <strong>Number of Starts</strong>, <strong>Tapered</strong> and <strong>Full Thread</strong>: threads are single-start and straight.</p>
+</li>
+<li>
+<p>Fine pitch and UNF tables: type the values, and the callout reads <strong>Custom</strong>.</p>
+</li>
+<li>
+<p>NX&#8217;s dashed display of a symbolic thread: the SymbolicThread feature shows the cylinder as it is.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="move-object"><a class="anchor" href="#move-object"></a>Move Object</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Move Object</strong> (<span class="keyseq"><kbd>Ctrl</kbd>+<kbd>T</kbd></span>, or <strong>Move Object</strong> on the MB3 radial menu; NX: <strong>Edit › Move Object</strong>) moves bodies and objects, or copies of them.
+What is selected when it starts becomes its <strong>Objects</strong>; with nothing selected, click the objects in the graphics window or the Part Navigator (a second click on one takes it out again).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A click on a solid takes its Body, as NX selects a body. The move goes inside the Body, which keeps its <strong>Placement</strong>: free primitives, sketches and datums move by their Placement, a sketch or datum attached to the Body&#8217;s origin planes by its <strong>Attachment Offset</strong>, and everything built on them follows.
+This is because FreeCAD 1.1&#8217;s <strong>Unite / Subtract</strong> (PartDesign Boolean) ignores the target Body&#8217;s Placement: a Body moved by its Placement and then cut into would be cut where it was.
+A Body whose features refer to its origin directly (a Revolve about the origin&#8217;s Z axis, a Mirror on the XY plane) is moved by its Placement instead, and the dialog warns that a later Unite / Subtract into it would not see the move.</p>
+</li>
+<li>
+<p>A Part object outside a Body (a Part primitive, an imported solid) moves by its Placement.</p>
+</li>
+<li>
+<p>In an assembly, a click on a component takes its link, and the link moves.</p>
+</li>
+<li>
+<p>A sketch or a datum picked as itself moves alone. An attached one moves through its <strong>Attachment Offset</strong>, so it stays attached.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_motion"><a class="anchor" href="#_motion"></a>Motion</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Motion</th>
+<th class="tableblock halign-left valign-top">What you specify</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Distance</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Specify Vector</strong> (XC, YC, ZC, −XC, −YC, −ZC; <strong>Reverse Direction</strong>) and the <strong>Distance</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Angle</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Specify Vector</strong> as the axis, <strong>Specify Axis Point</strong> (typed, or picked and snapped by its Point type), and the <strong>Angle</strong>; positive turns right-handed about the vector.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Point to Point</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Specify From Point</strong> and <strong>Specify To Point</strong>, typed or picked. The objects move by the difference.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Dynamic</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OK hands the object to FreeCAD&#8217;s <strong>Transform</strong> dragger (FreeCAD&#8217;s <code>Std_TransformManip</code>): drag its arrows and rings, or type in its panel. One object at a time.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_result"><a class="anchor" href="#_result"></a>Result</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Move Original</strong> moves the objects.</p>
+</li>
+<li>
+<p><strong>Copy Original</strong> leaves them where they are and makes <strong>Number of Copies</strong> copies: copy 1 moved once, copy 2 twice, and so on (four copies at 90° go round once).</p>
+</li>
+<li>
+<p><strong>Distance/Angle Divisions</strong> divides the motion: 100 mm with 4 divisions moves 25 mm.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A copy is not associative, as NX&#8217;s copy is by default:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A Body&#8217;s copy is a new PartDesign Body whose Base Feature is a static copy of the solid, already moved (a hidden Part feature, <strong>&lt;body&gt; solid</strong>). It is a body like any other: the primitives' Booleans and Combine can take it as a target, and new features build on it. Editing the original leaves the copy as it is.</p>
+</li>
+<li>
+<p>A Part object&#8217;s copy is a static Part feature with its shape (Part&#8217;s Simple Copy).</p>
+</li>
+<li>
+<p>A link&#8217;s copy is another link to the same object, so a copied component is still the same part.</p>
+</li>
+<li>
+<p>Sketches and datums are moved only; <strong>Copy Original</strong> on them is refused with the reason.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The Body copy was chosen over PartDesign&#8217;s <strong>Clone</strong> and a <strong>SubShapeBinder</strong>: both keep the copy tied to the original, which NX&#8217;s default copy is not, and a Clone follows every later change of the original body.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ok_apply_cancel_3"><a class="anchor" href="#_ok_apply_cancel_3"></a>OK, Apply, Cancel</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>The graphics window shows the result while the dialog is open: the objects are where OK will leave them, and the copies are there.</p>
+</li>
+<li>
+<p><strong>OK</strong> (or MB2) adds one undo step, <strong>Move Object</strong>; one Undo puts everything back and removes the copies.</p>
+</li>
+<li>
+<p><strong>Apply</strong> commits the move and keeps the dialog open with the same objects: the next Apply (or OK) moves them again, or makes more copies.</p>
+</li>
+<li>
+<p><strong>Cancel</strong> or <kbd>Esc</kbd> leaves nothing changed.</p>
+</li>
+<li>
+<p>An error leaves <strong>OK</strong> unavailable: no objects, no copies, <strong>Copy Original</strong> on a sketch or datum, or <strong>Dynamic</strong> with several objects.
+A Distance or Angle of 0 is allowed with a warning that nothing moves.</p>
+</li>
+<li>
+<p>The dialog remembers the motion, vector, distance, angle and result for the next time.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The book&#8217;s arbor press L-bar (NX 12 for Engineering Design, 4.7.3) moves its second block 200 in along ZC, and 4.6.9 moves a cylinder 5 in along XC; the self-test replays both by <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> and checks the placement, the bounding box, the one undo step and Undo, and then cuts a slot into the moved block with <strong>Unite / Subtract</strong>, checking the volume against the Part API.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_not_supported_yet_4"><a class="anchor" href="#_not_supported_yet_4"></a>Not supported yet</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>The other motions: <strong>Distance between Points</strong>, <strong>Radial Distance</strong>, <strong>Align Axis to Vector</strong>, <strong>CSYS to CSYS</strong>, <strong>Delta XYZ</strong>, <strong>Rotate by Three Points</strong> (use Distance, Angle or Point to Point).</p>
+</li>
+<li>
+<p>A vector from a picked face or edge: choose one of the six axes.</p>
+</li>
+<li>
+<p><strong>Associative</strong> (a Move Object feature), <strong>Move Parents</strong>, <strong>Create Trace Lines</strong>, and the Layer options.</p>
+</li>
+<li>
+<p>A Body or Part object whose Placement is set by an expression is refused: change the expression.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_datums"><a class="anchor" href="#_datums"></a>Datums</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Feature › Datum</strong> has Datum Plane, Datum Axis, Point and Datum CSYS.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The Body has its own origin (XY, XZ and YZ planes and the axes). NX-Style keeps it hidden and FreeCAD shows it while you pick a sketch plane.</p>
+</li>
+<li>
+<p><strong>At Angle</strong> datum planes rotate about the face&#8217;s own axes in the attachment offset; NX lets you pick the hinge axis (<a href="tutorials/c.html" class="xref page">Tutorial C</a>).</p>
+</li>
+<li>
+<p>Datum CSYS with nothing selected asks whether to continue without an attachment; NX places it at the WCS (<a href="tutorials/e.html" class="xref page">Tutorial E</a>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_holes"><a class="anchor" href="#_holes"></a>Holes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Hole</strong> drills at the circle centres of a sketch on a face.
+Select the face (or a datum plane), click <strong>Hole</strong>, place the centres in the sketch with <kbd>O</kbd> and <kbd>D</kbd>, and <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span> continues into the Hole dialog.
+NX places a hole by its point and adds the location dimensions by itself.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_edge_blend_chamfer_draft_shell"><a class="anchor" href="#_edge_blend_chamfer_draft_shell"></a>Edge Blend, Chamfer, Draft, Shell</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These are FreeCAD&#8217;s Fillet, Chamfer, Draft and Thickness.
+Select the edges or faces first, then the command.</p>
+</div>
+<div class="paragraph">
+<p><strong>Edge Blend</strong> also works the other way round: start it with nothing selected and it opens a selection collector; pick the edges (<strong>Tangent Curves</strong> takes a whole smooth chain from one pick), then OK hands them to the Fillet for the radius.
+It refuses what it cannot round (a face, an edge of another body) and says why (<a href="selection.html#_commands_that_collect_edge_blend" class="xref page">selection.adoc#_commands_that_collect_edge_blend</a>).</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+In FreeCAD 1.1.4, <strong>Shell</strong> can fail after <strong>Edge Blend</strong> on the same edges.
+Shell first, then blend (<a href="tutorials/f.html" class="xref page">Tutorial F</a>).
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_patterns_and_mirror"><a class="anchor" href="#_patterns_and_mirror"></a>Patterns and mirror</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>NX has one <strong>Pattern Feature</strong> with a Layout list; FreeCAD has separate buttons.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">NX layout</th>
+<th class="tableblock halign-left valign-top">Button</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Linear</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern Feature</strong> (FreeCAD&#8217;s Linear Pattern); Direction 2 is a tick box in the same dialog. NX&#8217;s negative pitch is FreeCAD&#8217;s spacing with <strong>Reverse</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circular</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Circular Pattern</strong>; the axis is chosen from a list in the dialog.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Several at once</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Multi-Transform</strong></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>Mirror Feature</strong>: select the feature first, then start the command.
+Inside a Body the mirror unites by itself.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_design_changes"><a class="anchor" href="#_design_changes"></a>Design changes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Edit Parameters</strong> reopens the feature&#8217;s dialog. It is on the ribbon, the radial menu, and the MB3 menu of the feature in the Part Navigator.
+An extrude opens in the Extrude dialog with its command box (<a href="#extrude">Extrude</a>), so <strong>Cancel</strong> puts every value back.
+A Block, Cylinder, Cone or Sphere opens in its NX dialog (<a href="#primitives">Primitives: Block, Cylinder, Cone, Sphere</a>), and so does a Thread (<a href="#thread">Thread</a>).
+Double-clicking the feature opens FreeCAD&#8217;s own dialog without the command box.
+NX also lets you edit a dimension shown in the graphics window; here the change goes through the dialog or the sketch.</p>
+</li>
+<li>
+<p><kbd>F2</kbd> or MB3 › <strong>Rename</strong> in the Part Navigator gives a feature a name.</p>
+</li>
+<li>
+<p><strong>Make Current Feature</strong> rolls the part back to that feature; later features wait until you make the last one current again.</p>
+</li>
+<li>
+<p><strong>Suppress</strong> switches a feature off and on again (NX&#8217;s Suppress and Unsuppress).
+FreeCAD keeps the feature&#8217;s links in its properties; <a href="tutorials/m.html" class="xref page">Tutorial M</a> shows parent/child behaviour.</p>
+</li>
+<li>
+<p><strong>Update Model</strong> recomputes.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Later features follow a change, including a fillet added to the first sketch afterwards (<a href="tutorials/e.html" class="xref page">Tutorial E</a>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_expressions"><a class="anchor" href="#_expressions"></a>Expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>E</kbd></span> opens the <strong>Expressions</strong> sheet: a FreeCAD spreadsheet named <code>Expressions</code>, with names in one column and values in the next.
+A dimension uses a name as <code>=Expressions.L</code>.
+Change the value in the sheet and the part follows (<a href="tutorials/k.html" class="xref page">Tutorial K</a>).</p>
+</div>
+<div class="paragraph">
+<p>FreeCAD refuses names that are unit symbols: the newton <code>N</code> becomes <code>N_holes</code>, for example.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_materials_and_mass"><a class="anchor" href="#_materials_and_mass"></a>Materials and mass</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Select the body and click <strong>Render › Material › Assign Material</strong>.
+Pick the material; the choice applies at once, and the dialog closes with <strong>Close</strong>.</p>
+</li>
+<li>
+<p><strong>Analysis › Measure › Measure Bodies</strong> shows volume, surface area, the material and density, mass and centre of mass in an Information window, in mm³, mm² and kg.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>FreeCAD&#8217;s own Measure has no mass; <strong>Measure Bodies</strong> is NX-Style&#8217;s.
+FreeCAD 1.1 also applies the material&#8217;s appearance, so a steel body renders nearly black.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_associative_copy_surfaces_synchronous_modeling"><a class="anchor" href="#_associative_copy_surfaces_synchronous_modeling"></a>Associative copy, surfaces, synchronous modeling</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>WAVE Linker</strong>, <strong>Extract Geometry</strong> and <strong>Clone Body</strong> are FreeCAD&#8217;s sub-shape binder, shape binder and clone.</p>
+</li>
+<li>
+<p>The <strong>Surface</strong> tab holds Through Curves, Swept, N-Sided Surface and the sheet operations from FreeCAD&#8217;s Part and Surface workbenches.</p>
+</li>
+<li>
+<p><strong>Synchronous Modeling</strong> is limited to <strong>Delete Face</strong> (FreeCAD&#8217;s Defeaturing).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The full list of buttons is in <a href="nx-to-freecad.html" class="xref page">NX command to FreeCAD command</a>.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="sketching.html">Sketching</a></span>
+  <span class="next"><a href="assemblies.html">Assemblies</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>

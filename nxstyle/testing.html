@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Testing :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/testing.html">
+    <link rel="prev" href="troubleshooting.html">
+    <link rel="next" href="development.html">
+    <meta name="description" content="The unit tests, the self-test and the tutorial replay: what each checks and how to run it.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+<link rel="stylesheet" href="../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../index.html">
+        <img class="site-logo" src="../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="tutorials/bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">FreeCAD NX-Style</a></li>
+    <li>For contributors</li>
+    <li><a href="testing.html">Self-test and tutorial replay</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/testing.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Testing</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Three levels of tests, from seconds to about half an hour.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_unit_tests_and_lint"><a class="anchor" href="#_unit_tests_and_lint"></a>Unit tests and lint</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python -m unittest discover -s tests</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ruff check --select F,E9 .</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The unit tests cover the engineering computations, checked against the books' worked examples: the tolerance stack-up (Fischer&#8217;s pin and ground plate, Drake&#8217;s MRSS factor, Cogorno&#8217;s fastener and boundary formulas), ISO 286 limits and fits (against the ISO 286-1 formulas and published values) and ISO 2768, the PMI semantics (ISO 8015 and ASME Y14.5 checks, inspection plan, gauge sizes), the release package manifest and its verification, the clearance classification, the AP242 mapping of the PMI (and the correction of OpenCASCADE&#8217;s IT grade), sheet metal bend allowance and flat length (Shih&#8217;s actuator bracket), pin location (Drake ch. 24, Fischer&#8217;s lever), composite position frames and the pattern evaluation (its fit checked against a brute-force search), measurement capability (Drake&#8217;s gauge study example, 42.6 %; TUR and ISO 14253-1 acceptance limits), and the title block values and revision block.
+They cover the selection rules too: the scope verdict on occurrence paths (a look-alike sibling outside the work part is refused), collector counts and refusal reasons, the tangent and connected chains, and the select-through choice.
+They cover the command controller&#8217;s decisions as well (<code>nxstyle/command_core.py</code>). Typed lengths are read with their units and the field&#8217;s decimal separator; <code>3.175</code> in a field whose separator is a comma is refused, not guessed. Every Extrude Boolean is either built (None for a new body, Unite, Subtract) or refused with a reason (Intersect), and the Boolean NX would infer is checked.
+So are Revolve&#8217;s: its Boolean, its axis (a vector through the origin is the Body&#8217;s axis, elsewhere a datum line) and its Start and End angles, refused where FreeCAD cannot revolve them.
+A section&#8217;s picked curves must close: the impeller casing&#8217;s three loops do, a loop with a curve missing is open, and the whole casing branches.
+Picked geometry is matched to the sketch shape&#8217;s edge names, which follow another order.
+They cover ISO 10303 too: Part 21 strings, reals, binaries, comments, line breaks inside tokens and several data sections (with the standard&#8217;s own examples), the EXPRESS reader and the checker (attribute order of internal mapping, <code>*</code> for re-derived attributes, ONEOF, abstract entities, SELECT and aggregate values), the bundled dictionary against ISO 10303-108 Cor.1 annex F, and a parametric model written, checked without an error, read back and compared, including rules that must catch broken data; a Part 112 sketch of every kind of command evaluated against hand-computed geometry, and sketches written as Part 112 commands that reproduce them; lengths and angles in inches and degrees; the application protocol named in a header; and the product structure of an assembly with its quantities. The EXPRESS interpreter has its own tests: the operators and built-in functions with indeterminate values, a schema FUNCTION with loops and a SET local, derived and inverse attributes, SELECT types in TYPEOF, the complex entity constructor, and a small schema whose every kind of rule (an entity&#8217;s WHERE rule, a defined type&#8217;s, an aggregate bound given by an attribute, UNIQUE and a global RULE) is broken once and met once, with a rule left undecided when an unknown entity may use the instance.
+In a real FreeCAD, <code>freecadcmd tests/fc_parametric_step.py</code> exports a constrained, parameter-driven plate and a CSG part as STEP with parameters, imports them into new documents and compares the solids, before and after the same parameter change (<code>NXSTYLE_OUT</code> keeps the files).
+They cover the Carbon client (<a href="manufacturing.html" class="xref page">Manufacturing with Carbon</a>): every flow against a stand-in Carbon server on this computer that checks each request against Carbon&#8217;s published OpenAPI schemas, with a negative control (a request the schema rejects is refused); publishing a part with its model, documents and inspection plan, an assembly&#8217;s BOM from its STEP, a second publish that writes nothing, a review that writes nothing, a BOM change on an Active method going to a new Draft, a new revision created inactive, an unreleased or tampered package refused, the API key&#8217;s sources and that it is never printed.
+In a real FreeCAD, <code>freecadcmd tests/fc_carbon.py</code> builds an assembly of links to other documents (a link array among them), reads its BOM, makes its release package and publishes it to the stand-in server.
+They also cover the launcher: the profile folders and their reset, refusing a profile inside or above the normal FreeCAD folder, the environment and command it builds, which Strata, Katydid, SheetMetal, LCInterlocking and DFM it loads (DFM only with its OCP, whose folder goes first, installed by a pinned <code>--no-deps</code> pip command) and where it reads <code>nxstyle.json</code>, that every application&#8217;s ribbon has the Application tab, that the Laser Cut ribbon names only commands LCInterlocking registers, and the memory ceiling (a runaway is stopped, a second concurrent run refused).
+FreeCAD is not needed.
+GitHub Actions runs both, and checks that the ribbon files are valid JSON, on every push (Windows and Ubuntu).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_self_test"><a class="anchor" href="#_self_test"></a>Self-test</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python launch_nx.py --smoke-test out</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This starts FreeCAD with NX-Style in a throwaway profile and drives the real UI with synthetic mouse and key events.
+It ends with the count of checks passed, failed and skipped (171 checks on FreeCAD 1.1.4 with Strata, Katydid, SheetMetal and LCInterlocking, 2026-10-27). Among them:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>every key in <a href="keyboard-shortcuts.html" class="xref page">Keyboard shortcuts</a> reaches its command through Qt&#8217;s real shortcut system, with no other action holding the same key. This checks the dispatch: the test stops the command from then running. Ctrl+Shift+B is pressed for real as the positive control, and a letter key typed into the Command Finder must stay text;</p>
+</li>
+<li>
+<p>MB2 rotate, pan and zoom, MB2 click = OK, the MB3 hold radial menu;</p>
+</li>
+<li>
+<p>the ribbon, the Type Filter, the Resource Bar and no empty tab strip over the Top Border Bar;</p>
+</li>
+<li>
+<p>every button of the Modeling, Drafting and Sketch ribbons is enabled whenever its FreeCAD command is active, FreeCAD group commands (Line, Radius / Diameter) included; <strong>Radius / Diameter</strong> clicked on a selected arc makes a Radius constraint;</p>
+</li>
+<li>
+<p>the window-size matrix (<a href="#window-matrix">below</a>) for Modeling, Drafting and Pre/Post: nothing clipped and every command reachable at 1366x768 and 1920x1080, each at 100, 125, 150 and 200 % scaling;</p>
+</li>
+<li>
+<p>a window too short for the ribbon minimises it, a tab then drops its page down, and the ribbon comes back when the window is taller;</p>
+</li>
+<li>
+<p>a group set to <strong>Always Collapsed</strong> stays so after the ribbon is rebuilt and is saved in <code>nxstyle.ribbon.json</code>, and its menu entry runs the command;</p>
+</li>
+<li>
+<p>the guided Pre/Post ribbon: the Home tab is the analysis workflow in order, and an analysis with a material and a fixed support ticks steps 1 to 3 and makes the mesh the next step;</p>
+</li>
+<li>
+<p>metric units even when the profile was set to US customary;</p>
+</li>
+<li>
+<p>Strata starts and sits with the navigators;</p>
+</li>
+<li>
+<p>the DFM Workbench&#8217;s commands under Analysis › Molded Part Validation, enabled, with NX names and found by the Command Finder; <strong>Moldability Validation</strong> clicked on a stepped block flags its one sharp inside edge as a Sharp Internal Corner, and on the same block with that edge filleted lists the rule as Passed (with <code>--no-dfm</code>, or before <code>--install-dfm-deps</code>, the group is checked to be absent instead);</p>
+</li>
+<li>
+<p>the PLM tab&#8217;s Manufacturing group; Review, Publish to Manufacturing, Manufacturing Status and Test Connection through their dialogs, against the stand-in Carbon server of the unit tests;</p>
+</li>
+<li>
+<p>the Algorithmic Modeling application opens Katydid&#8217;s canvas, floating, with Canvas, Bake and the Application tab on the ribbon; Canvas is on the Tools tab before Katydid&#8217;s workbench has started; the selected category tab has a readable label; the canvas stays open after switching back to Modeling;</p>
+</li>
+<li>
+<p>the eight PMI model views look as FreeCAD&#8217;s own standard views do, a new PMI goes into the work view, switching views hides the others' PMI, and Display in Views copies one;</p>
+</li>
+<li>
+<p>a plate with PMI written as STEP AP242: datums, the H7 and g6 classes with their right IT grades, position with Ⓜ and flatness in the file, and OpenCASCADE reading back the dimensions and tolerances; the file imported again gives the same PMI;</p>
+</li>
+<li>
+<p>a linked part inside a moved assembly is where the assembly puts it for volume claims and clearance, and its hidden source is not counted;</p>
+</li>
+<li>
+<p>selection (<a href="selection.html" class="xref page">Selecting</a>), on a nested assembly where two links to the same part sit one above the other and the work part is the lower one:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>QuickPick lists both look-alike occurrences, greys the nearer sibling with its reason, and picks exactly the work part&#8217;s occurrence;</p>
+</li>
+<li>
+<p>a pick on the sibling is refused and the cue line says why;</p>
+</li>
+<li>
+<p>an MB1 click selects through the sibling to the work part&#8217;s occurrence, and with <strong>Entire Assembly</strong> the same click takes the sibling (the control);</p>
+</li>
+<li>
+<p>resting the pointer there shows the three-dot cursor and the next click opens QuickPick (no dots over empty space), holding MB1 still opens it too; <strong>Within Work Part Only</strong> refuses a component&#8217;s geometry;</p>
+</li>
+<li>
+<p>the Part Navigator names the work part and the selected occurrence;</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Edge Blend&#8217;s collector, command first: <code>Select Edge (0)</code> and OK refused, a Type Filter change during the command does not replace its gate, <strong>Tangent Curves</strong> collects the line–arc–line chain of a rounded corner, refused picks carry their reasons, and Cancel brings back the previous gate with the filter chosen meanwhile;</p>
+</li>
+<li>
+<p>Edge Blend, selection first: an unusable face is refused and deselected and the edge reaches FreeCAD&#8217;s Fillet; with only usable edges the Fillet opens at once;</p>
+</li>
+<li>
+<p>a Type Filter change while a FreeCAD-style dialog holds its own gate waits, and the Type Filter&#8217;s gate comes back when the dialog closes;</p>
+</li>
+<li>
+<p>Extrude started by its key (<kbd>X</kbd>) with a sketch selected and the Type Filter on Edge: the panel opens, the filter is lifted and greyed out while it runs and back after Cancel; a start that fails ends the command as failed with the reason, and Extrude then runs again;</p>
+</li>
+<li>
+<p>sections on the impeller casing sketch of tutorial AG (19 curves, three loops that share curves, two overlapping lines), with the Curve Rule on the Top Border Bar:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Revolve from the ribbon with nothing selected, the 10 wall curves picked in the graphics window, XC through the origin, End 180: the Profile is those curves and the solid the Part API&#8217;s; with 9 picked the section is open and OK unavailable, and Ctrl+MB1 takes a curve out;</p>
+</li>
+<li>
+<p>the 10 lip curves preselected, then <kbd>X</kbd>, Boolean None, 0.5 in Reversed: a new Body whose binder holds only those curves, extruded along −Z;</p>
+</li>
+<li>
+<p>the 4-curve flange, three sides with one Connected Curves pick and one Single Curve pick, revolved and united with the wall;</p>
+</li>
+<li>
+<p><kbd>Esc</kbd> in a Revolve about a vector through (0, 10, 0) and in an Extrude of picked curves leaves the objects and the undo list as they were;</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Move Object by <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>T</kbd></span> at once after the selection: the book&#8217;s L-bar block (4.7.3) lifted 200 in along ZC with its placement, bounding box, one undo step and Undo checked, and the same move along YC failing the ZC position check; the 4.6.9 cylinder clicked in the graphics window and moved 5 in along XC; Copy Original making two body copies at +1 and +2 steps, removed again by one Undo; Angle with Apply, then Point to Point; Cancel and <kbd>Esc</kbd> leaving the body and the undo list as they were; Distance 0 warning that nothing moves;</p>
+</li>
+<li>
+<p>the curve rules on a rectangle sketch (Connected takes 4 sides, Tangent stops at the corners); the Part Navigator marks the active body, a suppressed feature and a failed one;</p>
+</li>
+<li>
+<p>a composite position frame, its two-row label and the evaluation of a measured pattern; a gauge study on a PMI size; Populate Title Block from part attributes onto an ISO 5457 sheet, with its revision block;</p>
+</li>
+<li>
+<p>broken references are reported, not papered over:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>a diameter whose face became a plane is invalid, shows its error, and is kept out of the inspection plan, the stack-up and the STEP export, then valid again when repaired;</p>
+</li>
+<li>
+<p>a stack-up whose PMI was deleted gives no result;</p>
+</li>
+<li>
+<p>clearance results are out of date after a part moves;</p>
+</li>
+<li>
+<p>a pair rule naming a label two parts share is not applied;</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the geometry comparison the tutorials use tells a solid from a different one of the same volume;</p>
+</li>
+<li>
+<p>the status bar names NX-Style&#8217;s mouse handling rather than FreeCAD&#8217;s Blender base style alone.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as <strong>skipped</strong>, never as passed; <code>--require-all</code> makes a skipped check fail the run.
+It writes <code>out/smoke.json</code> and screenshots.
+While developing, <code>NXSTYLE_SMOKE_ONLY=s_move,s_thread</code> (step names from `smoke.py&#8217;s plan) runs only those steps after Strata&#8217;s start; a full run is still the check.</p>
+</div>
+<div class="sect2">
+<h3 id="window-matrix"><a class="anchor" href="#window-matrix"></a>Window sizes and display scaling</h3>
+<div class="paragraph">
+<p>The self-test resizes the main window to each cell of a matrix and measures widget rectangles, not screenshots:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Screen</th>
+<th class="tableblock halign-left valign-top">100 %</th>
+<th class="tableblock halign-left valign-top">125 %</th>
+<th class="tableblock halign-left valign-top">150 %</th>
+<th class="tableblock halign-left valign-top">200 %</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1366x768</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1366x689</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1092x535</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">910x433</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">683x305</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1920x1080</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1920x1001</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1536x785</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1280x641</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">960x461</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The window sizes are in Qt&#8217;s logical pixels: the screen divided by the scale, less 48 px for the Windows taskbar and 31 px for the title bar.
+Qt lays a window out in logical pixels and scales fonts and icons with the display, so a logical size stands for that resolution and scale.
+The window is resized twice, because a short window minimises the ribbon, which lowers the window&#8217;s minimum height; a maximised window is then given the screen&#8217;s work area again.
+A screen smaller than the cell limits the height. On a 1920x1080 screen at 125 %, for instance, the 1920x1001 cell is measured 844 px high, and the result notes it. This makes the vertical checks harder and leaves the ribbon&#8217;s width the same; a width that differs fails the cell.
+When the ribbon is minimised (the 683x305 cell), each tab is measured in the drop-down a click on it shows, and the drop-down must lie inside the window.
+For each cell and each ribbon tab it checks that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>every shown ribbon control and group label lies wholly inside the ribbon page, and no page needs sideways scrolling;</p>
+</li>
+<li>
+<p>the File button, Quick Access Toolbar, tabs, Command Finder and collapse button lie inside the tab row, and tabs or Quick Access buttons that do not fit have their scroll or extension buttons;</p>
+</li>
+<li>
+<p>every command of the tab is reachable: on a button that is fully shown, or in the menu of a collapsed group or of the More button, which must itself be fully shown;</p>
+</li>
+<li>
+<p>the application&#8217;s essential commands (<code>"essential"</code> in its ribbon file) are reachable, and in Modeling at 1920x1080 and 100 % they are one click away;</p>
+</li>
+<li>
+<p>the ribbon and bars lie inside the window, and the graphics area keeps at least 80 px of height.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Two negative controls show that the checks can fail: with the reduction switched off, the narrowest Modeling cell is reported as clipped or scrolling; and a collapsed group whose menu has lost a command is reported as unreachable.
+The narrowest cell must also have collapsed some groups, so that the matrix exercises the reduction and does not merely find wide windows.
+The results of every cell are in <code>smoke.json</code> under <code>info</code>.</p>
+</div>
+<div class="paragraph">
+<p>The matrix does not change Qt&#8217;s real scale factor during a run.
+Rounding of fractional scales and the platform&#8217;s font hinting can differ by a pixel or so from a real display at that scale.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_the_launcher_accepts"><a class="anchor" href="#_what_the_launcher_accepts"></a>What the launcher accepts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A result file counts only when it is this run&#8217;s and the run finished.
+The launcher passes each run a new ID, and the result (written atomically by <code>nxstyle/harness_result.py</code>) must carry that ID, the schema <code>nxstyle-harness/1</code>, status <code>complete</code>, and every planned step listed as run.
+A tutorial that fails part way lists the steps it then skipped.
+So a passing <code>smoke.json</code> left in the folder by an earlier run cannot pass a run that crashed, and neither can <code>{}</code>, empty lists, a truncated file or a run that stopped half way.
+A FreeCAD that exits with an error after writing a good result fails too.
+<code>tests/test_harness_result.py</code> covers each of these, through <code>launch_nx.main</code> with the FreeCAD run replaced by a stub.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tutorial-replay"><a class="anchor" href="#tutorial-replay"></a>Tutorial replay</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python launch_nx.py --tutorial out</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The replay works through the <a href="tutorials/index.html" class="xref page">tutorials</a> the way the books tell an NX user to: the same keys, the NX-named ribbon buttons, MB1 clicks on sketch points in the graphics window, MB2 to end tools and accept dialogs.
+On the Katydid canvas (tutorials O to R) it double-clicks the empty canvas and types each component&#8217;s name, drags wires from grip to grip (<kbd>Shift</kbd> adds), sets Graft, Flatten and input values from the grips' right-click menu, and types slider values into the slider&#8217;s dialog; after each step it saves a screenshot with the floating canvas laid over the lower half of the graphics window.
+Dimension values are applied through FreeCAD&#8217;s API, the equivalent of typing them into Rapid Dimension; everything else is real UI input.</p>
+</div>
+<div class="paragraph">
+<p>Each feature is checked by its volume against the same operation done directly with FreeCAD&#8217;s Part API.
+Volume alone does not prove the shape: a slot cut in the wrong place has the same volume.
+Tutorial A therefore also compares the part with a reference solid built with the Part API: their symmetric difference and their bounding boxes must agree (<code>nxstyle/geomcheck.py</code>). The boxes are exact ones (<code>optimalBoundingBox</code> without the display mesh): <code>Shape.BoundBox</code> is the box of the mesh once the 3D view has drawn a curved solid, 0.02 to 0.09 mm off for a disc of R60.
+The final part must also be drawn in the graphics window. That is an occupancy check (something is drawn), not a check of the image.
+Save steps press the real <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> and check that the file was rewritten; only a new part&#8217;s first file name is given by script, because the replay cannot drive the system file dialog.
+Before the key the part&#8217;s Comment gets a marker unique to that save; the step passes when the file on disk holds the marker and the part is unmodified. The file&#8217;s time is no witness: FreeCAD saves to a temporary file and renames it over the old one, and in replays on Windows the new file kept the replaced file&#8217;s last-write time in 4 of 10 saves, with the change in it.
+Tutorials S to X check engineering results: the stack-up against Fischer&#8217;s figures, the fit against ISO 286, the STEP file&#8217;s PMI and what OpenCASCADE reads back, the inherited dimensions on the sheet, the clearance kinds and penetration depth, the release states in Strata and the release packages against their manifests, the flat pattern against Shih&#8217;s hand calculation, and the pin location against Drake&#8217;s formulas.
+Dialogs that Strata opens are answered by the replay the way a user fills them in.
+Tutorials AA to AC check the composite frame&#8217;s plan rows and gauges, the evaluation of measured holes, the TUR and acceptance limits, Drake&#8217;s gauge study result, and the title block against the Strata release.
+Tutorial AE is the acceptance case for the command controller (<a href="modeling.html#extrude" class="xref page">Extrude</a>). It does New, Sketch, then Extrude four times through the real UI: None (a new body), Unite, Subtract chosen in the Boolean list, and a separate new body.
+It also checks what must not happen:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>choosing Intersect changes nothing and the dialog gives the reason;</p>
+</li>
+<li>
+<p>a Unite that misses the part leaves OK unavailable, and MB2 does not close the dialog;</p>
+</li>
+<li>
+<p>changing the Boolean adds no undo step.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Then it edits the first extrude. From the Part Navigator&#8217;s MB3 menu it previews a new length and presses Cancel. The value must come back, with no undo step added and nothing left to recompute. It edits again from the ribbon and presses OK, which must add one undo step. Ctrl+Z twice takes back the edit and then the whole New Body extrude, and Ctrl+Y twice restores both. <strong>Extrude (Subtract)</strong> is then started from the Command Finder and cancelled at the plane pick, which must leave no object and no undo step. Finally it saves, reopens and edits again, and <kbd>Esc</kbd> cancels.
+The radial menu&#8217;s <strong>Edit Parameters</strong> runs the same command as the ribbon&#8217;s, but the replay does not drive the radial menu itself.
+Every solid is compared with <code>nxstyle/geomcheck.py</code>, and every command must add exactly one undo step.
+<code>--tutorials G,H</code> picks some; N runs M first, V runs T first, AC and BC run T and V first.
+A run may take 5 minutes plus 5 per tutorial chosen before it counts as timed out; the canvas tutorials O to R take about 20 minutes together.</p>
+</div>
+<div class="paragraph">
+<p>The replay writes <code>out/tutorial.json</code>, a <code>progress.log</code> and screenshots.
+Exit code 1 means a step FAILED.
+The <strong>same</strong>, <strong>differs</strong> and <strong>missing</strong> outcomes are the replay&#8217;s own judgement of each step against the book; they are not an independently measured equivalence with NX.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hidden_desktop_and_memory_ceiling"><a class="anchor" href="#_hidden_desktop_and_memory_ceiling"></a>Hidden desktop and memory ceiling</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>On Windows both runs use a hidden desktop, so nothing appears on your screen; <code>--visible</code> shows FreeCAD instead.</p>
+</div>
+<div class="paragraph">
+<p>Every run is capped at 4 GB of memory (<code>--max-memory-gb</code>) inside a Windows job object.
+FreeCAD&#8217;s allocations beyond the ceiling are refused and the run ends with exit code 4, so a runaway cannot take the machine down.
+Run one at a time.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Exit code</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Passed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A check or step failed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No result: FreeCAD crashed or NX-Style failed to load</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Timed out</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stopped at the memory ceiling</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Refused to start, for example because another test run is going</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The result is not this run&#8217;s, or is incomplete, empty or unreadable</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD exited with an error code</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_a_second_start"><a class="anchor" href="#_testing_a_second_start"></a>Testing a second start</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each run uses a fresh throwaway profile.
+To test what a second start sees, give both runs the same <code>--profile DIR</code>; it is kept between runs.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python launch_nx.py --smoke-test out1 --profile p</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python launch_nx.py --smoke-test out2 --profile p</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_from_results_to_the_docs"><a class="anchor" href="#_from_results_to_the_docs"></a>From results to the docs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The tutorial pages' step tables come from <code>docs/results/tutorials.json</code>: a replay&#8217;s steps and the FreeCAD version, nothing else.
+After a full replay that should be published:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">python tools/gen_docs.py --results out/tutorial.json</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It refuses results that name a folder in your home directory, since they are published.
+<code>python tools/tutorial_table.py out/tutorial.json</code> prints the result counts per tutorial and updates the table in <code>docs/TUTORIAL-REPLAY.md</code>.
+See <a href="writing-docs.html" class="xref page">Writing these docs</a> for building the site.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="troubleshooting.html">Troubleshooting and FAQ</a></span>
+  <span class="next"><a href="development.html">How NX-Style works</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+<script src="../_/js/vendor/lunr.js"></script>
+<script src="../_/js/search-ui.js" id="search-ui-script" data-site-root-path=".." data-snippet-length="100" data-stylesheet="../_/css/search.css"></script>
+<script async src="../search-index.js"></script>
+  </body>
+</html>
