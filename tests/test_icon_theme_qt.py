@@ -12,6 +12,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6 import QtCore, QtGui, QtWidgets, QtSvg
 except ImportError:
+    if os.environ.get("NXSTYLE_REQUIRE_QT") == "1":
+        raise  # dedicated CI must fail, not skip, if Qt or its runtime libraries are missing
     QtCore = None
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "NXStyle"))
