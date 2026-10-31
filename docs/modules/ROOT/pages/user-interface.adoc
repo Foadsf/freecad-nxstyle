@@ -90,8 +90,13 @@ image::ui-simulation.png[Pre/Post application: the Home tab shows the analysis s
 
 Left of the tabs: New, Open, Save, Undo, Redo, Cut, Copy, Paste and *Repeat Command* (runs the last command again).
 
-Right of the tabs, the *Command Finder* searches by NX name and by FreeCAD name, and shows where each command lives on the ribbon.
-Type part of a name and press kbd:[Enter] to run the first match.
+Right of the tabs, the *Command Finder* searches NX names, FreeCAD names, command IDs, ribbon locations and shortcuts.
+Results show the command title above its location and native alias, with a separate shortcut badge.
+Type part of a name and press kbd:[Enter] to run the first available match, or use the arrow keys
+to choose another result. Unavailable commands are dimmed and cannot run. kbd:[Esc] clears the
+search and closes the results; choosing a command also clears the field.
+
+image::ui-studio-results.png[Command Finder with two-line results and shortcuts,440]
 
 == Top Border Bar
 
@@ -158,6 +163,18 @@ kbd:[Ctrl+Shift+U] (*Show All*) shows everything; kbd:[Ctrl+Shift+B] swaps shown
 == Look and theme
 
 NX-Style layers one light theme over FreeCAD's own *FreeCAD Light* stylesheet: a single teal accent with its tints, line icons on the Resource Bar, the left panels in one tab strip, and the document tabs above the graphics window.
+Softly outlined ribbon groups separate related tools. Cool neutral surfaces, rounded fields,
+stronger selected-tab labels and visible keyboard-focus outlines give the workspace a consistent hierarchy.
+Task-panel fields, menus, document tabs and the Resource Bar use the same palette.
+The ribbon automatically minimises when the available height cannot accommodate its themed controls.
+
+.The light workspace with FreeCAD's shipped PartDesign example
+image::ui-studio-workspace.png[Refined light workspace with the PartDesign example]
+
+The new *Studio Background* is a quiet blue-grey gradient. Choose it from *View › Background*,
+or set `"background": "studio"` in the settings. It is the default for profiles without an explicit
+background choice; all previous backgrounds remain available.
+
 Every colour of the theme is a token defined once in `NXStyle/nxstyle/theme.py`.
 The stylesheets (`nx_theme.qss`, `ribbon.qss`) name a token as `@nx-accent`, `@nx-chrome` and so on, and the Python code reads the same table.
 Set `"theme": "none"` in the xref:settings.adoc[settings] to keep FreeCAD's look.

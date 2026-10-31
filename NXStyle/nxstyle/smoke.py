@@ -382,10 +382,13 @@ class Smoke:
         collapsed group whose menu lost a command."""
         from . import layout_check, ribbon_layout
         r = self.shell.ribbon
-        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: ribbon expanded, narrow
+        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: narrow ribbon
         Gui.getMainWindow().resize(*cell["window"])
         r.select("Home")
         layout_check.settle()
+        if r.is_collapsed():
+            r.show_popup()  # measure the visible page when theme/font metrics require minimisation
+            layout_check.settle()
         page = r.stack.currentWidget()
         page.layout_enabled = False
         page.refit()
@@ -416,6 +419,7 @@ class Smoke:
             fixed = layout_check.measure_page(page, "Home")
             self.check("layout check catches a command missing from a collapsed group's menu (negative control)",
                        broken["unreachable"] and not fixed["unreachable"], broken["unreachable"])
+        r.hide_popup()
         Gui.getMainWindow().resize(*self.SMOKE_WINDOW)
         layout_check.settle()
 
@@ -760,9 +764,9 @@ class Smoke:
         """Type a harmless command's name into the Command Finder so its completer popup opens, and count
         the commands it runs."""
         from .tutorial import qtest
-        from .finder import ROLE_CMD
+        from .finder import ROLE_CMD, ROLE_TITLE
         cf = self.shell.finder
-        title = next((cf.model.item(r).text().split("  —  ")[0] for r in range(cf.model.rowCount())
+        title = next((cf.model.item(r).data(ROLE_TITLE) for r in range(cf.model.rowCount())
                       if cf.model.item(r).data(ROLE_CMD) == "Std_ViewFitAll"), "Fit all")
         self._finder_runs = []
         self._finder_on_run = cf.on_run
@@ -773,6 +777,7 @@ class Smoke:
         QtWidgets.QApplication.processEvents()
         self._finder_how = how
         self._finder_popup_before = cf.completer.popup().isVisible()
+        self.shot("09_command_finder.png")
 
     def s_finder_check(self):
         cf = self.shell.finder

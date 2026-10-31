@@ -55,6 +55,26 @@ class Tokens(unittest.TestCase):
             with self.subTest(token=k):
                 self.assertRegex(v, r"^(#[0-9A-F]{6}|rgba\(\d+, \d+, \d+, \d+\))$")
 
+    def test_readable_text_on_each_surface(self):
+        def luminance(hex_color):
+            channels = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+            return sum(c * weight for c, weight in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+        def contrast(a, b):
+            lo, hi = sorted((luminance(a), luminance(b)))
+            return (hi + 0.05) / (lo + 0.05)
+
+        # Positive/negative controls exercise the same measurement as the palette.
+        self.assertAlmostEqual(contrast("#000000", "#FFFFFF"), 21)
+        self.assertLess(contrast("#FFFFFF", "#FFFFFF"), 4.5)
+        for text in ("text", "text-tab", "muted", "label", "accent"):
+            for surface in ("panel", "panel-alt", "chrome", "tint", "tint2"):
+                with self.subTest(text=text, surface=surface):
+                    self.assertGreaterEqual(contrast(theme.color(text), theme.color(surface)), 4.5)
+        for surface in ("accent", "accent-hover", "accent-pressed"):
+            self.assertGreaterEqual(contrast(theme.color("on-accent"), theme.color(surface)), 4.5)
+
     def test_chrome_modules_have_no_literal_colours(self):
         for name in CHROME_MODULES:
             with self.subTest(module=name):
