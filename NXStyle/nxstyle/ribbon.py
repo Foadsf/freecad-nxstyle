@@ -316,12 +316,12 @@ class RibbonGroup(QtWidgets.QFrame):
         self.items = []                  # (widget, size) in the order added
         self._widths = None
         outer = QtWidgets.QVBoxLayout(self)
-        outer.setContentsMargins(4, 2, 4, 1)
+        outer.setContentsMargins(6, 4, 6, 2)
         outer.setSpacing(0)
         self.body = QtWidgets.QWidget(self)
         self.body.setObjectName("NXRibbonGroupBody")
         self.grid = QtWidgets.QGridLayout(self.body)
-        self.grid.setSpacing(1)
+        self.grid.setSpacing(2)
         self.grid.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(self.body, 1)
         self.collapsed_button = QtWidgets.QToolButton(self)
@@ -675,7 +675,7 @@ class Ribbon(QtWidgets.QWidget):
         self.header = QtWidgets.QWidget(self)
         self.header.setObjectName("NXRibbonHeader")
         head = QtWidgets.QHBoxLayout(self.header)
-        head.setContentsMargins(0, 0, 4, 0)
+        head.setContentsMargins(6, 1, 6, 1)
         head.setSpacing(2)
 
         self.file_button = QtWidgets.QToolButton(self.header)
@@ -935,7 +935,7 @@ class Ribbon(QtWidgets.QWidget):
         inner = QtWidgets.QWidget()
         inner.setObjectName("NXRibbonPageInner")
         lay = QtWidgets.QHBoxLayout(inner)
-        lay.setContentsMargins(2, 2, 2, 0)
+        lay.setContentsMargins(6, 5, 6, 4)
         lay.setSpacing(0)
         area.setWidget(inner)
         return area, lay

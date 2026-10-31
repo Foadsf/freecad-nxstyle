@@ -30,7 +30,7 @@ DEFAULTS = {
     "stylesheet": "auto",                # FreeCAD's light stylesheet for this version; or a file name
     "theme": "nx",                     # "nx" = NXStyle's light theme over that stylesheet; "none" = FreeCAD's look
     "icon_theme": "nx",                # "nx" = original NX-inspired Modeling/Sketch icons; "freecad" = native icons
-    "background": "light_gray_gradient",  # white, light, light_gray_gradient, dark_gray_gradient or dark (View > Background)
+    "background": "studio",               # studio, white, light, light_gray_gradient, dark_gray_gradient or dark (View > Background)
     "colors": {                        # preselection, selection, body and edge colours of the graphics window
         "preselection": "#FF2020",
         "selection": "#FF8C00",
@@ -75,6 +75,7 @@ DEFAULTS = {
 
 BACKGROUNDS = {
     # name: (label, top, bottom); one colour means a plain background
+    "studio": ("Studio Background", "#DCE5ED", "#F8FAFC"),
     "white": ("White Background", "#FFFFFF", None),
     "light": ("Light Background", "#E6E9ED", None),
     "light_gray_gradient": ("Light Gray Gradient", "#B9C3CE", "#F2F4F6"),
