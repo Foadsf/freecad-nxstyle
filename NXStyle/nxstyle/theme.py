@@ -12,35 +12,35 @@ import re
 
 TOKENS = {
     # surfaces
-    "chrome": "#EEF1F4",          # window background, bars, ribbon tab row
+    "chrome": "#F0F4F8",          # window background, bars, ribbon tab row
     "panel": "#FFFFFF",           # navigators, ribbon page, menus
-    "panel-alt": "#F5F7F9",       # table headers
-    "strip": "#E4E8EC",           # resource bar, inactive document tabs
-    "overlay": "rgba(238, 241, 244, 235)",   # chrome over content (ribbon scroll arrows)
+    "panel-alt": "#F7F9FC",       # table headers
+    "strip": "#E8EFF5",           # resource bar, inactive document tabs
+    "overlay": "rgba(240, 244, 248, 245)",   # chrome over content (ribbon scroll arrows)
     # lines
-    "line": "#D5DAE0",            # borders and separators
-    "line-soft": "#E1E5E9",       # separators inside a page or menu
-    "line-faint": "#E6E9ED",      # table column lines
-    "line-disabled": "#DDE1E5",
-    "field": "#C3CAD1",           # input and menu borders
+    "line": "#D6E1EA",            # borders and separators
+    "line-soft": "#E5EBF1",       # separators inside a page or menu
+    "line-faint": "#EDF1F5",      # table column lines
+    "line-disabled": "#E0E6ED",
+    "field": "#BCCBD8",           # input and menu borders
     # text
-    "text": "#1E2329",
-    "text-tab": "#3A4249",        # ribbon tab labels
-    "muted": "#5D6670",           # secondary text
-    "label": "#6B747D",           # ribbon group labels
-    "disabled": "#A3AAB1",
-    "disabled-menu": "#9AA1A8",
+    "text": "#243447",
+    "text-tab": "#475569",        # ribbon tab labels
+    "muted": "#526579",           # secondary text
+    "label": "#526579",           # ribbon group labels
+    "disabled": "#8B98A6",
+    "disabled-menu": "#8B98A6",
     "on-accent": "#FFFFFF",       # text on the accent colour
     # accent and its tints
-    "accent": "#0B6E79",          # selected tab, focus, File button, cue line
-    "accent-hover": "#0D8290",
-    "accent-pressed": "#095E68",
-    "contextual": "#007A87",      # contextual ribbon tabs (Sketch)
-    "tint": "#E3F1F3",            # hover
-    "tint-strip": "#D7EDF0",      # hover on the resource bar
-    "tint2": "#C7E3E7",           # pressed / selected
-    "tintline": "#8CC5CC",        # hover border
-    "tintline-strong": "#6FB6BF",  # pressed border
+    "accent": "#086F7C",          # selected tab, focus, File button, cue line
+    "accent-hover": "#075E69",
+    "accent-pressed": "#064E59",
+    "contextual": "#077C89",      # contextual ribbon tabs (Sketch)
+    "tint": "#EAF5F6",            # hover
+    "tint-strip": "#DDEEF1",      # hover on the resource bar
+    "tint2": "#D5ECEF",           # pressed / selected
+    "tintline": "#95C6CC",        # hover border
+    "tintline-strong": "#5CABB5",  # pressed border
 }
 
 # FreeCAD fills these placeholders when it loads one of its own stylesheets; an unfilled one makes Qt

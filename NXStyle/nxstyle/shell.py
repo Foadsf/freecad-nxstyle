@@ -265,7 +265,14 @@ class Shell(QtCore.QObject):
 
     def eventFilter(self, obj, ev):
         if obj is self.mw and ev.type() == QtCore.QEvent.Resize:
-            self.ribbon.set_auto_minimized(self.mw.height() < self.AUTO_MINIMIZE_BELOW)
+            # Font/theme spacing can lift Qt's expanded minimum above the usual
+            # breakpoint. Collapse before that minimum traps a small window.
+            # Retain it while collapsed so the lower minimum cannot cause oscillation.
+            if not self.ribbon.is_collapsed():
+                self._ribbon_auto_threshold = max(self.AUTO_MINIMIZE_BELOW,
+                                                  self.mw.minimumSizeHint().height() + 24)
+            threshold = getattr(self, "_ribbon_auto_threshold", self.AUTO_MINIMIZE_BELOW)
+            self.ribbon.set_auto_minimized(self.mw.height() < threshold)
         return False
 
     # An add-on panel docked with the navigators (Strata's needs 383 px) sets the whole window's minimum

@@ -8,20 +8,21 @@
 
 #NXFileButton {
     background: @nx-accent; color: @nx-on-accent; font-weight: 600;
-    border: none; padding: 5px 18px; margin: 0px 6px 0px 0px;
+    border: 1px solid transparent; border-radius: 6px; padding: 6px 18px; margin: 0px 6px 0px 0px;
 }
 #NXFileButton:hover { background: @nx-accent-hover; }
 #NXFileButton:pressed { background: @nx-accent-pressed; }
 #NXFileButton::menu-indicator { image: none; width: 0px; }
 
 #NXQuickAccess { background: transparent; border: none; spacing: 1px; padding: 0px 8px 0px 0px; }
-#NXQuickAccess QToolButton { padding: 3px; border: 1px solid transparent; border-radius: 2px; }
+#NXQuickAccess QToolButton { padding: 4px; border: 1px solid transparent; border-radius: 5px; }
 #NXQuickAccess QToolButton:hover { background: @nx-tint; border: 1px solid @nx-tintline; }
 
 #NXRibbonTabs { background: transparent; }
 #NXRibbonTabs::tab {
     background: transparent; color: @nx-text-tab;
-    padding: 6px 14px 5px 14px; margin: 0px;
+    padding: 7px 12px 6px 12px; margin: 0px 1px;
+    border-top-left-radius: 5px; border-top-right-radius: 5px;
     border: none; border-bottom: 2px solid transparent;
 }
 #NXRibbonTabs::tab:hover { color: @nx-text; background: @nx-tint; }
@@ -30,13 +31,13 @@
 #NXRibbonStack, #NXRibbonPage, #NXRibbonPageInner { background: @nx-panel; }
 #NXRibbonStack { border-bottom: 1px solid @nx-line; }
 
-#NXRibbonGroup { background: transparent; }
-#NXRibbonGroupLabel { color: @nx-label; font-size: 8pt; padding: 1px 0px 2px 0px; }
-#NXRibbonSeparator { color: @nx-line-soft; margin: 6px 2px 6px 2px; }
+#NXRibbonGroup { background: @nx-panel-alt; border: 1px solid @nx-line-soft; border-radius: 6px; }
+#NXRibbonGroupLabel { color: @nx-label; font-size: 8pt; font-weight: 600; padding: 4px 0px 1px 0px; }
+#NXRibbonSeparator { color: @nx-panel; margin: 8px 2px; }
 
 QToolButton#NXRibbonButton {
-    color: @nx-text; border: 1px solid transparent; border-radius: 3px;
-    padding: 2px 4px 2px 4px; background: transparent;
+    color: @nx-text; border: 1px solid transparent; border-radius: 5px;
+    padding: 3px 5px; background: transparent;
 }
 QToolButton#NXRibbonButton:hover { background: @nx-tint; border: 1px solid @nx-tintline; }
 QToolButton#NXRibbonButton:pressed, QToolButton#NXRibbonButton:checked {
@@ -51,7 +52,7 @@ QToolButton#NXRibbonButton:focus, QToolButton#NXRibbonGroupButton:focus, QToolBu
 
 /* a collapsed group and the More menu: one button that lists the commands */
 QToolButton#NXRibbonGroupButton, QToolButton#NXRibbonOverflow {
-    color: @nx-text; border: 1px solid transparent; border-radius: 3px;
+    color: @nx-text; border: 1px solid transparent; border-radius: 5px;
     padding: 2px 6px 2px 6px; background: transparent;
 }
 QToolButton#NXRibbonGroupButton:hover, QToolButton#NXRibbonOverflow:hover { background: @nx-tint; border: 1px solid @nx-tintline; }
@@ -63,11 +64,11 @@ QToolButton#NXRibbonOverflow { border-left: 1px solid @nx-line-soft; }
 #NXRibbonGroupLabel[nxstep="done"] { color: @nx-muted; }
 #NXRibbonGroup[nxstep="next"] { border-bottom: 2px solid @nx-accent; }
 
-#NXCollapseButton { border: none; padding: 3px; border-radius: 2px; }
+#NXCollapseButton { border: 1px solid transparent; padding: 4px; border-radius: 5px; }
 #NXCollapseButton:hover { background: @nx-tint; }
 
 QLineEdit#NXCommandFinder {
-    border: 1px solid @nx-field; border-radius: 12px; padding: 3px 10px;
+    border: 1px solid @nx-field; border-radius: 6px; padding: 5px 10px;
     background: @nx-panel; color: @nx-text; margin: 2px 0px;
 }
 QLineEdit#NXCommandFinder:hover { border: 1px solid @nx-tintline; }
@@ -75,3 +76,11 @@ QLineEdit#NXCommandFinder:focus { border: 1px solid @nx-accent; }
 
 QToolButton#NXRibbonScroll { background: @nx-overlay; border: none; border-left: 1px solid @nx-line; border-right: 1px solid @nx-line; }
 QToolButton#NXRibbonScroll:hover { background: @nx-tint; }
+
+/* Focus remains visible for keyboard navigation, including File and Quick Access. */
+#NXFileButton:focus { border: 1px solid @nx-on-accent; }
+#NXQuickAccess QToolButton:focus, #NXCollapseButton:focus { border: 1px solid @nx-accent; }
+#NXQuickAccess QToolButton:pressed, #NXCollapseButton:pressed { background: @nx-tint2; }
+#NXRibbonTabs::tab:selected { font-weight: 600; }
+QToolButton#NXRibbonGroupButton:checked { background: @nx-tint2; border: 1px solid @nx-tintline-strong; }
+QLineEdit#NXCommandFinder:disabled { color: @nx-disabled; background: @nx-panel-alt; }

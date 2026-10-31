@@ -27,6 +27,7 @@
         {"cmd": "Std_DrawStyleWireframe", "label": "Static Wireframe"},
         {"cmd": "Std_DrawStyleNoShading", "label": "No Shading"},
         {"dropdown": "Background", "size": "large", "items": [
+          {"cmd": "NXStyle_Background_studio", "label": "Studio Background"},
           {"cmd": "NXStyle_Background_white", "label": "White Background"},
           {"cmd": "NXStyle_Background_light", "label": "Light Background"},
           {"cmd": "NXStyle_Background_light_gray_gradient", "label": "Light Gray Gradient"},

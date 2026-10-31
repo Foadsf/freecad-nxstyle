@@ -8,7 +8,7 @@
 */
 
 QMainWindow, QMainWindow::separator { background: @nx-chrome; }
-QMainWindow::separator { width: 3px; height: 3px; }
+QMainWindow::separator { width: 5px; height: 5px; }
 QMainWindow::separator:hover { background: @nx-tint2; }
 
 /* ---- docked panels: tabs are the headers (NX navigator style) --------- */
@@ -17,12 +17,12 @@ QDockWidget > QWidget { background: @nx-panel; }
 QMainWindow > QTabBar { background: @nx-chrome; border: none; }
 QMainWindow > QTabBar::tab, QMainWindow > QTabBar::tab:top {
     background: transparent; color: @nx-muted; border: none;
-    padding: 5px 12px 5px 12px; margin: 0px; min-width: 60px;
+    padding: 4px 12px; margin: 2px 1px 0px 1px; min-width: 60px;
     border-bottom: 2px solid transparent;
 }
 QMainWindow > QTabBar::tab:hover, QMainWindow > QTabBar::tab:top:!selected:hover { color: @nx-text; background: @nx-tint; }
 QMainWindow > QTabBar::tab:selected, QMainWindow > QTabBar::tab:top:selected {
-    color: @nx-accent; background: @nx-panel; border: none; border-bottom: 2px solid @nx-accent; border-radius: 0px; font-weight: normal;
+    color: @nx-accent; background: @nx-panel; border: none; border-bottom: 2px solid @nx-accent; border-top-left-radius: 5px; border-top-right-radius: 5px; font-weight: 600;
 }
 
 QWidget#NXDockTitle { background: @nx-chrome; border-bottom: 1px solid @nx-line; }
@@ -35,14 +35,14 @@ QDockWidget#Model QTreeView, QDockWidget#NXHistory QListWidget {
     background: @nx-panel; border: none; outline: 0; color: @nx-text;
     selection-background-color: @nx-tint2; selection-color: @nx-text;
 }
-QDockWidget#Model QTreeView::item, QDockWidget#NXHistory QListWidget::item { padding: 2px 0px; }
+QDockWidget#Model QTreeView::item, QDockWidget#NXHistory QListWidget::item { padding: 4px 2px; }
 QDockWidget#Model QTreeView::item:hover, QDockWidget#NXHistory QListWidget::item:hover { background: @nx-tint; }
 QDockWidget#Model QTreeView::item:selected, QDockWidget#NXHistory QListWidget::item:selected {
     background: @nx-tint2; color: @nx-text;
 }
 QDockWidget#Model QHeaderView::section {
     background: @nx-panel-alt; color: @nx-muted; border: none; border-bottom: 1px solid @nx-line;
-    border-right: 1px solid @nx-line-faint; padding: 3px 6px;
+    border-right: 1px solid @nx-line-faint; padding: 5px 8px;
 }
 QDockWidget#Model QTabBar::tab {
     background: transparent; color: @nx-muted; border: none; padding: 4px 12px;
@@ -54,22 +54,23 @@ QDockWidget#Model QTabBar::tab:selected { color: @nx-accent; border-top: 2px sol
 QMdiArea QTabBar { background: @nx-chrome; }
 QMdiArea QTabBar::tab, QMdiArea QTabBar::tab:top {
     background: @nx-strip; color: @nx-muted; border: 1px solid @nx-line; border-bottom: none;
-    padding: 4px 14px; margin-right: 1px;
+    padding: 6px 16px; margin: 3px 3px 0px 0px;
+    border-top-left-radius: 6px; border-top-right-radius: 6px;
 }
 QMdiArea QTabBar::tab:hover, QMdiArea QTabBar::tab:top:!selected:hover { background: @nx-tint; color: @nx-text; }
 QMdiArea QTabBar::tab:selected, QMdiArea QTabBar::tab:top:selected { background: @nx-panel; color: @nx-text; border-top: 2px solid @nx-accent; }
 
 /* ---- status bar / cue line ---------------------------------------------- */
-QStatusBar { background: @nx-panel; border-top: 1px solid @nx-line; color: @nx-text; }
+QStatusBar { background: @nx-panel; border-top: 1px solid @nx-line; color: @nx-muted; padding: 0px 6px; }
 QStatusBar::item { border: none; }
 
 /* ---- top border bar ------------------------------------------------------ */
-QToolBar#NXTopBorderBar { background: @nx-panel; border: none; border-bottom: 1px solid @nx-line; spacing: 4px; padding: 2px 6px; }
-QToolBar#NXTopBorderBar QToolButton { border: 1px solid transparent; border-radius: 2px; padding: 2px 4px; color: @nx-text; }
+QToolBar#NXTopBorderBar { background: @nx-panel; border: none; border-bottom: 1px solid @nx-line; spacing: 5px; padding: 3px 8px; }
+QToolBar#NXTopBorderBar QToolButton { border: 1px solid transparent; border-radius: 5px; padding: 3px 5px; color: @nx-text; }
 QToolBar#NXTopBorderBar QToolButton:hover { background: @nx-tint; border: 1px solid @nx-tintline; }
 QToolBar#NXTopBorderBar QToolButton:pressed { background: @nx-tint2; }
 QToolBar#NXTopBorderBar QComboBox {
-    border: 1px solid @nx-field; border-radius: 2px; padding: 2px 8px; background: @nx-panel; color: @nx-text;
+    border: 1px solid @nx-field; border-radius: 5px; padding: 3px 8px; background: @nx-panel; color: @nx-text;
     min-height: 18px;
 }
 QToolBar#NXTopBorderBar QComboBox:hover { border: 1px solid @nx-tintline; }
@@ -77,25 +78,51 @@ QToolBar#NXTopBorderBar QComboBox:focus { border: 1px solid @nx-accent; }
 QToolBar#NXTopBorderBar::separator { background: @nx-line; width: 1px; margin: 4px 4px; }
 
 /* ---- resource bar ---------------------------------------------------------- */
-QToolBar#NXResourceBar { background: @nx-strip; border: none; border-right: 1px solid @nx-line; spacing: 2px; padding: 4px 3px; }
-QToolBar#NXResourceBar QToolButton { border: none; border-left: 3px solid transparent; padding: 5px 4px; border-radius: 0px; }
+QToolBar#NXResourceBar { background: @nx-strip; border: none; border-right: 1px solid @nx-line; spacing: 5px; padding: 6px 4px; }
+QToolBar#NXResourceBar QToolButton { border: 1px solid transparent; border-left: 3px solid transparent; padding: 6px 4px; border-radius: 5px; }
 QToolBar#NXResourceBar QToolButton:hover { background: @nx-tint-strip; }
 QToolBar#NXResourceBar QToolButton:checked { background: @nx-panel; border-left: 3px solid @nx-accent; }
 
 /* ---- menus opened from File / Menu / context ------------------------------- */
-QMenu { background: @nx-panel; border: 1px solid @nx-field; padding: 3px 0px; color: @nx-text; }
-QMenu::item { padding: 4px 26px 4px 26px; }
+QMenu { background: @nx-panel; border: 1px solid @nx-field; border-radius: 6px; padding: 5px; color: @nx-text; }
+QMenu::item { padding: 6px 28px; border-radius: 4px; }
 QMenu::item:selected { background: @nx-tint; color: @nx-text; }
 QMenu::item:disabled { color: @nx-disabled-menu; }
 QMenu::separator { height: 1px; background: @nx-line-soft; margin: 3px 8px; }
 
-QToolTip { background: @nx-panel; color: @nx-text; border: 1px solid @nx-field; padding: 4px 6px; }
+QToolTip { background: @nx-panel; color: @nx-text; border: 1px solid @nx-field; padding: 6px 9px; border-radius: 4px; }
 
 /* ---- buttons inside panels (task dialogs) ------------------------------------ */
 QDockWidget QPushButton {
-    background: @nx-panel; color: @nx-text; border: 1px solid @nx-field; border-radius: 3px; padding: 4px 16px; min-height: 18px;
+    background: @nx-panel; color: @nx-text; border: 1px solid @nx-field; border-radius: 5px; padding: 5px 16px; min-height: 20px;
 }
 QDockWidget QPushButton:hover { background: @nx-tint; border: 1px solid @nx-tintline; }
 QDockWidget QPushButton:pressed { background: @nx-tint2; }
-QDockWidget QPushButton:default { border: 1px solid @nx-accent; }
+QDockWidget QPushButton:default { background: @nx-accent; color: @nx-on-accent; border: 1px solid @nx-accent; }
+QDockWidget QPushButton:default:hover { background: @nx-accent-hover; }
 QDockWidget QPushButton:disabled { color: @nx-disabled; border: 1px solid @nx-line-disabled; }
+/* Quiet, consistent editor surfaces. Keep the native field arrows and unit controls. */
+QDockWidget QLineEdit, QDockWidget QAbstractSpinBox, QDockWidget QComboBox {
+    background: @nx-panel; color: @nx-text; border: 1px solid @nx-field;
+    border-radius: 4px; padding: 4px 6px; min-height: 18px;
+    selection-background-color: @nx-tint2; selection-color: @nx-text;
+}
+QDockWidget QLineEdit:hover, QDockWidget QAbstractSpinBox:hover, QDockWidget QComboBox:hover { border-color: @nx-tintline-strong; }
+QDockWidget QLineEdit:focus, QDockWidget QAbstractSpinBox:focus, QDockWidget QComboBox:focus { border-color: @nx-accent; }
+QDockWidget QLineEdit:disabled, QDockWidget QAbstractSpinBox:disabled, QDockWidget QComboBox:disabled {
+    background: @nx-panel-alt; color: @nx-disabled; border-color: @nx-line-disabled;
+}
+QDockWidget QGroupBox {
+    background: @nx-panel; color: @nx-text; border: 1px solid @nx-line;
+    border-radius: 6px; margin-top: 20px;
+}
+QDockWidget QGroupBox::title { color: @nx-muted; font-weight: 600; top: -18px; left: 6px; }
+QDockWidget QAbstractItemView { alternate-background-color: @nx-panel-alt; selection-background-color: @nx-tint2; selection-color: @nx-text; }
+QDockWidget QAbstractItemView::item:focus { border: 1px solid @nx-accent; }
+QDockWidget QPushButton:focus, QToolBar#NXResourceBar QToolButton:focus,
+QToolBar#NXTopBorderBar QToolButton:focus { border: 1px solid @nx-accent; }
+QDockWidget QScrollBar:vertical { background: @nx-panel-alt; border: none; width: 10px; margin: 0px; }
+QDockWidget QScrollBar::handle:vertical { background: @nx-field; border-radius: 4px; min-height: 24px; margin: 1px; }
+QDockWidget QScrollBar::handle:vertical:hover { background: @nx-muted; }
+QDockWidget QScrollBar::add-line:vertical, QDockWidget QScrollBar::sub-line:vertical { height: 0px; }
+QDockWidget QScrollBar::add-page:vertical, QDockWidget QScrollBar::sub-page:vertical { background: transparent; }
