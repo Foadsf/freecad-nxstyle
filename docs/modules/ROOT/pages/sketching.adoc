@@ -48,6 +48,7 @@ A click on the profile's first point closes it, as in NX: the last line gets a c
 Lines get Horizontal or Vertical when they are drawn within 2° of it.
 After an arc, FreeCAD carries on with a line held tangent to the arc and infers no Horizontal or Vertical on it.
 NX's book clicks *Line* in the Profile dialog there; in FreeCAD press kbd:[M] twice (tangent line, perpendicular line, line) to get the plain line, then add *Tangent* if you want it.
+Profile takes typed points too: see <<profile-typed>>.
 
 == Typed coordinates
 
@@ -70,6 +71,23 @@ At a tangential join that can leave out the second arc's radius dimension: the j
 +
 The repair adds no undo step: Undo takes back the curve as before.
 The self-test draws two arcs and a line this way, and tutorial AV's arm (7 arcs and a line), and checks that they make closed loops with no gap above 1e-7 mm (1e-9 mm for AV) and no redundant constraint; with the repair off, FreeCAD alone leaves gaps of 3.3e-5 mm and no Coincident.
+
+[#profile-typed]
+Profile::
+FreeCAD 1.1.4's Polyline, NX's Profile here, is the one curve tool without on-view fields: it takes clicks only.
+NX-Style adds NX's fields to it, beside the pointer as FreeCAD's *Line* shows them: X and Y for the first point, then each line's *length* and *angle* (degrees from the X axis) from the point before.
+The fields follow the pointer; type a value and press kbd:[Enter] (or kbd:[Tab]) to lock it, and the point goes in once both values are locked.
+A click with one value locked takes the other from the pointer, and typing a digit in the view starts the next field.
+The profile goes on from each typed point, so tutorial AY's section is 50 kbd:[Enter] 0 kbd:[Enter], then 30 kbd:[Enter] 90 kbd:[Enter], 100 kbd:[Enter] 180 kbd:[Enter], 30 kbd:[Enter] −90 kbd:[Enter], and MB2.
++
+After kbd:[M] the fields change with the mode: a line held tangent or square to the curve before takes its length only (its angle is shown), an arc its *radius* and *sweep* (degrees, counter-clockwise positive).
++
+The values typed are kept as constraints, as FreeCAD's *Line* keeps them, each with the number typed: the first point's X and Y as distances from the axes (on an axis for 0), a length as the line's distance, an angle of 0 or 180° as Horizontal, of ±90° as Vertical, otherwise as the angle from the X axis; an arc's radius and sweep.
+A point typed onto the profile's first point closes the profile as a click there does, and one typed onto another curve's end point joins it (Coincident, within 1e-4 mm); a typed value the join already holds is left out, so the sketch gets no redundant constraint.
+NX-Style puts the point in with a click of FreeCAD's tool at the typed position, with the sketch's automatic constraints off for that click, and then adds the constraints, so Undo takes back the segment as before.
+The self-test draws a closed outline with two slanted sides and tutorial AY's open section with typed values only: every point lands within 1e-7 mm of the value typed and the outline is fully constrained; with NX-Style's fields off, FreeCAD alone shows no field to type in.
++
+Profile gets its fields when it starts from its key, button or menu entry; started from a macro (`Gui.runCommand`) it has none.
 
 Set `sketch_input` to `dimensions` for FreeCAD's default (no position fields), `none`, or `freecad` to leave FreeCAD's own choice alone.
 

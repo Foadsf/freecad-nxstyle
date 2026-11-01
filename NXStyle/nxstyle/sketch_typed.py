@@ -53,14 +53,16 @@ def edited_sketch():
 
 
 def on_view_field(obj):
-    """The sketcher on-view field an event concerns (the field or its line edit), or None."""
+    """The sketcher on-view field an event concerns (the field or its line edit), or None. NX-Style's own fields
+    for Profile (sketch_profile.py) hold their typed values themselves."""
     from .precise_input import in_3d_view
+    from .sketch_profile import FIELD
     try:
         w = obj if obj.inherits(QSB) else None
         if w is None and isinstance(obj, QtWidgets.QLineEdit):
             p = obj.parent()
             w = p if p is not None and p.inherits(QSB) else None
-        return w if w is not None and in_3d_view(w) else None
+        return w if w is not None and in_3d_view(w) and not w.property(FIELD) else None
     except RuntimeError:                  # deleted widget
         return None
 
@@ -76,10 +78,11 @@ def field_number(w):
 def shown_numbers():
     """field_number of every on-view field the 3D views hold now (a value confirmed by a click, not Enter)."""
     from .precise_input import in_3d_view
+    from .sketch_profile import FIELD
     out = []
     for w in Gui.getMainWindow().findChildren(QtWidgets.QAbstractSpinBox):
         try:
-            if w.inherits(QSB) and in_3d_view(w):
+            if w.inherits(QSB) and in_3d_view(w) and not w.property(FIELD):
                 n = field_number(w)
                 if n is not None:
                     out.append(n)
