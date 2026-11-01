@@ -2958,9 +2958,10 @@ class MstDieCavityTutorials:
         qtest().qWait(500)
         s = self.ao_ctl().session
         axis = dict(s.axis) if s is not None else None
-        # End first: with End still at its default 360, Start -45 would make 405° and the box resets Start to 0
-        self.set_quantity("nxLimitEnd", 45)
+        # Start first, as the book types them: with End still at its default 360, Start -45 alone spans 405°, and
+        # the box keeps it (as NX does) until End 45 makes the pair valid
         self.set_quantity("nxLimitStart", -45)
+        self.set_quantity("nxLimitEnd", 45)
         s = self.ao_ctl().session
         limits = tuple(s.limits) if s is not None and s.limits else None
         want_axis = f"line:{names[self._ay_axis]}"
