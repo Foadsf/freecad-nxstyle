@@ -84,7 +84,7 @@ It ends with the count of checks passed, failed and skipped (171 checks on FreeC
 A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.
 It writes `out/smoke.json` and screenshots.
 While developing, `NXSTYLE_SMOKE_ONLY=s_move,s_thread` (step names from `smoke.py`'s plan) runs only those steps after Strata's start; a full run is still the check.
-A run may take 2 minutes plus 12 seconds per step in `smoke.py`'s plan before it counts as timed out (the launcher prints the limit); a new step raises the limit with it, and `--timeout SECONDS` sets another.
+A run may take 2 minutes plus 24 seconds per step in `smoke.py`'s plan before it counts as timed out (the launcher prints the limit); a new step raises the limit with it, and `--timeout SECONDS` sets another.
 `smoke.json` lists each step's time under `info` → `step seconds`, so a slower run shows which steps grew.
 
 === Window sizes and display scaling [[window-matrix]]

@@ -725,11 +725,12 @@ class TimeLimitTests(unittest.TestCase):
                          - launch_nx.harness_timeout("smoke", "", steps=10), launch_nx.SMOKE_STEP_S)
 
     def test_full_self_test_fits_with_room(self):
-        # 79 steps took about 550 s on 2026-10-28, and the old fixed 600 s then ended runs of 83 steps
+        # 87 steps took 679 s idle and about 1585 s while other work held the machine at 80 % CPU (2026-11-01);
+        # the old fixed 600 s ended the idle run, and a per-step allowance must cover the loaded one too
         steps = launch_nx.smoke_planned_steps()
         limit = launch_nx.harness_timeout("smoke", "")
         self.assertGreater(limit, 600)
-        self.assertGreaterEqual(limit, 550 / 79 * steps * 1.3)
+        self.assertGreaterEqual(limit, 18 * steps)      # the loaded run's measured per-step cost
 
     def test_tutorial_limit_grows_with_the_tutorials(self):
         self.assertEqual(launch_nx.harness_timeout("tutorial", "A,B,C"),
