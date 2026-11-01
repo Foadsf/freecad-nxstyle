@@ -660,8 +660,44 @@ class MemoryCeilingTests(unittest.TestCase):
             k.CloseHandle(ctypes.c_void_p(held))
 
 
+class ConsoleEncodingTests(unittest.TestCase):
+    """The report prints NXStyle's own tick and star on a console that cannot encode them."""
+
+    def _cp1252(self):
+        buf = io.BytesIO()
+        return buf, io.TextIOWrapper(buf, encoding="cp1252", errors="strict")
+
+    def test_a_console_that_cannot_encode_them_replaces_instead_of_crashing(self):
+        # NXStyle's labels carry these: the ribbon's done mark and the collector's empty mark
+        buf, stream = self._cp1252()
+        launch_nx.set_console_errors(stream)
+        stream.write("✓ Select Edge (0) ✱")
+        stream.flush()
+        self.assertEqual(buf.getvalue().decode("cp1252"), "? Select Edge (0) ?")
+
+    def test_judge_result_reports_a_check_that_carries_the_tick(self):
+        result = {"schema": launch_nx.HARNESS_SCHEMA, "harness": "smoke", "run_id": "r", "status": "complete",
+                  "planned": ["s_a"], "ran": ["s_a"],
+                  "checks": [{"name": "ribbon tabs", "ok": True, "detail": "the next step is ticked ✓"},
+                             {"name": "collector", "ok": False, "detail": "✱ needs an edge"}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "smoke.json"
+            path.write_text(json.dumps(result), encoding="utf-8")
+            buf, stream = self._cp1252()
+            launch_nx.set_console_errors(stream)
+            with contextlib.redirect_stdout(stream):
+                code = launch_nx.judge_result(path, "smoke", "r", 0)
+            stream.flush()
+        self.assertEqual(code, 1)                    # the one failed check, not a UnicodeEncodeError
+        out = buf.getvalue().decode("cp1252")
+        self.assertIn("PASS  ribbon tabs", out)
+        self.assertIn("FAIL  collector", out)
+        self.assertIn("2 checks: 1 passed, 1 failed, 0 skipped", out)
+
+
 class TimeLimitTests(unittest.TestCase):
     """A run's time limit grows with its plan; a run that hangs still ends."""
+
 
     PLAN = ("class Other:\n    def plan(self):\n        yield 1\n\n"
             "class Smoke:\n    def plan(self):\n        yield self.s_a, 100\n        yield self.s_b, 100\n"

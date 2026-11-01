@@ -612,6 +612,21 @@ def harness_timeout(harness: str, tutorials: str, override: int | None = None,
     return SMOKE_BASE_S + SMOKE_STEP_S * (smoke_planned_steps() if steps is None else steps)
 
 
+def set_console_errors(*streams) -> None:
+    """Let the report print characters the console's code page cannot encode as replacements instead of ending
+    the run with a UnicodeEncodeError: NXStyle's own labels carry a tick and a star (the ribbon's done mark,
+    the collector's empty mark), and judge_result prints a check's detail back unchanged. stdout and stderr
+    unless streams are given."""
+    for stream in streams or (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:                     # a redirected or replaced stream may not be a TextIOWrapper
+            continue
+        try:
+            reconfigure(errors="replace")
+        except (ValueError, OSError):               # detached, closed, or not reconfigurable: leave it
+            pass
+
+
 def judge_result(path: Path, harness: str, run_id: str, child_code: int | None,
                  require_all: bool = False) -> int:
     """The exit code of a harness run, from its result file and FreeCAD's exit code. Prints the checks or
@@ -921,6 +936,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
+    set_console_errors()
     if args.timeout is not None and args.timeout <= 0:
         ap.error(f"--timeout must be a positive number of seconds, not {args.timeout}")
     passthrough = args.passthrough[1:] if args.passthrough[:1] == ["--"] else args.passthrough
