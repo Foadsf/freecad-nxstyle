@@ -163,6 +163,7 @@ OK adds one undo step, named *Revolve*, and Cancel or kbd:[Esc] leaves nothing b
 |===
 
 The box drives FreeCAD's panel: what it sets shows there, and what is typed there shows in the box.
+A Start or End that is not valid with the other angle yet stays as typed, as in NX: Start −45 typed while End is still 360 spans 405°, so the box says so and OK is unavailable until End 45 makes the pair valid. FreeCAD's panel keeps the last valid angles meanwhile.
 A new axis rebuilds the preview, because FreeCAD's panel takes an axis only from its list.
 When editing a Revolve, change its axis in FreeCAD's axis list; the Boolean cannot change either.
 

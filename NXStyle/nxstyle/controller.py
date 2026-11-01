@@ -516,8 +516,9 @@ class RevolveAdapter(SectionAdapter):
             label = (f"Line {vector[5:]}" if vector.startswith("line:") else "Datum or edge (FreeCAD's axis list)")
             box.vector.addItem(label, vector)
             i = box.vector.findData(vector)
+        start, end = s.limits_typed or s.limits
         for w, value in [(box.vector, None)] + list(zip(box.point, s.axis["point"])) + \
-                [(box.start, s.limits[0]), (box.end, s.limits[1])]:
+                [(box.start, start), (box.end, end)]:
             w.blockSignals(True)
             if value is None:
                 w.setCurrentIndex(i)
@@ -589,6 +590,7 @@ class Session:
         self.picking = False             # the controller is selecting the section itself (not a user's pick)
         self.axis = {"vector": "sketch_v", "point": (0.0, 0.0, 0.0)}   # Revolve: FreeCAD's default axis
         self.limits = (0.0, 360.0)
+        self.limits_typed = None         # Revolve: Start and End as typed while they are no valid pair (kept, as NX does)
         self.axis_pick = False           # Revolve: the next sketch line picked is the axis
         self.limit_error = self.axis_error = None
         self.has_body = self.has_solid = False
@@ -1287,7 +1289,9 @@ class Controller:
         return True
 
     def change_limits(self, start, end):
-        """Revolve: Start or End angle typed in the box; they go into FreeCAD's panel as typed there."""
+        """Revolve: Start or End angle typed in the box; they go into FreeCAD's panel as typed there. A pair that is
+        not valid yet (Start -45 typed while End is still 360) stays in the box as typed, with the error blocking
+        OK, until the other angle makes it valid; FreeCAD's panel keeps the last valid one meanwhile."""
         s = self.session
         if s is None or s.stage != "parameterize" or s.swapping:
             return False
@@ -1296,11 +1300,11 @@ class Controller:
         try:
             lim = core.revolve_limits(start, end)
         except core.CommandError as e:
-            s.limit_error = str(e)
+            s.limit_error, s.limits_typed = str(e), (float(start), float(end))
             s.key = None
             self.validate(force=True)
             return False
-        s.limit_error, s.limits = None, (float(start), float(end))
+        s.limit_error, s.limits, s.limits_typed = None, (float(start), float(end)), None
         f = s.feature()
         reversed_ = s.adapter.axis_reversed(s) != lim["flip"]
         if f is None or not s.adapter.drive(s, f, lim, reversed_):
