@@ -15,6 +15,21 @@ def qtest():
     return QTest
 
 
+def displaced(smoke, when="start"):
+    """The FreeCAD bindings NX-Style's keys took (shortcuts._free_keys records them, also as workbenches load and
+    take keys back): the access keys must take none; the NX keys' list is for the docs."""
+    from . import shortcuts
+    manager = shortcuts.instance()
+    if manager is None:
+        smoke.check(f"keys displaced ({when}): shortcuts applied", False)
+        return
+    record = {k: sorted(f"{name} ({seq})" for name, seq in v) for k, v in sorted(manager.displaced.items())}
+    smoke.info[f"FreeCAD bindings taken by NX-Style keys ({when})"] = record
+    access = {shortcuts.norm(e.keys) for e in shortcuts.TABLE if e.context == "global"}
+    taken = {k: v for k, v in record.items() if k in access}
+    smoke.check(f"access keys take no FreeCAD binding ({when}; {len(record)} NX keys took one)", not taken, taken)
+
+
 def run(smoke):
     from . import keyboard_selection, shortcuts, command_help
     shell, app = smoke.shell, QtWidgets.QApplication.instance()
@@ -28,11 +43,12 @@ def run(smoke):
         qtest().keyClick(target or app.focusWidget() or mw, k, mods)
         qtest().qWait(120)
 
+    displaced(smoke)
     access.focus_view()
     tested, bad = smoke.press_keys("global")
     smoke.check("access shortcuts dispatch without ambiguity", tested == 10 and not bad, (tested, bad))
-    key("F10")
-    smoke.check("F10 focuses ribbon tabs", app.focusWidget() is shell.ribbon.tabs)
+    key("Alt+0")
+    smoke.check("Alt+0 focuses ribbon tabs", app.focusWidget() is shell.ribbon.tabs)
     key("Down")
     focus = app.focusWidget()
     smoke.check("Down enters enabled ribbon control", isinstance(focus, QtWidgets.QToolButton), str(focus))
@@ -70,8 +86,8 @@ def run(smoke):
     before = smoke.camera()
     key("PgDown")
     smoke.check("PageDown keeps FreeCAD's zoom", before[2] != smoke.camera()[2], (before, smoke.camera()))
-    key("Ctrl+Space")
-    smoke.check("Ctrl+Space focuses Finder", app.focusWidget() is shell.finder)
+    key("Alt+Q")
+    smoke.check("Alt+Q focuses Finder", app.focusWidget() is shell.finder)
     qtest().keyClicks(shell.finder, "xras")
     before = smoke.camera()
     key("Left")
@@ -141,7 +157,7 @@ def run(smoke):
     # Create a parametric solid through Finder, then Tab through the real task panel.
     from . import primitive_ui
     Gui.Selection.clearSelection()
-    key("Ctrl+Space")
+    key("Alt+Q")
     qtest().keyClicks(shell.finder, "NXStyle_Block")
     key("Return", shell.finder)
     qtest().qWait(500)

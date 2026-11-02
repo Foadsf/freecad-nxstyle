@@ -193,7 +193,8 @@ class Smoke:
         yield self.s_validity, 300
         yield self.s_inspection, 300
         yield self.s_expressions, 800
-        yield self.s_nxt, 300                    # last: drives Nxt's commands on a document of its own
+        yield self.s_keys_displaced, 100         # after the workbenches the steps above load
+        yield self.s_nxt, 300                   # last: drives Nxt's commands on a document of its own
         yield self.s_final, 100
 
     def s_wait_strata(self):
@@ -2269,6 +2270,12 @@ class Smoke:
     def s_keyboard_sketch(self):
         from . import smoke_keyboard
         smoke_keyboard.sketch(self)
+
+    def s_keys_displaced(self):
+        from . import smoke_keyboard
+        loaded = sorted(getattr(self.shell, "_preloaded", ()))
+        self.info["workbenches NX-Style had preloaded when the displaced keys were listed"] = loaded
+        smoke_keyboard.displaced(self, f"late, {len(loaded)} workbenches preloaded")
 
     def s_keys_in_text_field(self):
         """A single-letter NX key typed into a text field is text: X in the Command Finder must not reach

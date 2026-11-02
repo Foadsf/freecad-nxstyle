@@ -414,16 +414,24 @@ class KeyboardAccess(QtCore.QObject):
             keys = manager.shortcuts_for(entry.resolved) if manager and entry.resolved else []
             if keys:
                 rows.append(f"<tr><td>{html.escape(entry.nx)}</td><td>{html.escape(', '.join(keys))}</td></tr>")
-        browser.setHtml("<h2>Work without a mouse</h2><p>F10 enters the ribbon. Left/Right choose tabs; Down enters a page; "
+        from . import command_help
+
+        def keys(command):      # as assigned now: none with "nx_shortcuts" off, or another the user chose
+            return html.escape(command_help.shortcut_text(command) or "(no key: Tools › Keyboard Access)")
+        browser.setHtml(f"<h2>Work without a mouse</h2><p>{keys('NXStyle_FocusRibbon')} enters the ribbon. Left/Right "
+                        "choose tabs; Down enters a page; "
                         "Tab/Shift+Tab move between controls. Enter activates; Down opens a button's menu. "
                         "Escape returns to the previous area.</p><p>In the graphics view, Alt+arrows rotate; FreeCAD's "
-                        "arrows pan and PageUp/PageDown zoom. These keys leave text fields and lists alone.</p><p>F12 toggles the keyboard pointer: "
+                        "arrows pan and PageUp/PageDown zoom. These keys leave text fields and lists alone.</p>"
+                        f"<p>{keys('NXStyle_KeyboardPointer')} toggles the keyboard pointer: "
                         "arrows move, Shift moves one pixel, Ctrl moves faster, Enter clicks, Ctrl+Enter starts/ends a "
                         "left drag, Space middle-clicks, Menu or Shift+F10 right-clicks. Escape stops the pointer; another Escape "
                         "can cancel the active command. Use typed dimensions whenever exact coordinates matter: in a sketch "
                         "tool, digits go to the focused on-view field and Enter clicks with that value.</p>"
-                        "<p>Ctrl+Shift+Space selects named objects or subelements. Tab and Shift+Tab traverse task fields; "
-                        "Space activates the focused button. Ctrl+Space finds commands, including those without a direct key.</p>"
+                        f"<p>{keys('NXStyle_SelectGeometry')} selects named objects or subelements. Tab and Shift+Tab "
+                        "traverse task fields in the form's order and stay in the panel; "
+                        f"Space activates the focused button. {keys('NXStyle_CommandFinder')} finds commands, including "
+                        "those without a direct key.</p>"
                         "<h3>Current assigned shortcuts</h3><table cellspacing='8'>" + "".join(rows) + "</table>")
         layout.addWidget(browser)
         box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Close, parent=dialog)

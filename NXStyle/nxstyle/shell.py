@@ -168,8 +168,9 @@ class Shell(QtCore.QObject):
         default = self.cfg.get("default_application", "modeling")
         self.switch_application(default if self._app(default) else self.apps[0]["id"])
         try:
-            self.shortcut_rows = shortcuts.apply(self, nx=self.cfg.get("nx_shortcuts", True))
-            shortcuts.report(self.shortcut_rows)
+            if self.cfg.get("nx_shortcuts", True):    # off: FreeCAD's own keys, the access keys too
+                self.shortcut_rows = shortcuts.apply(self)
+                shortcuts.report(self.shortcut_rows)
             from . import keyboard_ui
             self.keyboard = keyboard_ui.install(self)
         except Exception:

@@ -133,9 +133,11 @@ TABLE = [
           note="FreeCAD's Draft layer manager"),
     Entry("Expressions", "Ctrl+E", "NXStyle_Expressions", note="a spreadsheet named Expressions"),
     Entry("Touch Mode", "F4", "NXStyle_TouchMode", note="larger ribbon and bar icons"),
-    # ---- Keyboard access (NXStyle extensions, not claimed NX defaults)
-    Entry("Command Finder", "Ctrl+Space", "NXStyle_CommandFinder", "global", note="NXStyle keyboard access extension"),
-    Entry("Focus Ribbon", "F10", "NXStyle_FocusRibbon", "global", note="NXStyle keyboard access extension"),
+    # ---- Keyboard access (NXStyle extensions, not claimed NX defaults). Keys no FreeCAD command holds: F10 is
+    # Std_MacroStepOver and Ctrl+Space BIM's Arch_ToggleSubs, so the Finder is Alt+Q (Office's command search)
+    # and the ribbon Alt+0, beside the other areas' Alt+1 to Alt+5. The smoke lists what any of these displaces.
+    Entry("Command Finder", "Alt+Q", "NXStyle_CommandFinder", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Ribbon", "Alt+0", "NXStyle_FocusRibbon", "global", note="NXStyle keyboard access extension"),
     Entry("Focus Part Navigator", "Alt+1", "NXStyle_FocusNavigator", "global", note="NXStyle keyboard access extension"),
     Entry("Focus Task Panel", "Alt+2", "NXStyle_FocusTasks", "global", note="NXStyle keyboard access extension"),
     Entry("Focus Graphics View", "Alt+3", "NXStyle_FocusView", "global", note="NXStyle keyboard access extension"),
@@ -241,15 +243,15 @@ def _cmd_actions():
 class Shortcuts:
     """Applies TABLE; alias keys and fallbacks live on extra QActions in the main window."""
 
-    def __init__(self, shell, nx=True):
+    def __init__(self, shell):
         self.shell = shell
         self.mw = Gui.getMainWindow()
         self.aliases = {}       # key -> QAction
         self.targets = {}       # key -> QAction that should fire
         self.commands = {}      # key -> command whose own action is the target (not an alias)
         self.rows = []          # report rows
-        self.entries = [e for e in TABLE if nx or e.context == "global"]
-        self.nx = nx
+        self.entries = list(TABLE)
+        self.displaced = {}     # key -> {(FreeCAD command or action, its sequence)} that held it before us
         self.gate = KeyGate(self)
         self.watched = {}
         self.guarding = False
@@ -257,7 +259,7 @@ class Shortcuts:
     # ---------------------------------------------------------------- apply
     def apply(self):
         known = _known()
-        for name, seq in (RELOCATE.items() if self.nx else []):
+        for name, seq in RELOCATE.items():
             if name in known:
                 Gui.Command.get(name).setShortcut(seq)
         primaries = {}
@@ -392,15 +394,18 @@ class Shortcuts:
             if id(act) in ours:
                 continue
             seqs = [s.toString() for s in act.shortcuts()] or [act.shortcut().toString()]
-            hit = False
+            hits = []
             for s in seqs:
                 if not s:
                     continue
                 if norm(s) in singles or first_chord(s) in singles:
-                    hit = True
-            if not hit:
+                    hits.append(s)
+            if not hits:
                 continue
             name = by_cmd.get(id(act))
+            for s in hits:                        # what the key did in FreeCAD before (smoke, docs)
+                key = norm(s) if norm(s) in singles else first_chord(s)
+                self.displaced.setdefault(key, set()).add((name or act.objectName() or act.text(), s))
             if name and name not in cleared:
                 try:
                     Gui.Command.get(name).setShortcut("")
@@ -431,12 +436,12 @@ class Shortcuts:
 _instance = None
 
 
-def apply(shell, nx=True):
+def apply(shell):
     global _instance
     if _instance is not None:
         QtWidgets.QApplication.instance().removeEventFilter(_instance.gate)
         _instance.disconnect_guards()
-    _instance = Shortcuts(shell, nx=nx)
+    _instance = Shortcuts(shell)
     return _instance.apply()
 
 

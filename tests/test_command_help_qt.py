@@ -47,11 +47,12 @@ class CommandHelpQt(unittest.TestCase):
         self.widgets.append(button)
         return button
 
-    def test_native_shortcut_mode_keeps_native_keys_and_installs_access_routes(self):
+    def test_access_keys_record_what_they_displace_and_stay_unique(self):
         window = QtWidgets.QMainWindow()
         self.widgets.append(window)
+        finder_key = next(e.keys for e in self.shortcuts.TABLE if e.cmd == "NXStyle_CommandFinder")
         native = QtGui.QAction("Native", window)
-        native.setShortcut(QtGui.QKeySequence("Ctrl+Q"))
+        native.setShortcut(QtGui.QKeySequence(finder_key))
         for entry in self.shortcuts.TABLE:
             if entry.context != "global":
                 continue
@@ -63,19 +64,22 @@ class CommandHelpQt(unittest.TestCase):
                 "setShortcut": lambda _, key, a=action: a.setShortcut(QtGui.QKeySequence(key)),
             })()
         with patch.object(self.gui, "getMainWindow", return_value=window, create=True):
-            manager = self.shortcuts.Shortcuts(None, nx=False)
+            manager = self.shortcuts.Shortcuts(None)
+            manager.entries = [e for e in self.shortcuts.TABLE if e.context == "global"]
             try:
                 rows = manager.apply()
                 self.assertEqual(len(rows), 10)
-                self.assertEqual(native.shortcut().toString(), "Ctrl+Q")
-                self.assertEqual(manager.shortcuts_for("NXStyle_CommandFinder"), ["Ctrl+Space"])
-                self.assertFalse(any(row["context"] != "global" for row in rows))
-                native.setShortcuts([QtGui.QKeySequence("Ctrl+Space"), QtGui.QKeySequence("Ctrl+Q")])
+                # the key was taken from the native action, and the record says so
+                self.assertEqual(native.shortcuts(), [])
+                self.assertEqual(manager.displaced, {finder_key: {("Native", finder_key)}})
+                self.assertEqual(manager.shortcuts_for("NXStyle_CommandFinder"), [finder_key])
+                # a native group copying the key back loses it again
+                native.setShortcuts([QtGui.QKeySequence(finder_key), QtGui.QKeySequence("Ctrl+Q")])
                 self.assertEqual([s.toString() for s in native.shortcuts()], ["Ctrl+Q"])
-                self.assertEqual(manager.shortcuts_for("NXStyle_CommandFinder"), ["Ctrl+Space"])
+                self.assertEqual(manager.shortcuts_for("NXStyle_CommandFinder"), [finder_key])
                 with patch.object(manager, "guard_action"):
-                    native.setShortcut(QtGui.QKeySequence("Ctrl+Space"))
-                    self.assertEqual(native.shortcut().toString(), "Ctrl+Space")
+                    native.setShortcut(QtGui.QKeySequence(finder_key))
+                    self.assertEqual(native.shortcut().toString(), finder_key)
             finally:
                 self.app.removeEventFilter(manager.gate)
                 manager.disconnect_guards()
