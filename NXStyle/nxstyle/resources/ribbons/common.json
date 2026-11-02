@@ -45,7 +45,8 @@
       {"name": "Visualization", "items": [
         {"cmd": ["Std_SetAppearance", "Std_DlgDisplayProperties"], "label": "Edit Object Display", "size": "large"},
         {"cmd": "Std_SetMaterial", "label": "Assign Material"},
-        {"cmd": "Std_ToggleClipPlane", "label": "Clip Section"}
+        {"cmd": "Std_ToggleClipPlane", "label": "Clip Section"},
+        {"cmd": "NXStyle_ViewCube", "label": "View Cube"}
       ]},
       {"name": "Window", "items": [
         {"cmd": "Std_MainFullscreen", "label": "Full Screen", "size": "large"},

@@ -30,6 +30,106 @@ def rebuild(smoke):
     smoke.shell.build_ribbon(smoke.shell.current_app)
 
 
+def corner_image(view, why):
+    """The top-right corner of the graphics window as drawn (FreeCAD's view cube sits there by default), or None
+    when this Qt cannot read the window's framebuffer back; ``why`` collects the reason."""
+    try:
+        vp = view.graphicsView().viewport()
+        why["viewport"] = vp.metaObject().className()
+        img = vp.grabFramebuffer() if hasattr(vp, "grabFramebuffer") else vp.grab().toImage()
+        if img.isNull():
+            why["image"] = "null"
+            return None
+        s = min(170, img.width(), img.height())
+        return img.copy(img.width() - s, 0, s, s)
+    except Exception as e:
+        why["error"] = f"{type(e).__name__}: {e}"
+        return None
+
+
+def changed_share(a, b):
+    """Share of sampled pixels that differ between two images of the same size."""
+    hits = total = 0
+    for y in range(0, a.height(), 3):
+        for x in range(0, a.width(), 3):
+            total += 1
+            hits += a.pixel(x, y) != b.pixel(x, y)
+    return hits / total if total else 0.0
+
+
+def run_view_cube(smoke):
+    """View › Visualization › View Cube: a new profile has no cube (seeded off); the button switches FreeCAD's own
+    cube on in the open view, ticks, and is kept in FreeCAD's preference; clicked again it is off. Controls: the
+    corner image changes only with the cube, and a change made in Preferences (the parameter) moves the tick."""
+    from .qt import QtWidgets
+    from .tutorial import qtest
+    doc = None
+    try:
+        from . import prefs
+        view = smoke.view() if Gui.ActiveDocument is not None else None
+        if view is None or not hasattr(view, "getViewer"):
+            doc = App.newDocument("SmokeViewCube")
+            import Part  # noqa: F401
+            doc.addObject("Part::Box", "Box")
+            doc.recompute()
+            Gui.SendMsgToActiveView("ViewFit")
+            qtest().qWait(300)
+            view = smoke.view()
+        viewer = view.getViewer()
+        smoke.info["viewer has isEnabledNaviCube"] = hasattr(viewer, "isEnabledNaviCube")
+        p = App.ParamGet(prefs.VIEW)
+        start = p.GetBool("ShowNaviCube", True)
+        b = tab_buttons(smoke, "View").get("NXStyle_ViewCube")
+        smoke.check("View › Visualization › View Cube button, off in a new profile",
+                    b is not None and b.nx_label == "View Cube" and b.isCheckable() and not b.isChecked()
+                    and not start and smoke.shell.ribbon.locations.get("NXStyle_ViewCube") == "View › Visualization",
+                    {"button": b is not None, "checked": b.isChecked() if b else None, "ShowNaviCube": start,
+                     "where": smoke.shell.ribbon.locations.get("NXStyle_ViewCube")})
+        if b is None:
+            return
+        smoke.shell.ribbon.select("View")
+        QtWidgets.QApplication.processEvents()
+        why = {}
+        off_img = corner_image(view, why)
+        b.click()
+        qtest().qWait(400)
+        on = (p.GetBool("ShowNaviCube", False), viewer.isEnabledNaviCube(), b.isChecked())
+        on_img = corner_image(view, why)
+        smoke.shot("view_cube_on.png")
+        b.click()
+        qtest().qWait(400)
+        off = (p.GetBool("ShowNaviCube", True), viewer.isEnabledNaviCube(), b.isChecked())
+        off_again = corner_image(view, why)
+        smoke.info["view cube corner image"] = why
+        smoke.check("View Cube on: FreeCAD's preference, the open view and the tick; off again on a second click",
+                    on == (True, True, True) and off == (False, False, False),
+                    {"on (parameter, view, tick)": on, "off": off})
+        if off_img is None or on_img is None or off_again is None:
+            smoke.skip("the view cube is drawn in the graphics window's corner", f"framebuffer not readable: {why}")
+        else:
+            with_cube, without = changed_share(off_img, on_img), changed_share(off_img, off_again)
+            smoke.check("the view cube is drawn in the graphics window's corner (and gone again: control)",
+                        with_cube > 0.05 and without < 0.01,
+                        f"pixels changed with the cube {with_cube:.1%}, after switching it off {without:.1%}")
+        # a change in Preferences (the same parameter) reaches the button's tick
+        act = (Gui.Command.get("NXStyle_ViewCube").getAction() or [None])[0]
+        p.SetBool("ShowNaviCube", True)
+        qtest().qWait(300)
+        ticked = (b.isChecked(), act.isChecked() if act else None)
+        p.SetBool("ShowNaviCube", False)
+        qtest().qWait(300)
+        unticked = (b.isChecked(), act.isChecked() if act else None)
+        smoke.check("a change made in Preferences moves the View Cube tick",
+                    ticked == (True, True) and unticked == (False, False),
+                    {"after on (button, action)": ticked, "after off": unticked})
+        smoke.shell.ribbon.select("Home")
+    except Exception:
+        smoke.check("view cube scenario ran", False, traceback.format_exc().splitlines()[-1])
+    finally:
+        if doc is not None:
+            App.closeDocument(doc.Name)
+
+
 def run_macros(smoke):
     try:
         known = set(Gui.listCommands())

@@ -50,6 +50,7 @@ include::partial$generated/settings.adoc[]
 | Start in Drafting | `"default_application": "drafting"`
 | FreeCAD 1.1's own NX mouse style | `"navigation": "native"`
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
+| FreeCAD's view cube | not a setting here: *View › Visualization › View Cube*, kept by FreeCAD
 | No data management | `"plm": "none"`
 | No Algorithmic Modeling (Katydid) | `"algorithmic_modeling": "none"`
 | No Sheet Metal (SheetMetal add-on) | `"sheet_metal": "none"`

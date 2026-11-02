@@ -182,6 +182,7 @@ class Smoke:
         yield self.s_move, 300
         yield self.s_show_key, 300
         yield self.s_macros, 300
+        yield self.s_view_cube, 300
         yield self.s_drafting_views, 300
         yield self.s_pmi_notes, 300
         yield self.s_geometry_oracle, 100
@@ -2737,6 +2738,11 @@ class Smoke:
         it; removed again, its button goes (smoke_user_setup.py)."""
         from . import smoke_user_setup
         smoke_user_setup.run_macros(self)
+
+    def s_view_cube(self):
+        """View › Visualization › View Cube switches FreeCAD's view cube on and off (smoke_user_setup.py)."""
+        from . import smoke_user_setup
+        smoke_user_setup.run_view_cube(self)
 
     def s_drafting_views(self):
         """NX's Projected View off a selected view (Above, Right, first angle, Close, undo), its edges against the

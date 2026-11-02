@@ -125,8 +125,9 @@ When no dialog is open, NX-Style brings the Part Navigator back to the front, al
 
 * Light-grey gradient background, as in NX. *View › Style › Background* offers NX's five presets.
 * Red preselection, orange selection, grey bodies with dark edges.
-* The view triad sits in the lower-left corner; there is no view cube.
-FreeCAD's *Navigation Cube* (File › Preferences › Display › Navigation) switches it on, and it stays on after a restart.
+* The view triad sits in the lower-left corner; there is no view cube, as in NX.
+*View › Visualization › View Cube* switches FreeCAD's view cube on and off, and your choice stays after a restart.
+It is FreeCAD's own *Navigation Cube* setting (File › Preferences › Display › Navigation), so either place changes it.
 * Document tabs are above the window.
 
 .Hold MB3 for the radial menu
