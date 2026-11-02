@@ -281,9 +281,10 @@ def run_macros(smoke):
                     f"p = FreeCAD.ParamGet({MARK!r})\n"
                     "p.SetInt('Runs', p.GetInt('Runs', 0) + 1)\n")
         App.ParamGet(MARK).SetInt("Runs", 0)
+        had = set(tab_buttons(smoke, "Tools"))
         name = Gui.Command.createCustomCommand(MACRO_FILE, "Smoke Macro", "Runs the smoke test's macro")
         smoke.info["user macro command"] = name
-        before = "Std_Macro_" in "".join(tab_buttons(smoke, "Tools"))
+        before = name in had
         rebuild(smoke)
         smoke.shell.ribbon.select("Tools")
         b = tab_buttons(smoke, "Tools").get(name)
