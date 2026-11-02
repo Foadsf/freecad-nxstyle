@@ -29,6 +29,7 @@ DEFAULTS = {
     "floating_task_panel": False,      # True = feature dialogs float over the graphics window like NX
     "stylesheet": "auto",                # FreeCAD's light stylesheet for this version; or a file name
     "theme": "nx",                     # "nx" = NXStyle's light theme over that stylesheet; "none" = FreeCAD's look
+    "icon_theme": "nx",                # "nx" = original NX-inspired Modeling/Sketch icons; "freecad" = native icons
     "background": "light_gray_gradient",  # white, light, light_gray_gradient, dark_gray_gradient or dark (View > Background)
     "colors": {                        # preselection, selection, body and edge colours of the graphics window
         "preselection": "#FF2020",

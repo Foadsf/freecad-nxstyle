@@ -3,7 +3,7 @@
 
 [horizontal]
 Source:: Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, _NX 12 for Engineering Design_ (Missouri University of Science and Technology), exercise 4.10.4 (Die Cavity).
-You learn:: Block with Unite and Subtract, a sketch with a Studio Spline through typed points, Revolve (Subtract) about a sketch line, Cylinder with Unite, Edge Blend
+You learn:: Block with Unite and Subtract, a sketch of typed points (Profile and a Studio Spline), Revolve (Subtract) about a sketch line, Cylinder with Unite, Edge Blend
 Sizes:: the book's, in millimetres.
 
 The book draws the section's spline through four points and gives the posts as "20 inches" in a millimetre part; they are Ø20 mm here.
@@ -20,7 +20,7 @@ Choose *Block* again: origin (−50, −40, −40), 100 × 80 × 40, Boolean *Un
 === 2. The section
 
 Click *Sketch* and pick the XZ plane.
-With *Line* (kbd:[L]) draw (50, 0) to (50, 30), then to (−50, 30), then to (−50, 0); type each point in the X and Y fields.
+With *Profile* (kbd:[Z]) draw (50, 0) to (50, 30), then to (−50, 30), then to (−50, 0): type 50 and 0 in the X and Y fields of the first point, then each line's length and angle (30 and 90, 100 and 180, 30 and −90), kbd:[Enter] after each value; MB2 ends the profile.
 Press kbd:[S] (*Studio Spline*, Through Points) and type (−50, 0), (−25, 1), (25, −8) and (50, 0); MB2 ends it. The section is now closed.
 Draw one more line from (−75, −100) to (75, −100): the revolve axis, 60 mm below the first block's top.
 Finish the sketch with kbd:[Ctrl+Q].
@@ -29,7 +29,7 @@ Finish the sketch with kbd:[Ctrl+Q].
 
 Click *Revolve (Subtract)*, set the Curve Rule to *Single Curve* and pick the section's four curves.
 Under the axis choose *Line…* and pick the axis line.
-Type End 45 and Start −45, and click *OK*: the top block's top now follows the spline.
+Type Start −45 and End 45, and click *OK*: the top block's top now follows the spline.
 
 === 4. The cavity and the posts
 
@@ -52,8 +52,3 @@ include::partial$generated/tutorial-AY.adoc[]
 include::partial$outcome-legend.adoc[]
 
 Each step is compared with FreeCAD's Part API build of the book's dimensions, the section's spline taken from the sketch.
-
-== What differs from NX
-
-* *Profile* (kbd:[Z]) shows no on-view X/Y fields in FreeCAD's sketcher, so the replay draws the three lines with *Line* (kbd:[L]), which does.
-* The Revolve box resets a Start that is not valid yet: typing Start −45 while End is still 0 reads back 0. Typing End first avoids it.

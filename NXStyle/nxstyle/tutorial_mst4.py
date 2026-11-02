@@ -2863,11 +2863,8 @@ class MstDieCavityTutorials:
     def ay_curves(self):
         sk = self._ay_sk
         g0 = len(sk.Geometry)
-        # the three lines, each with Line (L): FreeCAD's Profile (Z) shows no fields to type a point in
-        t1, c1 = 0, 0
-        for p, q in zip(AY_PROFILE, AY_PROFILE[1:]):
-            t, c = self.fs_points(sk, "L", [p, q])
-            t1, c1 = t1 + t, c1 + c
+        # the three lines in one Profile (Z): X and Y of the first point, then each line's length and angle
+        t1, c1 = self.fs_points(sk, "Z", AY_PROFILE)
         g1 = len(sk.Geometry)
         t2, c2 = self.ay_spline(sk, AY_SPLINE)                        # Studio Spline through the four points
         g2 = len(sk.Geometry)
@@ -2889,9 +2886,10 @@ class MstDieCavityTutorials:
             closed = Part.Wire(Part.__sortEdges__([sk.Geometry[g].toShape() for g in self._ay_profile])).isClosed()
         except Exception:
             pass
-        ok = len(splines) == 1 and through and max(through) < 1e-6 and closed and self._ay_axis is not None
+        ok = len(splines) == 1 and through and max(through) < 1e-6 and closed and self._ay_axis is not None \
+            and t1 == len(AY_PROFILE)
         self.step("Sketch: the section (three lines and the spline through four points) and the axis line",
-                  f"ribbon '{self._fs_where} > Sketch' on '{self._ay_plane}'; L (Line) x3 {t1} points typed, S "
+                  f"ribbon '{self._fs_where} > Sketch' on '{self._ay_plane}'; Z (Profile) {t1} points typed, S "
                   f"(Studio Spline) {t2} typed, L (Line) {t3} typed (clicked: {c1 + c2 + c3}); MB2 after each",
                   SAME if ok else FAIL,
                   f"{len(splines)} spline, its distance from the four points {through} mm; the section closed "
@@ -2958,9 +2956,10 @@ class MstDieCavityTutorials:
         qtest().qWait(500)
         s = self.ao_ctl().session
         axis = dict(s.axis) if s is not None else None
-        # End first: with End still at its default 360, Start -45 would make 405° and the box resets Start to 0
-        self.set_quantity("nxLimitEnd", 45)
+        # Start first, as the book types them: with End still at its default 360, Start -45 alone spans 405°, and
+        # the box keeps it (as NX does) until End 45 makes the pair valid
         self.set_quantity("nxLimitStart", -45)
+        self.set_quantity("nxLimitEnd", 45)
         s = self.ao_ctl().session
         limits = tuple(s.limits) if s is not None and s.limits else None
         want_axis = f"line:{names[self._ay_axis]}"

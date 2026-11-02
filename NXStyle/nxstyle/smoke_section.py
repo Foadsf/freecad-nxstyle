@@ -582,8 +582,105 @@ def negative_control(smoke):
                 {"failed": failed, "passed": [n[:60] for n, ok, _ in rec.checks if ok]})
 
 
+def typed_limits(smoke, name="SmokeRevolveLimits"):
+    """Revolve of the flange about XC with its limits typed key by key, Start before End (as tutorial AY's book
+    types them): Start -45 while End is still 360 spans 405°, so the pair is not valid yet. The box keeps -45 as
+    typed (NX does), says why and holds OK; End 45 then makes it valid: FreeCAD's panel gets Two angles 45 and
+    45, and OK revolves the flange 90°."""
+    from .smoke_primitives import type_into
+    before = App.ActiveDocument
+    doc = App.newDocument(name)
+    try:
+        body, sk = casing(doc)
+        gdoc = Gui.getDocument(doc.Name)
+        gdoc.ActiveView.setActiveObject("pdbody", body)
+        gdoc.ActiveView.viewTop()
+        gdoc.ActiveView.fitAll()
+        settle(gdoc.ActiveView, 400)
+        run = Run(smoke, doc, body, sk)
+        try:
+            reset(run)
+            run.rule("single")
+            for g in FLANGE:
+                run.pick(g)
+            Gui.runCommand("NXStyle_Revolve")
+            up = run.opened(len(FLANGE))
+            axis = run.vector("XC")
+            start = box_widget(QtWidgets.QDoubleSpinBox, "nxLimitStart")
+            end = box_widget(QtWidgets.QDoubleSpinBox, "nxLimitEnd")
+            if start is None or end is None:
+                smoke.check("Revolve limits typed Start first: the box's Start and End fields", False,
+                            run.state())
+                return
+            type_into(start, "-45")
+            s, okb = run.session(), run.ctl._ok_button()
+            held = {"Start": start.value(), "End": end.value(), "error": s.error if s else None,
+                    "OK enabled": okb is not None and okb.isEnabled()}
+            type_into(end, "45")
+            s, okb = run.session(), run.ctl._ok_button()
+            rev = next((o for o in doc.Objects if o.TypeId == "PartDesign::Revolution"), None)
+            valid = {"limits": tuple(s.limits) if s else None, "error": s.error if s else None,
+                     "feature": (rev.Type, rev.Angle.Value, rev.Angle2.Value) if rev is not None else None}
+            ok = run.ok()
+            rev = next((o for o in doc.Objects if o.TypeId == "PartDesign::Revolution"), None)
+            want = expected(sk, FLANGE, "revolve").Volume / 2.0          # 90° of the 180° the Part API makes
+            got = volume(rev)
+            last = run.ctl.history[-1] if run.ctl.history else {}
+            report(smoke, "Revolve limits typed key by key, Start before End: Start -45 while End is still 360 stays "
+                   "-45 with the 405° error and OK unavailable; End 45 makes it valid (FreeCAD's Two angles 45 and "
+                   "45) and OK revolves the flange 90°",
+                   {"section of 4": up, "XC": axis, "Start kept as typed": abs(held["Start"] + 45.0) < 1e-9,
+                    "End still 360": abs(held["End"] - 360.0) < 1e-9,
+                    "says 405°": bool(held["error"]) and "405" in held["error"], "OK held": not held["OK enabled"],
+                    "End 45 makes it valid": valid["limits"] == (-45.0, 45.0) and valid["error"] is None,
+                    "Two angles 45 and 45": valid["feature"] == ("TwoAngles", 45.0, 45.0), "OK enabled": ok,
+                    "committed": last.get("outcome") == "committed" and last.get("command") == "Revolve",
+                    "volume of 90°": abs(got - want) < 1e-6 * want},
+                   {"after Start": held, "after End": valid, "volume": got, "expected": want, "last": last,
+                    "trace": run.ctl.trace[-12:], "routes": run.routes[-4:]})
+        finally:
+            if run.ctl.busy():
+                run.ctl.cancel()
+                qwait(300)
+            run.rule("inferred")
+    finally:
+        try:
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+            Gui.Selection.clearSelection()
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+        except Exception:
+            smoke.info["section: limits cleanup"] = traceback.format_exc()
+
+
+def typed_limits_control(smoke):
+    """typed_limits with the old reset put back (the box shows only valid limits, so a Start that is not valid
+    yet reads back the last valid one): its check must fail."""
+    from . import controller
+    rec = Recorder(smoke)
+    real = controller.Controller.change_limits
+
+    def reset_typed(self, start, end):
+        out = real(self, start, end)
+        if self.session is not None and self.session.limits_typed is not None:
+            self.session.limits_typed = None
+            self._show()
+        return out
+    controller.Controller.change_limits = reset_typed
+    try:
+        typed_limits(rec, "SmokeRevolveLimitsPlanted")
+    finally:
+        controller.Controller.change_limits = real
+    smoke.check("negative control: with the box resetting a Start that is not valid yet (as before), the typed "
+                "limits check fails", len(rec.checks) == 1 and not rec.checks[0][1],
+                {"checks": [(n[:60], ok, d[:300]) for n, ok, d in rec.checks]})
+
+
 def run(smoke):
-    for part in (scenario, negative_control):
+    for part in (scenario, negative_control, typed_limits, typed_limits_control):
         try:
             part(smoke)
         except Exception:

@@ -264,5 +264,113 @@ class MissingJoins(unittest.TestCase):
         self.assertEqual(core.missing_joins({(0, 1): (0.0, 0.0), (0, 2): (0.0, 0.0)}, {0}, [], 1e-4), [])
 
 
+class ProfileModes(unittest.TestCase):
+    """FreeCAD's Polyline (DrawSketchHandlerLineSet, 1.1.4) as M switches it."""
+
+    def cycle(self, prev_is_arc, n=7):
+        mode, out = (core.LINE, core.TANGENT if prev_is_arc else core.FREE), []
+        for _ in range(n):
+            mode = core.profile_mode_switch(*mode, prev_is_arc)
+            out.append(mode)
+        return out
+
+    def test_after_a_line(self):
+        L, A = core.LINE, core.ARC
+        self.assertEqual(self.cycle(False), [(L, core.PERP_L), (L, core.TANGENT), (A, core.TANGENT), (A, core.PERP_L),
+                                             (A, core.PERP_R), (L, core.FREE), (L, core.PERP_L)])
+
+    def test_after_an_arc(self):
+        L, A = core.LINE, core.ARC
+        self.assertEqual(self.cycle(True), [(L, core.PERP_L), (L, core.FREE), (A, core.TANGENT), (A, core.PERP_L),
+                                            (A, core.PERP_R), (L, core.TANGENT), (L, core.PERP_L)])
+
+    def test_after_a_segment(self):
+        self.assertEqual(core.profile_mode_after(False), (core.LINE, core.FREE))
+        self.assertEqual(core.profile_mode_after(True), (core.LINE, core.TANGENT))
+
+
+class ProfileFields(unittest.TestCase):
+    def test_which_fields(self):
+        self.assertEqual(core.profile_fields("first"), ("x", "y"))
+        self.assertEqual(core.profile_fields("first", visibility=1), ())          # FreeCAD's 'dimensions only'
+        self.assertEqual(core.profile_fields("next", visibility=1), ("length", "angle"))
+        self.assertEqual(core.profile_fields("next", visibility=0), ())
+        self.assertEqual(core.profile_fields("next", core.LINE, core.TANGENT), ("length", "direction"))
+        self.assertEqual(core.profile_fields("next", core.ARC, core.PERP_R), ("radius", "sweep"))
+
+    def assertPoint(self, got, want):
+        self.assertAlmostEqual(got[0], want[0], places=12)
+        self.assertAlmostEqual(got[1], want[1], places=12)
+
+    def test_first_point_follows_the_pointer_until_typed(self):
+        shown, at = core.profile_point(("x", "y"), {"x": 50.0}, (47.3, 2.1))
+        self.assertEqual(shown, {"x": 50.0, "y": 2.1})
+        self.assertEqual(at, (50.0, 2.1))
+
+    def test_length_and_angle(self):
+        shown, at = core.profile_point(("length", "angle"), {}, (50.0, 30.0), start=(50.0, 0.0))
+        self.assertAlmostEqual(shown["length"], 30.0)
+        self.assertAlmostEqual(shown["angle"], 90.0)
+        _, at = core.profile_point(("length", "angle"), {"length": 100.0, "angle": 180.0}, (3.0, 4.0),
+                                   start=(50.0, 30.0))
+        self.assertPoint(at, (-50.0, 30.0))
+        _, at = core.profile_point(("length", "angle"), {"angle": -45.0}, (20.0, 0.0), start=(10.0, 10.0))
+        self.assertAlmostEqual(math.degrees(math.atan2(at[1] - 10, at[0] - 10)), -45.0)   # the pointer's length
+
+    def test_tangent_line_goes_onward_and_a_square_one_to_the_pointer_side(self):
+        d = core.transition_direction(core.TANGENT, (1.0, 0.0))
+        _, at = core.profile_point(("length", "direction"), {"length": 5.0}, (-3.0, 1.0), (0.0, 0.0), d)
+        self.assertPoint(at, (5.0, 0.0))
+        n = core.transition_direction(core.PERP_L, (1.0, 0.0))
+        _, at = core.profile_point(("length", "direction"), {"length": 5.0}, (2.0, -3.0), (0.0, 0.0), n, True)
+        self.assertPoint(at, (0.0, -5.0))
+
+    def test_end_directions(self):
+        self.assertPoint(core.end_direction(core.LINE, (0, 0), (3, 4), None, 2), (0.6, 0.8))
+        self.assertPoint(core.end_direction(core.LINE, (0, 0), (3, 4), None, 1), (-0.6, -0.8))
+        # the counter-clockwise arc from (1, 0) to (0, 1) about the origin: onward at its end is -X, at its start -Y
+        self.assertPoint(core.end_direction(core.ARC, (1, 0), (0, 1), (0, 0), 2), (-1.0, 0.0))
+        self.assertPoint(core.end_direction(core.ARC, (1, 0), (0, 1), (0, 0), 1), (0.0, -1.0))
+
+    def test_tangent_arc_both_ways(self):
+        t = (1.0, 0.0)
+        for radius, sweep in ((10.0, 90.0), (10.0, -90.0), (12.7, 180.0), (5.0, 270.0), (63.5, -30.0)):
+            end = core.tangent_arc_end((0.0, 0.0), t, radius, sweep)
+            r, s = core.tangent_arc_through((0.0, 0.0), t, end)
+            self.assertAlmostEqual(r, radius, places=9)
+            self.assertAlmostEqual(s, sweep, places=9)
+        self.assertPoint(core.tangent_arc_end((0.0, 0.0), t, 10.0, 90.0), (10.0, 10.0))      # left: counter-clockwise
+        self.assertPoint(core.tangent_arc_end((0.0, 0.0), t, 10.0, -90.0), (10.0, -10.0))
+        self.assertIsNone(core.tangent_arc_through((0.0, 0.0), t, (5.0, 0.0))[0])
+
+
+class ProfileConstraints(unittest.TestCase):
+    def test_first_point_as_freecad_holds_typed_coordinates(self):
+        self.assertEqual(core.profile_constraints(("x", "y"), {"x": 50.0, "y": 0.0}, 4, 1, 2),
+                         [("DistanceX", 4, 1, 50.0), ("PointOnObject", 4, 1, core.H_AXIS)])
+        self.assertEqual(core.profile_constraints(("x", "y"), {"x": 0.0, "y": 0.0}, 4, 1, 2),
+                         [("Coincident", 4, 1, -1, 1)])
+        self.assertEqual(core.profile_constraints(("x", "y"), {"y": -8.0}, 0, 1, 2), [("DistanceY", 0, 1, -8.0)])
+
+    def test_line_angle_as_horizontal_vertical_or_angle(self):
+        c = core.profile_constraints
+        self.assertEqual(c(("length", "angle"), {"length": 100.0, "angle": 180.0}, 2, 1, 2),
+                         [("Distance", 2, 100.0), ("Horizontal", 2)])
+        self.assertEqual(c(("length", "angle"), {"length": 30.0, "angle": -90.0}, 3, 1, 2),
+                         [("Distance", 3, 30.0), ("Vertical", 3)])
+        (_, (kind, h, g, rad)) = c(("length", "angle"), {"length": 1.0, "angle": -116.5}, 5, 1, 2)
+        self.assertEqual((kind, h, g), ("Angle", core.H_AXIS, 5))
+        self.assertAlmostEqual(rad, math.radians(-116.5), places=15)
+        self.assertEqual(c(("length", "angle"), {"angle": 270.0}, 1, 1, 2), [("Vertical", 1)])
+        self.assertEqual(c(("length", "direction"), {"length": 7.5, "direction": 12.0}, 1, 1, 2), [("Distance", 1, 7.5)])
+        self.assertEqual(c(("length", "angle"), {"length": 0.0}, 1, 1, 2), [])
+
+    def test_arc(self):
+        got = core.profile_constraints(("radius", "sweep"), {"radius": 12.7, "sweep": -90.0}, 6, 2, 1)
+        self.assertEqual(got[0], ("Radius", 6, 12.7))
+        self.assertEqual(got[1][:2], ("Angle", 6))
+        self.assertAlmostEqual(got[1][2], math.pi / 2, places=15)
+
+
 if __name__ == "__main__":
     unittest.main()
