@@ -155,7 +155,10 @@ def gen_ribbons():
         rows = []
         for g in tab.get("groups") or []:
             for it in g.get("items", []):
-                if "dropdown" in it:
+                if it.get("macros"):
+                    # the user's own macro commands (Tools › Customize › Macros): one button each
+                    rows.append((g["name"], "Your macro commands (one button each)", "`Std_Macro_<n>`"))
+                elif "dropdown" in it:
                     for sub in it["items"]:
                         rows.append((g["name"], button(sub, f"{it['dropdown']} > {sub.get('label', sub['cmd'])}"),
                                      cmd_text(sub["cmd"])))

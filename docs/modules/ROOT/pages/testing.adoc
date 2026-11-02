@@ -80,6 +80,7 @@ It ends with the count of checks passed, failed and skipped (171 checks on FreeC
 ** clearance results are out of date after a part moves;
 ** a pair rule naming a label two parts share is not applied;
 * the geometry comparison the tutorials use tells a solid from a different one of the same volume;
+* *Tools › Macros*: a macro command made through FreeCAD's own `createCustomCommand` becomes a button with its menu text and runs the macro, and once removed its button is gone;
 * the status bar names NX-Style's mouse handling rather than FreeCAD's Blender base style alone.
 
 A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.

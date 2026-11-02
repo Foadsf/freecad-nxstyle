@@ -1,5 +1,5 @@
 {
-  "_comment": "Tabs shared by every application. 'Application' is filled in by code from apps.json.",
+  "_comment": "Tabs shared by every application. 'Application' is filled in by code from apps.json. An item {\"macros\": true} is a marker: it becomes one button per macro command the user made in Tools > Customize > Macros (FreeCAD's Std_Macro_<n>).",
   "tabs": [
     {"name": "View", "groups": [
       {"name": "Orientation", "items": [
@@ -76,10 +76,12 @@
       {"name": "Algorithmic Modeling", "items": [
         {"cmd": "Katydid_Canvas", "label": "Canvas", "size": "large", "optional": true}
       ]},
-      {"name": "Journal", "items": [
-        {"cmd": "Std_DlgMacroRecord", "label": "Record", "size": "large"},
-        {"cmd": "Std_DlgMacroExecute", "label": "Play"},
-        {"cmd": "Std_DlgMacroExecuteDirect", "label": "Run Current Journal"}
+      {"name": "Macros", "items": [
+        {"cmd": "Std_DlgMacroExecute", "label": "Macros…", "size": "large"},
+        {"cmd": "Std_DlgMacroRecord", "label": "Record"},
+        {"cmd": "Std_MacroStopRecord", "label": "Stop", "optional": true},
+        {"cmd": "Std_DlgMacroExecuteDirect", "label": "Run Current"},
+        {"macros": true}
       ]},
       {"name": "Customize", "items": [
         {"cmd": "Std_DlgCustomize", "label": "Customize", "size": "large"},
