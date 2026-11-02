@@ -5,6 +5,15 @@ Three levels of tests, from seconds to about half an hour.
 
 == Unit tests and lint
 
+The dedicated Qt CI job installs PySide6 on Windows and Linux and runs `python -m unittest discover -s tests -p '*_qt.py' -v` with `NXSTYLE_REQUIRE_QT=1`.
+Keyboard checks cover focus traversal, menus, text-field isolation, pointer event sequences, selection rejection and live shortcut help.
+Negative controls remove alias help, introduce a conflicting key, or suppress pointer events so the checks must detect the broken behavior.
+These checks use real Qt widgets with FreeCAD services replaced; they do not establish that a native workbench operation succeeds.
+
+Inside FreeCAD, `s_keyboard_access` exercises the ten access keys, camera navigation, named face selection, pointer selection, typed Block creation and Undo/Redo.
+`s_keyboard_sketch` uses keyboard pointer events to draw a native rectangle after `s_sketch_enter`.
+The harness records individual results and screenshots; third-party workbenches and screen-reader behavior need separate qualification.
+
 [source,bash]
 ----
 python -m unittest discover -s tests
