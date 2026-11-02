@@ -277,27 +277,53 @@ class KeyboardUiQt(unittest.TestCase):
         self.assertFalse(self.ribbon._popup.isVisible())
         self.assertIs(self.app.focusWidget(), self.graphics)
 
-    def test_camera_keys_work_in_view_and_leave_text_fields_untouched(self):
-        self.key(self.graphics, QtCore.Qt.Key_Left)
-        self.key(self.graphics, QtCore.Qt.Key_Up, QtCore.Qt.ShiftModifier)
-        self.key(self.graphics, QtCore.Qt.Key_Plus)
-        self.key(self.graphics.viewport(), QtCore.Qt.Key_Minus)
-        self.assertEqual(self.camera, [("rotate", -10, 0), ("pan", 0, -10), ("zoom", -10), ("zoom", 10)])
-        control = list(self.camera)
+    def test_alt_arrows_rotate_in_view_and_leave_text_fields_untouched(self):
+        self.key(self.graphics, QtCore.Qt.Key_Left, QtCore.Qt.AltModifier)
+        self.key(self.graphics.viewport(), QtCore.Qt.Key_Up, QtCore.Qt.AltModifier)
+        self.assertEqual(self.camera, [("rotate", -10, 0), ("rotate", 0, -10)])
         self.editor.setFocus()
-        QtTest.QTest.keyClicks(self.editor, "coordinate + -")
-        self.key(self.editor, QtCore.Qt.Key_Left)
-        self.key(self.editor, QtCore.Qt.Key_Up, QtCore.Qt.ShiftModifier)
-        self.assertEqual(self.editor.text(), "coordinate + -")
-        self.assertEqual(self.camera, control)
+        self.editor.setText("coordinate")
+        self.editor.setCursorPosition(3)
+        self.key(self.editor, QtCore.Qt.Key_Left, QtCore.Qt.AltModifier)
+        self.assertEqual(self.camera, [("rotate", -10, 0), ("rotate", 0, -10)])
 
-    def test_camera_override_claims_arrows_before_conflicting_global_qaction(self):
+    def test_freecad_view_keys_keep_their_meaning(self):
+        # FreeCAD 1.1.4 pans with the arrows and zooms with PageUp/PageDown (measured with this override off);
+        # Shift+Left / Shift+Right are Std_ViewRotateLeft / Right, Ctrl+arrows Std_DockOverlayToggle*
+        seen = []
+
+        class Native(QtCore.QObject):
+            def eventFilter(self, obj, event):
+                if event.type() == QtCore.QEvent.KeyPress:
+                    seen.append((event.key(), event.modifiers()))
+                return False
+        native = Native(self.graphics)
+        self.graphics.installEventFilter(native)
+        turns = []
+        for seq in ("Shift+Left", "Shift+Right", "Ctrl+Left"):
+            action = QtGui.QAction(seq, self.mw)
+            action.setShortcut(QtGui.QKeySequence(seq))
+            action.triggered.connect(lambda _=False, s=seq: turns.append(s))
+            self.mw.addAction(action)
+        self.graphics.setFocus()
+        for key in (QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_PageUp, QtCore.Qt.Key_Plus):
+            self.key(self.graphics, key)
+        self.key(self.graphics, QtCore.Qt.Key_Left, QtCore.Qt.ShiftModifier)
+        self.key(self.graphics, QtCore.Qt.Key_Right, QtCore.Qt.ShiftModifier)
+        self.key(self.graphics, QtCore.Qt.Key_Left, QtCore.Qt.ControlModifier)
+        modifiers = (QtCore.Qt.Key_Shift, QtCore.Qt.Key_Control)    # QTest presses those too
+        self.assertEqual([k for k, _ in seen if k not in modifiers],
+                         [QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_PageUp, QtCore.Qt.Key_Plus])
+        self.assertEqual(turns, ["Shift+Left", "Shift+Right", "Ctrl+Left"])
+        self.assertEqual(self.camera, [])
+
+    def test_rotate_override_claims_alt_arrow_before_conflicting_global_qaction(self):
         invoked = []
-        conflict = QtGui.QAction("Conflicting left-arrow action", self.mw)
-        conflict.setShortcut(QtGui.QKeySequence("Left"))
+        conflict = QtGui.QAction("Conflicting Alt+Left action", self.mw)
+        conflict.setShortcut(QtGui.QKeySequence("Alt+Left"))
         conflict.triggered.connect(lambda: invoked.append("left action"))
         self.mw.addAction(conflict)
-        self.key(self.graphics, QtCore.Qt.Key_Left)
+        self.key(self.graphics, QtCore.Qt.Key_Left, QtCore.Qt.AltModifier)
         self.assertEqual(self.camera, [("rotate", -10, 0)])
         self.assertEqual(invoked, [])
         # Unclaimed keys still reach their normal QAction shortcut target.
@@ -321,7 +347,8 @@ class KeyboardUiQt(unittest.TestCase):
             self.assertIs(self.app.focusWidget(), button)
             self.key(button, QtCore.Qt.Key_Return)
             self.assertEqual(self.clicked[-1], label)
-            self.assertEqual(button.focusPolicy(), QtCore.Qt.StrongFocus)
+            # reachable by Tab, but a mouse click must not take the focus from the graphics view
+            self.assertEqual(button.focusPolicy(), QtCore.Qt.TabFocus)
         self.assertEqual(self.camera, [])
 
     def test_pointer_moves_with_modifiers_clamps_and_leaves_camera_unchanged(self):

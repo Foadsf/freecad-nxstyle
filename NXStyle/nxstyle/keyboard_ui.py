@@ -49,13 +49,19 @@ class KeyboardAccess(QtCore.QObject):
         QtWidgets.QApplication.instance().installEventFilter(self)
         self.prepare_controls()
 
+    @staticmethod
+    def tab_stop(widget):
+        """Tab reaches a button that toolbars made NoFocus; a click still leaves the focus where it was."""
+        if not widget.focusPolicy() & Qt.TabFocus:
+            widget.setFocusPolicy(Qt.TabFocus)
+
     def prepare_controls(self):
         for area in (self.shell.ribbon, self.shell.border_bar, self.shell.resource_bar):
             for button in area.findChildren(QtWidgets.QToolButton):
-                button.setFocusPolicy(Qt.StrongFocus)
+                self.tab_stop(button)
                 if not button.accessibleName():
                     button.setAccessibleName(button.text().replace("&", "").replace("\n", " ") or button.toolTip())
-        self.shell.ribbon.tabs.setFocusPolicy(Qt.StrongFocus)
+        self.tab_stop(self.shell.ribbon.tabs)
         self.shell.ribbon.tabs.setAccessibleName("Ribbon tabs")
         self.shell.ribbon.collapse_button.setAccessibleName("Collapse or expand ribbon")
 
@@ -109,6 +115,8 @@ class KeyboardAccess(QtCore.QObject):
 
     @staticmethod
     def dock_controls(dock):
+        """The dock's controls in the order they were made. (Not QWidget.nextInFocusChain: walking the chain from
+        Python left every PySide wrapper under FreeCAD's main window 'already deleted', measured 2026-11-02.)"""
         types = (QtWidgets.QAbstractButton, QtWidgets.QAbstractSpinBox, QtWidgets.QComboBox,
                  QtWidgets.QLineEdit, QtWidgets.QAbstractItemView, QtWidgets.QTextEdit, QtWidgets.QPlainTextEdit)
         controls = []
@@ -232,7 +240,7 @@ class KeyboardAccess(QtCore.QObject):
                     break
         if kind == QtCore.QEvent.Show and isinstance(obj, QtWidgets.QToolButton):
             if self.shell.mw.isAncestorOf(obj):
-                obj.setFocusPolicy(Qt.StrongFocus)
+                self.tab_stop(obj)
         if self.pointer_view is not None and kind == QtCore.QEvent.Hide and obj is self.pointer_view.widget:
             self.stop_pointer()
         if self.pointer_view is not None and kind == QtCore.QEvent.ApplicationDeactivate:
@@ -380,21 +388,16 @@ class KeyboardAccess(QtCore.QObject):
                 button = Qt.MiddleButton if key == Qt.Key_Space else Qt.RightButton if context_key else Qt.LeftButton
                 self.click_pointer(button)
             return True
-        if obj not in (nav.widget, nav.view.graphicsView()):
+        # Alt+arrows rotate. FreeCAD's own view keys stay: the arrows pan (with any modifier but these),
+        # PageUp/PageDown zoom, Shift+Left/Right turn the view 90 degrees, Ctrl+arrows toggle the dock overlays
+        if obj not in (nav.widget, nav.view.graphicsView()) or mods != Qt.AltModifier or key not in ARROWS:
             return False
-        if mods in (Qt.NoModifier, Qt.ShiftModifier):
-            camera_key = key in ARROWS or key in (Qt.Key_Plus, Qt.Key_Equal, Qt.Key_Minus)
-            if camera_key and kind == QtCore.QEvent.ShortcutOverride:
-                ev.accept()
-                return True
-            if key in ARROWS:
-                dx, dy = ARROWS[key]
-                (nav.pan if mods & Qt.ShiftModifier else nav.rotate)(dx * 10, dy * 10)
-                return True
-            if key in (Qt.Key_Plus, Qt.Key_Equal, Qt.Key_Minus):
-                nav.zoom(10 if key == Qt.Key_Minus else -10)
-                return True
-        return False
+        if kind == QtCore.QEvent.ShortcutOverride:
+            ev.accept()
+            return True
+        dx, dy = ARROWS[key]
+        nav.rotate(dx * 10, dy * 10)
+        return True
 
     def help(self):
         from . import shortcuts
@@ -413,8 +416,8 @@ class KeyboardAccess(QtCore.QObject):
                 rows.append(f"<tr><td>{html.escape(entry.nx)}</td><td>{html.escape(', '.join(keys))}</td></tr>")
         browser.setHtml("<h2>Work without a mouse</h2><p>F10 enters the ribbon. Left/Right choose tabs; Down enters a page; "
                         "Tab/Shift+Tab move between controls. Enter activates; Down opens a button's menu. "
-                        "Escape returns to the previous area.</p><p>In the graphics view, arrows rotate, Shift+arrows pan, "
-                        "+/- zoom. These keys leave text fields and lists alone.</p><p>F12 toggles the keyboard pointer: "
+                        "Escape returns to the previous area.</p><p>In the graphics view, Alt+arrows rotate; FreeCAD's "
+                        "arrows pan and PageUp/PageDown zoom. These keys leave text fields and lists alone.</p><p>F12 toggles the keyboard pointer: "
                         "arrows move, Shift moves one pixel, Ctrl moves faster, Enter clicks, Ctrl+Enter starts/ends a "
                         "left drag, Space middle-clicks, Menu or Shift+F10 right-clicks. Escape stops the pointer; another Escape "
                         "can cancel the active command. Use typed dimensions whenever exact coordinates matter: in a sketch "

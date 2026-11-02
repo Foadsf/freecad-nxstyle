@@ -3,7 +3,7 @@
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from .qt import QtCore, QtWidgets
+from .qt import QAction, QtCore, QtWidgets
 from .smoke import decode
 
 
@@ -49,14 +49,27 @@ def run(smoke):
     graphics = Gui.ActiveDocument.ActiveView.graphicsView()
     smoke.check("Alt+3 focuses graphics", app.focusWidget() in (graphics, graphics.viewport()), str(app.focusWidget()))
     before = smoke.camera()
+    key("Alt+Right")
+    smoke.check("Alt+arrow rotates native camera", before[0] != smoke.camera()[0], (before, smoke.camera()))
+    before = smoke.camera()
     key("Right")
-    smoke.check("keyboard rotates native camera", before[0] != smoke.camera()[0])
+    after = smoke.camera()
+    smoke.check("arrow keeps FreeCAD's pan (no rotation)", before[0] == after[0] and before[1] != after[1],
+                (before, after))
+    # The rotate keys must not take a key from a FreeCAD command (Shift+Left/Right turn the view 90 degrees,
+    # Ctrl+arrows toggle the dock overlays)
+    held = {}
+    for a in mw.findChildren(QAction):
+        for s in a.shortcuts():
+            held.setdefault(shortcuts.norm(s.toString()), []).append(a.objectName() or a.text())
+    arrows = ("Left", "Right", "Up", "Down")
+    smoke.info["arrow keys held by commands"] = {k: v for k, v in held.items()
+                                                  if any(k.endswith(a) for a in arrows)}
+    holders = sorted((k, held[k]) for k in (shortcuts.norm("Alt+" + a) for a in arrows) if k in held)
+    smoke.check("Alt+arrows shadow no command's shortcut", not holders, holders)
     before = smoke.camera()
-    key("Shift+Right")
-    smoke.check("keyboard pans native camera", before[1] != smoke.camera()[1])
-    before = smoke.camera()
-    key("-")
-    smoke.check("keyboard zooms native camera", before[2] != smoke.camera()[2])
+    key("PgDown")
+    smoke.check("PageDown keeps FreeCAD's zoom", before[2] != smoke.camera()[2], (before, smoke.camera()))
     key("Ctrl+Space")
     smoke.check("Ctrl+Space focuses Finder", app.focusWidget() is shell.finder)
     qtest().keyClicks(shell.finder, "xras")
