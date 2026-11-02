@@ -62,6 +62,8 @@ In a narrow window the Command Finder gets narrower first. If the tabs still do 
 An NX application is a FreeCAD workbench behind the scenes.
 Applications without a hand-made ribbon get one built from their workbench's toolbars, so every installed workbench is reachable.
 
+Workbenches of your own add-ons are applications too, under *Application › Add-ons*, each with a ribbon built from its own toolbars: the ones you install in the NX profile with *Tools › Add-on Manager*, and, with `"user_addons": true` or `--user-addons`, those of your normal FreeCAD (xref:installation.adoc#addons[]).
+
 .The Application tab
 image::ui-applications.png[Application tab with the NX applications]
 
@@ -130,8 +132,9 @@ When no dialog is open, NX-Style brings the Part Navigator back to the front, al
 
 * Light-grey gradient background, as in NX. *View › Style › Background* offers NX's five presets.
 * Red preselection, orange selection, grey bodies with dark edges.
-* The view triad sits in the lower-left corner; there is no view cube.
-FreeCAD's *Navigation Cube* (File › Preferences › Display › Navigation) switches it on, and it stays on after a restart.
+* The view triad sits in the lower-left corner; there is no view cube, as in NX.
+*View › Visualization › View Cube* switches FreeCAD's view cube on and off, and your choice stays after a restart.
+It is FreeCAD's own *Navigation Cube* setting (File › Preferences › Display › Navigation), so either place changes it.
 * Document tabs are above the window.
 
 .Hold MB3 for the radial menu
@@ -155,6 +158,13 @@ In NX the hidden objects appear in the graphics window to be picked.
 Both keys work at once after a pick.
 kbd:[Ctrl+Shift+U] (*Show All*) shows everything; kbd:[Ctrl+Shift+B] swaps shown and hidden.
 
+== Your macros
+
+*Tools › Macros* has *Macros…* (FreeCAD's macro dialog, to run, edit or create one), *Record* and *Run Current* (the macro open in the editor).
+A macro you make into a command in *Tools › Customize › Macros* gets its own button in the group, labelled with the menu text you gave it.
+The buttons appear the next time the ribbon is built: switch application or start NX-Style again.
+Macro commands from your normal FreeCAD come across with `"import_preferences": ["macros"]` (xref:settings.adoc#import[]).
+
 == Touch Mode and FreeCAD's own interface
 
 * kbd:[F4] toggles *Touch Mode*: larger ribbon and bar icons.
@@ -163,13 +173,8 @@ kbd:[Ctrl+Shift+U] (*Show All*) shows everything; kbd:[Ctrl+Shift+B] swaps shown
 == Look and theme
 
 NX-Style layers one light theme over FreeCAD's own *FreeCAD Light* stylesheet: a single teal accent with its tints, line icons on the Resource Bar, the left panels in one tab strip, and the document tabs above the graphics window.
-Softly outlined ribbon groups separate related tools. Cool neutral surfaces, rounded fields,
-stronger selected-tab labels and visible keyboard-focus outlines give the workspace a consistent hierarchy.
+Cool neutral surfaces and rounded fields and menus give the workspace a consistent hierarchy.
 Task-panel fields, menus, document tabs and the Resource Bar use the same palette.
-The ribbon automatically minimises when the available height cannot accommodate its themed controls.
-
-.The light workspace with FreeCAD's shipped PartDesign example
-image::ui-studio-workspace.png[Refined light workspace with the PartDesign example]
 
 The new *Studio Background* is a quiet blue-grey gradient. Choose it from *View › Background*,
 or set `"background": "studio"` in the settings. It is the default for profiles without an explicit

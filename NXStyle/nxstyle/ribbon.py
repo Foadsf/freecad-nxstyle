@@ -3,7 +3,7 @@
 
 import FreeCADGui as Gui
 
-from . import config, icon_theme, ribbon_layout, theme
+from . import config, icon_theme, macros, ribbon_layout, theme
 from .qt import QAction, QtCore, QtGui, QtWidgets, Qt, exec_menu
 
 LARGE = 32
@@ -316,12 +316,12 @@ class RibbonGroup(QtWidgets.QFrame):
         self.items = []                  # (widget, size) in the order added
         self._widths = None
         outer = QtWidgets.QVBoxLayout(self)
-        outer.setContentsMargins(6, 4, 6, 2)
+        outer.setContentsMargins(4, 2, 4, 1)
         outer.setSpacing(0)
         self.body = QtWidgets.QWidget(self)
         self.body.setObjectName("NXRibbonGroupBody")
         self.grid = QtWidgets.QGridLayout(self.body)
-        self.grid.setSpacing(2)
+        self.grid.setSpacing(1)
         self.grid.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(self.body, 1)
         self.collapsed_button = QtWidgets.QToolButton(self)
@@ -675,7 +675,7 @@ class Ribbon(QtWidgets.QWidget):
         self.header = QtWidgets.QWidget(self)
         self.header.setObjectName("NXRibbonHeader")
         head = QtWidgets.QHBoxLayout(self.header)
-        head.setContentsMargins(6, 1, 6, 1)
+        head.setContentsMargins(0, 0, 4, 0)
         head.setSpacing(2)
 
         self.file_button = QtWidgets.QToolButton(self.header)
@@ -935,7 +935,7 @@ class Ribbon(QtWidgets.QWidget):
         inner = QtWidgets.QWidget()
         inner.setObjectName("NXRibbonPageInner")
         lay = QtWidgets.QHBoxLayout(inner)
-        lay.setContentsMargins(6, 5, 6, 4)
+        lay.setContentsMargins(2, 2, 2, 0)
         lay.setSpacing(0)
         area.setWidget(inner)
         return area, lay
@@ -1021,6 +1021,11 @@ class Ribbon(QtWidgets.QWidget):
             if not entries:
                 return None, size
             return DropdownButton(item["dropdown"], entries, size, on_run=self._ran), size
+        if "cmd" not in item:            # a {"macros": true} marker is expanded before (spec_groups): malformed
+            import FreeCAD
+            FreeCAD.Console.PrintWarning(f"NXStyle: ribbon item without a command in {tab} › {group}: {item}\n")
+            self.missing.append((tab, group, f"malformed item {item}"))
+            return None, size
         cmd = resolve(item["cmd"], known)
         if not cmd:
             if not item.get("optional"):   # optional = only in newer FreeCAD versions
@@ -1048,17 +1053,52 @@ def spec_commands(groups, known):
     out = []
     for entry in groups:
         for item in entry[1]:
-            if isinstance(item, dict):
-                for spec in [s["cmd"] for s in item.get("items", [])] if "dropdown" in item else [item["cmd"]]:
-                    cmd = resolve(spec, known)
-                    if cmd:
-                        out.append(cmd)
+            if not isinstance(item, dict):
+                continue
+            if "dropdown" in item:
+                specs = [s["cmd"] for s in item.get("items", [])]
+            elif "cmd" in item:
+                specs = [item["cmd"]]
+            else:
+                specs = []               # a marker (the user's macros), not a button
+            for spec in specs:
+                cmd = resolve(spec, known)
+                if cmd:
+                    out.append(cmd)
+    return out
+
+
+def menu_text(name):
+    """A command's menu text, as FreeCAD's Command.getInfo() gives it; None when it has none."""
+    try:
+        return Gui.Command.get(name).getInfo().get("menuText")
+    except Exception:
+        return None
+
+
+def macro_items():
+    """The user's own macro commands (FreeCAD's Std_Macro_<n>, made in Tools › Customize › Macros) as ribbon
+    items, labelled with the menu text the user gave each."""
+    return macros.items_for(known_commands(), menu_text)
+
+
+def expand_macro_marker(items):
+    """Replace the {"macros": true} marker of a JSON group by a button per user macro command.
+
+    FreeCAD has no command for "the macros that exist", so the group names them one by one when the ribbon
+    is built. Without a macro command the marker leaves nothing behind and the group keeps its other buttons."""
+    out = []
+    for item in items:
+        if isinstance(item, dict) and item.get("macros"):
+            out += macro_items()
+        else:
+            out.append(item)
     return out
 
 
 def spec_groups(tab_spec):
     """(name, items, meta) per group of a JSON tab; meta holds the optional rank and workflow step."""
-    return [(g["name"], g.get("items", []), {k: g[k] for k in ("rank", "step") if k in g})
+    return [(g["name"], expand_macro_marker(g.get("items", [])), {k: g[k] for k in ("rank", "step") if k in g})
             for g in tab_spec.get("groups", [])]
 
 

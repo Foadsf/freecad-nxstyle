@@ -100,6 +100,13 @@ def toggle_native_ui():
         _shell.toggle_native_ui()
 
 
+def workbench_toolbar(name):
+    """A toolbar the workbench brings, for a ribbon made from its toolbars: not one of FreeCAD's global toolbars
+    (FreeCAD 1.1 spells "Individual Views", 1.0 "Individual views") and not NX-Style's own hidden one."""
+    return (name.casefold() not in {t.casefold() for t in GLOBAL_TOOLBARS}
+            and name != commands.GLOBAL_TOOLBAR_NAME)
+
+
 def load_apps():
     data = config.load_json("ribbons", "apps.json")
     available = set(Gui.listWorkbenches())
@@ -109,6 +116,15 @@ def load_apps():
         if apps:
             groups.append((g["name"], apps))
             flat += apps
+    try:                                  # the user's own add-ons, with ribbons made from their toolbars
+        from . import addons
+        extra = addons.apps_freecad({a["workbench"] for g in data["groups"] for a in g["apps"]})
+    except Exception as e:
+        App.Console.PrintWarning(f"NXStyle: add-on workbenches not listed: {e}\n")
+        extra = []
+    if extra:
+        groups.append((addons.GROUP, extra))
+        flat += extra
     return groups, flat
 
 
@@ -265,14 +281,7 @@ class Shell(QtCore.QObject):
 
     def eventFilter(self, obj, ev):
         if obj is self.mw and ev.type() == QtCore.QEvent.Resize:
-            # Font/theme spacing can lift Qt's expanded minimum above the usual
-            # breakpoint. Collapse before that minimum traps a small window.
-            # Retain it while collapsed so the lower minimum cannot cause oscillation.
-            if not self.ribbon.is_collapsed():
-                self._ribbon_auto_threshold = max(self.AUTO_MINIMIZE_BELOW,
-                                                  self.mw.minimumSizeHint().height() + 24)
-            threshold = getattr(self, "_ribbon_auto_threshold", self.AUTO_MINIMIZE_BELOW)
-            self.ribbon.set_auto_minimized(self.mw.height() < threshold)
+            self.ribbon.set_auto_minimized(self.mw.height() < self.AUTO_MINIMIZE_BELOW)
         return False
 
     # An add-on panel docked with the navigators (Strata's needs 383 px) sets the whole window's minimum
@@ -392,7 +401,7 @@ class Shell(QtCore.QObject):
         except Exception:
             items = {}
         for tbname, cmds in items.items():
-            if tbname in GLOBAL_TOOLBARS:
+            if not workbench_toolbar(tbname):
                 continue
             entries = []
             for i, c in enumerate([c for c in cmds if c and c != "Separator"]):

@@ -181,6 +181,10 @@ class Smoke:
         yield self.s_thread, 300
         yield self.s_move, 300
         yield self.s_show_key, 300
+        yield self.s_macros, 300
+        yield self.s_view_cube, 300
+        yield self.s_imported_prefs, 300
+        yield self.s_user_addons, 300
         yield self.s_drafting_views, 300
         yield self.s_pmi_notes, 300
         yield self.s_geometry_oracle, 100
@@ -383,13 +387,10 @@ class Smoke:
         collapsed group whose menu lost a command."""
         from . import layout_check, ribbon_layout
         r = self.shell.ribbon
-        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: narrow ribbon
+        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: ribbon expanded, narrow
         Gui.getMainWindow().resize(*cell["window"])
         r.select("Home")
         layout_check.settle()
-        if r.is_collapsed():
-            r.show_popup()  # measure the visible page when theme/font metrics require minimisation
-            layout_check.settle()
         page = r.stack.currentWidget()
         page.layout_enabled = False
         page.refit()
@@ -420,7 +421,6 @@ class Smoke:
             fixed = layout_check.measure_page(page, "Home")
             self.check("layout check catches a command missing from a collapsed group's menu (negative control)",
                        broken["unreachable"] and not fixed["unreachable"], broken["unreachable"])
-        r.hide_popup()
         Gui.getMainWindow().resize(*self.SMOKE_WINDOW)
         layout_check.settle()
 
@@ -2736,6 +2736,29 @@ class Smoke:
         from . import smoke_show
         smoke_show.run(self)
 
+    def s_macros(self):
+        """Tools › Macros: FreeCAD's macro commands and a macro command of the user's own as a button that runs
+        it; removed again, its button goes (smoke_user_setup.py)."""
+        from . import smoke_user_setup
+        smoke_user_setup.run_macros(self)
+
+    def s_view_cube(self):
+        """View › Visualization › View Cube switches FreeCAD's view cube on and off (smoke_user_setup.py)."""
+        from . import smoke_user_setup
+        smoke_user_setup.run_view_cube(self)
+
+    def s_imported_prefs(self):
+        """Preferences imported from the normal FreeCAD profile are in effect, nxstyle.json still winning
+        (smoke_user_setup.py; skipped when the run imported none)."""
+        from . import smoke_user_setup
+        smoke_user_setup.run_imported_prefs(self)
+
+    def s_user_addons(self):
+        """Add-ons loaded from the normal FreeCAD profile are applications with ribbons made from their toolbars
+        (smoke_user_setup.py; skipped when the run loaded none)."""
+        from . import smoke_user_setup
+        smoke_user_setup.run_user_addons(self)
+
     def s_drafting_views(self):
         """NX's Projected View off a selected view (Above, Right, first angle, Close, undo), its edges against the
         Part API with a negative control, and the Note with a leader (smoke_drafting.py)."""
@@ -2987,11 +3010,14 @@ class Smoke:
             self.finish()
             return
         fn, delay = self.steps.pop(0)
+        t0 = time.monotonic()
         try:
             fn()
         except Exception:
             self.check(f"step {fn.__name__}", False, traceback.format_exc().splitlines()[-1])
             self.info[f"traceback {fn.__name__}"] = traceback.format_exc()
+        # [name, seconds in the step, ms waited after it]: shows which steps a slower run spends its time in
+        self.info.setdefault("step seconds", []).append([fn.__name__, round(time.monotonic() - t0, 2), delay])
         self.ran.append(fn.__name__)
         QtCore.QTimer.singleShot(delay, self.next)
 

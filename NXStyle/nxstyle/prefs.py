@@ -183,6 +183,27 @@ def apply_sketch_input(cfg=None):
     return index
 
 
+def view_cube_shown():
+    """FreeCAD's own view cube (Preferences › Display › Navigation › Navigation Cube) is on."""
+    return App.ParamGet(VIEW).GetBool("ShowNaviCube", True)
+
+
+def show_view_cube(on):
+    """Switch FreeCAD's view cube on or off. It is FreeCAD's own preference, so the choice is kept in the
+    profile and Preferences shows it; FreeCAD's views follow the parameter, and the ones already open are
+    set here as well. Returns the new state."""
+    App.ParamGet(VIEW).SetBool("ShowNaviCube", bool(on))
+    for gdoc in _gui_documents():
+        for view in gdoc.mdiViewsOfType("Gui::View3DInventor"):
+            try:
+                viewer = view.getViewer()
+                if viewer.isEnabledNaviCube() != bool(on):
+                    viewer.setEnabledNaviCube(bool(on))
+            except Exception:
+                pass
+    return view_cube_shown()
+
+
 def apply_navigation_to_open_views(cfg=None):
     """Set the navigation style on views that already exist."""
     cfg = cfg or config.get()

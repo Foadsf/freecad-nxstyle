@@ -113,6 +113,12 @@ python launch_nx.py part.FCStd
 | `--nxt`
 | Starts with the FreeCAD-Nxt add-on, a trial that is off by default (xref:nxt.adoc[]). To switch it on for good, set `"nxt": true`. It needs FreeCAD 1.1 or newer.
 
+| `--import-preferences [GROUPS]`
+| Copies preferences from your normal FreeCAD profile, which it only reads: `navigation` (the default), `view_cube`, `macros`, or `all`, comma-separated. To do it at every start, set `"import_preferences"` (xref:settings.adoc#import[]).
+
+| `--user-addons`
+| Also loads the add-ons of your normal FreeCAD profile, except those NX-Style bundles or the NX profile already has (xref:#addons[]). To do it at every start, set `"user_addons": true`.
+
 | `--install-dfm-deps`
 | Installs what the DFM Workbench needs (cadquery-ocp 7.8.1.1.post1 and VTK 9.3.1, pinned to FreeCAD 1.1's OpenCASCADE 7.8.1, and gmsh 4.15.2 for its colour maps) with FreeCAD's own Python, then exits. The only option that downloads anything.
 
@@ -145,8 +151,19 @@ The NX profile is a private set of FreeCAD user folders, one per FreeCAD version
 
 Inside it, `config` holds FreeCAD's `user.cfg` and NX-Style's `nxstyle.json` (see xref:settings.adoc[]), `data` holds the add-ons (`Mod`) and macros, and `temp` FreeCAD's temporary files.
 
-Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never read or written.
-That also means your usual FreeCAD add-ons do not load in the NX profile; install the ones you want there with *Tools › Add-on Manager*.
+Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never written, and read only when you ask for its preferences or add-ons (`--import-preferences`, xref:settings.adoc#import[]; `--user-addons`, xref:#addons[below]).
+That also means your usual FreeCAD add-ons do not load in the NX profile unless you ask for them (xref:#addons[below]).
+
+[#addons]
+=== Your add-ons
+
+Two ways bring a workbench you use into NX-Style:
+
+* Install it in the NX profile with *Tools › Add-on Manager*. It stays there and nothing else changes.
+* Load the add-ons of your normal FreeCAD as well: `python launch_nx.py --user-addons` for one start, or `"user_addons": true` in `nxstyle.json` for every start. The launcher loads them from your normal profile's `Mod` folder, which it only reads. It skips an add-on that NX-Style already bundles (Strata, Katydid, SheetMetal, LCInterlocking, the DFM Workbench, FreeCAD-Nxt) and one already in the NX profile, so nothing loads twice. It also skips one you disabled in the Add-on Manager. The start-up lines name what was loaded and what was skipped.
+
+Either way, each workbench appears under *Application › Add-ons* with a ribbon built from its own toolbars.
+An add-on that installed Python packages of its own through the Add-on Manager may need them in the NX profile too: install it there once as well.
 
 == Update
 

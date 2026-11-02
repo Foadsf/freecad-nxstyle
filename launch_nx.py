@@ -21,6 +21,7 @@ one bundled with FreeCAD) can run it.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -311,6 +312,358 @@ def build_command(install: Install, files: list[str], passthrough: list[str],
 
 
 # --------------------------------------------------------------------------
+# The user's normal FreeCAD profile: preferences brought into the NX profile on request. Only ever read.
+# --------------------------------------------------------------------------
+VIEW_GROUP = ("BaseApp", "Preferences", "View")
+# group -> [(parameter group path under Root, parameter names, or None for the whole group)]
+IMPORT_GROUPS = {
+    # File › Preferences › Display › Navigation, minus the view cube
+    "navigation": [(VIEW_GROUP, ["NavigationStyle", "OrbitStyle", "RotationMode", "ZoomAtCursor", "InvertZoom",
+                                 "ZoomStep", "DragAtCursor", "UseNavigationAnimations", "AnimationDuration",
+                                 "UseAutoRotation", "UseSpinningAnimations", "DisableTouchTilt", "ShowRotationCenter",
+                                 "RotationCenterSize", "RotationCenterColor"])],
+    # the Navigation Cube: shown or not, and how it looks
+    "view_cube": [(VIEW_GROUP, ["ShowNaviCube"]), (("BaseApp", "Preferences", "NaviCube"), None)],
+    # the macro commands of Tools › Customize › Macros (merged, see import_preferences); the macro files are copied
+    # into the NX profile's own Macro folder, never shared, so NX-Style never writes into the normal profile
+    "macros": [(("BaseApp", "Macro", "Macros"), None)],
+}
+MACRO_SUFFIXES = (".fcmacro", ".py")      # what FreeCAD's Macros dialog lists
+DEFAULT_IMPORT = ["navigation"]
+IMPORTED_FILE = "nxstyle.imported.json"
+
+
+def normal_profile(version: tuple[int, int, int] | None) -> dict[str, Path] | None:
+    """The normal FreeCAD profile of this FreeCAD version: {"config": folder of user.cfg, "data": folder of Mod}, or
+    None if there is none. FreeCAD 1.1 keeps one per version in a v<major>-<minor> subfolder (v1-1); the newest one
+    not newer than this FreeCAD is taken, else the unversioned folder that FreeCAD 1.0 and older use."""
+    if os.name == "nt":
+        base = Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming")) / "FreeCAD"
+        bases = {"config": base, "data": base}
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library/Application Support/FreeCAD"
+        bases = {"config": base, "data": base}
+    else:
+        bases = {"config": Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "FreeCAD",
+                 "data": Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "FreeCAD"}
+
+    def pick(base: Path) -> Path:
+        found = []
+        if base.is_dir():
+            for d in base.iterdir():
+                m = re.fullmatch(r"v(\d+)-(\d+)", d.name)
+                if m and d.is_dir():
+                    v = (int(m.group(1)), int(m.group(2)))
+                    if version is None or v <= tuple(version[:2]):
+                        found.append((v, d))
+        return max(found)[1] if found else base
+
+    out = {k: pick(b) for k, b in bases.items()}
+    return out if (out["config"] / "user.cfg").is_file() or (out["data"] / "Mod").is_dir() else None
+
+
+def _param_group(root, path: tuple[str, ...], create: bool = False):
+    """The FCParamGroup at Root/<path> of a parsed user.cfg, made when create is set; None when missing."""
+    import xml.etree.ElementTree as ET
+
+    node = next((g for g in root.findall("FCParamGroup") if g.get("Name") == "Root"), None)
+    if node is None:
+        if not create:
+            return None
+        node = ET.SubElement(root, "FCParamGroup", Name="Root")
+    for name in path:
+        found = next((g for g in node.findall("FCParamGroup") if g.get("Name") == name), None)
+        if found is None:
+            if not create:
+                return None
+            found = ET.SubElement(node, "FCParamGroup", Name=name)
+        node = found
+    return node
+
+
+def _param_value(el):
+    """A parameter element's value as Python: FCText -> str, FCBool -> bool, FCInt/FCUInt -> int, FCFloat -> float."""
+    kind = el.tag[2:]
+    if kind == "Text":
+        return el.text or ""
+    raw = el.get("Value", "")
+    try:
+        return raw == "1" if kind == "Bool" else float(raw) if kind == "Float" else int(raw)
+    except ValueError:
+        return raw
+
+
+def import_groups(choice) -> list[str]:
+    """The groups an --import-preferences value or an "import_preferences" setting names: a list or a comma list,
+    true = the default (navigation), "all" = every group. Raises ValueError on an unknown group."""
+    if choice is True:
+        return list(DEFAULT_IMPORT)
+    if not choice:
+        return []
+    names = [s.strip() for s in (choice.split(",") if isinstance(choice, str) else choice) if s and s.strip()]
+    if "all" in names:
+        return list(IMPORT_GROUPS)
+    unknown = [n for n in names if n not in IMPORT_GROUPS]
+    if unknown:
+        raise ValueError(f"unknown preference group(s) {unknown}; choose from {sorted(IMPORT_GROUPS)} or 'all'")
+    return list(dict.fromkeys(names))
+
+
+def normal_macro_dir(src_root, normal_data: Path | None) -> Path | None:
+    """The normal profile's macro folder: its MacroPath preference, else <data>/Macro (FreeCAD's default)."""
+    group = _param_group(src_root, ("BaseApp", "Preferences", "Macro"))
+    el = next((e for e in group if e.tag == "FCText" and e.get("Name") == "MacroPath"), None) \
+        if group is not None else None
+    if el is not None and (el.text or "").strip():
+        return Path(el.text.strip()).expanduser()
+    return normal_data / "Macro" if normal_data else None
+
+
+def copy_macros(source: Path | None, target: Path) -> dict:
+    """Copy the macro files of the normal macro folder (only read) into the NX profile's. A file the NX profile
+    already has is kept as it is, so a macro edited in NX-Style is never overwritten."""
+    copied, kept = [], []
+    if source is not None and source.is_dir():
+        target.mkdir(parents=True, exist_ok=True)
+        for f in sorted(source.iterdir()):
+            if not (f.is_file() and f.suffix.lower() in MACRO_SUFFIXES):
+                continue
+            if (target / f.name).exists():
+                kept.append(f.name)
+            else:
+                shutil.copy2(f, target / f.name)
+                copied.append(f.name)
+    return {"from": str(source) if source else None, "to": str(target), "copied": copied, "kept": kept}
+
+
+def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str], normal_data: Path | None = None,
+                       macro_target: Path | None = None) -> dict:
+    """Copy the parameters of these groups from the normal user.cfg (only read) into the NX profile's user.cfg.
+
+    Single parameters replace the NX profile's; a whole group (the view cube's look) is replaced. Macro commands
+    are merged: one from the normal profile whose script the NX profile does not have yet is added under the next
+    free Std_Macro_<n>, so the NX profile's own macro commands stay and a second import adds nothing; their macro
+    files are copied into macro_target (the NX profile's Macro folder), which stays NX-Style's macro folder.
+    Returns the record that NX-Style reads (nxstyle.imported.json): what was copied, and the NX-Style settings it
+    stands for ("navigation", "zoom_at_cursor", "invert_wheel_zoom"); nxstyle.json still overrides those.
+    Raises ET.ParseError or OSError when the normal user.cfg cannot be read."""
+    import copy
+    import xml.etree.ElementTree as ET
+
+    src = ET.parse(source_cfg).getroot()
+    tree = ET.parse(target_cfg) if target_cfg.is_file() else ET.ElementTree(ET.Element("FCParameters"))
+    dst = tree.getroot()
+    copied: dict[str, dict] = {}
+    for group in groups:
+        for path, names in IMPORT_GROUPS[group]:
+            sgroup = _param_group(src, path)
+            if sgroup is None:
+                continue
+            key = "/".join(path)
+            if path == ("BaseApp", "Macro", "Macros"):
+                dgroup = _param_group(dst, path, create=True)
+                have = {_script(g): g.get("Name") for g in dgroup.findall("FCParamGroup")}
+                used = {g.get("Name") for g in dgroup.findall("FCParamGroup")}
+                added, present = [], []
+                for g in sgroup.findall("FCParamGroup"):
+                    if _script(g) in have:
+                        present.append({"command": have[_script(g)], "script": _script(g)})
+                        continue
+                    n = 0
+                    while f"Std_Macro_{n}" in used:
+                        n += 1
+                    new = copy.deepcopy(g)
+                    new.set("Name", f"Std_Macro_{n}")
+                    dgroup.append(new)
+                    used.add(new.get("Name"))
+                    have[_script(g)] = new.get("Name")
+                    added.append({"command": new.get("Name"), "script": _script(g)})
+                    present.append(added[-1])
+                # "commands": every macro command of the normal profile, as the NX profile now has it
+                copied[key] = {"added": added, "commands": present}
+            elif names is None:
+                parent = _param_group(dst, path[:-1], create=True)
+                old = next((g for g in parent.findall("FCParamGroup") if g.get("Name") == path[-1]), None)
+                if old is not None:
+                    parent.remove(old)
+                parent.append(copy.deepcopy(sgroup))
+                copied[key] = {el.get("Name"): _param_value(el) for el in sgroup if el.tag != "FCParamGroup"}
+            else:
+                dgroup = _param_group(dst, path, create=True)
+                for el in sgroup:
+                    if el.tag == "FCParamGroup" or el.get("Name") not in names:
+                        continue
+                    for old in [o for o in dgroup if o.tag != "FCParamGroup" and o.get("Name") == el.get("Name")]:
+                        dgroup.remove(old)
+                    dgroup.append(copy.deepcopy(el))
+                    copied.setdefault(key, {})[el.get("Name")] = _param_value(el)
+    if "macros" in groups and macro_target is not None:
+        copied["macro files"] = copy_macros(normal_macro_dir(src, normal_data), macro_target)
+        mgroup = _param_group(dst, ("BaseApp", "Preferences", "Macro"), create=True)
+        if not any(e.get("Name") == "MacroPath" for e in mgroup if e.tag == "FCText"):
+            ET.SubElement(mgroup, "FCText", Name="MacroPath").text = str(macro_target)
+    target_cfg.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(target_cfg, encoding="UTF-8", xml_declaration=True)
+    view = copied.get("/".join(VIEW_GROUP), {})
+    settings = {}
+    if "navigation" in groups:
+        for param, setting in (("NavigationStyle", "navigation"), ("ZoomAtCursor", "zoom_at_cursor"),
+                               ("InvertZoom", "invert_wheel_zoom")):
+            if param in view:
+                settings[setting] = view[param]
+    return {"source": str(source_cfg), "groups": groups, "parameters": copied, "settings": settings}
+
+
+def _script(group) -> str:
+    """The script file of a macro command's parameter group."""
+    el = next((e for e in group if e.tag == "FCText" and e.get("Name") == "Script"), None)
+    return (el.text or "") if el is not None else ""
+
+
+def bring_preferences(paths: dict[str, Path], groups: list[str], version: tuple[int, int, int] | None,
+                      normal_dir: str | dict = "") -> str:
+    """At each start: import these groups from the normal profile (normal_dir, else FreeCAD's usual folder) into
+    the NX profile and write nxstyle.imported.json; with no group, remove that record, so NX-Style's own defaults
+    decide again. Returns the start-up line."""
+    record_path = paths["home"] / IMPORTED_FILE
+    if not groups:
+        if record_path.is_file():
+            record_path.unlink()
+        return "none imported (--import-preferences, or \"import_preferences\" in nxstyle.json, brings yours)"
+    import xml.etree.ElementTree as ET
+
+    normal = normal_dirs(version, normal_dir)
+    source = normal["config"] / "user.cfg" if normal else None
+    if source is None or not source.is_file() or _is_within(source, paths["home"].parent.resolve()):
+        if record_path.is_file():
+            record_path.unlink()
+        return f"normal FreeCAD profile not found ({source or 'no user.cfg'}); nothing imported"
+    macro_target, macro_note = nx_macro_dir(paths) if "macros" in groups else (None, "")
+    try:
+        record = import_preferences(source, paths["home"] / "user.cfg", groups, normal["data"], macro_target)
+    except (ET.ParseError, OSError) as e:
+        if record_path.is_file():
+            record_path.unlink()
+        return f"nothing imported: {source} could not be read ({e})"
+    record_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+    return f"{', '.join(groups)} imported from {source} (only read){macro_note}"
+
+
+def normal_dirs(version: tuple[int, int, int] | None, normal_dir="") -> dict[str, Path] | None:
+    """{"config": folder of user.cfg, "data": folder of Mod and Macro} of the normal profile: "normal_profile" when
+    set (one folder for both, as on Windows and macOS, or {"config": ..., "data": ...} for Linux's two), else
+    FreeCAD's usual folders (normal_profile)."""
+    if isinstance(normal_dir, dict):
+        config, data = normal_dir.get("config") or normal_dir.get("data"), normal_dir.get("data") or \
+            normal_dir.get("config")
+        return {"config": Path(config).expanduser(), "data": Path(data).expanduser()} if config else None
+    if normal_dir:
+        folder = Path(normal_dir).expanduser()
+        return {"config": folder, "data": folder}
+    return normal_profile(version)
+
+
+def nx_macro_dir(paths: dict[str, Path]) -> tuple[Path | None, str]:
+    """Where imported macro files go: the NX profile's MacroPath when it lies inside the NX profile, else
+    <profile>/data/Macro (import_preferences makes that its MacroPath when it has none). None, with a note, when
+    the NX profile's MacroPath points outside it: nothing is copied there."""
+    import xml.etree.ElementTree as ET
+
+    default = paths["data"] / "Macro"
+    try:
+        root = ET.parse(paths["home"] / "user.cfg").getroot()
+    except (OSError, ET.ParseError):
+        return default, ""
+    group = _param_group(root, ("BaseApp", "Preferences", "Macro"))
+    el = next((e for e in group if e.tag == "FCText" and e.get("Name") == "MacroPath"), None) \
+        if group is not None else None
+    if el is None or not (el.text or "").strip():
+        return default, ""
+    own = Path(el.text.strip()).expanduser()
+    if _is_within(own, paths["home"].parent.resolve()):
+        return own, ""
+    return None, f"; macro files not copied: the NX profile's macro folder is {own}, outside the NX profile"
+
+
+# --------------------------------------------------------------------------
+# The user's own add-ons from the normal profile's Mod folder, loaded with -M on request ("user_addons")
+# --------------------------------------------------------------------------
+VENDOR_DIR = HERE / "vendor"
+# a file inside an add-on that says which bundled one it is, whatever its folder is called
+BUNDLED_MARKERS = ("strata/__init__.py", "katydid/__init__.py", "SheetMetalCmd.py", "lasercut/join.py",
+                   "freecad/nxt/init_gui.py", "freecad/DFM/init_gui.py", "nxstyle/__init__.py",
+                   "NXStyle/nxstyle/__init__.py")
+
+
+def package_name(folder: Path) -> str:
+    """The <name> of an add-on's package.xml (the Addon Manager's metadata), or ""."""
+    import xml.etree.ElementTree as ET
+
+    try:
+        root = ET.parse(folder / "package.xml").getroot()
+    except (OSError, ET.ParseError):
+        return ""
+    el = next((c for c in root if c.tag == "name" or c.tag.endswith("}name")), None)
+    return (el.text or "").strip() if el is not None else ""
+
+
+def addon_identity(folder: Path) -> set[str]:
+    """What tells two copies of one add-on apart from others: folder name, package name, bundled markers."""
+    ids = {folder.name.lower()}
+    name = package_name(folder)
+    if name:
+        ids.add(name.lower())
+    ids |= {f"marker:{m}" for m in BUNDLED_MARKERS if (folder / m).is_file()}
+    return ids
+
+
+def is_freecad_module(folder: Path) -> bool:
+    """A folder FreeCAD loads as a module: Init.py / InitGui.py, or a freecad.<name> namespace package."""
+    if (folder / "Init.py").is_file() or (folder / "InitGui.py").is_file():
+        return True
+    ns = folder / "freecad"
+    return ns.is_dir() and any((p / "__init__.py").is_file() or (p / "init_gui.py").is_file()
+                               for p in ns.iterdir() if p.is_dir())
+
+
+def find_user_addons(profile: Path, version: tuple[int, int, int] | None, enabled: bool,
+                     normal_dir: str | dict = "") -> tuple[list[Path], str]:
+    """The add-ons of the normal FreeCAD profile's Mod folder to load with -M, and the start-up line. Off unless
+    asked for. Skipped: one bundled under vendor/ (it loads from there, or is off on purpose), one already in the
+    NX profile's own Mod folder (FreeCAD loads that itself), one the Addon Manager disabled (ADDON_DISABLED), and a
+    folder that is no FreeCAD module (a parts library, a preference pack)."""
+    if not enabled:
+        return [], "not loaded (--user-addons, or \"user_addons\": true in nxstyle.json, loads them)"
+    normal = normal_dirs(version, normal_dir)
+    mods = normal["data"] / "Mod" if normal else None
+    if mods is None or not mods.is_dir():
+        return [], f"none found ({mods or 'no normal FreeCAD profile'})"
+    taken = set()
+    for d in sorted(VENDOR_DIR.iterdir()) if VENDOR_DIR.is_dir() else []:
+        if d.is_dir():
+            taken |= addon_identity(d)
+    own = profile / "data" / "Mod"
+    for d in sorted(own.iterdir()) if own.is_dir() else []:
+        if d.is_dir():
+            taken |= addon_identity(d)
+    load, skipped = [], []
+    for d in sorted(mods.iterdir(), key=lambda p: p.name.lower()):
+        if not d.is_dir():
+            continue
+        if (d / "ADDON_DISABLED").exists():
+            skipped.append(f"{d.name} (disabled)")
+        elif not is_freecad_module(d):
+            skipped.append(f"{d.name} (not a module)")
+        elif addon_identity(d) & taken:
+            skipped.append(f"{d.name} (bundled or already in the NX profile)")
+        else:
+            load.append(d)
+            taken |= addon_identity(d)
+    why = f"{', '.join(d.name for d in load) or 'none'} from {mods}"
+    return load, why + (f"; skipped {', '.join(skipped)}" if skipped else "")
+
+
+# --------------------------------------------------------------------------
 # Strata: data management next to NXStyle (the role Teamcenter plays next to NX)
 # --------------------------------------------------------------------------
 STRATA_DIR = HERE / "vendor" / "freecad-strata"     # git submodule of github.com/Foadsf/freecad-strata
@@ -574,6 +927,58 @@ HARNESS_SCHEMA = "nxstyle-harness/1"
 RESULT_FILES = {"smoke": "smoke.json", "tutorial": "tutorial.json"}
 EXIT_INVALID_RESULT = 6            # stale, empty, truncated, unfinished or another run's result
 EXIT_CHILD_FAILED = 7              # FreeCAD exited with an error code
+
+# A run's time limit grows with what it plans to do, so adding self-test steps or tutorials does not push a
+# healthy run over a fixed limit, while a run that hangs still ends. The self-test's 87 steps took 679 s on an
+# otherwise idle machine (2026-11-01: 567 s of step work, 58 s of planned waits, 55 s around them) and 1705 s on
+# the same machine while other work held it at 80 % CPU (1478 s of step work, 19.6 s a step of wall time), where
+# the geometry-bound steps run two to three times slower. SMOKE_STEP_S is that loaded per-step cost with
+# headroom, so a run that only shares the machine still fits while a run that hangs still ends.
+SMOKE_BASE_S = 120                 # FreeCAD's start, Strata's wait, writing the result and closing
+SMOKE_STEP_S = 24                  # per planned step of smoke.py's plan(); the 89-step plan -> 2256 s
+TUTORIAL_BASE_S = 300
+TUTORIAL_EACH_S = 300              # a textbook tutorial takes about a minute, a Katydid one up to about 8
+SMOKE_SOURCE = MODULE_DIR / "nxstyle" / "smoke.py"
+
+
+def smoke_planned_steps(source: Path = SMOKE_SOURCE) -> int:
+    """How many steps Smoke.plan() yields, read from smoke.py without importing it (it needs FreeCAD)."""
+    tree = ast.parse(source.read_text(encoding="utf-8"))
+    for cls in tree.body:
+        if isinstance(cls, ast.ClassDef) and cls.name == "Smoke":
+            for fn in cls.body:
+                if isinstance(fn, ast.FunctionDef) and fn.name == "plan":
+                    return sum(isinstance(n, ast.Yield) for n in ast.walk(fn))
+    raise ValueError(f"{source} has no Smoke.plan()")
+
+
+def harness_timeout(harness: str, tutorials: str, override: int | None = None,
+                    steps: int | None = None) -> int:
+    """Seconds a smoke or tutorial run may take before it is ended as hung: override if given, otherwise
+    a base plus an allowance per planned self-test step (steps, default counted from smoke.py) or per
+    tutorial."""
+    if override is not None:
+        if override <= 0:
+            raise ValueError(f"the time limit must be positive, not {override}")
+        return override
+    if harness == "tutorial":
+        return TUTORIAL_BASE_S + TUTORIAL_EACH_S * len([t for t in tutorials.split(",") if t.strip()])
+    return SMOKE_BASE_S + SMOKE_STEP_S * (smoke_planned_steps() if steps is None else steps)
+
+
+def set_console_errors(*streams) -> None:
+    """Let the report print characters the console's code page cannot encode as replacements instead of ending
+    the run with a UnicodeEncodeError: NXStyle's own labels carry a tick and a star (the ribbon's done mark,
+    the collector's empty mark), and judge_result prints a check's detail back unchanged. stdout and stderr
+    unless streams are given."""
+    for stream in streams or (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:                     # a redirected or replaced stream may not be a TextIOWrapper
+            continue
+        try:
+            reconfigure(errors="replace")
+        except (ValueError, OSError):               # detached, closed, or not reconfigurable: leave it
+            pass
 
 
 def judge_result(path: Path, harness: str, run_id: str, child_code: int | None,
@@ -856,6 +1261,10 @@ def main(argv: list[str] | None = None) -> int:
                          "no FEM, no QtTest) fails the run instead of being reported apart")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
+    ap.add_argument("--timeout", type=int, metavar="SECONDS",
+                    help=f"with --smoke-test/--tutorial: end the run after this many seconds (default: "
+                         f"{SMOKE_BASE_S} s + {SMOKE_STEP_S} s per planned self-test step, or {TUTORIAL_BASE_S} s + "
+                         f"{TUTORIAL_EACH_S} s per tutorial)")
     ap.add_argument("--max-memory-gb", type=float, default=HARNESS_MEMORY_GB,
                     help=f"with --smoke-test/--tutorial on Windows: end the run when FreeCAD uses more "
                          f"(default {HARNESS_MEMORY_GB:g})")
@@ -875,12 +1284,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-dfm", action="store_true",
                     help="start without the DFM add-on (Analysis > Molded Part Validation; on by default once "
                          "--install-dfm-deps has run)")
+    ap.add_argument("--import-preferences", nargs="?", const="navigation", metavar="GROUPS",
+                    help=f"copy preferences from your normal FreeCAD profile, which is only read: a comma list of "
+                         f"{', '.join(IMPORT_GROUPS)} or all (default: navigation); \"import_preferences\" in "
+                         f"nxstyle.json does it at every start")
+    ap.add_argument("--user-addons", action="store_true",
+                    help="also load the add-ons of your normal FreeCAD profile's Mod folder (not those NX-Style "
+                         "bundles or the NX profile has); \"user_addons\": true in nxstyle.json does it at every start")
     ap.add_argument("--install-dfm-deps", action="store_true",
                     help=f"install what the DFM add-on needs ({', '.join(DFM_DEPS)}) with FreeCAD's own Python "
                          f"into {default_profile_root()}/pydeps, then exit (downloads about 165 MB)")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
+    set_console_errors()
+    if args.timeout is not None and args.timeout <= 0:
+        ap.error(f"--timeout must be a positive number of seconds, not {args.timeout}")
     passthrough = args.passthrough[1:] if args.passthrough[:1] == ["--"] else args.passthrough
 
     if args.list:
@@ -911,6 +1330,12 @@ def main(argv: list[str] | None = None) -> int:
         profile = args.profile or default_profile_root() / f"profile-{ver}"
         reset = args.reset_profile
 
+    settings = read_settings(profile.resolve())
+    try:
+        groups = import_groups(args.import_preferences if args.import_preferences is not None
+                               else settings.get("import_preferences"))
+    except ValueError as e:
+        ap.error(str(e))
     strata, strata_why = find_strata(profile.resolve(), disabled=args.no_strata)
     extra["NXSTYLE_STRATA_EXPECTED"] = "1" if strata or "NX profile" in strata_why else "0"
     katydid, katydid_why = find_katydid(profile.resolve(), disabled=args.no_katydid)
@@ -927,20 +1352,27 @@ def main(argv: list[str] | None = None) -> int:
     nxt, nxt_why = find_nxt(profile.resolve(), install, enabled=args.nxt)
     if nxt or "NX profile" in nxt_why:
         extra["NXSTYLE_NXT_EXPECTED"] = "1"
+    addons, addons_why = find_user_addons(profile.resolve(), install.version,
+                                          args.user_addons or settings.get("user_addons") is True,
+                                          settings.get("normal_profile", ""))
+    if addons:
+        extra["NXSTYLE_USER_ADDONS"] = os.pathsep.join(str(a) for a in addons)
     cmd = build_command(install, args.files, passthrough,
                         tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m) + dfm
-                        + ((nxt,) if nxt else ()))
+                        + ((nxt,) if nxt else ()) + tuple(addons))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
-                          "nxt": nxt_why, "carbon": carbon_why,
+                          "nxt": nxt_why, "carbon": carbon_why, "import_preferences": groups,
+                          "user_addons": addons_why,
                           "command": cmd},
                          indent=2))
         return 0
 
     paths = prepare_profile(profile, reset=reset)
     seed_user_cfg(paths, install.version)
+    prefs_why = bring_preferences(paths, groups, install.version, settings.get("normal_profile", ""))
     env = build_env(paths, extra)
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")
@@ -951,13 +1383,14 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Carbon: {carbon_why}")
     print(f"DFM: {dfm_why}")
     print(f"Nxt: {nxt_why}")
+    print(f"Preferences: {prefs_why}")
+    print(f"Your add-ons: {addons_why}")
 
     if harness:
         if os.name == "nt":
             stats = {}
-            # the self-test takes about 2 minutes; a textbook tutorial about a minute, a canvas (Katydid) one
-            # up to about 8 (measured 2026-10-14: O-R together ~20 min)
-            timeout_s = 300 + 300 * len(args.tutorials.split(",")) if harness == "tutorial" else 600
+            timeout_s = harness_timeout(harness, args.tutorials, args.timeout)
+            print(f"time limit: {timeout_s} s")
             try:
                 code = run_on_hidden_desktop(cmd, env, timeout_s=timeout_s, max_memory_gb=args.max_memory_gb,
                                              hidden=not args.visible, stats=stats)
@@ -977,7 +1410,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             proc = subprocess.Popen(cmd, env=env)
             try:
-                code = proc.wait(timeout=600)
+                code = proc.wait(timeout=harness_timeout(harness, args.tutorials, args.timeout))
             except subprocess.TimeoutExpired:
                 proc.kill()
                 print(f"{harness} run timed out", file=sys.stderr)
