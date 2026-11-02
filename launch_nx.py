@@ -578,12 +578,12 @@ EXIT_CHILD_FAILED = 7              # FreeCAD exited with an error code
 
 # A run's time limit grows with what it plans to do, so adding self-test steps or tutorials does not push a
 # healthy run over a fixed limit, while a run that hangs still ends. The self-test's 87 steps took 679 s on an
-# otherwise idle machine (2026-11-01: 567 s of step work, 58 s of planned waits, 55 s around them), but the same
-# 87 steps needed about 1585 s on that machine while other work held it at 80 % CPU, where the geometry-bound
-# steps run two to three times slower. SMOKE_STEP_S is that loaded per-step cost with headroom, so a run that
-# only shares the machine still fits while a run that hangs still ends.
+# otherwise idle machine (2026-11-01: 567 s of step work, 58 s of planned waits, 55 s around them) and 1705 s on
+# the same machine while other work held it at 80 % CPU (1478 s of step work, 19.6 s a step of wall time), where
+# the geometry-bound steps run two to three times slower. SMOKE_STEP_S is that loaded per-step cost with
+# headroom, so a run that only shares the machine still fits while a run that hangs still ends.
 SMOKE_BASE_S = 120                 # FreeCAD's start, Strata's wait, writing the result and closing
-SMOKE_STEP_S = 24                  # per planned step of smoke.py's plan(); 87 steps -> 2208 s
+SMOKE_STEP_S = 24                  # per planned step of smoke.py's plan(); the 89-step plan -> 2256 s
 TUTORIAL_BASE_S = 300
 TUTORIAL_EACH_S = 300              # a textbook tutorial takes about a minute, a Katydid one up to about 8
 SMOKE_SOURCE = MODULE_DIR / "nxstyle" / "smoke.py"

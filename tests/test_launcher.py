@@ -718,19 +718,21 @@ class TimeLimitTests(unittest.TestCase):
         self.assertEqual(launch_nx.smoke_planned_steps(), plan.count("        yield self.s_"))
 
     def test_smoke_limit_for_a_small_and_a_large_plan(self):
-        for steps in (5, 87, 200):                     # a small plan, the real one, and a large one
+        for steps in (5, launch_nx.smoke_planned_steps(), 200):   # a small plan, the real one, and a large one
             self.assertEqual(launch_nx.harness_timeout("smoke", "", steps=steps),
                              launch_nx.SMOKE_BASE_S + steps * launch_nx.SMOKE_STEP_S)
         self.assertEqual(launch_nx.harness_timeout("smoke", "", steps=11)
                          - launch_nx.harness_timeout("smoke", "", steps=10), launch_nx.SMOKE_STEP_S)
 
     def test_full_self_test_fits_with_room(self):
-        # 87 steps took 679 s idle and about 1585 s while other work held the machine at 80 % CPU (2026-11-01);
-        # the old fixed 600 s ended the idle run, and a per-step allowance must cover the loaded one too
+        # The measured runs of the 87-step plan (2026-11-01): 679 s on an otherwise idle machine and 1705 s
+        # while other work held the machine at 80 % CPU (1478 s of step work). The old fixed 600 s ended the
+        # idle run, and a per-step allowance must cover the loaded one too.
+        loaded_wall_s, loaded_steps = 1705, 87
         steps = launch_nx.smoke_planned_steps()
         limit = launch_nx.harness_timeout("smoke", "")
         self.assertGreater(limit, 600)
-        self.assertGreaterEqual(limit, 18 * steps)      # the loaded run's measured per-step cost
+        self.assertGreaterEqual(limit, loaded_wall_s / loaded_steps * steps)
 
     def test_tutorial_limit_grows_with_the_tutorials(self):
         self.assertEqual(launch_nx.harness_timeout("tutorial", "A,B,C"),
@@ -747,9 +749,12 @@ class TimeLimitTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt", "the job-object runner is Windows-only")
     def test_hung_run_is_ended_at_the_limit(self):
         t0 = time.monotonic()
-        code = launch_nx.run_on_hidden_desktop([sys.executable, "-c", "import time; time.sleep(120)"],
-                                               dict(os.environ), timeout_s=launch_nx.harness_timeout(
-                                                   "smoke", "", override=2), hidden=False)
+        try:
+            code = launch_nx.run_on_hidden_desktop([sys.executable, "-c", "import time; time.sleep(120)"],
+                                                   dict(os.environ), timeout_s=launch_nx.harness_timeout(
+                                                       "smoke", "", override=2), hidden=False)
+        except launch_nx.HarnessBusy:
+            self.skipTest("another NX-style run holds the harness")   # not this test's business
         self.assertIsNone(code)                       # main() reports None as "timed out", exit 3
         self.assertLess(time.monotonic() - t0, 30)
 
@@ -765,7 +770,10 @@ class TimeLimitTests(unittest.TestCase):
 
             def spy(cmd, env, timeout_s, **kw):
                 seen["timeout_s"] = timeout_s
-                return real(cmd, env, timeout_s, **kw)
+                try:
+                    return real(cmd, env, timeout_s, **kw)
+                except launch_nx.HarnessBusy:
+                    self.skipTest("another NX-style run holds the harness")   # not this test's business
 
             with mock.patch.object(launch_nx, "pick_install", return_value=install), \
                  mock.patch.object(launch_nx, "build_command", return_value=sleeper), \
