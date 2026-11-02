@@ -100,6 +100,13 @@ def toggle_native_ui():
         _shell.toggle_native_ui()
 
 
+def workbench_toolbar(name):
+    """A toolbar the workbench brings, for a ribbon made from its toolbars: not one of FreeCAD's global toolbars
+    (FreeCAD 1.1 spells "Individual Views", 1.0 "Individual views") and not NX-Style's own hidden one."""
+    return (name.casefold() not in {t.casefold() for t in GLOBAL_TOOLBARS}
+            and name != commands.GLOBAL_TOOLBAR_NAME)
+
+
 def load_apps():
     data = config.load_json("ribbons", "apps.json")
     available = set(Gui.listWorkbenches())
@@ -109,6 +116,15 @@ def load_apps():
         if apps:
             groups.append((g["name"], apps))
             flat += apps
+    try:                                  # the user's own add-ons, with ribbons made from their toolbars
+        from . import addons
+        extra = addons.apps_freecad({a["workbench"] for g in data["groups"] for a in g["apps"]})
+    except Exception as e:
+        App.Console.PrintWarning(f"NXStyle: add-on workbenches not listed: {e}\n")
+        extra = []
+    if extra:
+        groups.append((addons.GROUP, extra))
+        flat += extra
     return groups, flat
 
 
@@ -385,7 +401,7 @@ class Shell(QtCore.QObject):
         except Exception:
             items = {}
         for tbname, cmds in items.items():
-            if tbname in GLOBAL_TOOLBARS:
+            if not workbench_toolbar(tbname):
                 continue
             entries = []
             for i, c in enumerate([c for c in cmds if c and c != "Separator"]):

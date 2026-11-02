@@ -18,7 +18,7 @@ Strata (`vendor/freecad-strata`), Katydid (`vendor/Katydid`), FreeCAD's SheetMet
 
 ## How it stays out of your normal FreeCAD
 
-FreeCAD reads its user folders from `FREECAD_USER_HOME`, `FREECAD_USER_DATA` and `FREECAD_USER_TEMP` (the folders must already exist; FreeCAD ignores the variables otherwise). The launcher points them at a private profile: `%LOCALAPPDATA%\FreeCAD-NXStyle\profile-<version>` on Windows, `~/.local/share/freecad-nxstyle/…` on Linux, `~/Library/Application Support/FreeCAD-NXStyle/…` on macOS. It loads the `NXStyle` module from this folder with FreeCAD's `-M` switch, and Strata from `vendor/freecad-strata` the same way (unless a Strata is already installed in the NX profile's own `Mod` folder, so it never loads twice). Nothing is installed into FreeCAD or into your normal `%APPDATA%\FreeCAD`. The launcher refuses any profile path that overlaps that folder. Your normal add-ons do not load in the NX profile, by design.
+FreeCAD reads its user folders from `FREECAD_USER_HOME`, `FREECAD_USER_DATA` and `FREECAD_USER_TEMP` (the folders must already exist; FreeCAD ignores the variables otherwise). The launcher points them at a private profile: `%LOCALAPPDATA%\FreeCAD-NXStyle\profile-<version>` on Windows, `~/.local/share/freecad-nxstyle/…` on Linux, `~/Library/Application Support/FreeCAD-NXStyle/…` on macOS. It loads the `NXStyle` module from this folder with FreeCAD's `-M` switch, and Strata from `vendor/freecad-strata` the same way (unless a Strata is already installed in the NX profile's own `Mod` folder, so it never loads twice). Nothing is installed into FreeCAD or into your normal `%APPDATA%\FreeCAD`. The launcher refuses any profile path that overlaps that folder. Your normal add-ons do not load in the NX profile unless you ask: `--user-addons` (or `"user_addons": true`) loads them from your normal profile's `Mod` folder, read only, skipping those NX-Style bundles, and their workbenches appear under Application › Add-ons with ribbons built from their toolbars.
 
 Delete the profile folder (or run `--reset-profile`) and it is gone.
 
@@ -38,7 +38,7 @@ Delete the profile folder (or run `--reset-profile`) and it is gone.
 | Sketch task environment | Contextual **Sketch** tab with Finish Sketch, Profile, Rapid Dimension, constraints; MB2 ends the active curve tool |
 | Mouse | MB2 rotate; hold MB2 to rotate about the point under the cursor; Shift+MB2 / MB2+MB3 pan; Ctrl+MB2 / MB1+MB2 zoom; wheel zoom; **MB2 click = OK**; **hold MB3 = radial menu** (view menu, or object menu over a part) |
 | Keys | All 65 bindings from [NXtips](https://github.com/Foadsf/NXtips): file, edit, view (Home, End, Ctrl+Alt+F/T/R/L, F5–F8, W, Ctrl+H), selection (Ctrl+B, Ctrl+Shift+I/K/U/B, Ctrl+J, Ctrl+I), sketch (Z, R, L, A, O, P, S, T, E, F, D, C, Ctrl+Q), applications (Ctrl+M, Ctrl+Shift+D/M/Y, Ctrl+Alt+S), Ctrl+1/2/E/L, F4 Touch Mode. Each one is pressed by the self-test; see [docs/SHORTCUTS.md](docs/SHORTCUTS.md) |
-| Graphics window | Light-grey gradient background (five NX presets on View › Background), red preselection, orange selection, grey bodies with dark edges, view triad bottom-left (drawn by NXStyle; FreeCAD 1.0 can only put its own bottom-right), no view cube |
+| Graphics window | Light-grey gradient background (five NX presets on View › Background), red preselection, orange selection, grey bodies with dark edges, view triad bottom-left (drawn by NXStyle; FreeCAD 1.0 can only put its own bottom-right), no view cube until View › Visualization › View Cube switches FreeCAD's on (it stays on) |
 | Cue line | NX-style prompt at the bottom left |
 | Assemblies | NX's Assembly template (a new document in Assemblies starts with an empty Assembly) and NX constraint names: Touch Align, Concentric, Align Axes, Align/Lock, Fix, Bond, Parallel, Perpendicular, Angle |
 | Drafting › Feature Control Frame, Datum Feature Symbol | NX's GD&T dialogs: characteristic, Ø zone, tolerance, material condition, datums with modifiers; placed against the selected edge or under the selected dimension; values stay editable (FreeCAD itself has only fixed GD&T pictures) |
@@ -102,6 +102,12 @@ python launch_nx.py --reset-profile
 ```bash
 python launch_nx.py --no-strata
 ```
+
+```bash
+python launch_nx.py --import-preferences navigation,macros
+```
+
+That last one copies your normal FreeCAD's navigation style, orbit style and zoom, and your macro commands with copies of their macro files, into the NX profile; your normal profile is only read. `"import_preferences": ["navigation", "macros"]` in `nxstyle.json` does it at every start, and a `"navigation"` you set there still wins ([settings](https://foadsf.github.io/freecad-nxstyle/nxstyle/settings.html#import)).
 
 Settings live in `nxstyle.json` inside the profile's `config` folder, which is created on first start. You can change the navigation (`"nx"` = this project's mouse handling on any FreeCAD version, `"native"` = FreeCAD 1.1's own Siemens NX style), labels (`"nx"` or `"freecad"`), units (`"metric"`, the default: millimetres and kilograms, and an imperial schema is switched back; `"freecad"` leaves FreeCAD's choice alone), colours, background, hold delays, whether the feature dialog floats over the graphics window, data management (`"plm": "strata"`, the default, or `"none"`) and manufacturing (`"manufacturing": "carbon"`, the default, or `"none"`; the Carbon server is set on PLM › Manufacturing Connection).
 

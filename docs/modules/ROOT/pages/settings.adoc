@@ -50,6 +50,9 @@ include::partial$generated/settings.adoc[]
 | Start in Drafting | `"default_application": "drafting"`
 | FreeCAD 1.1's own NX mouse style | `"navigation": "native"`
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
+| FreeCAD's view cube | not a setting here: *View › Visualization › View Cube*, kept by FreeCAD
+| Your normal FreeCAD's navigation and macros (xref:#import[below]) | `"import_preferences": ["navigation", "macros"]`
+| Your normal FreeCAD's add-ons as well (xref:installation.adoc#addons[]) | `"user_addons": true`
 | No data management | `"plm": "none"`
 | No Algorithmic Modeling (Katydid) | `"algorithmic_modeling": "none"`
 | No Sheet Metal (SheetMetal add-on) | `"sheet_metal": "none"`
@@ -59,6 +62,42 @@ include::partial$generated/settings.adoc[]
 | The FreeCAD-Nxt add-on, a trial (off by default; xref:nxt.adoc[]) | `"nxt": true`
 | Send parts to Carbon without a Strata release | `"carbon": {"allow_unreleased": true}`
 |===
+
+[#import]
+== Your normal FreeCAD's preferences
+
+The NX profile starts with NX-Style's choices, not your normal FreeCAD's.
+To bring some of yours across, name them in `nxstyle.json`:
+
+[source,json]
+----
+{ "import_preferences": ["navigation", "macros"] }
+----
+
+At every start the launcher then copies them from your normal FreeCAD profile into the NX profile.
+It only reads your normal profile and never writes to it.
+
+[cols="1,4",options="header"]
+|===
+| Group | What comes across
+
+| `navigation` | Navigation style, orbit style (Turntable, Free Turntable, Trackball...), rotation mode, zoom at cursor, wheel direction, zoom step, animations, rotation centre (File › Preferences › Display › Navigation).
+| `view_cube` | Whether the view cube is shown, and how it looks.
+| `macros` | The macro commands of *Tools › Customize › Macros*, which then get buttons on *Tools › Macros*, and your macro files, copied into the NX profile's own `data/Macro` folder (which becomes its macro folder if it had none of its own). Your macro folder itself is never used, so a macro recorded or edited in NX-Style stays in the NX profile. A command already in the NX profile, by its macro file, is not added twice, and a macro file already there is kept as it is.
+| `all` | All of the above.
+|===
+
+`true` means `["navigation"]`.
+For one start only, use `python launch_nx.py --import-preferences` (navigation) or `--import-preferences navigation,macros`.
+
+With `navigation` imported, the graphics window behaves as in your normal FreeCAD, so NX-Style's own mouse handling (MB2 rotate, MB2 click = OK) is off.
+What you set in `nxstyle.json` still decides: `"navigation": "nx"` keeps NX-Style's mouse handling, and the same holds for `zoom_at_cursor` and `invert_wheel_zoom`.
+NX-Style's MB2 rotation then turns the view its own way, so your orbit style and rotation mode do not apply to it; the wheel is FreeCAD's, so your zoom step does.
+
+The launcher looks for your normal profile where FreeCAD keeps it: `%APPDATA%\FreeCAD` on Windows, `~/.config/FreeCAD` on Linux, `~/Library/Application Support/FreeCAD` on macOS, in the `v1-1` subfolder that FreeCAD 1.1 makes for each version.
+If you keep it elsewhere, give the folder that holds `user.cfg`, `Mod` and `Macro`: `"normal_profile": "D:/FreeCAD/profile"`.
+Where `user.cfg` and the rest are in two folders, as on Linux, give both: `"normal_profile": {"config": "~/.config/FreeCAD/v1-1", "data": "~/.local/share/FreeCAD/v1-1"}`.
+It writes what it copied to `nxstyle.imported.json` next to `nxstyle.json`; remove `import_preferences` and the file goes at the next start, while the copied FreeCAD preferences stay in the NX profile until you change them.
 
 NOTE: Before 2026-10-13, NX-Style read `nxstyle.json` from the profile's root folder instead of `config`.
 A file left there is still read when `config` has none.

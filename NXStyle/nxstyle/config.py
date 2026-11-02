@@ -53,6 +53,17 @@ DEFAULTS = {
     # parameters 'Position and dimensions'; "dimensions" (FreeCAD's default), "none", or "freecad" (leave alone)
     "sketch_input": "position",
     "nx_shortcuts": True,              # bind the NX keys (see Keyboard shortcuts); false keeps FreeCAD's
+    # preferences the launcher copies from your normal FreeCAD at every start, which it only reads: "navigation"
+    # (style, orbit style, zoom; the NX-Style settings navigation, zoom_at_cursor and invert_wheel_zoom you set
+    # here still win), "view_cube", "macros" (macro commands, their files copied into this profile), "all"; [] =
+    # none, true = navigation
+    "import_preferences": [],
+    # your normal FreeCAD's user folder (holds user.cfg, Mod and Macro), or {"config": ..., "data": ...} where they
+    # are apart (Linux: ~/.config/FreeCAD and ~/.local/share/FreeCAD); "" = FreeCAD's usual folders
+    "normal_profile": "",
+    # also load the add-ons of your normal FreeCAD's Mod folder (not those NX-Style bundles or the NX profile has);
+    # their workbenches join Application › Add-ons with a ribbon made from their toolbars
+    "user_addons": False,
     "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
     "sheet_metal": "sheetmetal",       # NX Sheet Metal: FreeCAD's "sheetmetal" add-on (bundled), or "none"
@@ -83,6 +94,7 @@ BACKGROUNDS = {
 }
 
 _cfg = None
+IMPORTED_FILE = "nxstyle.imported.json"     # launch_nx.IMPORTED_FILE
 
 
 def profile_dir():
@@ -111,9 +123,22 @@ def _merge(base, over):
     return base
 
 
+def imported_file():
+    """What the launcher copied from the normal FreeCAD profile ("import_preferences"), written at each start."""
+    return os.path.join(profile_dir(), IMPORTED_FILE)
+
+
 def load():
     global _cfg
     cfg = copy.deepcopy(DEFAULTS)
+    # imported preferences sit between the defaults and nxstyle.json: what you set in nxstyle.json still decides
+    try:
+        with open(imported_file(), encoding="utf-8") as f:
+            _merge(cfg, json.load(f).get("settings", {}))
+    except FileNotFoundError:
+        pass
+    except (OSError, ValueError, AttributeError) as e:
+        App.Console.PrintWarning(f"NXStyle: ignoring unreadable {imported_file()}: {e}\n")
     path = user_file()
     if os.path.isfile(path):
         try:

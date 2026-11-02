@@ -254,6 +254,38 @@ class Background:
         cfg["background"] = self.key
 
 
+class ViewCube:
+    """View › Visualization › View Cube: FreeCAD's view cube on or off. NX has none (its triad is NX-Style's), so
+    a new profile starts without it; this is the visible switch for FreeCAD's own preference."""
+
+    def GetResources(self):
+        return {"MenuText": "View Cube", "Checkable": prefs.view_cube_shown(),
+                "ToolTip": "Show or hide FreeCAD's view cube in the graphics window (kept for the next start; "
+                           "also Preferences › Display › Navigation)",
+                "Pixmap": _pixmap("Std_ViewIsometric")}
+
+    def IsActive(self):
+        return True
+
+    def Activated(self, checked=None):
+        prefs.show_view_cube(not prefs.view_cube_shown() if checked is None else bool(checked))
+
+    @staticmethod
+    def sync():
+        """The button's tick follows FreeCAD's preference, also when Preferences changes it."""
+        for act in Gui.Command.get("NXStyle_ViewCube").getAction() or []:
+            if act.isCheckable() and act.isChecked() != prefs.view_cube_shown():
+                blocked = act.blockSignals(True)        # toggled would run the command again
+                act.setChecked(prefs.view_cube_shown())
+                act.blockSignals(blocked)
+                act.changed.emit()                      # the ribbon button follows the action's changed signal
+
+    def onChange(self, group, name):
+        """FreeCAD's parameter observer (ParameterGrp.Attach), on the View preferences."""
+        if name == "ShowNaviCube":
+            self.sync()
+
+
 class ToggleNativeUI:
     def GetResources(self):
         return {"MenuText": "FreeCAD Menus and Toolbars",
@@ -708,6 +740,8 @@ def continue_pending_feature(sketch):
 
 
 GLOBAL_TOOLBAR = "User parameter:BaseApp/Workbench/Global/Toolbar/Custom_NXStyle"
+GLOBAL_TOOLBAR_NAME = "NXStyle Commands"      # its title, as Workbench.getToolbarItems() lists it
+_watched = {}                    # parameter groups with an observer attached (see register)
 
 
 def register(apps):
@@ -719,6 +753,7 @@ def register(apps):
         "NXStyle_Expressions": Expressions(),
         "NXStyle_RepeatCommand": RepeatCommand(),
         "NXStyle_ToggleNativeUI": ToggleNativeUI(),
+        "NXStyle_ViewCube": ViewCube(),
         "NXStyle_RotateMode": RotateMode(),
         "NXStyle_Refresh": Refresh(),
         "NXStyle_ToggleSuppress": ToggleSuppress(),
@@ -773,6 +808,9 @@ def register(apps):
         table[f"NXStyle_App_{app['id']}"] = SwitchApplication(app)
     for name, cmd in table.items():
         Gui.addCommand(name, cmd)
+    # the group object must live on: FreeCAD drops a Python observer with the group object it was attached to
+    _watched["view"] = App.ParamGet(prefs.VIEW)
+    _watched["view"].Attach(table["NXStyle_ViewCube"])
     from . import controller
     controller.install_context_menu()
     sketch_ui.install_context_menu()
@@ -784,7 +822,7 @@ def register(apps):
     # placed in a toolbar or menu. A global custom toolbar (hidden by the shell)
     # makes FreeCAD create the actions, so shortcuts and ribbon buttons work.
     p = App.ParamGet(GLOBAL_TOOLBAR)
-    p.SetString("Name", "NXStyle Commands")
+    p.SetString("Name", GLOBAL_TOOLBAR_NAME)
     p.SetBool("Active", True)
     for name in table:
         p.SetString(name, "FreeCAD")
