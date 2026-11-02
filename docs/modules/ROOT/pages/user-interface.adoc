@@ -156,6 +156,7 @@ kbd:[Ctrl+Shift+U] (*Show All*) shows everything; kbd:[Ctrl+Shift+B] swaps shown
 *Tools › Macros* has *Macros…* (FreeCAD's macro dialog, to run, edit or create one), *Record* and *Run Current* (the macro open in the editor).
 A macro you make into a command in *Tools › Customize › Macros* gets its own button in the group, labelled with the menu text you gave it.
 The buttons appear the next time the ribbon is built: switch application or start NX-Style again.
+Macro commands from your normal FreeCAD come across with `"import_preferences": ["macros"]` (xref:settings.adoc#import[]).
 
 == Touch Mode and FreeCAD's own interface
 

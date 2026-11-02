@@ -113,6 +113,9 @@ python launch_nx.py part.FCStd
 | `--nxt`
 | Starts with the FreeCAD-Nxt add-on, a trial that is off by default (xref:nxt.adoc[]). To switch it on for good, set `"nxt": true`. It needs FreeCAD 1.1 or newer.
 
+| `--import-preferences [GROUPS]`
+| Copies preferences from your normal FreeCAD profile, which it only reads: `navigation` (the default), `view_cube`, `macros`, or `all`, comma-separated. To do it at every start, set `"import_preferences"` (xref:settings.adoc#import[]).
+
 | `--install-dfm-deps`
 | Installs what the DFM Workbench needs (cadquery-ocp 7.8.1.1.post1 and VTK 9.3.1, pinned to FreeCAD 1.1's OpenCASCADE 7.8.1, and gmsh 4.15.2 for its colour maps) with FreeCAD's own Python, then exits. The only option that downloads anything.
 
@@ -145,7 +148,7 @@ The NX profile is a private set of FreeCAD user folders, one per FreeCAD version
 
 Inside it, `config` holds FreeCAD's `user.cfg` and NX-Style's `nxstyle.json` (see xref:settings.adoc[]), `data` holds the add-ons (`Mod`) and macros, and `temp` FreeCAD's temporary files.
 
-Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never read or written.
+Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never written, and read only when you ask for its preferences (`--import-preferences`, xref:settings.adoc#import[]).
 That also means your usual FreeCAD add-ons do not load in the NX profile; install the ones you want there with *Tools › Add-on Manager*.
 
 == Update

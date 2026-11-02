@@ -103,6 +103,12 @@ python launch_nx.py --reset-profile
 python launch_nx.py --no-strata
 ```
 
+```bash
+python launch_nx.py --import-preferences navigation,macros
+```
+
+That last one copies your normal FreeCAD's navigation style, orbit style and zoom, and your macro commands, into the NX profile; your normal profile is only read. `"import_preferences": ["navigation", "macros"]` in `nxstyle.json` does it at every start, and a `"navigation"` you set there still wins ([settings](https://foadsf.github.io/freecad-nxstyle/nxstyle/settings.html#import)).
+
 Settings live in `nxstyle.json` inside the profile's `config` folder, which is created on first start. You can change the navigation (`"nx"` = this project's mouse handling on any FreeCAD version, `"native"` = FreeCAD 1.1's own Siemens NX style), labels (`"nx"` or `"freecad"`), units (`"metric"`, the default: millimetres and kilograms, and an imperial schema is switched back; `"freecad"` leaves FreeCAD's choice alone), colours, background, hold delays, whether the feature dialog floats over the graphics window, data management (`"plm": "strata"`, the default, or `"none"`) and manufacturing (`"manufacturing": "carbon"`, the default, or `"none"`; the Carbon server is set on PLM › Manufacturing Connection).
 
 Ribbons are plain JSON in `NXStyle/nxstyle/resources/ribbons/`. A command entry can list several candidate names (the first one that exists wins), so one file serves FreeCAD 1.0 and 1.1. Entries marked `"optional": true` exist only in newer FreeCAD versions.

@@ -82,6 +82,7 @@ It ends with the count of checks passed, failed and skipped (171 checks on FreeC
 * the geometry comparison the tutorials use tells a solid from a different one of the same volume;
 * *Tools › Macros*: a macro command made through FreeCAD's own `createCustomCommand` becomes a button with its menu text and runs the macro, and once removed its button is gone;
 * *View › Visualization › View Cube*: off in a new profile; clicked, FreeCAD's preference, the open view and the button's tick are on, clicked again all off; a change of the preference elsewhere moves the tick;
+* with `--import-preferences` (or `"import_preferences"`) and `NXSTYLE_SMOKE_EXPECT_IMPORT` naming the groups: the imported view preferences are FreeCAD's, a new view uses the imported navigation style unless `nxstyle.json` sets `"navigation"`, and imported macro commands are *Tools › Macros* buttons (skipped in a run that imports nothing);
 * the status bar names NX-Style's mouse handling rather than FreeCAD's Blender base style alone.
 
 A check that needs something this FreeCAD build lacks (pythonocc for AP242, the FEM workbench, QtTest) is counted as *skipped*, never as passed; `--require-all` makes a skipped check fail the run.

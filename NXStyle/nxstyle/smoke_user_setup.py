@@ -130,6 +130,76 @@ def run_view_cube(smoke):
             App.closeDocument(doc.Name)
 
 
+def run_imported_prefs(smoke):
+    """Preferences the launcher imported from a normal FreeCAD profile (--import-preferences or
+    "import_preferences"), as this FreeCAD runs with them. NXSTYLE_SMOKE_EXPECT_IMPORT names the groups the run
+    must have imported, so a run that imported nothing fails instead of skipping."""
+    import json
+    from . import config, prefs
+    want = [g for g in os.environ.get("NXSTYLE_SMOKE_EXPECT_IMPORT", "").split(",") if g]
+    try:
+        try:
+            with open(config.imported_file(), encoding="utf-8") as f:
+                record = json.load(f)
+        except FileNotFoundError:
+            record = None
+        if not want and record is None:
+            smoke.skip("preferences imported from the normal FreeCAD profile", "no import asked for in this run")
+            return
+        smoke.check("the launcher imported the expected preference groups",
+                    record is not None and record.get("groups") == want,
+                    {"expected": want, "imported": record.get("groups") if record else None})
+        if record is None:
+            return
+        smoke.info["imported preferences"] = record
+        cfg = config.get()
+        try:
+            with open(config.user_file(), encoding="utf-8") as f:
+                own = json.load(f)
+        except (OSError, ValueError):
+            own = {}
+        managed = {"NavigationStyle": "navigation", "ZoomAtCursor": "zoom_at_cursor",
+                   "InvertZoom": "invert_wheel_zoom"}
+        view = record["parameters"].get("BaseApp/Preferences/View", {})
+        p = App.ParamGet(prefs.VIEW)
+        get = {bool: p.GetBool, int: p.GetInt, float: p.GetFloat, str: p.GetString}
+        wrong = {}
+        for name, value in view.items():
+            if managed.get(name) in own:
+                continue                      # nxstyle.json sets it: checked below
+            live = get[type(value)](name)
+            if isinstance(value, int) and not isinstance(value, bool) and live != value:
+                live = p.GetUnsigned(name)    # an FCUInt (a colour)
+            if (abs(live - value) > 1e-9) if isinstance(value, float) else live != value:
+                wrong[name] = {"imported": value, "in FreeCAD": live}
+        smoke.check("imported view preferences are FreeCAD's in the NX profile (orbit style, zoom, ...)",
+                    view and not wrong, wrong or sorted(view))
+        if "navigation" in want:
+            nav = Gui.ActiveDocument.ActiveView.getNavigationType() if Gui.ActiveDocument else None
+            if nav is None:
+                doc = App.newDocument("SmokeImport")
+                nav = Gui.ActiveDocument.ActiveView.getNavigationType()
+                App.closeDocument(doc.Name)
+            expected = prefs.navigation_style(cfg)
+            if "navigation" in own:
+                smoke.check("nxstyle.json's own \"navigation\" wins over the imported style",
+                            nav == expected and nav != view.get("NavigationStyle"),
+                            {"view": nav, "nxstyle.json": own["navigation"], "imported": view.get("NavigationStyle")})
+            else:
+                smoke.check("a new view uses the imported navigation style",
+                            nav == view.get("NavigationStyle") == expected,
+                            {"view": nav, "imported": view.get("NavigationStyle")})
+        if "macros" in want:
+            added = record["parameters"].get("BaseApp/Macro/Macros", {}).get("added", [])
+            rebuild(smoke)
+            tools = tab_buttons(smoke, "Tools")
+            smoke.check("imported macro commands are Tools › Macros buttons",
+                        added and all(a["command"] in tools for a in added),
+                        {"added": added, "buttons": sorted(c for c in tools if c.startswith("Std_Macro_"))})
+    except Exception:
+        smoke.check("imported preferences scenario ran", False, traceback.format_exc().splitlines()[-1])
+
+
 def run_macros(smoke):
     try:
         known = set(Gui.listCommands())

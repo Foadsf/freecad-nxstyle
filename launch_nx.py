@@ -311,6 +311,200 @@ def build_command(install: Install, files: list[str], passthrough: list[str],
 
 
 # --------------------------------------------------------------------------
+# The user's normal FreeCAD profile: preferences brought into the NX profile on request. Only ever read.
+# --------------------------------------------------------------------------
+VIEW_GROUP = ("BaseApp", "Preferences", "View")
+# group -> [(parameter group path under Root, parameter names, or None for the whole group)]
+IMPORT_GROUPS = {
+    # File › Preferences › Display › Navigation, minus the view cube
+    "navigation": [(VIEW_GROUP, ["NavigationStyle", "OrbitStyle", "RotationMode", "ZoomAtCursor", "InvertZoom",
+                                 "ZoomStep", "DragAtCursor", "UseNavigationAnimations", "AnimationDuration",
+                                 "UseAutoRotation", "UseSpinningAnimations", "DisableTouchTilt", "ShowRotationCenter",
+                                 "RotationCenterSize", "RotationCenterColor"])],
+    # the Navigation Cube: shown or not, and how it looks
+    "view_cube": [(VIEW_GROUP, ["ShowNaviCube"]), (("BaseApp", "Preferences", "NaviCube"), None)],
+    # the macro folder, and the macro commands of Tools › Customize › Macros (merged, see import_preferences)
+    "macros": [(("BaseApp", "Preferences", "Macro"), ["MacroPath", "MacroPathCheckedForMigrationTov1-1"]),
+               (("BaseApp", "Macro", "Macros"), None)],
+}
+DEFAULT_IMPORT = ["navigation"]
+IMPORTED_FILE = "nxstyle.imported.json"
+
+
+def normal_profile(version: tuple[int, int, int] | None) -> dict[str, Path] | None:
+    """The normal FreeCAD profile of this FreeCAD version: {"config": folder of user.cfg, "data": folder of Mod}, or
+    None if there is none. FreeCAD 1.1 keeps one per version in a v<major>-<minor> subfolder (v1-1); the newest one
+    not newer than this FreeCAD is taken, else the unversioned folder that FreeCAD 1.0 and older use."""
+    if os.name == "nt":
+        base = Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming")) / "FreeCAD"
+        bases = {"config": base, "data": base}
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library/Application Support/FreeCAD"
+        bases = {"config": base, "data": base}
+    else:
+        bases = {"config": Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "FreeCAD",
+                 "data": Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "FreeCAD"}
+
+    def pick(base: Path) -> Path:
+        found = []
+        if base.is_dir():
+            for d in base.iterdir():
+                m = re.fullmatch(r"v(\d+)-(\d+)", d.name)
+                if m and d.is_dir():
+                    v = (int(m.group(1)), int(m.group(2)))
+                    if version is None or v <= tuple(version[:2]):
+                        found.append((v, d))
+        return max(found)[1] if found else base
+
+    out = {k: pick(b) for k, b in bases.items()}
+    return out if (out["config"] / "user.cfg").is_file() or (out["data"] / "Mod").is_dir() else None
+
+
+def _param_group(root, path: tuple[str, ...], create: bool = False):
+    """The FCParamGroup at Root/<path> of a parsed user.cfg, made when create is set; None when missing."""
+    import xml.etree.ElementTree as ET
+
+    node = next((g for g in root.findall("FCParamGroup") if g.get("Name") == "Root"), None)
+    if node is None:
+        if not create:
+            return None
+        node = ET.SubElement(root, "FCParamGroup", Name="Root")
+    for name in path:
+        found = next((g for g in node.findall("FCParamGroup") if g.get("Name") == name), None)
+        if found is None:
+            if not create:
+                return None
+            found = ET.SubElement(node, "FCParamGroup", Name=name)
+        node = found
+    return node
+
+
+def _param_value(el):
+    """A parameter element's value as Python: FCText -> str, FCBool -> bool, FCInt/FCUInt -> int, FCFloat -> float."""
+    kind = el.tag[2:]
+    if kind == "Text":
+        return el.text or ""
+    raw = el.get("Value", "")
+    try:
+        return raw == "1" if kind == "Bool" else float(raw) if kind == "Float" else int(raw)
+    except ValueError:
+        return raw
+
+
+def import_groups(choice) -> list[str]:
+    """The groups an --import-preferences value or an "import_preferences" setting names: a list or a comma list,
+    true = the default (navigation), "all" = every group. Raises ValueError on an unknown group."""
+    if choice is True:
+        return list(DEFAULT_IMPORT)
+    if not choice:
+        return []
+    names = [s.strip() for s in (choice.split(",") if isinstance(choice, str) else choice) if s and s.strip()]
+    if "all" in names:
+        return list(IMPORT_GROUPS)
+    unknown = [n for n in names if n not in IMPORT_GROUPS]
+    if unknown:
+        raise ValueError(f"unknown preference group(s) {unknown}; choose from {sorted(IMPORT_GROUPS)} or 'all'")
+    return list(dict.fromkeys(names))
+
+
+def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str]) -> dict:
+    """Copy the parameters of these groups from the normal user.cfg (only read) into the NX profile's user.cfg.
+
+    Single parameters replace the NX profile's; a whole group (the view cube's look) is replaced. Macro commands
+    are merged: one from the normal profile whose script the NX profile does not have yet is added under the next
+    free Std_Macro_<n>, so the NX profile's own macro commands stay and a second import adds nothing.
+    Returns the record that NX-Style reads (nxstyle.imported.json): what was copied, and the NX-Style settings it
+    stands for ("navigation", "zoom_at_cursor", "invert_wheel_zoom"); nxstyle.json still overrides those."""
+    import copy
+    import xml.etree.ElementTree as ET
+
+    src = ET.parse(source_cfg).getroot()
+    tree = ET.parse(target_cfg) if target_cfg.is_file() else ET.ElementTree(ET.Element("FCParameters"))
+    dst = tree.getroot()
+    copied: dict[str, dict] = {}
+    for group in groups:
+        for path, names in IMPORT_GROUPS[group]:
+            sgroup = _param_group(src, path)
+            if sgroup is None:
+                continue
+            key = "/".join(path)
+            if path == ("BaseApp", "Macro", "Macros"):
+                dgroup = _param_group(dst, path, create=True)
+                have = {_script(g) for g in dgroup.findall("FCParamGroup")}
+                used = {g.get("Name") for g in dgroup.findall("FCParamGroup")}
+                added = []
+                for g in sgroup.findall("FCParamGroup"):
+                    if _script(g) in have:
+                        continue
+                    n = 0
+                    while f"Std_Macro_{n}" in used:
+                        n += 1
+                    new = copy.deepcopy(g)
+                    new.set("Name", f"Std_Macro_{n}")
+                    dgroup.append(new)
+                    used.add(new.get("Name"))
+                    have.add(_script(g))
+                    added.append({"command": new.get("Name"), "script": _script(g)})
+                copied[key] = {"added": added}
+            elif names is None:
+                parent = _param_group(dst, path[:-1], create=True)
+                old = next((g for g in parent.findall("FCParamGroup") if g.get("Name") == path[-1]), None)
+                if old is not None:
+                    parent.remove(old)
+                parent.append(copy.deepcopy(sgroup))
+                copied[key] = {el.get("Name"): _param_value(el) for el in sgroup if el.tag != "FCParamGroup"}
+            else:
+                dgroup = _param_group(dst, path, create=True)
+                for el in sgroup:
+                    if el.tag == "FCParamGroup" or el.get("Name") not in names:
+                        continue
+                    for old in [o for o in dgroup if o.tag != "FCParamGroup" and o.get("Name") == el.get("Name")]:
+                        dgroup.remove(old)
+                    dgroup.append(copy.deepcopy(el))
+                    copied.setdefault(key, {})[el.get("Name")] = _param_value(el)
+    target_cfg.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(target_cfg, encoding="UTF-8", xml_declaration=True)
+    view = copied.get("/".join(VIEW_GROUP), {})
+    settings = {}
+    if "navigation" in groups:
+        for param, setting in (("NavigationStyle", "navigation"), ("ZoomAtCursor", "zoom_at_cursor"),
+                               ("InvertZoom", "invert_wheel_zoom")):
+            if param in view:
+                settings[setting] = view[param]
+    return {"source": str(source_cfg), "groups": groups, "parameters": copied, "settings": settings}
+
+
+def _script(group) -> str:
+    """The script file of a macro command's parameter group."""
+    el = next((e for e in group if e.tag == "FCText" and e.get("Name") == "Script"), None)
+    return (el.text or "") if el is not None else ""
+
+
+def bring_preferences(paths: dict[str, Path], groups: list[str], version: tuple[int, int, int] | None,
+                      normal_dir: str = "") -> str:
+    """At each start: import these groups from the normal profile (normal_dir, else FreeCAD's usual folder) into
+    the NX profile and write nxstyle.imported.json; with no group, remove that record, so NX-Style's own defaults
+    decide again. Returns the start-up line."""
+    record_path = paths["home"] / IMPORTED_FILE
+    if not groups:
+        if record_path.is_file():
+            record_path.unlink()
+        return "none imported (--import-preferences, or \"import_preferences\" in nxstyle.json, brings yours)"
+    if normal_dir:
+        source = Path(normal_dir).expanduser() / "user.cfg"
+    else:
+        normal = normal_profile(version)
+        source = normal["config"] / "user.cfg" if normal else None
+    if source is None or not source.is_file() or _is_within(source, paths["home"].parent.resolve()):
+        if record_path.is_file():
+            record_path.unlink()
+        return f"normal FreeCAD profile not found ({source or 'no user.cfg'}); nothing imported"
+    record = import_preferences(source, paths["home"] / "user.cfg", groups)
+    record_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+    return f"{', '.join(groups)} imported from {source} (only read)"
+
+
+# --------------------------------------------------------------------------
 # Strata: data management next to NXStyle (the role Teamcenter plays next to NX)
 # --------------------------------------------------------------------------
 STRATA_DIR = HERE / "vendor" / "freecad-strata"     # git submodule of github.com/Foadsf/freecad-strata
@@ -875,6 +1069,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-dfm", action="store_true",
                     help="start without the DFM add-on (Analysis > Molded Part Validation; on by default once "
                          "--install-dfm-deps has run)")
+    ap.add_argument("--import-preferences", nargs="?", const="navigation", metavar="GROUPS",
+                    help=f"copy preferences from your normal FreeCAD profile, which is only read: a comma list of "
+                         f"{', '.join(IMPORT_GROUPS)} or all (default: navigation); \"import_preferences\" in "
+                         f"nxstyle.json does it at every start")
     ap.add_argument("--install-dfm-deps", action="store_true",
                     help=f"install what the DFM add-on needs ({', '.join(DFM_DEPS)}) with FreeCAD's own Python "
                          f"into {default_profile_root()}/pydeps, then exit (downloads about 165 MB)")
@@ -911,6 +1109,12 @@ def main(argv: list[str] | None = None) -> int:
         profile = args.profile or default_profile_root() / f"profile-{ver}"
         reset = args.reset_profile
 
+    settings = read_settings(profile.resolve())
+    try:
+        groups = import_groups(args.import_preferences if args.import_preferences is not None
+                               else settings.get("import_preferences"))
+    except ValueError as e:
+        ap.error(str(e))
     strata, strata_why = find_strata(profile.resolve(), disabled=args.no_strata)
     extra["NXSTYLE_STRATA_EXPECTED"] = "1" if strata or "NX profile" in strata_why else "0"
     katydid, katydid_why = find_katydid(profile.resolve(), disabled=args.no_katydid)
@@ -934,13 +1138,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
-                          "nxt": nxt_why, "carbon": carbon_why,
+                          "nxt": nxt_why, "carbon": carbon_why, "import_preferences": groups,
                           "command": cmd},
                          indent=2))
         return 0
 
     paths = prepare_profile(profile, reset=reset)
     seed_user_cfg(paths, install.version)
+    prefs_why = bring_preferences(paths, groups, install.version, settings.get("normal_profile", ""))
     env = build_env(paths, extra)
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")
@@ -951,6 +1156,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Carbon: {carbon_why}")
     print(f"DFM: {dfm_why}")
     print(f"Nxt: {nxt_why}")
+    print(f"Preferences: {prefs_why}")
 
     if harness:
         if os.name == "nt":
