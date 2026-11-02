@@ -127,7 +127,8 @@ class Smoke:
         yield self.s_sketch_enter, 1500
         yield self.s_sketch_check, 100
         yield self.s_profile, 300
-        yield self.s_sketch_trim, 300             # before Point on Curve: MB2 must not leave the trim's gate up
+        yield self.s_profile_typed, 300
+        yield self.s_sketch_trim, 300            # before Point on Curve: MB2 must not leave the trim's gate up
         yield self.s_sketch_constraints, 300
         yield self.s_sketch_point_typed, 300
         yield self.s_sketch_typed_join, 300
@@ -902,6 +903,11 @@ class Smoke:
                    f"started {started}, ended {ended}, {len(sk.Geometry) - g0} lines")
         sk.deleteAllGeometry()
         App.ActiveDocument.recompute()
+
+    def s_profile_typed(self):
+        """Profile (Z) takes typed X, Y, then length and angle, in fields beside the pointer (smoke_profile.py)."""
+        from . import smoke_profile
+        smoke_profile.run(self)
 
     def s_sketch_trim(self):
         """Quick Trim (T) keeps a line tangent where it ends on the trimmed circle. Tutorial AK's outline, smaller:
