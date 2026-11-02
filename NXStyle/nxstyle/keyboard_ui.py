@@ -11,6 +11,7 @@ from .qt import QtCore, QtGui, QtWidgets, Qt, mouse_event
 
 _instance = None
 ARROWS = {Qt.Key_Left: (-1, 0), Qt.Key_Right: (1, 0), Qt.Key_Up: (0, -1), Qt.Key_Down: (0, 1)}
+KEYPAD_DIGITS = {Qt.Key_0, Qt.Key_1, Qt.Key_2, Qt.Key_3, Qt.Key_4, Qt.Key_5, Qt.Key_6, Qt.Key_7, Qt.Key_8, Qt.Key_9}
 
 
 class PointerMark(QtWidgets.QWidget):
@@ -46,6 +47,7 @@ class KeyboardAccess(QtCore.QObject):
         self.dragging = False
         self.replaying = False
         self.swallowed = set()      # keys whose press the pointer took: their release is the pointer's too
+        self.task_visited = []      # Task Panel controls Tab reached this round (wrap_task_focus)
         QtWidgets.QApplication.instance().installEventFilter(self)
         self.prepare_controls()
 
@@ -130,6 +132,59 @@ class KeyboardAccess(QtCore.QObject):
                 continue  # one tab stop for a compound quantity/combo field
             controls.append(widget)
         return controls
+
+    def note_task_focus(self, widget, reason):
+        """The Task Panel controls Tab has visited this round; entering by any other way starts a new round."""
+        tasks = self.shell.mw.findChild(QtWidgets.QDockWidget, "Tasks")
+        if tasks is None or not isinstance(widget, QtWidgets.QWidget) or not tasks.isAncestorOf(widget):
+            return
+        if reason not in (Qt.TabFocusReason, Qt.BacktabFocusReason):
+            self.task_visited = []
+        self.task_visited.append(widget)
+
+    def wrap_task_focus(self, left, backwards):
+        """Tab and Shift+Tab move in Qt's own order (the task form's) inside the Task Panel. Where that order would
+        leave the panel, the focus goes to the first control (in the order they were made) this round has not
+        reached yet, and round to the start once all were: FreeCAD's OK and Cancel sit apart from the form in
+        Qt's order, so they come after a tour of the whole window otherwise."""
+        tasks = self.shell.mw.findChild(QtWidgets.QDockWidget, "Tasks")
+        if tasks is None or not isinstance(left, QtWidgets.QWidget) or not tasks.isAncestorOf(left):
+            return
+        now = QtWidgets.QApplication.focusWidget()     # Qt names the new focus widget before FocusOut
+        if now is not None and tasks.isAncestorOf(now):
+            return
+        controls = self.dock_controls(tasks)
+        if backwards:
+            controls.reverse()
+
+        def visited(widget):
+            for seen in self.task_visited:
+                try:
+                    if seen is widget or widget.isAncestorOf(seen) or seen.isAncestorOf(widget):
+                        return True
+                except RuntimeError:                   # a control of a closed panel
+                    continue
+            return False
+        target = next((w for w in controls if not visited(w)), None)
+        if target is None:
+            self.task_visited = []
+            target = controls[0] if controls else None
+        if target is not None:
+            QtCore.QTimer.singleShot(0, lambda: self.enter_control(tasks, target))
+
+    @staticmethod
+    def enter_control(dock, target):
+        try:
+            if not target.isVisible():
+                return
+            target.setFocus(Qt.TabFocusReason)
+            parent = target.parentWidget()
+            while parent is not None and parent is not dock:
+                if isinstance(parent, QtWidgets.QScrollArea):
+                    parent.ensureWidgetVisible(target)
+                parent = parent.parentWidget()
+        except RuntimeError:      # the panel closed meanwhile
+            pass
 
     def nav(self):
         return self.shell.navigation.filter_for_active_view()
@@ -219,8 +274,13 @@ class KeyboardAccess(QtCore.QObject):
             return False
         try:
             return self._event(obj, ev)
-        except RuntimeError:  # Qt may deliver a final event while a view or dock is being deleted
-            self.stop_pointer()
+        except RuntimeError as error:
+            if "already deleted" not in str(error):  # else Qt delivered a last event while a view or dock went
+                import traceback
+                import FreeCAD as App
+                App.Console.PrintWarning("NXStyle keyboard access: " + traceback.format_exc())
+            if self.pointer_view is not None:     # stopping sends events of its own: not on every error
+                self.stop_pointer()
             return False
 
     def _event(self, obj, ev):
@@ -249,6 +309,10 @@ class KeyboardAccess(QtCore.QObject):
             # Qt names the new focus widget before FocusOut: an on-view field taking it keeps the drag
             if self.in_pointer_view(obj) and not self.in_pointer_view(QtWidgets.QApplication.focusWidget()):
                 self.click_pointer(Qt.LeftButton)
+        if kind == QtCore.QEvent.FocusIn:
+            self.note_task_focus(obj, ev.reason())
+        if kind == QtCore.QEvent.FocusOut and ev.reason() in (Qt.TabFocusReason, Qt.BacktabFocusReason):
+            self.wrap_task_focus(obj, ev.reason() == Qt.BacktabFocusReason)
         if kind == QtCore.QEvent.KeyRelease and ev.key() in self.swallowed:
             # The release of a key the pointer took: Sketcher's DrawSketchKeyboardManager also reads releases,
             # and a Return release keeps it typing into the on-view field for 2 s, so Escape did not reach the tool
@@ -259,6 +323,11 @@ class KeyboardAccess(QtCore.QObject):
             return False
         if QtWidgets.QApplication.activeModalWidget() is not None:
             return False
+        if (kind == QtCore.QEvent.ShortcutOverride and ev.key() in KEYPAD_DIGITS
+                and ev.modifiers() & Qt.KeypadModifier and ev.modifiers() & Qt.AltModifier):
+            # Windows types Alt codes on the keypad (Alt+0177 is ±); Qt would match Alt+keypad 1 to Alt+1
+            ev.accept()
+            return True
         if kind == QtCore.QEvent.ShortcutOverride:
             from . import shortcuts
             manager = shortcuts.instance()
@@ -275,31 +344,6 @@ class KeyboardAccess(QtCore.QObject):
                             ev.ignore()
                             return True
         key, mods = ev.key(), ev.modifiers()
-        tasks = self.shell.mw.findChild(QtWidgets.QDockWidget, "Tasks")
-        if tasks is not None and isinstance(obj, QtWidgets.QWidget) and tasks.isAncestorOf(obj):
-            if key in (Qt.Key_Tab, Qt.Key_Backtab):
-                editor = obj
-                while editor is not None and editor is not tasks:
-                    if isinstance(editor, (QtWidgets.QTextEdit, QtWidgets.QPlainTextEdit, QtWidgets.QTableView)):
-                        if not mods & Qt.ControlModifier:
-                            return False  # text indentation and table-cell navigation stay native
-                        break
-                    editor = editor.parentWidget()
-                if kind == QtCore.QEvent.ShortcutOverride:
-                    ev.accept()
-                    return True
-                controls = self.dock_controls(tasks)
-                current = next((i for i, w in enumerate(controls) if w is obj or w.isAncestorOf(obj)), -1)
-                if controls:
-                    step = -1 if key == Qt.Key_Backtab or mods & Qt.ShiftModifier else 1
-                    target = controls[(current + step) % len(controls)]
-                    target.setFocus(Qt.TabFocusReason)
-                    parent = target.parentWidget()
-                    while parent is not None and parent is not tasks:
-                        if isinstance(parent, QtWidgets.QScrollArea):
-                            parent.ensureWidgetVisible(target)
-                        parent = parent.parentWidget()
-                return True
         r = self.shell.ribbon
         ribbon_area = (isinstance(obj, QtWidgets.QWidget) and
                        (r.isAncestorOf(obj) or obj is r.tabs or

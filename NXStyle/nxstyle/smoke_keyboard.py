@@ -184,6 +184,8 @@ def run(smoke):
                 focused = app.focusWidget()
                 if focused is widget or (focused is not None and widget.isAncestorOf(focused)):
                     return True
+                if focused is not None and tasks is not None and not tasks.isAncestorOf(focused):
+                    smoke.info.setdefault("Tab left the Task Panel for", []).append(str(focused))
                 qtest().keyClick(focused or mw, *decode("Tab"))
                 qtest().qWait(15)
             return False
@@ -207,6 +209,8 @@ def run(smoke):
         smoke.check("keyboard-only typed Block commits 17 x 13 x 11", reached and primitive_ui.current() is None
                     and feature is not None and abs(feature.Shape.Volume - 2431) < 1e-6,
                     (reached, feature_name, feature.Shape.Volume if feature else None))
+        smoke.check("Tab reaches OK without leaving the Task Panel", reached and
+                    "Tab left the Task Panel for" not in smoke.info, smoke.info.get("Tab left the Task Panel for"))
         if primitive_ui.current() is not None:
             primitive_ui.current().reject()  # failure cleanup only
         elif feature is not None:

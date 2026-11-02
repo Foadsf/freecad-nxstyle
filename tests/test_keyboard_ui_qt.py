@@ -189,7 +189,7 @@ class KeyboardUiQt(unittest.TestCase):
             finally:
                 self.app.installEventFilter(self.access)
 
-    def test_task_tab_traverses_real_fields_once_and_wraps_inside_panel(self):
+    def task_panel(self):
         dock = QtWidgets.QDockWidget("Tasks", self.mw)
         dock.setObjectName("Tasks")
         scroll = QtWidgets.QScrollArea()
@@ -205,20 +205,80 @@ class KeyboardUiQt(unittest.TestCase):
         self.mw.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
         dock.show()
         self.app.processEvents()
+        return combo, spin, button
+
+    def tabs_until(self, target, key=QtCore.Qt.Key_Tab if QtCore is not None else None):
+        """Press Tab (Qt's own, which also stops on the panel's scroll area) until target has the focus; the
+        widgets passed on the way."""
+        dock = self.mw.findChild(QtWidgets.QDockWidget, "Tasks")
+        seen = []
+        for _ in range(6):
+            self.key(self.app.focusWidget(), key)
+            self.app.processEvents()         # a wrap at the panel's end comes on a zero timer
+            focus = self.app.focusWidget()
+            self.assertTrue(dock.isAncestorOf(focus), f"Tab left the panel for {focus}")
+            if focus is target or target.isAncestorOf(focus) or focus.parentWidget() is target:
+                return seen
+            seen.append(focus)
+        self.fail(f"no {target} after {seen}")
+
+    def test_task_tab_traverses_real_fields_once_and_wraps_inside_panel(self):
+        combo, spin, button = self.task_panel()
         self.access.focus_dock("Tasks")
         self.app.processEvents()
         self.assertIs(self.app.focusWidget(), combo)
-        self.key(combo, QtCore.Qt.Key_Tab)
-        self.assertIn(self.app.focusWidget(), (spin, spin.lineEdit()))
+        self.tabs_until(spin)
         self.key(self.app.focusWidget(), QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
         QtTest.QTest.keyClicks(self.app.focusWidget(), "17")
-        self.key(self.app.focusWidget(), QtCore.Qt.Key_Tab)
-        self.assertIs(self.app.focusWidget(), button)
+        self.tabs_until(button)
         self.assertEqual(spin.value(), 17)
-        self.key(button, QtCore.Qt.Key_Tab)
+        self.tabs_until(combo)                                     # round the end, inside the panel
+        self.tabs_until(button, QtCore.Qt.Key_Backtab)
+
+    def test_task_tab_reaches_a_button_that_sits_apart_in_qts_order(self):
+        # FreeCAD's task OK sits elsewhere in Qt's focus chain than the form: past the form, Qt's Tab leaves the
+        # panel and comes to OK only after the whole window (measured in FreeCAD, Block, 2026-11-02)
+        combo, spin, button = self.task_panel()
+        QtWidgets.QWidget.setTabOrder(spin, self.editor)
+        QtWidgets.QWidget.setTabOrder(self.editor, button)
+        self.access.focus_dock("Tasks")
+        self.app.processEvents()
         self.assertIs(self.app.focusWidget(), combo)
-        self.key(combo, QtCore.Qt.Key_Backtab)
-        self.assertIs(self.app.focusWidget(), button)
+        self.tabs_until(spin)
+        self.assertEqual(self.tabs_until(button), [])          # straight there, not through the editor
+        self.tabs_until(combo)                                  # all reached: round to the start
+
+    def test_task_tab_keeps_the_forms_own_tab_order(self):
+        combo, spin, button = self.task_panel()
+        QtWidgets.QWidget.setTabOrder(combo, button)     # as a .ui form's <tabstops> do
+        QtWidgets.QWidget.setTabOrder(button, spin)
+        combo.setFocus()
+        self.assertNotIn(spin, self.tabs_until(button))
+        self.tabs_until(spin)
+
+    def test_alt_codes_on_the_keypad_do_not_fire_alt_digit_keys(self):
+        hits = []
+        action = QtGui.QAction("Focus navigator", self.mw)
+        action.setShortcut(QtGui.QKeySequence("Alt+1"))
+        action.triggered.connect(lambda: hits.append(True))
+        self.mw.addAction(action)
+        self.editor.setFocus()
+        # Alt+0177 (±) typed on the keypad: plain Qt would fire Alt+1 on the keypad 1
+        for key in (QtCore.Qt.Key_0, QtCore.Qt.Key_1, QtCore.Qt.Key_7, QtCore.Qt.Key_7):
+            self.key(self.editor, key, QtCore.Qt.AltModifier | QtCore.Qt.KeypadModifier)
+        self.assertEqual(hits, [])
+        self.key(self.editor, QtCore.Qt.Key_1, QtCore.Qt.AltModifier)    # the main row still does
+        self.assertEqual(hits, [True])
+
+    def test_unexpected_errors_in_the_key_handler_are_logged(self):
+        warnings = []
+        app_module = types.SimpleNamespace(Console=types.SimpleNamespace(PrintWarning=warnings.append))
+        with patch.dict(sys.modules, {"FreeCAD": app_module}):
+            for message in ("Internal C++ object (QWidget) already deleted.", "something else"):
+                with patch.object(self.access, "_event", side_effect=RuntimeError(message)):
+                    self.app.sendEvent(self.graphics, QtCore.QEvent(QtCore.QEvent.User))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("something else", warnings[0])
 
     def test_ribbon_focus_tab_enter_escape_and_native_tab_arrows(self):
         self.access.focus_ribbon()
