@@ -39,7 +39,7 @@ NORMAL_CFG = """<?xml version="1.0" encoding="utf-8"?>
           <FCInt Name="CubeSize" Value="160"/>
         </FCParamGroup>
         <FCParamGroup Name="Macro">
-          <FCText Name="MacroPath">C:/Users/me/FreeCAD/Macro</FCText>
+          <FCText Name="MacroPath">{MACROS}</FCText>
           <FCBool Name="RecordGui" Value="0"/>
         </FCParamGroup>
       </FCParamGroup>
@@ -83,12 +83,18 @@ class Fixture(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="nx-import-"))
         self.addCleanup(lambda: __import__("shutil").rmtree(self.tmp, ignore_errors=True))
+        self.macros = self.tmp / "normal-macros"            # the normal profile's MacroPath
+        self.macros.mkdir()
+        (self.macros / "gear.FCMacro").write_text("# gear from the normal profile\n", encoding="utf-8")
+        (self.macros / "bolt.py").write_text("# bolt\n", encoding="utf-8")
+        (self.macros / "notes.txt").write_text("not a macro\n", encoding="utf-8")
         for base in (self.tmp / "appdata" / "FreeCAD", self.tmp / "xdgconfig" / "FreeCAD",
                      self.tmp / "home" / "Library" / "Application Support" / "FreeCAD"):
             for sub, text in (("", OLDER_CFG), ("v1-1", NORMAL_CFG),
                               ("v1-2", NORMAL_CFG.replace("Touchpad", "Gesture"))):
                 (base / sub).mkdir(parents=True, exist_ok=True)
-                (base / sub / "user.cfg").write_text(text, encoding="utf-8")
+                (base / sub / "user.cfg").write_text(text.replace("{MACROS}", self.macros.as_posix()),
+                                                     encoding="utf-8")
         env = {"APPDATA": str(self.tmp / "appdata"), "XDG_CONFIG_HOME": str(self.tmp / "xdgconfig"),
                "XDG_DATA_HOME": str(self.tmp / "xdgdata")}
         for p in (mock.patch.dict(os.environ, env),
@@ -132,11 +138,13 @@ class ImportTests(Fixture):
                                               "zoom_at_cursor": False, "invert_wheel_zoom": False})
 
     def test_the_normal_profile_is_only_read(self):
-        before = {p: digest(p) for p in self.tmp.rglob("user.cfg") if self.profile not in p.parents}
-        launch_nx.import_preferences(self.source, self.target, launch_nx.import_groups("all"))
-        after = {p: digest(p) for p in self.tmp.rglob("user.cfg") if self.profile not in p.parents}
-        self.assertEqual(before, after)
-        self.assertEqual(len(before), 9)
+        """Every file outside the NX profile, the macro folder included, is unchanged, and none is added."""
+        def outside():
+            return {p: digest(p) for p in self.tmp.rglob("*") if p.is_file() and self.profile not in p.parents}
+        before = outside()
+        launch_nx.bring_preferences(self.paths, launch_nx.import_groups("all"), (1, 1, 4), "")
+        self.assertEqual(outside(), before)
+        self.assertEqual(len(before), 12)                    # 9 user.cfg and 3 files in the macro folder
 
     def test_the_nx_profile_keeps_what_was_not_imported(self):
         launch_nx.import_preferences(self.source, self.target, ["navigation"])
@@ -154,16 +162,34 @@ class ImportTests(Fixture):
                             "FCParamGroup", Name="Std_Macro_0")
         ET.SubElement(own, "FCText", Name="Script").text = "mine.FCMacro"
         root.write(self.target, encoding="UTF-8", xml_declaration=True)
-        record = launch_nx.import_preferences(self.source, self.target, ["macros"])
+        nx_macros = self.paths["data"] / "Macro"
+        record = launch_nx.import_preferences(self.source, self.target, ["macros"], self.normal["data"], nx_macros)
         self.assertEqual(macro_commands(self.target), {"Std_Macro_0": "mine.FCMacro", "Std_Macro_1": "gear.FCMacro"})
         self.assertEqual(record["parameters"]["BaseApp/Macro/Macros"]["added"],
                          [{"command": "Std_Macro_1", "script": "gear.FCMacro"}])
+        # the macro files are copied; the NX profile's macro folder stays its own
+        self.assertEqual(sorted(p.name for p in nx_macros.iterdir()), ["bolt.py", "gear.FCMacro"])
         self.assertEqual(params(self.target, "BaseApp", "Preferences", "Macro")["MacroPath"],
-                         ("FCText", "C:/Users/me/FreeCAD/Macro"))
-        # at the next start nothing is added twice
-        again = launch_nx.import_preferences(self.source, self.target, ["macros"])
+                         ("FCText", str(nx_macros)))
+        # at the next start nothing is added twice, and a macro edited in the NX profile is kept
+        (nx_macros / "gear.FCMacro").write_text("# edited in NX-Style\n", encoding="utf-8")
+        again = launch_nx.import_preferences(self.source, self.target, ["macros"], self.normal["data"], nx_macros)
         self.assertEqual(again["parameters"]["BaseApp/Macro/Macros"]["added"], [])
+        self.assertEqual(again["parameters"]["BaseApp/Macro/Macros"]["commands"],
+                         [{"command": "Std_Macro_1", "script": "gear.FCMacro"}])     # had: still reported
+        self.assertEqual(again["parameters"]["macro files"]["kept"], ["bolt.py", "gear.FCMacro"])
+        self.assertEqual((nx_macros / "gear.FCMacro").read_text(encoding="utf-8"), "# edited in NX-Style\n")
         self.assertEqual(len(macro_commands(self.target)), 2)
+
+    def test_a_macro_path_of_the_nx_profile_outside_it_gets_no_files(self):
+        root = ET.parse(self.target)
+        ET.SubElement(launch_nx._param_group(root.getroot(), ("BaseApp", "Preferences", "Macro"), create=True),
+                      "FCText", Name="MacroPath").text = str(self.macros)      # pointed at the normal folder
+        root.write(self.target, encoding="UTF-8", xml_declaration=True)
+        msg = launch_nx.bring_preferences(self.paths, ["macros"], (1, 1, 4), "")
+        self.assertIn("macro files not copied", msg)
+        self.assertEqual(sorted(p.name for p in self.macros.iterdir()), ["bolt.py", "gear.FCMacro", "notes.txt"])
+        self.assertFalse((self.paths["data"] / "Macro").exists())
 
     def test_group_names(self):
         self.assertEqual(launch_nx.import_groups(True), ["navigation"])
@@ -194,6 +220,29 @@ class LauncherTests(Fixture):
         launch_nx.bring_preferences(self.paths, ["navigation"], (1, 1, 4), str(other))
         self.assertEqual(params(self.target, "BaseApp", "Preferences", "View")["NavigationStyle"][1],
                          "Gui::MayaNavigationStyle")
+
+    def test_an_unreadable_normal_user_cfg_imports_nothing_and_does_not_stop_the_start(self):
+        broken = self.tmp / "broken"
+        broken.mkdir()
+        (broken / "user.cfg").write_text("<FCParameters><FCParamGroup Name='Root'>", encoding="utf-8")
+        launch_nx.bring_preferences(self.paths, ["navigation"], (1, 1, 4), "")      # an earlier good import
+        msg = launch_nx.bring_preferences(self.paths, ["navigation"], (1, 1, 4), str(broken))
+        self.assertIn("nothing imported", msg)
+        self.assertFalse((self.paths["home"] / launch_nx.IMPORTED_FILE).exists())
+
+    def test_config_and_data_folders_apart_as_on_linux(self):
+        config, data = self.tmp / "cfg", self.tmp / "share"
+        config.mkdir()
+        (config / "user.cfg").write_text(NORMAL_CFG.replace("Touchpad", "Maya").replace(
+            "<FCText Name=\"MacroPath\">{MACROS}</FCText>", ""), encoding="utf-8")
+        (data / "Macro").mkdir(parents=True)
+        (data / "Macro" / "gear.FCMacro").write_text("# from share\n", encoding="utf-8")
+        launch_nx.bring_preferences(self.paths, ["navigation", "macros"], (1, 1, 4),
+                                    {"config": str(config), "data": str(data)})
+        self.assertEqual(params(self.target, "BaseApp", "Preferences", "View")["NavigationStyle"][1],
+                         "Gui::MayaNavigationStyle")
+        self.assertEqual((self.paths["data"] / "Macro" / "gear.FCMacro").read_text(encoding="utf-8"),
+                         "# from share\n")       # no MacroPath: FreeCAD's default <data>/Macro
 
     def test_no_normal_profile_says_so_and_writes_nothing(self):
         msg = launch_nx.bring_preferences(self.paths, ["navigation"], (1, 1, 4), str(self.tmp / "missing"))

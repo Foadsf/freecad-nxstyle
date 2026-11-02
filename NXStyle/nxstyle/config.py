@@ -55,9 +55,12 @@ DEFAULTS = {
     "nx_shortcuts": True,              # bind the NX keys (see Keyboard shortcuts); false keeps FreeCAD's
     # preferences the launcher copies from your normal FreeCAD at every start, which it only reads: "navigation"
     # (style, orbit style, zoom; the NX-Style settings navigation, zoom_at_cursor and invert_wheel_zoom you set
-    # here still win), "view_cube", "macros" (macro folder and macro commands), "all"; [] = none, true = navigation
+    # here still win), "view_cube", "macros" (macro commands, their files copied into this profile), "all"; [] =
+    # none, true = navigation
     "import_preferences": [],
-    "normal_profile": "",              # your normal FreeCAD's user folder (holds user.cfg); "" = FreeCAD's usual one
+    # your normal FreeCAD's user folder (holds user.cfg, Mod and Macro), or {"config": ..., "data": ...} where they
+    # are apart (Linux: ~/.config/FreeCAD and ~/.local/share/FreeCAD); "" = FreeCAD's usual folders
+    "normal_profile": "",
     # also load the add-ons of your normal FreeCAD's Mod folder (not those NX-Style bundles or the NX profile has);
     # their workbenches join Application › Add-ons with a ribbon made from their toolbars
     "user_addons": False,

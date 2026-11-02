@@ -1021,9 +1021,14 @@ class Ribbon(QtWidgets.QWidget):
             if not entries:
                 return None, size
             return DropdownButton(item["dropdown"], entries, size, on_run=self._ran), size
-        cmd = resolve(item["cmd"], known) if "cmd" in item else None
+        if "cmd" not in item:            # a {"macros": true} marker is expanded before (spec_groups): malformed
+            import FreeCAD
+            FreeCAD.Console.PrintWarning(f"NXStyle: ribbon item without a command in {tab} › {group}: {item}\n")
+            self.missing.append((tab, group, f"malformed item {item}"))
+            return None, size
+        cmd = resolve(item["cmd"], known)
         if not cmd:
-            if "cmd" in item and not item.get("optional"):   # optional = only in newer FreeCAD versions
+            if not item.get("optional"):   # optional = only in newer FreeCAD versions
                 self.missing.append((tab, group, item["cmd"]))
             return None, size
         label = self._label(item, cmd)

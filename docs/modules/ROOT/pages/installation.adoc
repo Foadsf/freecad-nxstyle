@@ -151,7 +151,7 @@ The NX profile is a private set of FreeCAD user folders, one per FreeCAD version
 
 Inside it, `config` holds FreeCAD's `user.cfg` and NX-Style's `nxstyle.json` (see xref:settings.adoc[]), `data` holds the add-ons (`Mod`) and macros, and `temp` FreeCAD's temporary files.
 
-Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never written, and read only when you ask for its preferences (`--import-preferences`, xref:settings.adoc#import[]).
+Your normal FreeCAD (`%APPDATA%\FreeCAD` on Windows) is never written, and read only when you ask for its preferences or add-ons (`--import-preferences`, xref:settings.adoc#import[]; `--user-addons`, xref:#addons[below]).
 That also means your usual FreeCAD add-ons do not load in the NX profile unless you ask for them (xref:#addons[below]).
 
 [#addons]

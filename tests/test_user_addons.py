@@ -74,6 +74,11 @@ class DiscoveryTests(unittest.TestCase):
         load, _ = self.find()
         self.assertEqual([d.name for d in load], ["MyBench", "NsBench"])
 
+    def test_mod_from_the_data_folder_when_config_and_data_are_apart(self):
+        load, _ = launch_nx.find_user_addons(self.profile, (1, 1, 4), True,
+                                             {"config": str(self.tmp / "elsewhere"), "data": str(self.normal)})
+        self.assertEqual([d.name for d in load], ["MyBench", "NsBench"])
+
     def test_no_mod_folder(self):
         load, why = launch_nx.find_user_addons(self.profile, (1, 1, 4), True, str(self.tmp / "missing"))
         self.assertEqual(load, [])

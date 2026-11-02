@@ -323,10 +323,11 @@ IMPORT_GROUPS = {
                                  "RotationCenterSize", "RotationCenterColor"])],
     # the Navigation Cube: shown or not, and how it looks
     "view_cube": [(VIEW_GROUP, ["ShowNaviCube"]), (("BaseApp", "Preferences", "NaviCube"), None)],
-    # the macro folder, and the macro commands of Tools › Customize › Macros (merged, see import_preferences)
-    "macros": [(("BaseApp", "Preferences", "Macro"), ["MacroPath", "MacroPathCheckedForMigrationTov1-1"]),
-               (("BaseApp", "Macro", "Macros"), None)],
+    # the macro commands of Tools › Customize › Macros (merged, see import_preferences); the macro files are copied
+    # into the NX profile's own Macro folder, never shared, so NX-Style never writes into the normal profile
+    "macros": [(("BaseApp", "Macro", "Macros"), None)],
 }
+MACRO_SUFFIXES = (".fcmacro", ".py")      # what FreeCAD's Macros dialog lists
 DEFAULT_IMPORT = ["navigation"]
 IMPORTED_FILE = "nxstyle.imported.json"
 
@@ -407,14 +408,44 @@ def import_groups(choice) -> list[str]:
     return list(dict.fromkeys(names))
 
 
-def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str]) -> dict:
+def normal_macro_dir(src_root, normal_data: Path | None) -> Path | None:
+    """The normal profile's macro folder: its MacroPath preference, else <data>/Macro (FreeCAD's default)."""
+    group = _param_group(src_root, ("BaseApp", "Preferences", "Macro"))
+    el = next((e for e in group if e.tag == "FCText" and e.get("Name") == "MacroPath"), None) \
+        if group is not None else None
+    if el is not None and (el.text or "").strip():
+        return Path(el.text.strip()).expanduser()
+    return normal_data / "Macro" if normal_data else None
+
+
+def copy_macros(source: Path | None, target: Path) -> dict:
+    """Copy the macro files of the normal macro folder (only read) into the NX profile's. A file the NX profile
+    already has is kept as it is, so a macro edited in NX-Style is never overwritten."""
+    copied, kept = [], []
+    if source is not None and source.is_dir():
+        target.mkdir(parents=True, exist_ok=True)
+        for f in sorted(source.iterdir()):
+            if not (f.is_file() and f.suffix.lower() in MACRO_SUFFIXES):
+                continue
+            if (target / f.name).exists():
+                kept.append(f.name)
+            else:
+                shutil.copy2(f, target / f.name)
+                copied.append(f.name)
+    return {"from": str(source) if source else None, "to": str(target), "copied": copied, "kept": kept}
+
+
+def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str], normal_data: Path | None = None,
+                       macro_target: Path | None = None) -> dict:
     """Copy the parameters of these groups from the normal user.cfg (only read) into the NX profile's user.cfg.
 
     Single parameters replace the NX profile's; a whole group (the view cube's look) is replaced. Macro commands
     are merged: one from the normal profile whose script the NX profile does not have yet is added under the next
-    free Std_Macro_<n>, so the NX profile's own macro commands stay and a second import adds nothing.
+    free Std_Macro_<n>, so the NX profile's own macro commands stay and a second import adds nothing; their macro
+    files are copied into macro_target (the NX profile's Macro folder), which stays NX-Style's macro folder.
     Returns the record that NX-Style reads (nxstyle.imported.json): what was copied, and the NX-Style settings it
-    stands for ("navigation", "zoom_at_cursor", "invert_wheel_zoom"); nxstyle.json still overrides those."""
+    stands for ("navigation", "zoom_at_cursor", "invert_wheel_zoom"); nxstyle.json still overrides those.
+    Raises ET.ParseError or OSError when the normal user.cfg cannot be read."""
     import copy
     import xml.etree.ElementTree as ET
 
@@ -430,11 +461,12 @@ def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str]) ->
             key = "/".join(path)
             if path == ("BaseApp", "Macro", "Macros"):
                 dgroup = _param_group(dst, path, create=True)
-                have = {_script(g) for g in dgroup.findall("FCParamGroup")}
+                have = {_script(g): g.get("Name") for g in dgroup.findall("FCParamGroup")}
                 used = {g.get("Name") for g in dgroup.findall("FCParamGroup")}
-                added = []
+                added, present = [], []
                 for g in sgroup.findall("FCParamGroup"):
                     if _script(g) in have:
+                        present.append({"command": have[_script(g)], "script": _script(g)})
                         continue
                     n = 0
                     while f"Std_Macro_{n}" in used:
@@ -443,9 +475,11 @@ def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str]) ->
                     new.set("Name", f"Std_Macro_{n}")
                     dgroup.append(new)
                     used.add(new.get("Name"))
-                    have.add(_script(g))
+                    have[_script(g)] = new.get("Name")
                     added.append({"command": new.get("Name"), "script": _script(g)})
-                copied[key] = {"added": added}
+                    present.append(added[-1])
+                # "commands": every macro command of the normal profile, as the NX profile now has it
+                copied[key] = {"added": added, "commands": present}
             elif names is None:
                 parent = _param_group(dst, path[:-1], create=True)
                 old = next((g for g in parent.findall("FCParamGroup") if g.get("Name") == path[-1]), None)
@@ -462,6 +496,11 @@ def import_preferences(source_cfg: Path, target_cfg: Path, groups: list[str]) ->
                         dgroup.remove(old)
                     dgroup.append(copy.deepcopy(el))
                     copied.setdefault(key, {})[el.get("Name")] = _param_value(el)
+    if "macros" in groups and macro_target is not None:
+        copied["macro files"] = copy_macros(normal_macro_dir(src, normal_data), macro_target)
+        mgroup = _param_group(dst, ("BaseApp", "Preferences", "Macro"), create=True)
+        if not any(e.get("Name") == "MacroPath" for e in mgroup if e.tag == "FCText"):
+            ET.SubElement(mgroup, "FCText", Name="MacroPath").text = str(macro_target)
     target_cfg.parent.mkdir(parents=True, exist_ok=True)
     tree.write(target_cfg, encoding="UTF-8", xml_declaration=True)
     view = copied.get("/".join(VIEW_GROUP), {})
@@ -481,7 +520,7 @@ def _script(group) -> str:
 
 
 def bring_preferences(paths: dict[str, Path], groups: list[str], version: tuple[int, int, int] | None,
-                      normal_dir: str = "") -> str:
+                      normal_dir: str | dict = "") -> str:
     """At each start: import these groups from the normal profile (normal_dir, else FreeCAD's usual folder) into
     the NX profile and write nxstyle.imported.json; with no group, remove that record, so NX-Style's own defaults
     decide again. Returns the start-up line."""
@@ -490,18 +529,59 @@ def bring_preferences(paths: dict[str, Path], groups: list[str], version: tuple[
         if record_path.is_file():
             record_path.unlink()
         return "none imported (--import-preferences, or \"import_preferences\" in nxstyle.json, brings yours)"
-    if normal_dir:
-        source = Path(normal_dir).expanduser() / "user.cfg"
-    else:
-        normal = normal_profile(version)
-        source = normal["config"] / "user.cfg" if normal else None
+    import xml.etree.ElementTree as ET
+
+    normal = normal_dirs(version, normal_dir)
+    source = normal["config"] / "user.cfg" if normal else None
     if source is None or not source.is_file() or _is_within(source, paths["home"].parent.resolve()):
         if record_path.is_file():
             record_path.unlink()
         return f"normal FreeCAD profile not found ({source or 'no user.cfg'}); nothing imported"
-    record = import_preferences(source, paths["home"] / "user.cfg", groups)
+    macro_target, macro_note = nx_macro_dir(paths) if "macros" in groups else (None, "")
+    try:
+        record = import_preferences(source, paths["home"] / "user.cfg", groups, normal["data"], macro_target)
+    except (ET.ParseError, OSError) as e:
+        if record_path.is_file():
+            record_path.unlink()
+        return f"nothing imported: {source} could not be read ({e})"
     record_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
-    return f"{', '.join(groups)} imported from {source} (only read)"
+    return f"{', '.join(groups)} imported from {source} (only read){macro_note}"
+
+
+def normal_dirs(version: tuple[int, int, int] | None, normal_dir="") -> dict[str, Path] | None:
+    """{"config": folder of user.cfg, "data": folder of Mod and Macro} of the normal profile: "normal_profile" when
+    set (one folder for both, as on Windows and macOS, or {"config": ..., "data": ...} for Linux's two), else
+    FreeCAD's usual folders (normal_profile)."""
+    if isinstance(normal_dir, dict):
+        config, data = normal_dir.get("config") or normal_dir.get("data"), normal_dir.get("data") or \
+            normal_dir.get("config")
+        return {"config": Path(config).expanduser(), "data": Path(data).expanduser()} if config else None
+    if normal_dir:
+        folder = Path(normal_dir).expanduser()
+        return {"config": folder, "data": folder}
+    return normal_profile(version)
+
+
+def nx_macro_dir(paths: dict[str, Path]) -> tuple[Path | None, str]:
+    """Where imported macro files go: the NX profile's MacroPath when it lies inside the NX profile, else
+    <profile>/data/Macro (import_preferences makes that its MacroPath when it has none). None, with a note, when
+    the NX profile's MacroPath points outside it: nothing is copied there."""
+    import xml.etree.ElementTree as ET
+
+    default = paths["data"] / "Macro"
+    try:
+        root = ET.parse(paths["home"] / "user.cfg").getroot()
+    except (OSError, ET.ParseError):
+        return default, ""
+    group = _param_group(root, ("BaseApp", "Preferences", "Macro"))
+    el = next((e for e in group if e.tag == "FCText" and e.get("Name") == "MacroPath"), None) \
+        if group is not None else None
+    if el is None or not (el.text or "").strip():
+        return default, ""
+    own = Path(el.text.strip()).expanduser()
+    if _is_within(own, paths["home"].parent.resolve()):
+        return own, ""
+    return None, f"; macro files not copied: the NX profile's macro folder is {own}, outside the NX profile"
 
 
 # --------------------------------------------------------------------------
@@ -546,18 +626,15 @@ def is_freecad_module(folder: Path) -> bool:
 
 
 def find_user_addons(profile: Path, version: tuple[int, int, int] | None, enabled: bool,
-                     normal_dir: str = "") -> tuple[list[Path], str]:
+                     normal_dir: str | dict = "") -> tuple[list[Path], str]:
     """The add-ons of the normal FreeCAD profile's Mod folder to load with -M, and the start-up line. Off unless
     asked for. Skipped: one bundled under vendor/ (it loads from there, or is off on purpose), one already in the
     NX profile's own Mod folder (FreeCAD loads that itself), one the Addon Manager disabled (ADDON_DISABLED), and a
     folder that is no FreeCAD module (a parts library, a preference pack)."""
     if not enabled:
         return [], "not loaded (--user-addons, or \"user_addons\": true in nxstyle.json, loads them)"
-    if normal_dir:
-        mods = Path(normal_dir).expanduser() / "Mod"
-    else:
-        normal = normal_profile(version)
-        mods = normal["data"] / "Mod" if normal else None
+    normal = normal_dirs(version, normal_dir)
+    mods = normal["data"] / "Mod" if normal else None
     if mods is None or not mods.is_dir():
         return [], f"none found ({mods or 'no normal FreeCAD profile'})"
     taken = set()

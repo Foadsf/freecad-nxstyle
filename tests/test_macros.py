@@ -35,9 +35,10 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(macros.user_commands(known), ["Std_Macro_0", "Std_Macro_1"])
 
     def test_the_debugger_commands_are_not_user_macros(self):
-        """FreeCAD's own macro debugger and recorder commands have no underscore after 'Macro'."""
+        """FreeCAD's own macro commands (1.1.4's list, smoke info 'macro commands in this FreeCAD', and the
+        recorder's Std_MacroStopRecord of other versions) have no underscore after 'Macro'."""
         known = {"Std_MacroStartDebug", "Std_MacroStepInto", "Std_MacroStepOver", "Std_MacroStopDebug",
-                 "Std_MacroAttachDebugger", "Std_MacroStopRecord", "Std_MacroToggleBreakpoint"}
+                 "Std_MacroAttachDebugger", "Std_MacroStopRecord", "Std_RecentMacros"}
         self.assertEqual(macros.user_commands(known), [])
 
     def test_numbered_commands_keep_the_order_they_were_made_in(self):

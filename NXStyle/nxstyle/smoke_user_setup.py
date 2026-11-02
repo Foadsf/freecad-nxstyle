@@ -26,6 +26,15 @@ def tab_buttons(smoke, tab):
     return {b.command: b for b in page.findChildren(CommandButton)}
 
 
+def in_profile(path):
+    """The path lies inside the NX profile the launcher started (NXSTYLE_PROFILE)."""
+    root = os.environ.get("NXSTYLE_PROFILE")
+    if not root:
+        return False
+    p, r = os.path.normcase(os.path.abspath(path)), os.path.normcase(os.path.abspath(root))
+    return p == r or p.startswith(r.rstrip(os.sep) + os.sep)
+
+
 def rebuild(smoke):
     smoke.shell.build_ribbon(smoke.shell.current_app)
 
@@ -58,12 +67,14 @@ def changed_share(a, b):
 
 
 def run_view_cube(smoke):
-    """View › Visualization › View Cube: a new profile has no cube (seeded off); the button switches FreeCAD's own
-    cube on in the open view, ticks, and is kept in FreeCAD's preference; clicked again it is off. Controls: the
-    corner image changes only with the cube, and a change made in Preferences (the parameter) moves the tick."""
+    """View › Visualization › View Cube: the button's tick shows FreeCAD's preference as the profile starts; from
+    off, the button switches FreeCAD's own cube on in the open view, ticks, and is kept in FreeCAD's preference;
+    clicked again it is off. Controls: the corner image changes only with the cube, and a change made in
+    Preferences (the parameter) moves the tick. The preference is put back as it was (a reused --profile)."""
     from .qt import QtWidgets
     from .tutorial import qtest
     doc = None
+    start = None
     try:
         from . import prefs
         view = smoke.view() if Gui.ActiveDocument is not None else None
@@ -80,14 +91,17 @@ def run_view_cube(smoke):
         p = App.ParamGet(prefs.VIEW)
         start = p.GetBool("ShowNaviCube", True)
         b = tab_buttons(smoke, "View").get("NXStyle_ViewCube")
-        smoke.check("View › Visualization › View Cube button, off in a new profile",
-                    b is not None and b.nx_label == "View Cube" and b.isCheckable() and not b.isChecked()
-                    and not start and smoke.shell.ribbon.locations.get("NXStyle_ViewCube") == "View › Visualization",
+        smoke.check("View › Visualization › View Cube button, its tick the preference the profile starts with",
+                    b is not None and b.nx_label == "View Cube" and b.isCheckable() and b.isChecked() == start
+                    and smoke.shell.ribbon.locations.get("NXStyle_ViewCube") == "View › Visualization",
                     {"button": b is not None, "checked": b.isChecked() if b else None, "ShowNaviCube": start,
                      "where": smoke.shell.ribbon.locations.get("NXStyle_ViewCube")})
         if b is None:
             return
         smoke.shell.ribbon.select("View")
+        if start:                                      # a reused profile with the cube on: begin from off
+            p.SetBool("ShowNaviCube", False)
+            qtest().qWait(300)
         QtWidgets.QApplication.processEvents()
         why = {}
         off_img = corner_image(view, why)
@@ -126,6 +140,9 @@ def run_view_cube(smoke):
     except Exception:
         smoke.check("view cube scenario ran", False, traceback.format_exc().splitlines()[-1])
     finally:
+        if start is not None:
+            from . import prefs
+            App.ParamGet(prefs.VIEW).SetBool("ShowNaviCube", start)
         if doc is not None:
             App.closeDocument(doc.Name)
 
@@ -172,8 +189,9 @@ def run_imported_prefs(smoke):
                 live = p.GetUnsigned(name)    # an FCUInt (a colour)
             if (abs(live - value) > 1e-9) if isinstance(value, float) else live != value:
                 wrong[name] = {"imported": value, "in FreeCAD": live}
-        smoke.check("imported view preferences are FreeCAD's in the NX profile (orbit style, zoom, ...)",
-                    view and not wrong, wrong or sorted(view))
+        if {"navigation", "view_cube"} & set(want):
+            smoke.check("imported view preferences are FreeCAD's in the NX profile (orbit style, zoom, ...)",
+                        view and not wrong, wrong or sorted(view))
         if "navigation" in want:
             nav = Gui.ActiveDocument.ActiveView.getNavigationType() if Gui.ActiveDocument else None
             if nav is None:
@@ -190,12 +208,17 @@ def run_imported_prefs(smoke):
                             nav == view.get("NavigationStyle") == expected,
                             {"view": nav, "imported": view.get("NavigationStyle")})
         if "macros" in want:
-            added = record["parameters"].get("BaseApp/Macro/Macros", {}).get("added", [])
+            added = record["parameters"].get("BaseApp/Macro/Macros", {}).get("commands", [])   # added or had
             rebuild(smoke)
             tools = tab_buttons(smoke, "Tools")
             smoke.check("imported macro commands are Tools › Macros buttons",
                         added and all(a["command"] in tools for a in added),
-                        {"added": added, "buttons": sorted(c for c in tools if c.startswith("Std_Macro_"))})
+                        {"commands": added, "buttons": sorted(c for c in tools if c.startswith("Std_Macro_"))})
+            folder = App.getUserMacroDir(True)
+            files = {a["script"]: os.path.isfile(os.path.join(folder, a["script"])) for a in added}
+            smoke.check("their macro files are copies in the NX profile's own macro folder",
+                        in_profile(folder) and files and all(files.values()),
+                        {"macro folder": folder, "inside the NX profile": in_profile(folder), "files": files})
     except Exception:
         smoke.check("imported preferences scenario ran", False, traceback.format_exc().splitlines()[-1])
 
@@ -261,6 +284,7 @@ def run_user_addons(smoke):
 
 
 def run_macros(smoke):
+    path = None
     try:
         known = set(Gui.listCommands())
         smoke.info["macro commands in this FreeCAD"] = sorted(n for n in known if "Macro" in n)
@@ -274,17 +298,21 @@ def run_macros(smoke):
             smoke.skip("a macro command of the user's own as a Tools › Macros button",
                        "this FreeCAD has no Gui.Command.createCustomCommand")
             return
-        path = os.path.join(App.getUserMacroDir(True), MACRO_FILE)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        folder = App.getUserMacroDir(True)
+        if not in_profile(folder):
+            smoke.check("FreeCAD's macro folder is the NX profile's (the test writes its macro there)", False,
+                        f"{folder} is outside {os.environ.get('NXSTYLE_PROFILE')}")
+            return
+        path = os.path.join(folder, MACRO_FILE)
+        os.makedirs(folder, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write("import FreeCAD\n"
                     f"p = FreeCAD.ParamGet({MARK!r})\n"
                     "p.SetInt('Runs', p.GetInt('Runs', 0) + 1)\n")
         App.ParamGet(MARK).SetInt("Runs", 0)
-        had = set(tab_buttons(smoke, "Tools"))
         name = Gui.Command.createCustomCommand(MACRO_FILE, "Smoke Macro", "Runs the smoke test's macro")
         smoke.info["user macro command"] = name
-        before = name in had
+        before = name in tab_buttons(smoke, "Tools")     # the command exists; the ribbon is not rebuilt yet
         rebuild(smoke)
         smoke.shell.ribbon.select("Tools")
         b = tab_buttons(smoke, "Tools").get(name)
@@ -308,3 +336,7 @@ def run_macros(smoke):
         smoke.shell.ribbon.select("Home")
     except Exception:
         smoke.check("macros scenario ran", False, traceback.format_exc().splitlines()[-1])
+    finally:
+        if path is not None and os.path.isfile(path):
+            os.remove(path)                           # the test's own file, in the NX profile's macro folder
+        smoke.info["smoke macro file left behind"] = bool(path and os.path.isfile(path))
