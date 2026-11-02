@@ -5,6 +5,7 @@ The NX-based bindings follow {nxtips}[Foadsf/NXtips] (NX's default keys with the
 The focus, Command Finder, named selection and keyboard pointer shortcuts below are *NX-Style accessibility extensions*.
 They are listed separately from the NX-based mappings and are not claimed as NX defaults.
 
+Every key below is pressed by the xref:testing.adoc[self-test] through Qt's real shortcut system, and must reach its FreeCAD command with no other action holding the same key.
 The reference table is generated from the shortcut definitions.
 It describes the default assignments; command availability depends on the document, active workbench and installed add-ons.
 Keys marked *sketch edit* apply while a sketch is open for editing.
@@ -81,7 +82,8 @@ Multiline editors and tables keep their native Tab behavior; kbd:[Ctrl+Tab] move
 The task's own validation, selection requirements, OK / Apply and Cancel behavior still apply.
 For example, find *Block*, enter its dimensions in the task fields, and activate its OK button; use named geometry selection when a later feature asks for a face or edge.
 
-With the graphics view focused and the keyboard pointer off, the arrow keys rotate, kbd:[Shift+Arrow] pans, and kbd:[+] / kbd:[-] zoom.
+With the graphics view focused and the keyboard pointer off, kbd:[Alt+Arrow] rotates the view.
+FreeCAD's own view keys keep their meaning: the arrow keys pan, kbd:[Page Up] / kbd:[Page Down] zoom, kbd:[Shift+Left] / kbd:[Shift+Right] turn the view by 90°, and kbd:[Ctrl+Arrow] toggles the dock overlays.
 Text fields, trees, menus and task dialogs retain their own navigation keys.
 
 == Keyboard pointer
@@ -105,8 +107,9 @@ It sends the same viewport events used by the existing interaction tools, so it 
 
 The pointer is a screen-position tool: use typed values for exact coordinates and named selection for identifiable geometry.
 It does not add geometric snapping rules or replace a workbench's own task behavior.
-While the pointer is on, its navigation and click keys also work when Sketcher focuses an inline dimension box.
-Turn the pointer off with kbd:[F12] to use those boxes' normal arrow and Enter behavior for typed dimensions.
+In a sketch tool, FreeCAD gives an on-view dimension box the keyboard focus whenever the pointer moves, as it does for mouse moves.
+Digits then go into that box, and the pointer's arrows and kbd:[Enter] still move and click: type a value, then press kbd:[Enter] to place the point with it.
+Turn the pointer off with kbd:[F12] to use the boxes' own kbd:[Enter] and kbd:[Tab].
 Keyboard access to native dialogs and add-on canvases also depends on their controls; these routes are not a claim that every FreeCAD or add-on workflow has been exercised without a mouse.
 
 == Command binding reference

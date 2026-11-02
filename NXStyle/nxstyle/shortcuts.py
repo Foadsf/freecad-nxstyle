@@ -205,8 +205,8 @@ class KeyGate(QtCore.QObject):
     action of an NX key's command gets the state its command reports now (enable_if_active). Without it, a key
     pressed right after a pick in the Part Navigator did nothing (tutorial AX: Ctrl+B, Ctrl+Shift+K).
 
-    Only the part-level keys ("doc" context): in a sketch FreeCAD greys a creation tool while it hands over from
-    the last one, and isActive() does not say so. Enabling Profile (Z) there right after the last Profile ended
+    Only the part-level keys ("doc" context) and the keyboard access keys ("global"): in a sketch FreeCAD greys a
+    creation tool while it hands over from the last one, and isActive() does not say so. Enabling Profile (Z) there right after the last Profile ended
     started it half-way (smoke: "Profile left open", measured 2026-10-28)."""
 
     def __init__(self, owner):

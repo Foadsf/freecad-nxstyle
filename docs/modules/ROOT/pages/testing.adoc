@@ -11,7 +11,7 @@ Negative controls remove alias help, introduce a conflicting key, or suppress po
 These checks use real Qt widgets with FreeCAD services replaced; they do not establish that a native workbench operation succeeds.
 
 Inside FreeCAD, `s_keyboard_access` exercises the ten access keys, camera navigation, named face selection, pointer selection, typed Block creation and Undo/Redo.
-`s_keyboard_sketch` uses keyboard pointer events to draw a native rectangle after `s_sketch_enter`.
+`s_keyboard_sketch` uses keyboard pointer events to draw a native rectangle after `s_sketch_enter`, with one corner coordinate typed into the on-view field that the pointer's moves focus, and checks that kbd:[Escape] then ends the tool.
 The harness records individual results and screenshots; third-party workbenches and screen-reader behavior need separate qualification.
 
 [source,bash]
