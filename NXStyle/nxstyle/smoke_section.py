@@ -26,6 +26,7 @@ WALL = list(range(0, 8)) + [12, 13]           # geometry indices: the inner and 
 LIP = list(range(0, 4)) + list(range(8, 12)) + [14, 15]
 FLANGE = [15, 16, 17, 18]
 OVERLAPPED = {3: 0.25, 11: 0.25}               # Line 2 of the wall and of the edge: picked clear of the flange
+MISSED_MS = 300      # a planted run's later waits in a part once one has timed out (its check fails already)
 
 
 def _geometry(kind, p, q, c, r):
@@ -123,12 +124,21 @@ def box_widget(cls, name):
 
 
 class Run:
-    def __init__(self, smoke, doc, body, sk):
+    def __init__(self, smoke, doc, body, sk, planted=False):
         from . import controller
         self.smoke, self.doc, self.body, self.sk = smoke, doc, body, sk
         self.ctl = controller.CONTROLLER
         self.names = edge_names(sk)
         self.routes = []
+        self.planted, self.missed = planted, False
+
+    def wait(self, cond, ms):
+        """wait(), but in a planted run, once a wait of this part has timed out, the later ones get MISSED_MS: the
+        part's check fails already, and sitting out each 4-6 s timeout cost the negative control about 100 s. The
+        first wait keeps its full time, so a plant that changes nothing still lets the control fail."""
+        ok = wait(cond, min(ms, MISSED_MS) if self.planted and self.missed else ms)
+        self.missed = self.missed or not ok
+        return ok
 
     # ------------------------------------------------------------ inputs
     def rule(self, key):
@@ -219,14 +229,16 @@ class Run:
     def session(self):
         return self.ctl.session
 
+    def up(self, n=None):
+        """The NX box is up now (with n curves in the section)."""
+        from . import controller
+        s = self.ctl.session
+        return s is not None and s.stage == "parameterize" and controller._alive(s.box) and \
+            (n is None or (s.edges is not None and len(s.edges) == n))
+
     def opened(self, n=None, ms=6000):
-        """The NX box is up (with n curves in the section)."""
-        def up():
-            s = self.ctl.session
-            from . import controller
-            return s is not None and s.stage == "parameterize" and controller._alive(s.box) and \
-                (n is None or (s.edges is not None and len(s.edges) == n))
-        return wait(up, ms)
+        """The NX box comes up (with n curves in the section)."""
+        return self.wait(lambda: self.up(n), ms)
 
     def vector(self, key):
         c = box_widget(QtWidgets.QComboBox, "nxSpecifyVector")
@@ -236,7 +248,8 @@ class Run:
         c.setCurrentIndex(i)
         c.activated.emit(i)
         qwait(100)
-        return wait(lambda: self.ctl.session is not None and self.ctl.session.axis["vector"] == key and self.opened(ms=50))
+        return self.wait(lambda: self.ctl.session is not None and self.ctl.session.axis["vector"] == key and
+                         self.up(), 4000)
 
     def point(self, xyz):
         fields = [box_widget(QtWidgets.QDoubleSpinBox, f"nxPoint{c}") for c in "XYZ"]
@@ -246,7 +259,7 @@ class Run:
             w.setValue(v)
         fields[-1].editingFinished.emit()
         qwait(100)
-        return wait(lambda: self.opened(ms=50) and tuple(self.ctl.session.axis["point"]) == tuple(xyz))
+        return self.wait(lambda: self.up() and tuple(self.ctl.session.axis["point"]) == tuple(xyz), 4000)
 
     def limits(self, start, end):
         a, b = box_widget(QtWidgets.QDoubleSpinBox, "nxLimitStart"), box_widget(QtWidgets.QDoubleSpinBox, "nxLimitEnd")
@@ -266,14 +279,14 @@ class Run:
         c.setCurrentIndex(i)
         c.activated.emit(i)
         qwait(100)
-        return wait(lambda: self.ctl.session is not None and self.ctl.session.mode == key and self.opened(ms=50))
+        return self.wait(lambda: self.ctl.session is not None and self.ctl.session.mode == key and self.up(), 4000)
 
     def ok(self):
         b = self.ctl._ok_button()
         enabled = b is not None and b.isEnabled()
         if b is not None:
             b.click()
-        wait(lambda: not self.ctl.busy() and not Gui.Control.activeDialog(), 6000)
+        self.wait(lambda: not self.ctl.busy() and not Gui.Control.activeDialog(), 6000)
         qwait(200)
         return enabled
 
@@ -305,6 +318,7 @@ class Recorder:
 
 
 def reset(run):
+    run.missed = False
     if run.ctl.busy():
         run.ctl.cancel()
         wait(lambda: not run.ctl.busy(), 2000)
@@ -316,8 +330,8 @@ def reset(run):
     qwait(200)
 
 
-def scenario(smoke, name="SmokeSection"):
-    """The three loops of the casing, then Cancel."""
+def scenario(smoke, name="SmokeSection", planted=False):
+    """The three loops of the casing, then Cancel. planted: the negative control's run (see Run.wait)."""
     before = App.ActiveDocument
     doc = App.newDocument(name)
     try:
@@ -327,7 +341,7 @@ def scenario(smoke, name="SmokeSection"):
         gdoc.ActiveView.viewTop()
         gdoc.ActiveView.fitAll()
         settle(gdoc.ActiveView, 400)
-        run = Run(smoke, doc, body, sk)
+        run = Run(smoke, doc, body, sk, planted)
         smoke.info["section: casing edges"] = {str(k): v for k, v in sorted(run.names.items())}
         try:
             for part in (revolve_wall, extrude_lip, revolve_flange, cancel):
@@ -559,7 +573,7 @@ def negative_control(smoke):
     real = controller.expand
     controller.expand = lambda sketch, element, rule: None
     try:
-        scenario(rec, "SmokeSectionPlanted")
+        scenario(rec, "SmokeSectionPlanted", planted=True)
     finally:
         controller.expand = real
     failed = [name.split(":")[0][:60] for name, ok, _ in rec.checks if not ok]

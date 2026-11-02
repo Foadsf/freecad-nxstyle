@@ -21,6 +21,7 @@ one bundled with FreeCAD) can run it.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -575,6 +576,58 @@ RESULT_FILES = {"smoke": "smoke.json", "tutorial": "tutorial.json"}
 EXIT_INVALID_RESULT = 6            # stale, empty, truncated, unfinished or another run's result
 EXIT_CHILD_FAILED = 7              # FreeCAD exited with an error code
 
+# A run's time limit grows with what it plans to do, so adding self-test steps or tutorials does not push a
+# healthy run over a fixed limit, while a run that hangs still ends. The self-test's 87 steps took 679 s on an
+# otherwise idle machine (2026-11-01: 567 s of step work, 58 s of planned waits, 55 s around them) and 1705 s on
+# the same machine while other work held it at 80 % CPU (1478 s of step work, 19.6 s a step of wall time), where
+# the geometry-bound steps run two to three times slower. SMOKE_STEP_S is that loaded per-step cost with
+# headroom, so a run that only shares the machine still fits while a run that hangs still ends.
+SMOKE_BASE_S = 120                 # FreeCAD's start, Strata's wait, writing the result and closing
+SMOKE_STEP_S = 24                  # per planned step of smoke.py's plan(); the 89-step plan -> 2256 s
+TUTORIAL_BASE_S = 300
+TUTORIAL_EACH_S = 300              # a textbook tutorial takes about a minute, a Katydid one up to about 8
+SMOKE_SOURCE = MODULE_DIR / "nxstyle" / "smoke.py"
+
+
+def smoke_planned_steps(source: Path = SMOKE_SOURCE) -> int:
+    """How many steps Smoke.plan() yields, read from smoke.py without importing it (it needs FreeCAD)."""
+    tree = ast.parse(source.read_text(encoding="utf-8"))
+    for cls in tree.body:
+        if isinstance(cls, ast.ClassDef) and cls.name == "Smoke":
+            for fn in cls.body:
+                if isinstance(fn, ast.FunctionDef) and fn.name == "plan":
+                    return sum(isinstance(n, ast.Yield) for n in ast.walk(fn))
+    raise ValueError(f"{source} has no Smoke.plan()")
+
+
+def harness_timeout(harness: str, tutorials: str, override: int | None = None,
+                    steps: int | None = None) -> int:
+    """Seconds a smoke or tutorial run may take before it is ended as hung: override if given, otherwise
+    a base plus an allowance per planned self-test step (steps, default counted from smoke.py) or per
+    tutorial."""
+    if override is not None:
+        if override <= 0:
+            raise ValueError(f"the time limit must be positive, not {override}")
+        return override
+    if harness == "tutorial":
+        return TUTORIAL_BASE_S + TUTORIAL_EACH_S * len([t for t in tutorials.split(",") if t.strip()])
+    return SMOKE_BASE_S + SMOKE_STEP_S * (smoke_planned_steps() if steps is None else steps)
+
+
+def set_console_errors(*streams) -> None:
+    """Let the report print characters the console's code page cannot encode as replacements instead of ending
+    the run with a UnicodeEncodeError: NXStyle's own labels carry a tick and a star (the ribbon's done mark,
+    the collector's empty mark), and judge_result prints a check's detail back unchanged. stdout and stderr
+    unless streams are given."""
+    for stream in streams or (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:                     # a redirected or replaced stream may not be a TextIOWrapper
+            continue
+        try:
+            reconfigure(errors="replace")
+        except (ValueError, OSError):               # detached, closed, or not reconfigurable: leave it
+            pass
+
 
 def judge_result(path: Path, harness: str, run_id: str, child_code: int | None,
                  require_all: bool = False) -> int:
@@ -856,6 +909,10 @@ def main(argv: list[str] | None = None) -> int:
                          "no FEM, no QtTest) fails the run instead of being reported apart")
     ap.add_argument("--visible", action="store_true",
                     help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
+    ap.add_argument("--timeout", type=int, metavar="SECONDS",
+                    help=f"with --smoke-test/--tutorial: end the run after this many seconds (default: "
+                         f"{SMOKE_BASE_S} s + {SMOKE_STEP_S} s per planned self-test step, or {TUTORIAL_BASE_S} s + "
+                         f"{TUTORIAL_EACH_S} s per tutorial)")
     ap.add_argument("--max-memory-gb", type=float, default=HARNESS_MEMORY_GB,
                     help=f"with --smoke-test/--tutorial on Windows: end the run when FreeCAD uses more "
                          f"(default {HARNESS_MEMORY_GB:g})")
@@ -881,6 +938,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
+    set_console_errors()
+    if args.timeout is not None and args.timeout <= 0:
+        ap.error(f"--timeout must be a positive number of seconds, not {args.timeout}")
     passthrough = args.passthrough[1:] if args.passthrough[:1] == ["--"] else args.passthrough
 
     if args.list:
@@ -955,9 +1015,8 @@ def main(argv: list[str] | None = None) -> int:
     if harness:
         if os.name == "nt":
             stats = {}
-            # the self-test takes about 2 minutes; a textbook tutorial about a minute, a canvas (Katydid) one
-            # up to about 8 (measured 2026-10-14: O-R together ~20 min)
-            timeout_s = 300 + 300 * len(args.tutorials.split(",")) if harness == "tutorial" else 600
+            timeout_s = harness_timeout(harness, args.tutorials, args.timeout)
+            print(f"time limit: {timeout_s} s")
             try:
                 code = run_on_hidden_desktop(cmd, env, timeout_s=timeout_s, max_memory_gb=args.max_memory_gb,
                                              hidden=not args.visible, stats=stats)
@@ -977,7 +1036,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             proc = subprocess.Popen(cmd, env=env)
             try:
-                code = proc.wait(timeout=600)
+                code = proc.wait(timeout=harness_timeout(harness, args.tutorials, args.timeout))
             except subprocess.TimeoutExpired:
                 proc.kill()
                 print(f"{harness} run timed out", file=sys.stderr)
