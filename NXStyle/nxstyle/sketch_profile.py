@@ -86,6 +86,7 @@ class ProfileInput(QtCore.QObject):
         self.swallow_release = False
         self.open_name = None
         self.hooked = set()
+        self.actions = []               # the hooked actions, kept so their wrappers live
         self.scanned = 0.0
         self.log = []                  # what each typed point did, for tests and the tutorials
         self.timer = QtCore.QTimer(self)
@@ -105,13 +106,35 @@ class ProfileInput(QtCore.QObject):
             except Exception:
                 continue
             for a in acts:
-                if id(a) in self.hooked:
-                    continue
-                try:
-                    a.triggered.connect(lambda _=False, n=name: self.on_command(n))
-                    self.hooked.add(id(a))
-                except Exception:
-                    pass
+                self.hook_action(a, name)
+        self.hook_polyline()
+
+    def hook_action(self, a, name=None):
+        """Connect one command's action to the guard. The command's own name is the action's objectName: a group
+        command's list holds its entries (FreeCAD's Sketcher 'Line' group holds the Polyline), so the Polyline is
+        caught under its own name whichever list it is found in. The action is kept, so the connection lives."""
+        try:
+            key = a.objectName() or name or ""
+        except RuntimeError:
+            return
+        if not key or key in self.hooked:
+            return
+        try:
+            a.triggered.connect(lambda _=False, n=key: self.on_command(n))
+            self.hooked.add(key)
+            self.actions.append(a)
+        except Exception:
+            pass
+
+    def hook_polyline(self):
+        """Hook the Polyline's action now: the scan may not have run yet when the key comes (the Sketcher's commands
+        get their actions only once the workbench is loaded)."""
+        try:
+            acts = Gui.Command.get(POLYLINE).getAction() or []
+        except Exception:
+            return
+        for a in acts:
+            self.hook_action(a, POLYLINE)
 
     def on_command(self, name):
         if not self.enabled:
@@ -136,7 +159,8 @@ class ProfileInput(QtCore.QObject):
         self.reset_chain()
         self.timer.start()
         from .qt import QtGui
-        self.follow(self.widget.mapFromGlobal(QtGui.QCursor.pos()))
+        p = self.pointer if self.pointer is not None else self.widget.mapFromGlobal(QtGui.QCursor.pos())
+        self.follow(p)
 
     def reset_chain(self):
         self.stage = "first"
@@ -284,8 +308,8 @@ class ProfileInput(QtCore.QObject):
                 continue
             if kind not in self.locked and not (_same(focus, w) or _same(focus, w.lineEdit())):
                 self.show_value(w, kind, shown.get(kind, 0.0))
-            x = min(at.x() + 18, max(0, host.width() - w.width()))
-            y = min(at.y() + 18 + i * (w.height() + 4), max(0, host.height() - w.height()))
+            x = max(0, min(at.x() + 18, max(0, host.width() - w.width())))
+            y = max(0, min(at.y() + 18 + i * (w.height() + 4), max(0, host.height() - w.height())))
             w.move(x, y)
 
     def field_of(self, obj):
@@ -498,20 +522,37 @@ class ProfileInput(QtCore.QObject):
 
     # ------------------------------------------------------------ events
     def in_view(self, obj):
+        """Is the event's widget the 3D view's? (Also before the tool starts: the pointer may move before the
+        fields are made.)"""
         try:
-            return _same(obj, self.widget) or _same(obj, self.view.graphicsView())
+            w = self.widget or self.view_widget()
+            return _same(obj, w) or _same(obj, self.view.graphicsView() if self.view is not None else None)
         except RuntimeError:
             return False
 
+    @staticmethod
+    def view_widget():
+        """The 3D view's viewport, or None."""
+        try:
+            return Gui.ActiveDocument.ActiveView.graphicsView().viewport()
+        except Exception:
+            return None
+
     def eventFilter(self, obj, ev):
         t = ev.type()
-        if self.stage is None:
-            if self.enabled and t in (QtCore.QEvent.ShortcutOverride, QtCore.QEvent.MouseButtonPress) \
-                    and time.monotonic() - self.scanned > 3.0:
-                try:
+        if self.enabled and t in (QtCore.QEvent.ShortcutOverride, QtCore.QEvent.MouseButtonPress):
+            try:
+                if time.monotonic() - self.scanned > 1.0:
                     self.hook_actions()
-                except Exception:
-                    pass
+                elif t == QtCore.QEvent.ShortcutOverride:
+                    self.hook_polyline()        # the key may come before the next scan
+            except Exception:
+                pass
+        if self.stage is None:
+            if t == QtCore.QEvent.MouseMove and self.enabled and self.in_view(obj):
+                # the pointer moves before the tool starts (the key and the first move can come in one go):
+                # remember it, so the fields that appear show the pointer's values
+                self.pointer = QtCore.QPoint(ev.pos())
             return False
         if self.placing or not self.enabled:
             return False
@@ -539,6 +580,15 @@ class ProfileInput(QtCore.QObject):
             return False
         if not self.in_view(obj):
             return False
+        if t == QtCore.QEvent.KeyPress:
+            focus = QtWidgets.QApplication.focusWidget()
+            if focus is None:
+                # no focus widget: the viewport's own event is the press, the graphics view gets Qt's copy of it
+                if not _same(obj, self.widget):
+                    return False
+            elif obj is not focus:
+                # Qt propagates a key the focus widget ignored up to its parent: the same press, already handled
+                return False
         if t == QtCore.QEvent.MouseMove:
             self.follow(ev.pos())
         elif t == QtCore.QEvent.MouseButtonPress and ev.button() == Qt.LeftButton:
