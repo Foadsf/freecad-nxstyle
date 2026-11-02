@@ -788,6 +788,8 @@ def register(apps):
     table.update(thread_ui.COMMANDS)
     table.update(move_ui.COMMANDS)
     table.update(sketch_ui.COMMANDS)
+    from . import keyboard_ui
+    table.update(keyboard_ui.COMMANDS)
     table.update(alignment_ui.COMMANDS)
     table.update(position_ui.COMMANDS)
     table.update(msa_ui.COMMANDS)
