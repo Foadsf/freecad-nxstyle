@@ -3,7 +3,7 @@
 
 import FreeCADGui as Gui
 
-from . import config, icon_theme, macros, ribbon_layout, theme
+from . import command_help, config, icon_theme, macros, ribbon_layout, theme
 from .qt import QAction, QtCore, QtGui, QtWidgets, Qt, exec_menu
 
 LARGE = 32
@@ -192,12 +192,14 @@ class CommandButton(QtWidgets.QToolButton):
             self.setMinimumWidth(52)
             self.setMaximumWidth(112)
         self.setText(self._wrap(label) if big else label)
+        self.setAccessibleName(label)
         menu = self.action.menu() if self.action else None
         if menu is None and name not in HOST_ACTIONS and acts and acts[0].objectName() != name:
             menu = QtWidgets.QMenu(self)       # a group: every entry, as FreeCAD's toolbar drop-down lists them
             menu.addActions(acts)
         if menu is not None:
             self.setMenu(menu)
+            command_help.bind_menu_help(menu, label + " commands")
             self.setPopupMode(QtWidgets.QToolButton.MenuButtonPopup)
             if big:  # the drop-down arrow needs room next to the label
                 self.setMaximumWidth(140)
@@ -223,6 +225,7 @@ class CommandButton(QtWidgets.QToolButton):
         a = self.action
         if a is None:
             self.setEnabled(False)
+            self.setToolTip(command_help.command_tooltip(self.command, self.nx_label))
             return
         try:
             self.setIcon(a.icon())
@@ -230,19 +233,14 @@ class CommandButton(QtWidgets.QToolButton):
             self.setCheckable(a.isCheckable())
             if a.isCheckable():
                 self.setChecked(a.isChecked())
-            tip = clean_text(a.toolTip() or a.text())
-            shortcut = a.shortcut().toString()
-            freecad_name = clean_text(a.text())
-            parts = [f"<b>{self.nx_label}</b>"]
-            if freecad_name and freecad_name != self.nx_label:
-                parts.append(f"FreeCAD: {freecad_name}")
-            if shortcut:
-                parts.append(f"Shortcut: {shortcut}")
-            if tip and tip != freecad_name:
-                parts.append(tip)
-            self.setToolTip("<br>".join(parts))
+            self.setToolTip(command_help.command_tooltip(self.command, self.nx_label, a))
         except RuntimeError:  # action deleted by FreeCAD (workbench reload)
             self.action = None
+
+    def event(self, ev):
+        if ev.type() == QtCore.QEvent.ToolTip:
+            self._sync()
+        return super().event(ev)
 
     def _run(self):
         if self.action is None:
@@ -263,11 +261,27 @@ class ActionButton(QtWidgets.QToolButton):
         self.setIconSize(QtCore.QSize(LARGE, LARGE) if big else QtCore.QSize(SMALL, SMALL))
         self.setToolButtonStyle(Qt.ToolButtonTextUnderIcon if big else Qt.ToolButtonTextBesideIcon)
         self.setDefaultAction(action)
+        self.setAccessibleName(clean_text(action.text()))
         if action.menu() is not None:
             self.setPopupMode(QtWidgets.QToolButton.MenuButtonPopup)
+            command_help.bind_menu_help(action.menu(), clean_text(action.text()) + " commands")
         if big:
             self.setMinimumWidth(52)
             self.setMaximumWidth(112)
+        action.changed.connect(self._sync_help)
+        self._sync_help()
+
+    def _sync_help(self):
+        action = self.defaultAction()
+        if action is not None:
+            label = clean_text(action.text())
+            self.setAccessibleName(label)
+            self.setToolTip(command_help.command_tooltip(action.objectName(), label, action))
+
+    def event(self, ev):
+        if ev.type() == QtCore.QEvent.ToolTip:
+            self._sync_help()
+        return super().event(ev)
 
 
 class DropdownButton(QtWidgets.QToolButton):
@@ -282,6 +296,7 @@ class DropdownButton(QtWidgets.QToolButton):
         self.setAccessibleName(label)
         self.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         self.entries = []
+        self.help_label = label
         menu = QtWidgets.QMenu(self)
         for name, text in entries:
             act = command_action(name)
@@ -290,13 +305,27 @@ class DropdownButton(QtWidgets.QToolButton):
             self.entries.append((name, text))
             item = menu.addAction(act.icon(), text)
             item.setData(name)
-            item.setShortcut(act.shortcut())
+            command_help.proxy_help(item, name, text, act)
             item.triggered.connect(lambda _=False, n=name: (on_run and on_run(n), trigger(n)))
         self.setMenu(menu)
+        command_help.bind_menu_help(menu, label + " commands")
+        self._sync_help()
         if entries:
             self.setIcon(command_icon(entries[0][0]))
         if big:
             self.setMinimumWidth(52)
+
+    def _sync_help(self):
+        tip = command_help.command_tooltip("", self.help_label)
+        for name, label in self.entries:
+            keys = command_help.shortcut_text(name)
+            tip += "<br>" + command_help.escape(label) + ": " + command_help.escape(keys or "No direct shortcut assigned")
+        self.setToolTip(tip)
+
+    def event(self, ev):
+        if ev.type() == QtCore.QEvent.ToolTip:
+            self._sync_help()
+        return super().event(ev)
 
 
 class RibbonGroup(QtWidgets.QFrame):
@@ -388,6 +417,7 @@ class RibbonGroup(QtWidgets.QFrame):
                 sub_menu = w.menu()
                 if sub_menu is not None:
                     sub = menu.addMenu(w.icon(), w.nx_label)
+                    command_help.bind_menu_help(sub, w.nx_label + " commands")
                     sub.menuAction().setData(w.command)
                     target = sub.addAction(w.icon(), w.nx_label)
                     sub.addSeparator()
@@ -395,6 +425,7 @@ class RibbonGroup(QtWidgets.QFrame):
                 else:
                     target = menu.addAction(w.icon(), w.nx_label)
                 target.setData(w.command)
+                command_help.proxy_help(target, w.command, w.nx_label, w.action)
                 target.setEnabled(w.isEnabled())
                 if w.isCheckable():
                     target.setCheckable(True)
@@ -405,6 +436,7 @@ class RibbonGroup(QtWidgets.QFrame):
                 sub.addActions(w.menu().actions())
             elif isinstance(w, QtWidgets.QToolButton) and w.defaultAction() is not None:
                 menu.addAction(w.defaultAction())
+        command_help.bind_menu_help(menu, self.title + " commands")
 
     def menu_commands(self, menu):
         """Commands a populated menu reaches, through its submenus too (for the layout checks)."""

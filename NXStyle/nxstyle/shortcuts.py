@@ -133,6 +133,19 @@ TABLE = [
           note="FreeCAD's Draft layer manager"),
     Entry("Expressions", "Ctrl+E", "NXStyle_Expressions", note="a spreadsheet named Expressions"),
     Entry("Touch Mode", "F4", "NXStyle_TouchMode", note="larger ribbon and bar icons"),
+    # ---- Keyboard access (NXStyle extensions, not claimed NX defaults)
+    Entry("Command Finder", "Ctrl+Space", "NXStyle_CommandFinder", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Ribbon", "F10", "NXStyle_FocusRibbon", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Part Navigator", "Alt+1", "NXStyle_FocusNavigator", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Task Panel", "Alt+2", "NXStyle_FocusTasks", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Graphics View", "Alt+3", "NXStyle_FocusView", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Resource Bar", "Alt+4", "NXStyle_FocusResourceBar", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Selection Bar", "Alt+5", "NXStyle_FocusSelectionBar", "global", note="NXStyle keyboard access extension"),
+    Entry("Select Geometry by Name", "Ctrl+Shift+Space", "NXStyle_SelectGeometry", "global",
+          note="NXStyle keyboard access extension: objects, faces, edges and vertices"),
+    Entry("Keyboard Access Help", "Ctrl+Alt+K", "NXStyle_KeyboardHelp", "global", note="NXStyle keyboard access extension"),
+    Entry("Keyboard Pointer", "F12", "NXStyle_KeyboardPointer", "global",
+          note="NXStyle keyboard access extension: arrows move, Enter clicks; Ctrl+Enter starts/ends dragging"),
 ]
 
 # Keys FreeCAD's own commands get instead, so nothing important is lost
@@ -228,24 +241,28 @@ def _cmd_actions():
 class Shortcuts:
     """Applies TABLE; alias keys and fallbacks live on extra QActions in the main window."""
 
-    def __init__(self, shell):
+    def __init__(self, shell, nx=True):
         self.shell = shell
         self.mw = Gui.getMainWindow()
         self.aliases = {}       # key -> QAction
         self.targets = {}       # key -> QAction that should fire
         self.commands = {}      # key -> command whose own action is the target (not an alias)
         self.rows = []          # report rows
+        self.entries = [e for e in TABLE if nx or e.context == "global"]
+        self.nx = nx
         self.gate = KeyGate(self)
+        self.watched = {}
+        self.guarding = False
 
     # ---------------------------------------------------------------- apply
     def apply(self):
         known = _known()
-        for name, seq in RELOCATE.items():
+        for name, seq in (RELOCATE.items() if self.nx else []):
             if name in known:
                 Gui.Command.get(name).setShortcut(seq)
         primaries = {}
         wanted = []             # (key, entry, command or "")
-        for e in TABLE:
+        for e in self.entries:
             e.resolved = resolve(e, known)
             wanted.append((norm(e.keys), e))
         ours = set()
@@ -263,7 +280,7 @@ class Shortcuts:
             if act in self.aliases.values():
                 act.setShortcut(QtGui.QKeySequence(key))
             else:
-                if e.context == "doc":
+                if e.context in ("doc", "global"):
                     self.commands[key] = e.resolved
                 cmd = Gui.Command.get(e.resolved)
                 cmd.setShortcut(key)
@@ -274,16 +291,63 @@ class Shortcuts:
         self.rows = [self._row(k, e) for k, e in wanted]
         return self.rows
 
+    def shortcuts_for(self, command):
+        """Live keys, including aliases; never infer a binding from a default table."""
+        found = []
+        for entry in self.entries:
+            if entry.resolved != command:
+                continue
+            act = self.targets.get(norm(entry.keys))
+            if act is None:
+                continue
+            try:
+                found.extend(s.toString() for s in act.shortcuts() if not s.isEmpty())
+            except RuntimeError:
+                continue
+        return list(dict.fromkeys(found))
+
     def attach_to_window(self):
         """Qt only fires a window shortcut if its action sits on a *visible* widget.
         NXStyle hides FreeCAD's menu bar and toolbars, so every action with a key
         is also added to the main window itself (which shows nothing)."""
         attached = set(id(a) for a in self.mw.actions())
         for act in self.mw.findChildren(QAction):
+            if id(act) not in self.watched:
+                callback = lambda a=act: self.guard_action(a)
+                act.changed.connect(callback)
+                self.watched[id(act)] = (act, callback)
             if id(act) in attached:
                 continue
             if any(not s.isEmpty() for s in act.shortcuts()):
                 self.mw.addAction(act)
+
+    def guard_action(self, action):
+        """Native command groups can copy a child's shortcut after activation.
+
+        Keep reserved keys unique when that happens, without changing the
+        group's remembered command or registering another shortcut.
+        """
+        if self.guarding or any(action is own for own in self.targets.values()):
+            return
+        try:
+            before = action.shortcuts()
+            after = [seq for seq in before if not any(norm(seq.toString()) == key or
+                     norm(seq.toString()).startswith(key + ",") for key in self.targets)]
+            if before != after:
+                self.guarding = True
+                action.setShortcuts(after)
+        except RuntimeError:
+            pass
+        finally:
+            self.guarding = False
+
+    def disconnect_guards(self):
+        for action, callback in self.watched.values():
+            try:
+                action.changed.disconnect(callback)
+            except (RuntimeError, TypeError):
+                pass
+        self.watched.clear()
 
     def _target_action(self, key, e, primaries):
         cmd_act = None
@@ -367,11 +431,12 @@ class Shortcuts:
 _instance = None
 
 
-def apply(shell):
+def apply(shell, nx=True):
     global _instance
     if _instance is not None:
         QtWidgets.QApplication.instance().removeEventFilter(_instance.gate)
-    _instance = Shortcuts(shell)
+        _instance.disconnect_guards()
+    _instance = Shortcuts(shell, nx=nx)
     return _instance.apply()
 
 
