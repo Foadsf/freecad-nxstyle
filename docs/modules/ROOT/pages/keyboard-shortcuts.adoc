@@ -16,7 +16,11 @@ NX-Style follows NXtips; Repeat Command is on the Quick Access Toolbar.
 
 TIP: FreeCAD's own shortcuts that do not clash with these keep working, even with FreeCAD's menus and toolbars hidden.
 To keep FreeCAD's command keys instead of the NX-based mappings, set `"nx_shortcuts": false` in the xref:settings.adoc[settings].
-The NX-Style accessibility extensions remain assigned in that mode and still reserve their keys, including kbd:[F10], kbd:[F12] and kbd:[Alt+1] through kbd:[Alt+5].
+That leaves the keyboard access keys below unassigned too; their commands stay on *Tools › Keyboard Access* and in the Command Finder.
+
+The keyboard access keys are ones no FreeCAD command holds.
+kbd:[F10] (FreeCAD's macro debugger *Step Over*) and kbd:[Ctrl+Space] (BIM's *Toggle Subcomponents*) were considered and left to FreeCAD.
+The self-test lists every FreeCAD binding an NX-Style key takes over and fails if an access key takes one.
 
 == Reach commands and interface areas
 
@@ -24,8 +28,8 @@ The NX-Style accessibility extensions remain assigned in that mode and still res
 |===
 | Default keys | Action
 
-| kbd:[Ctrl+Space] | Focus Command Finder. Type an NX label, FreeCAD command name, ribbon location or shortcut; use the arrow keys to choose a result and kbd:[Enter] to run it.
-| kbd:[F10] | Focus the ribbon tabs. kbd:[Left] / kbd:[Right] choose a tab; kbd:[Down] or kbd:[Enter] enters its page, opening the popup when the ribbon is collapsed.
+| kbd:[Alt+Q] | Focus Command Finder. Type an NX label, FreeCAD command name, ribbon location or shortcut; use the arrow keys to choose a result and kbd:[Enter] to run it.
+| kbd:[Alt+0] | Focus the ribbon tabs. kbd:[Left] / kbd:[Right] choose a tab; kbd:[Down] or kbd:[Enter] enters its page, opening the popup when the ribbon is collapsed.
 | kbd:[Alt+1] | Focus the Part Navigator.
 | kbd:[Alt+2] | Show and focus the Task Panel.
 | kbd:[Alt+3] | Focus the active graphics view.
@@ -35,6 +39,8 @@ The NX-Style accessibility extensions remain assigned in that mode and still res
 | kbd:[F12] | Toggle the keyboard pointer in the active graphics view.
 | kbd:[Ctrl+Alt+K] | Open Keyboard Access Help, including the currently assigned shortcuts.
 |===
+
+kbd:[Alt] with a digit on the numeric keypad does not run these: Windows uses it to type characters (kbd:[Alt+0177] is ±).
 
 Use kbd:[Tab] / kbd:[Shift+Tab] to move between controls and kbd:[Space] or kbd:[Enter] to activate a focused button.
 On a ribbon or bar button, kbd:[Down] opens its menu when one is available; a split button's kbd:[Enter] runs its current command.
@@ -77,8 +83,9 @@ Selection itself does not create a feature, save the document or finish an activ
 
 Start a command through Command Finder or the ribbon, then use kbd:[Alt+2] to enter the Task Panel.
 Use kbd:[Tab] / kbd:[Shift+Tab] for fields and buttons, the dialog's underlined mnemonics where available, and typed values for dimensions and coordinates.
-Task fields cycle within the panel; use the area shortcuts to leave it.
-Multiline editors and tables keep their native Tab behavior; kbd:[Ctrl+Tab] moves to the next task control.
+kbd:[Tab] follows the task form's own order; past the last control it comes round to the first instead of leaving the panel (and kbd:[Shift+Tab] the other way round).
+Use the area shortcuts to leave it.
+Multiline editors and tables keep their native Tab behavior.
 The task's own validation, selection requirements, OK / Apply and Cancel behavior still apply.
 For example, find *Block*, enter its dimensions in the task fields, and activate its OK button; use named geometry selection when a later feature asks for a face or edge.
 

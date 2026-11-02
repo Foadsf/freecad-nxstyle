@@ -10,7 +10,8 @@ Keyboard checks cover focus traversal, menus, text-field isolation, pointer even
 Negative controls remove alias help, introduce a conflicting key, or suppress pointer events so the checks must detect the broken behavior.
 These checks use real Qt widgets with FreeCAD services replaced; they do not establish that a native workbench operation succeeds.
 
-Inside FreeCAD, `s_keyboard_access` exercises the ten access keys, camera navigation, named face selection, pointer selection, typed Block creation and Undo/Redo.
+Inside FreeCAD, `s_keyboard_access` exercises the ten access keys, camera navigation, named face selection, pointer selection, typed Block creation and Undo/Redo; kbd:[Tab] must reach the Block's OK without leaving the Task Panel.
+It and `s_keys_displaced` (late in the run, after the steps that load more workbenches) list every FreeCAD binding an NX-Style key took and fail if a keyboard access key took one.
 `s_keyboard_sketch` uses keyboard pointer events to draw a native rectangle after `s_sketch_enter`, with one corner coordinate typed into the on-view field that the pointer's moves focus, and checks that kbd:[Escape] then ends the tool.
 The harness records individual results and screenshots; third-party workbenches and screen-reader behavior need separate qualification.
 
