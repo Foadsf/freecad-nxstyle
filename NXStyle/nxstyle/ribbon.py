@@ -164,6 +164,9 @@ def command_icon(name):
 
 
 def clean_text(text):
+    """A command's label without mnemonics, an ellipsis or a menu entry's shortcut: Qt shows the text after a tab
+    as the entry's keys (command_help.proxy_help writes them there)."""
+    text = text.split("\t", 1)[0]
     return text.replace("&&", "\0").replace("&", "").replace("\0", "&").replace("...", "").strip()
 
 

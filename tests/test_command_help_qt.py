@@ -127,6 +127,8 @@ class CommandHelpQt(unittest.TestCase):
         proxy = dropdown.menu().actions()[0]
         self.assertIn("F7", proxy.text())
         self.assertEqual(proxy.shortcuts(), [])
+        # entries are still found by their label (the smoke and tutorial replays pick them so)
+        self.assertEqual(self.ribbon_module.clean_text(proxy.text()), "Extrude")
         self.assertEqual(dropdown.accessibleName(), "Features")
         self.assertTrue(dropdown.menu().accessibleName())
         self.alias.setShortcut(QtGui.QKeySequence("F9"))

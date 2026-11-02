@@ -13,7 +13,7 @@ FINDER_COMMAND = "NXStyle_CommandFinder"
 
 
 def plain(text):
-    return str(text or "").replace("&&", "\0").replace("&", "").replace("\0", "&").replace("...", "").strip()
+    return str(text or "").split("\t", 1)[0].replace("&&", "\0").replace("&", "").replace("\0", "&").replace("...", "").strip()
 
 
 def action_shortcuts(action):
