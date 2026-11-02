@@ -101,10 +101,14 @@ class KeyboardUiQt(unittest.TestCase):
             layout.addWidget(area)
         self.editor = QtWidgets.QLineEdit()
         layout.addWidget(self.editor)
+        # FreeCAD's View3DInventor: the viewer and, as its siblings, Sketcher's on-view fields
+        self.view_host = QtWidgets.QWidget()
+        QtWidgets.QVBoxLayout(self.view_host)
         self.graphics = QtWidgets.QGraphicsView()
         self.graphics.setScene(QtWidgets.QGraphicsScene(self.graphics))
         self.graphics.setFocusPolicy(QtCore.Qt.StrongFocus)
-        layout.addWidget(self.graphics, 1)
+        self.view_host.layout().addWidget(self.graphics)
+        layout.addWidget(self.view_host, 1)
         self.nav = types.SimpleNamespace(
             widget=self.graphics.viewport(), view=types.SimpleNamespace(graphicsView=lambda: self.graphics),
             rotate=lambda dx, dy: self.camera.append(("rotate", dx, dy)),
@@ -409,22 +413,68 @@ class KeyboardUiQt(unittest.TestCase):
         self.key(self.graphics, QtCore.Qt.Key_Return)
         self.assertEqual(len(self.mouse), 2)
 
-    def test_pointer_controls_inline_dimension_field_but_stops_for_normal_typing(self):
-        precise = importlib.import_module(self.package_name + ".precise_input")
+    def on_view_field(self):
+        """A field where Sketcher puts one (EditableDatumLabel: a child of the viewer's parent, ClickFocus)."""
+        field = QtWidgets.QDoubleSpinBox(self.view_host)
+        field.setFocusPolicy(QtCore.Qt.ClickFocus)
+        field.setRange(-1000, 1000)
+        field.show()
+        return field
+
+    def test_pointer_keys_reach_pointer_from_on_view_field_and_digits_stay_typed(self):
+        field = self.on_view_field()
+        self.start_pointer()
+        field.setFocus()           # what FreeCAD does on each pointer move of a sketch tool,
+        field.selectAll()          # with its number selected (EditableDatumLabel::setFocusToSpinbox)
+        released = []              # Sketcher's DrawSketchKeyboardManager filters releases on the field too
+
+        class Releases(QtCore.QObject):
+            def eventFilter(self, obj, event):
+                if event.type() == QtCore.QEvent.KeyRelease:
+                    released.append(event.key())
+                return False
+        watcher = Releases(field)
+        field.installEventFilter(watcher)
+        start = QtCore.QPoint(self.access.point)
+        QtTest.QTest.keyClicks(field, "25")
+        self.key(field, QtCore.Qt.Key_Right)
+        self.key(field, QtCore.Qt.Key_Return)
+        self.assertEqual(field.value(), 25)          # digits are the typed dimension
+        self.assertEqual(released, [QtCore.Qt.Key_2, QtCore.Qt.Key_5])   # not the pointer's Right and Return
+        self.assertEqual(self.access.point.x(), start.x() + 10)
+        self.assertEqual([e[0] for e in self.mouse[-2:]],
+                         [QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonRelease])
+        self.key(field, QtCore.Qt.Key_Escape)
+        self.assertIsNone(self.access.pointer_view)
+        # pointer off: the field's own keys again
+        self.mouse.clear()
+        self.key(field, QtCore.Qt.Key_Up)
+        self.assertEqual(field.value(), 26)
+        self.assertEqual(self.mouse, [])
+
+    def test_fields_outside_pointer_view_keep_their_keys(self):
         self.start_pointer()
         self.editor.setFocus()
-        start = QtCore.QPoint(self.access.point)
-        with patch.object(precise, "in_3d_view", side_effect=lambda widget: widget is self.editor):
-            self.key(self.editor, QtCore.Qt.Key_Right)
-            self.key(self.editor, QtCore.Qt.Key_Return)
-            self.assertEqual(self.access.point.x(), start.x() + 10)
-            self.assertEqual(self.mouse[-2][0], QtCore.QEvent.MouseButtonPress)
-            self.key(self.editor, QtCore.Qt.Key_Escape)
-            self.assertIsNone(self.access.pointer_view)
-            self.editor.setText("123")
-            self.editor.setCursorPosition(1)
-            self.key(self.editor, QtCore.Qt.Key_Right)
-            self.assertEqual(self.editor.cursorPosition(), 2)
+        self.editor.setText("123")
+        self.editor.setCursorPosition(1)
+        self.key(self.editor, QtCore.Qt.Key_Right)
+        self.key(self.editor, QtCore.Qt.Key_Return)
+        self.assertEqual(self.editor.cursorPosition(), 2)
+        self.assertEqual(self.mouse, [])
+
+    def test_drag_survives_focus_moving_to_on_view_field(self):
+        field = self.on_view_field()
+        self.start_pointer()
+        self.key(self.graphics, QtCore.Qt.Key_Return, QtCore.Qt.ControlModifier)
+        field.setFocus()
+        self.app.processEvents()
+        self.assertTrue(self.access.dragging)
+        self.key(field, QtCore.Qt.Key_Right)
+        self.assertEqual(self.mouse[-1][:3], (QtCore.QEvent.MouseMove, QtCore.Qt.NoButton, QtCore.Qt.LeftButton))
+        self.editor.setFocus()     # leaving the view ends it, once
+        self.app.processEvents()
+        self.assertFalse(self.access.dragging)
+        self.assertEqual(len([e for e in self.mouse if e[0] == QtCore.QEvent.MouseButtonRelease]), 1)
 
 
 if __name__ == "__main__":

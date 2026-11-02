@@ -6,8 +6,6 @@ selection gates and undo remain in FreeCAD and the existing NXStyle tools.
 """
 import html
 
-import FreeCADGui as Gui
-
 from . import config, theme
 from .qt import QtCore, QtGui, QtWidgets, Qt, mouse_event
 
@@ -47,6 +45,7 @@ class KeyboardAccess(QtCore.QObject):
         self.point = QtCore.QPoint()
         self.dragging = False
         self.replaying = False
+        self.swallowed = set()      # keys whose press the pointer took: their release is the pointer's too
         QtWidgets.QApplication.instance().installEventFilter(self)
         self.prepare_controls()
 
@@ -126,6 +125,16 @@ class KeyboardAccess(QtCore.QObject):
 
     def nav(self):
         return self.shell.navigation.filter_for_active_view()
+
+    def in_pointer_view(self, widget):
+        """Is widget the pointer's view or inside it? Sketcher's on-view fields are: EditableDatumLabel parents
+        them to the viewer's parent, and FreeCAD gives one the focus on every mouse move of a sketch tool
+        (DrawSketchController::afterEnforceControlParameters), so the pointer's own moves put the focus there."""
+        nav = self.pointer_view
+        if nav is None or not isinstance(widget, QtWidgets.QWidget):
+            return False
+        host = nav.view.graphicsView().parentWidget()
+        return widget is host or (host is not None and host.isAncestorOf(widget))
 
     def focus_view(self):
         nav = self.nav()
@@ -229,8 +238,15 @@ class KeyboardAccess(QtCore.QObject):
         if self.pointer_view is not None and kind == QtCore.QEvent.ApplicationDeactivate:
             self.stop_pointer()
         if self.pointer_view is not None and self.dragging and kind == QtCore.QEvent.FocusOut:
-            if obj in (self.pointer_view.widget, self.pointer_view.view.graphicsView()):
+            # Qt names the new focus widget before FocusOut: an on-view field taking it keeps the drag
+            if self.in_pointer_view(obj) and not self.in_pointer_view(QtWidgets.QApplication.focusWidget()):
                 self.click_pointer(Qt.LeftButton)
+        if kind == QtCore.QEvent.KeyRelease and ev.key() in self.swallowed:
+            # The release of a key the pointer took: Sketcher's DrawSketchKeyboardManager also reads releases,
+            # and a Return release keeps it typing into the on-view field for 2 s, so Escape did not reach the tool
+            if not ev.isAutoRepeat():
+                self.swallowed.discard(ev.key())
+            return True
         if kind not in (QtCore.QEvent.KeyPress, QtCore.QEvent.ShortcutOverride):
             return False
         if QtWidgets.QApplication.activeModalWidget() is not None:
@@ -329,20 +345,12 @@ class KeyboardAccess(QtCore.QObject):
                         obj.click()
                 ev.accept()
                 return True
-        try:
-            graphics = Gui.ActiveDocument.ActiveView.graphicsView()
-        except (AttributeError, RuntimeError):
-            return False
-        inline_field = False
-        if self.pointer_view is not None and isinstance(obj, QtWidgets.QWidget):
-            from .precise_input import in_3d_view
-            inline_field = in_3d_view(obj)
-        if obj not in (graphics, graphics.viewport()) and not inline_field:
-            return False
         nav = self.nav()
-        if nav is None or (obj not in (nav.widget, nav.view.graphicsView()) and not inline_field):
-            return False  # typed fields, trees, menus and task dialogs retain their own keys
+        if nav is None:
+            return False
         if self.pointer_view is not None:
+            if not self.in_pointer_view(obj):
+                return False  # typed fields, trees, menus and task dialogs retain their own keys
             if self.pointer_view is not nav:
                 self.stop_pointer()
                 return False
@@ -353,6 +361,7 @@ class KeyboardAccess(QtCore.QObject):
             if kind == QtCore.QEvent.ShortcutOverride:
                 ev.accept()
                 return True
+            self.swallowed.add(key)
             if ev.isAutoRepeat() and key not in ARROWS:
                 return True
             if key in ARROWS:
@@ -371,6 +380,8 @@ class KeyboardAccess(QtCore.QObject):
                 button = Qt.MiddleButton if key == Qt.Key_Space else Qt.RightButton if context_key else Qt.LeftButton
                 self.click_pointer(button)
             return True
+        if obj not in (nav.widget, nav.view.graphicsView()):
+            return False
         if mods in (Qt.NoModifier, Qt.ShiftModifier):
             camera_key = key in ARROWS or key in (Qt.Key_Plus, Qt.Key_Equal, Qt.Key_Minus)
             if camera_key and kind == QtCore.QEvent.ShortcutOverride:
@@ -406,7 +417,8 @@ class KeyboardAccess(QtCore.QObject):
                         "+/- zoom. These keys leave text fields and lists alone.</p><p>F12 toggles the keyboard pointer: "
                         "arrows move, Shift moves one pixel, Ctrl moves faster, Enter clicks, Ctrl+Enter starts/ends a "
                         "left drag, Space middle-clicks, Menu or Shift+F10 right-clicks. Escape stops the pointer; another Escape "
-                        "can cancel the active command. Use typed dimensions whenever exact coordinates matter.</p>"
+                        "can cancel the active command. Use typed dimensions whenever exact coordinates matter: in a sketch "
+                        "tool, digits go to the focused on-view field and Enter clicks with that value.</p>"
                         "<p>Ctrl+Shift+Space selects named objects or subelements. Tab and Shift+Tab traverse task fields; "
                         "Space activates the focused button. Ctrl+Space finds commands, including those without a direct key.</p>"
                         "<h3>Current assigned shortcuts</h3><table cellspacing='8'>" + "".join(rows) + "</table>")

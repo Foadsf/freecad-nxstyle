@@ -189,7 +189,10 @@ def run(smoke):
 
 
 def sketch(smoke):
+    """A rectangle by keyboard alone. FreeCAD gives an on-view field the focus on each mouse move of a sketch tool,
+    the pointer's moves too: its arrows and Enter must still reach the pointer, and digits the field."""
     from . import sketch_ui
+    from .sketch_typed import on_view_field
     access = smoke.shell.keyboard
     app = QtWidgets.QApplication.instance()
     model = sketch_ui.edited_sketch()
@@ -209,6 +212,13 @@ def sketch(smoke):
     key("F12")
     key("Left", 8)
     key("Up", 6)
+    field = on_view_field(app.focusWidget())
+    smoke.check("pointer moves give a Sketcher on-view field the focus, as mouse moves do", field is not None,
+                str(app.focusWidget()))
+    typed = -7.0
+    if field is not None:
+        qtest().keyClicks(app.focusWidget(), "-7")
+        qtest().qWait(100)
     key("Return")
     key("Right", 18)
     key("Down", 12)
@@ -216,7 +226,16 @@ def sketch(smoke):
     qtest().qWait(250)
     smoke.check("keyboard pointer creates native four-edge rectangle", model.GeometryCount == before + 4,
                 (before, model.GeometryCount))
+    corners = [(round(p.x, 9), round(p.y, 9)) for g in range(before, model.GeometryCount)
+               for p in (model.getPoint(g, 1), model.getPoint(g, 2))]
+    smoke.check("a value typed in the focused on-view field places the pointer's click (corner at -7)",
+                field is not None and any(typed in c for c in corners), corners)
     smoke.shot("keyboard-sketch.png")
     key("Esc")  # stop keyboard pointer
-    key("Esc")  # stop native rectangle command
     smoke.check("keyboard rectangle exits without held pointer", access.pointer_view is None and not access.dragging)
+    for _ in range(3):  # Escape from the on-view field reaches the tool (DrawSketchKeyboardManager forwards it)
+        if not smoke.nav().sketch_tool_active():
+            break
+        key("Esc")
+        qtest().qWait(100)
+    smoke.check("Escape then ends the rectangle tool", not smoke.nav().sketch_tool_active(), str(app.focusWidget()))
