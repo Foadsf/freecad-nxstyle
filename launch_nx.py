@@ -505,6 +505,87 @@ def bring_preferences(paths: dict[str, Path], groups: list[str], version: tuple[
 
 
 # --------------------------------------------------------------------------
+# The user's own add-ons from the normal profile's Mod folder, loaded with -M on request ("user_addons")
+# --------------------------------------------------------------------------
+VENDOR_DIR = HERE / "vendor"
+# a file inside an add-on that says which bundled one it is, whatever its folder is called
+BUNDLED_MARKERS = ("strata/__init__.py", "katydid/__init__.py", "SheetMetalCmd.py", "lasercut/join.py",
+                   "freecad/nxt/init_gui.py", "freecad/DFM/init_gui.py", "nxstyle/__init__.py",
+                   "NXStyle/nxstyle/__init__.py")
+
+
+def package_name(folder: Path) -> str:
+    """The <name> of an add-on's package.xml (the Addon Manager's metadata), or ""."""
+    import xml.etree.ElementTree as ET
+
+    try:
+        root = ET.parse(folder / "package.xml").getroot()
+    except (OSError, ET.ParseError):
+        return ""
+    el = next((c for c in root if c.tag == "name" or c.tag.endswith("}name")), None)
+    return (el.text or "").strip() if el is not None else ""
+
+
+def addon_identity(folder: Path) -> set[str]:
+    """What tells two copies of one add-on apart from others: folder name, package name, bundled markers."""
+    ids = {folder.name.lower()}
+    name = package_name(folder)
+    if name:
+        ids.add(name.lower())
+    ids |= {f"marker:{m}" for m in BUNDLED_MARKERS if (folder / m).is_file()}
+    return ids
+
+
+def is_freecad_module(folder: Path) -> bool:
+    """A folder FreeCAD loads as a module: Init.py / InitGui.py, or a freecad.<name> namespace package."""
+    if (folder / "Init.py").is_file() or (folder / "InitGui.py").is_file():
+        return True
+    ns = folder / "freecad"
+    return ns.is_dir() and any((p / "__init__.py").is_file() or (p / "init_gui.py").is_file()
+                               for p in ns.iterdir() if p.is_dir())
+
+
+def find_user_addons(profile: Path, version: tuple[int, int, int] | None, enabled: bool,
+                     normal_dir: str = "") -> tuple[list[Path], str]:
+    """The add-ons of the normal FreeCAD profile's Mod folder to load with -M, and the start-up line. Off unless
+    asked for. Skipped: one bundled under vendor/ (it loads from there, or is off on purpose), one already in the
+    NX profile's own Mod folder (FreeCAD loads that itself), one the Addon Manager disabled (ADDON_DISABLED), and a
+    folder that is no FreeCAD module (a parts library, a preference pack)."""
+    if not enabled:
+        return [], "not loaded (--user-addons, or \"user_addons\": true in nxstyle.json, loads them)"
+    if normal_dir:
+        mods = Path(normal_dir).expanduser() / "Mod"
+    else:
+        normal = normal_profile(version)
+        mods = normal["data"] / "Mod" if normal else None
+    if mods is None or not mods.is_dir():
+        return [], f"none found ({mods or 'no normal FreeCAD profile'})"
+    taken = set()
+    for d in sorted(VENDOR_DIR.iterdir()) if VENDOR_DIR.is_dir() else []:
+        if d.is_dir():
+            taken |= addon_identity(d)
+    own = profile / "data" / "Mod"
+    for d in sorted(own.iterdir()) if own.is_dir() else []:
+        if d.is_dir():
+            taken |= addon_identity(d)
+    load, skipped = [], []
+    for d in sorted(mods.iterdir(), key=lambda p: p.name.lower()):
+        if not d.is_dir():
+            continue
+        if (d / "ADDON_DISABLED").exists():
+            skipped.append(f"{d.name} (disabled)")
+        elif not is_freecad_module(d):
+            skipped.append(f"{d.name} (not a module)")
+        elif addon_identity(d) & taken:
+            skipped.append(f"{d.name} (bundled or already in the NX profile)")
+        else:
+            load.append(d)
+            taken |= addon_identity(d)
+    why = f"{', '.join(d.name for d in load) or 'none'} from {mods}"
+    return load, why + (f"; skipped {', '.join(skipped)}" if skipped else "")
+
+
+# --------------------------------------------------------------------------
 # Strata: data management next to NXStyle (the role Teamcenter plays next to NX)
 # --------------------------------------------------------------------------
 STRATA_DIR = HERE / "vendor" / "freecad-strata"     # git submodule of github.com/Foadsf/freecad-strata
@@ -1073,6 +1154,9 @@ def main(argv: list[str] | None = None) -> int:
                     help=f"copy preferences from your normal FreeCAD profile, which is only read: a comma list of "
                          f"{', '.join(IMPORT_GROUPS)} or all (default: navigation); \"import_preferences\" in "
                          f"nxstyle.json does it at every start")
+    ap.add_argument("--user-addons", action="store_true",
+                    help="also load the add-ons of your normal FreeCAD profile's Mod folder (not those NX-Style "
+                         "bundles or the NX profile has); \"user_addons\": true in nxstyle.json does it at every start")
     ap.add_argument("--install-dfm-deps", action="store_true",
                     help=f"install what the DFM add-on needs ({', '.join(DFM_DEPS)}) with FreeCAD's own Python "
                          f"into {default_profile_root()}/pydeps, then exit (downloads about 165 MB)")
@@ -1131,14 +1215,20 @@ def main(argv: list[str] | None = None) -> int:
     nxt, nxt_why = find_nxt(profile.resolve(), install, enabled=args.nxt)
     if nxt or "NX profile" in nxt_why:
         extra["NXSTYLE_NXT_EXPECTED"] = "1"
+    addons, addons_why = find_user_addons(profile.resolve(), install.version,
+                                          args.user_addons or settings.get("user_addons") is True,
+                                          settings.get("normal_profile", ""))
+    if addons:
+        extra["NXSTYLE_USER_ADDONS"] = os.pathsep.join(str(a) for a in addons)
     cmd = build_command(install, args.files, passthrough,
                         tuple(m for m in (strata, katydid, sheetmetal, lcinterlocking) if m) + dfm
-                        + ((nxt,) if nxt else ()))
+                        + ((nxt,) if nxt else ()) + tuple(addons))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
                           "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
                           "nxt": nxt_why, "carbon": carbon_why, "import_preferences": groups,
+                          "user_addons": addons_why,
                           "command": cmd},
                          indent=2))
         return 0
@@ -1157,6 +1247,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"DFM: {dfm_why}")
     print(f"Nxt: {nxt_why}")
     print(f"Preferences: {prefs_why}")
+    print(f"Your add-ons: {addons_why}")
 
     if harness:
         if os.name == "nt":

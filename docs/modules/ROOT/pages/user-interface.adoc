@@ -62,6 +62,8 @@ In a narrow window the Command Finder gets narrower first. If the tabs still do 
 An NX application is a FreeCAD workbench behind the scenes.
 Applications without a hand-made ribbon get one built from their workbench's toolbars, so every installed workbench is reachable.
 
+Workbenches of your own add-ons are applications too, under *Application › Add-ons*, each with a ribbon built from its own toolbars: the ones you install in the NX profile with *Tools › Add-on Manager*, and, with `"user_addons": true` or `--user-addons`, those of your normal FreeCAD (xref:installation.adoc#addons[]).
+
 .The Application tab
 image::ui-applications.png[Application tab with the NX applications]
 

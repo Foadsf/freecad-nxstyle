@@ -52,6 +52,7 @@ include::partial$generated/settings.adoc[]
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
 | FreeCAD's view cube | not a setting here: *View › Visualization › View Cube*, kept by FreeCAD
 | Your normal FreeCAD's navigation and macros (xref:#import[below]) | `"import_preferences": ["navigation", "macros"]`
+| Your normal FreeCAD's add-ons as well (xref:installation.adoc#addons[]) | `"user_addons": true`
 | No data management | `"plm": "none"`
 | No Algorithmic Modeling (Katydid) | `"algorithmic_modeling": "none"`
 | No Sheet Metal (SheetMetal add-on) | `"sheet_metal": "none"`

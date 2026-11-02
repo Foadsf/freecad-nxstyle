@@ -740,6 +740,7 @@ def continue_pending_feature(sketch):
 
 
 GLOBAL_TOOLBAR = "User parameter:BaseApp/Workbench/Global/Toolbar/Custom_NXStyle"
+GLOBAL_TOOLBAR_NAME = "NXStyle Commands"      # its title, as Workbench.getToolbarItems() lists it
 _watched = {}                    # parameter groups with an observer attached (see register)
 
 
@@ -821,7 +822,7 @@ def register(apps):
     # placed in a toolbar or menu. A global custom toolbar (hidden by the shell)
     # makes FreeCAD create the actions, so shortcuts and ribbon buttons work.
     p = App.ParamGet(GLOBAL_TOOLBAR)
-    p.SetString("Name", "NXStyle Commands")
+    p.SetString("Name", GLOBAL_TOOLBAR_NAME)
     p.SetBool("Active", True)
     for name in table:
         p.SetString(name, "FreeCAD")

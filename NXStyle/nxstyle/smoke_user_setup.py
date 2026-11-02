@@ -200,6 +200,66 @@ def run_imported_prefs(smoke):
         smoke.check("imported preferences scenario ran", False, traceback.format_exc().splitlines()[-1])
 
 
+def run_user_addons(smoke):
+    """Add-ons the launcher loaded from the normal FreeCAD profile (--user-addons): their workbenches are
+    applications under Application › Add-ons, and switching to one gives a ribbon made from its toolbars whose
+    buttons run its commands. NXSTYLE_SMOKE_EXPECT_ADDONS names the workbenches the run must have, and with a
+    leading '-' those it must not have (a duplicate of a bundled add-on, a disabled one)."""
+    from .tutorial import qtest
+    spec = [w for w in os.environ.get("NXSTYLE_SMOKE_EXPECT_ADDONS", "").split(",") if w]
+    want = [w for w in spec if not w.startswith("-")]
+    banned = [w[1:] for w in spec if w.startswith("-")]
+    loaded = [p for p in os.environ.get("NXSTYLE_USER_ADDONS", "").split(os.pathsep) if p]
+    if not want:
+        smoke.skip("the user's own add-ons as applications", "NXSTYLE_SMOKE_EXPECT_ADDONS names none"
+                   + (f" (loaded: {loaded})" if loaded else ""))
+        return
+    smoke.info["user add-on folders loaded"] = loaded
+    try:
+        benches = Gui.listWorkbenches()
+        smoke.check("the user's add-ons load, and a bundled duplicate or a disabled one does not",
+                    all(w in benches for w in want) and not any(w in benches for w in banned),
+                    {"wanted": {w: w in benches for w in want}, "must not load": {w: w in benches for w in banned},
+                     "folders": loaded})
+        r = smoke.shell.ribbon
+        app_buttons = tab_buttons(smoke, "Application")
+        found = {w: (f"NXStyle_App_addon_{w}" in app_buttons,
+                     r.locations.get(f"NXStyle_App_addon_{w}")) for w in want}
+        smoke.check("each one is an application under Application › Add-ons",
+                    want and all(ok and where == "Application › Add-ons" for ok, where in found.values()), found)
+        for w in want:
+            b = app_buttons.get(f"NXStyle_App_addon_{w}")
+            if b is None:
+                continue
+            title = b.nx_label
+            b.click()
+            qtest().qWait(800)
+            from . import shell
+            own = {tb: [c for c in cs if c and c != "Separator"]
+                   for tb, cs in Gui.getWorkbench(w).getToolbarItems().items() if shell.workbench_toolbar(tb)}
+            smoke.info[f"{w} toolbars (FreeCAD's list)"] = sorted(Gui.getWorkbench(w).getToolbarItems())
+            groups = [g.title for _t, g in r.groups(title)]
+            page = tab_buttons(smoke, title)
+            smoke.shot(f"addon_{w}.png", r)
+            # written out, not shell.workbench_toolbar again: what FreeCAD 1.1 lists for every workbench
+            stray = {"NXStyle Commands", "Individual Views", "File", "Edit", "View", "Macro"} & set(groups)
+            smoke.check(f"{title}: a ribbon tab with a group per toolbar of its own, every command a button, and "
+                        "not NX-Style's hidden command toolbar or FreeCAD's global ones",
+                        Gui.activeWorkbench().name() == w and r.tab_names()[:1] == [title] and own
+                        and groups == list(own) and not stray and all(c in page for cs in own.values() for c in cs),
+                        {"workbench": Gui.activeWorkbench().name(), "tabs": r.tab_names(), "its toolbars": own,
+                         "groups": groups, "buttons": sorted(page)})
+            if "NxSmokeAddon_Hello" in page:            # the fake add-on's command counts its runs
+                p = App.ParamGet(MARK)
+                p.SetInt("AddonRuns", 0)
+                page["NxSmokeAddon_Hello"].click()
+                smoke.check("the add-on's button runs its command", p.GetInt("AddonRuns", 0) == 1,
+                            f"runs: {p.GetInt('AddonRuns', 0)}")
+        smoke.shell.switch_application("modeling")
+    except Exception:
+        smoke.check("user add-ons scenario ran", False, traceback.format_exc().splitlines()[-1])
+
+
 def run_macros(smoke):
     try:
         known = set(Gui.listCommands())

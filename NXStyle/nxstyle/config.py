@@ -58,6 +58,9 @@ DEFAULTS = {
     # here still win), "view_cube", "macros" (macro folder and macro commands), "all"; [] = none, true = navigation
     "import_preferences": [],
     "normal_profile": "",              # your normal FreeCAD's user folder (holds user.cfg); "" = FreeCAD's usual one
+    # also load the add-ons of your normal FreeCAD's Mod folder (not those NX-Style bundles or the NX profile has);
+    # their workbenches join Application › Add-ons with a ribbon made from their toolbars
+    "user_addons": False,
     "plm": "strata",                   # data management (Teamcenter's role): "strata" add-on, or "none"
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
     "sheet_metal": "sheetmetal",       # NX Sheet Metal: FreeCAD's "sheetmetal" add-on (bundled), or "none"
