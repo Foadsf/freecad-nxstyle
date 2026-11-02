@@ -105,6 +105,7 @@ class Smoke:
         yield self.s_icon_theme, 200
         yield self.s_document, 1500
         yield self.s_gates, 100
+        yield self.s_keyboard_access, 300
         yield self.s_layout_matrix, 300
         yield self.s_layout_controls, 300
         yield self.s_snap, 900
@@ -126,6 +127,7 @@ class Smoke:
         yield self.s_repeat, 800
         yield self.s_sketch_enter, 1500
         yield self.s_sketch_check, 100
+        yield self.s_keyboard_sketch, 100
         yield self.s_profile, 300
         yield self.s_profile_typed, 300
         yield self.s_sketch_trim, 300            # before Point on Curve: MB2 must not leave the trim's gate up
@@ -2260,6 +2262,14 @@ class Smoke:
         self.shell.ribbon.select("Home")
 
     # ------------------------------------------------------ keyboard tests
+    def s_keyboard_access(self):
+        from . import smoke_keyboard
+        smoke_keyboard.run(self)
+
+    def s_keyboard_sketch(self):
+        from . import smoke_keyboard
+        smoke_keyboard.sketch(self)
+
     def s_keys_in_text_field(self):
         """A single-letter NX key typed into a text field is text: X in the Command Finder must not reach
         Extrude (a shortcut that fires while the user types would run commands by accident)."""
