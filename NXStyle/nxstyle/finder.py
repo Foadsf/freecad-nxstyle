@@ -4,6 +4,7 @@
 import FreeCADGui as Gui
 
 from .qt import QtCore, QtGui, QtWidgets, Qt
+from . import icon_theme
 from .ribbon import clean_text, command_action
 
 ROLE_CMD = Qt.UserRole + 1
@@ -51,7 +52,7 @@ class CommandFinder(QtWidgets.QLineEdit):
                 # on the ribbon, but FreeCAD made no action for it (it sits in none of FreeCAD's toolbars,
                 # e.g. Sketcher_ConstrainPointOnObject in 1.1): the command's own text and icon
                 info = Gui.Command.get(name).getInfo()
-                icon = Gui.getIcon(info.get("pixmap") or "") or QtGui.QIcon()
+                icon = icon_theme.icon(name, Gui.getIcon(info.get("pixmap") or "") or QtGui.QIcon())
                 fc_text, shortcut, tip = clean_text(info.get("menuText", "")), "", clean_text(info.get("toolTip", ""))
             else:
                 continue
