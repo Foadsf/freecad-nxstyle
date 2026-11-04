@@ -42,9 +42,11 @@ DEFAULTS = {
     "zoom_at_cursor": True,            # the wheel zooms towards the point under the cursor
     "invert_wheel_zoom": True,         # FreeCAD default: wheel forward zooms in
     "rotate_degrees_per_pixel": 0.4,   # MB2 drag: how fast the view turns
-    # MB2 drag: "freecad" = the axes of FreeCAD's orbit style (Preferences › Display › Navigation: Turntable, Free
-    # Turntable, Trackball...) once one is set there, NX's own rotation until then; "nx" = always NX's own
-    "orbit_style": "freecad",
+    # MB2 drag: "auto" = the axes of FreeCAD's orbit style (Preferences › Display › Navigation: Turntable, Free
+    # Turntable, Trackball...) on FreeCAD 1.1 and later, where a profile without one gets Trackball Classic, NX's
+    # own rotation; NX's own on FreeCAD 1.0, whose list has no such entry; "freecad" = FreeCAD's orbit style on
+    # 1.0 too; "nx" = always NX's own
+    "orbit_style": "auto",
     "zoom_drag_up_zooms_in": True,     # Ctrl+MB2 / MB1+MB2 drag: dragging up zooms in (false: down zooms in)
     "mb2_click_is_ok": True,           # middle click accepts the open feature dialog
     "mb2_hold_sets_rotation_point_ms": 450,  # press and hold MB2 this long on the model to rotate about that point
@@ -71,6 +73,7 @@ DEFAULTS = {
     "algorithmic_modeling": "katydid",  # node-based modelling (NX Algorithmic Modeling): "katydid" add-on, or "none"
     "sheet_metal": "sheetmetal",       # NX Sheet Metal: FreeCAD's "sheetmetal" add-on (bundled), or "none"
     "laser_cut": "lcinterlocking",     # Laser Cut: the "lcinterlocking" add-on (bundled), or "none"
+    "dfm": "dfm",                      # Molded Part Validation: the "dfm" add-on (bundled; needs OCP), or "none"
     "nxt": False,                      # the FreeCAD-Nxt add-on (model panel, Property Inspector), trial: off by default
     "manufacturing": "carbon",         # manufacturing ERP/MES/quality: "carbon" (a Carbon server), or "none"
     "carbon": {                        # The Carbon connection; PLM › Manufacturing Connection sets it, never the API key.

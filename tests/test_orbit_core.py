@@ -68,6 +68,14 @@ class ModeTests(unittest.TestCase):
     def test_unknown_style_number_keeps_nx_rotation(self):
         self.assertEqual(oc.mode(9), oc.NX)
 
+    def test_auto_keeps_nx_rotation_on_freecad_1_0(self):
+        """FreeCAD 1.0's Preferences write Trackball (1) on every save and list no entry for NX's rotation."""
+        self.assertEqual({oc.mode(i, "auto", (1, 0)) for i in range(3)}, {oc.NX})
+        self.assertEqual(oc.mode(2, "auto", (26, 3)), oc.FREE_TURN)
+
+    def test_freecad_follows_on_1_0_when_asked(self):
+        self.assertEqual(oc.mode(2, "freecad", (1, 0)), oc.FREE_TURN)
+
 
 class StepTests(unittest.TestCase):
     def test_nx_rotation_is_about_the_screen_axes(self):

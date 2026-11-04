@@ -186,6 +186,7 @@ class Smoke:
         yield self.s_imported_prefs, 300
         yield self.s_nav_settings, 300
         yield self.s_orbit_style, 300
+        yield self.s_orbit_preferences, 300
         yield self.s_user_addons, 300
         yield self.s_drafting_views, 300
         yield self.s_pmi_notes, 300
@@ -2766,6 +2767,12 @@ class Smoke:
         (smoke_navigation.py)."""
         from . import smoke_navigation
         smoke_navigation.run_orbit_style(self)
+
+    def s_orbit_preferences(self):
+        """Pressing OK in FreeCAD's Preferences keeps NX's MB2 rotation; without the Trackball Classic seed it
+        would turn MB2 into a trackball (the control) (smoke_navigation.py)."""
+        from . import smoke_navigation
+        smoke_navigation.run_orbit_preferences(self)
 
     def s_user_addons(self):
         """Add-ons loaded from the normal FreeCAD profile are applications with ribbons made from their toolbars

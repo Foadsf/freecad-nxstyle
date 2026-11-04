@@ -188,6 +188,7 @@ def apply(cfg=None):
     v.SetBool("ZoomAtCursor", bool(cfg.get("zoom_at_cursor", True)))
     v.SetBool("InvertZoom", bool(cfg.get("invert_wheel_zoom", True)))
     v.SetString("NavigationStyle", navigation_style(cfg))
+    seed_orbit_style(cfg)
     # only write when different: FreeCAD 1.1 reloads its stylesheet on every
     # change of these parameters, which would drop the NX layer on top
     main = App.ParamGet(MAIN)
@@ -200,6 +201,24 @@ def apply(cfg=None):
           "assemblies": "AssemblyWorkbench"}.get(app, "PartDesignWorkbench")
     App.ParamGet(GENERAL).SetString("AutoloadModule", wb)
     apply_sketch_input(cfg)
+
+
+TRACKBALL_CLASSIC = 3          # FreeCAD 1.1's orbit style list: NX's rotation, about the screen's axes
+
+
+def seed_orbit_style(cfg=None):
+    """With NX-Style's own MB2 rotation, give a profile that has no orbit style FreeCAD 1.1's Trackball Classic.
+    FreeCAD's Preferences write the orbit style each time they are saved, showing Rounded Arcball when there is
+    none (DlgSettingsNavigation, FreeCAD 1.1.0), so pressing OK for any reason would turn MB2 into a trackball;
+    seeded, the dialog shows the rotation MB2 has and saving it keeps it. A style already set (chosen, or imported
+    from the normal profile) is left alone; FreeCAD 1.0 has no Trackball Classic. Returns the value written or
+    None."""
+    cfg = cfg or config.get()
+    p = App.ParamGet(VIEW)
+    if not uses_own_navigation(cfg) or freecad_version() < (1, 1) or p.GetInt("OrbitStyle", -1) >= 0:
+        return None
+    p.SetInt("OrbitStyle", TRACKBALL_CLASSIC)
+    return TRACKBALL_CLASSIC
 
 
 def apply_sketch_input(cfg=None):

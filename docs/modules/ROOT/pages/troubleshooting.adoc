@@ -33,7 +33,7 @@ A misspelt name or value is ignored. `navigation` takes `"nx"`, `"native"` or a 
 Move those settings into `nxstyle.json`.
 
 The orbit style in Preferences seems ignored::
-MB2 follows it from the next drag (xref:mouse.adoc#orbit[]), unless `"orbit_style": "nx"` is set.
+MB2 follows it from the next drag (xref:mouse.adoc#orbit[]), unless `"orbit_style": "nx"` is set; on FreeCAD 1.0 only with `"orbit_style": "freecad"`.
 With `"import_preferences"` including `navigation`, the launcher copies your normal FreeCAD's orbit style over the NX profile's at every start.
 
 == The launcher stops

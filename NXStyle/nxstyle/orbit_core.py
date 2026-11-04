@@ -14,8 +14,11 @@ rotation the same axes:
     3 Trackball Classic  about the screen's vertical and horizontal axes: NX's own rotation
     4 Rounded Arcball    a trackball (FreeCAD rounds its sphere's rim; the axes are a trackball's)
 
-With no orbit style set (the parameter is missing, as in a new NX profile) the rotation is NX's own, about the
-screen's axes. How far the view turns is NX-Style's "rotate_degrees_per_pixel" in every style.
+With no orbit style set (the parameter is missing) the rotation is NX's own, about the screen's axes. FreeCAD's
+Preferences write the orbit style whenever they are saved, showing Rounded Arcball (1.1) when none is set, so
+NX-Style sets Trackball Classic in a profile without one (prefs.seed_orbit_style): the dialog then shows NX's
+rotation and saving it keeps it. FreeCAD 1.0 has no Trackball Classic; there the "auto" setting keeps NX's own.
+How far the view turns is NX-Style's "rotate_degrees_per_pixel" in every style.
 """
 
 import math
@@ -34,11 +37,18 @@ MODES = {TURNTABLE: TURN, TRACKBALL: BALL, FREE_TURNTABLE: FREE_TURN, TRACKBALL_
 SPHERE_RADIUS = 0.8             # FCSphereSheetProjector::defaultSphereRadius, in a [-1, 1] window
 
 
-def mode(orbit_style, setting="freecad"):
-    """The rotation NX-Style's MB2 uses: NX's own when the "orbit_style" setting is "nx" or FreeCAD has no orbit
-    style (None or negative: the parameter is missing), else the one FreeCAD's orbit style names. An unknown
-    number (a FreeCAD newer than this list) keeps NX's own."""
+FIRST_WITH_CLASSIC = (1, 1)     # Trackball Classic (NX's rotation) is in FreeCAD's list from 1.1 on
+
+
+def mode(orbit_style, setting="auto", freecad=FIRST_WITH_CLASSIC):
+    """The rotation NX-Style's MB2 uses: NX's own when the "orbit_style" setting is "nx", when FreeCAD has no orbit
+    style (None or negative: the parameter is missing), and with "auto" on a FreeCAD (major, minor) before 1.1;
+    else the one FreeCAD's orbit style names. FreeCAD 1.0's list has no entry for NX's rotation and its
+    Preferences write Trackball whenever they are saved, so "auto" does not follow it there. An unknown number
+    (a FreeCAD newer than this list) keeps NX's own."""
     if setting == "nx" or orbit_style is None or orbit_style < 0:
+        return NX
+    if setting == "auto" and tuple(freecad) < FIRST_WITH_CLASSIC:
         return NX
     return MODES.get(int(orbit_style), NX)
 

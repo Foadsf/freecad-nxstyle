@@ -243,7 +243,7 @@ class NxMouse(QtCore.QObject):
         """FreeCAD's orbit style as NX-Style's MB2 rotation uses it (orbit_core.mode), read at the start of each
         rotation so a change in Preferences counts from the next drag."""
         style = App.ParamGet(prefs.VIEW).GetInt("OrbitStyle", -1)       # -1: not set, NX's own rotation
-        self.orbit = orbit_core.mode(style, self.cfg.get("orbit_style", "freecad"))
+        self.orbit = orbit_core.mode(style, self.cfg.get("orbit_style", "auto"), prefs.freecad_version())
         return self.orbit
 
     def owns_mouse(self):
@@ -254,7 +254,10 @@ class NxMouse(QtCore.QObject):
             return False
         try:
             return self.view.getNavigationType() == prefs.NX_BASE_STYLE
-        except Exception:
+        except (RuntimeError, AttributeError) as e:      # the view is closing: keep NX's handling, say so once
+            if not getattr(self, "_nav_type_logged", False):
+                self._nav_type_logged = True
+                App.Console.PrintLog(f"NXStyle navigation: view's navigation style unreadable ({e})\n")
             return True
 
     def rotate(self, dx, dy, p=None):

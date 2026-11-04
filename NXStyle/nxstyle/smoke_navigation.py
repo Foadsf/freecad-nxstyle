@@ -126,6 +126,99 @@ def run_nav_settings(smoke):
             App.closeDocument(doc.Name)
 
 
+def press_preferences_ok(smoke, wait_ms=2500, give_up_ms=20000):
+    """Open FreeCAD's Preferences (Std_DlgPreferences, modal) and press its OK: FreeCAD then saves every page,
+    Display › Navigation's orbit style among them. Returns what happened."""
+    seen = {}
+
+    def ok():
+        dlg = QtWidgets.QApplication.activeModalWidget()
+        seen["dialog"] = dlg.metaObject().className() if dlg is not None else None
+        box = dlg.findChild(QtWidgets.QDialogButtonBox) if dlg is not None else None
+        button = box.button(QtWidgets.QDialogButtonBox.Ok) if box is not None else None
+        seen["ok button"] = button is not None
+        if button is not None:
+            button.click()
+
+    def give_up():                               # OK did not close it: never leave a modal dialog up
+        dlg = QtWidgets.QApplication.activeModalWidget()
+        if not seen.get("closed") and dlg is not None:
+            seen["gave up"] = True
+            dlg.reject()
+
+    QtCore.QTimer.singleShot(wait_ms, ok)
+    QtCore.QTimer.singleShot(give_up_ms, give_up)
+    Gui.runCommand("Std_DlgPreferences")         # returns when the dialog has closed
+    seen["closed"] = True
+    QtWidgets.QApplication.processEvents()
+    return seen
+
+
+def run_orbit_preferences(smoke):
+    """Pressing OK in FreeCAD's Preferences, for any reason, writes the orbit style the dialog shows. Without one
+    set, FreeCAD 1.1 shows (and writes) Rounded Arcball, and NX-Style's MB2 would turn into a trackball; NX-Style
+    sets Trackball Classic in such a profile, so the dialog shows NX's rotation and saving keeps it. The control
+    removes the orbit style and saves again: FreeCAD writes Rounded Arcball and MB2 rolls at the edge."""
+    from . import prefs
+    from .tutorial import qtest
+    p = App.ParamGet(prefs.VIEW)
+    had = p.GetInt(ORBIT_PARAM, -1)
+    doc = None
+    try:
+        if not prefs.uses_own_navigation(smoke.shell.cfg):
+            smoke.skip("Preferences OK keeps NX's MB2 rotation", "NX-Style's own MB2 handling is off in this run")
+            return
+        if prefs.freecad_version() < (1, 1):
+            smoke.skip("Preferences OK keeps NX's MB2 rotation", "FreeCAD 1.0 has no Trackball Classic")
+            return
+        doc, view, f = _view_and_filter(smoke, "SmokeOrbitPrefs")
+        w = f.widget
+        edge = QtCore.QPoint(w.width() - 8, w.height() // 2 - 40)
+        animated = p.GetBool("UseNavigationAnimations", True)
+        p.SetBool("UseNavigationAnimations", False)
+        view.viewIsometric()
+        qtest().qWait(200)
+        iso = view.getCameraNode().orientation.getValue().getValue()
+        p.SetBool("UseNavigationAnimations", animated)
+
+        def drags():
+            out = {}
+            for name, dx, dy, start in (("diagonal", 60, 25, None), ("edge", 0, 80, edge)):
+                view.getCameraNode().orientation.setValue(*iso)
+                QtWidgets.QApplication.processEvents()
+                before = frame(view)
+                smoke.drag(f, [Qt.MiddleButton], dx, dy, start)
+                qtest().qWait(50)
+                out[name] = measure(before, frame(view))
+            return out
+
+        smoke.check("a profile that had no orbit style starts with Trackball Classic (NX's rotation)",
+                    had == prefs.TRACKBALL_CLASSIC, {"OrbitStyle at the start": had})
+        seen = press_preferences_ok(smoke)
+        after = p.GetInt(ORBIT_PARAM, -1)
+        res = drags()
+        smoke.info["Preferences OK"] = {"dialog": seen, "OrbitStyle": after, "MB2": res}
+        smoke.check("Preferences OK keeps Trackball Classic, and MB2 keeps NX's rotation (no roll at the edge)",
+                    seen.get("ok button") and not seen.get("gave up") and after == prefs.TRACKBALL_CLASSIC
+                    and res["edge"]["roll"] < 0.5 and res["diagonal"]["horizon tilt"] > 0.05,
+                    {"dialog": seen, "OrbitStyle": after, "edge": res["edge"], "diagonal": res["diagonal"]})
+        p.RemInt(ORBIT_PARAM)                             # the control: as a profile without the seed
+        seen = press_preferences_ok(smoke)
+        unseeded = p.GetInt(ORBIT_PARAM, -1)
+        res = drags()
+        smoke.info["Preferences OK without an orbit style (control)"] = {"dialog": seen, "OrbitStyle": unseeded,
+                                                                          "MB2": res}
+        smoke.check("control: without an orbit style, Preferences OK writes Rounded Arcball and MB2 then rolls",
+                    seen.get("ok button") and unseeded == 4 and res["edge"]["roll"] > 2,
+                    {"dialog": seen, "OrbitStyle": unseeded, "edge": res["edge"]})
+    except Exception:
+        smoke.check("orbit style and Preferences scenario ran", False, traceback.format_exc().splitlines()[-1])
+    finally:
+        set_orbit(p, None if had < 0 else had)
+        if doc is not None:
+            App.closeDocument(doc.Name)
+
+
 def run_orbit_style(smoke):
     """A real MB2 drag (mouse events into the graphics window) under each orbit style, from FreeCAD's isometric
     view; the orbit style parameter is put back as it was."""

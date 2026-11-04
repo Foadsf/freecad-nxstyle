@@ -170,6 +170,75 @@ class DefaultsFileTests(Profile):
             self.assertEqual(config.DEFAULTS, defaults)
 
 
+class OrbitSeedTests(Profile):
+    """FreeCAD's Preferences write the orbit style they show whenever they are saved: Rounded Arcball (4) on 1.1
+    when none is set. A profile with NX-Style's own MB2 gets Trackball Classic (3), NX's rotation."""
+
+    def orbit_after_start(self, user=None, before=None, version=("1", "1", "4")):
+        if user is not None:
+            self.write("nxstyle.json", json.dumps(user))
+        tree = {}
+        stack, config, prefs = nxstyle_modules(tree, version)
+        if before is not None:
+            tree.setdefault(VIEW, Group()).SetInt("OrbitStyle", before)
+        with stack, mock.patch.dict(os.environ, {"NXSTYLE_PROFILE": str(self.profile)}):
+            prefs.apply(config.load())
+        return tree[VIEW].GetInt("OrbitStyle", -1)
+
+    def test_a_profile_without_one_gets_trackball_classic(self):
+        self.assertEqual(self.orbit_after_start(), 3)
+        self.assertEqual(self.orbit_after_start(version=("26", "3", "0RC2")), 3)
+
+    def test_a_chosen_or_imported_one_is_kept(self):
+        self.assertEqual(self.orbit_after_start(before=2), 2)
+        self.assertEqual(self.orbit_after_start(before=4), 4)
+
+    def test_not_with_freecads_own_navigation(self):
+        self.assertEqual(self.orbit_after_start({"navigation": "native"}), -1)
+
+    def test_not_on_freecad_1_0_which_has_no_trackball_classic(self):
+        self.assertEqual(self.orbit_after_start(version=("1", "0", "2")), -1)
+
+
+class LauncherSettingsTests(Profile):
+    def test_dfm_is_a_known_setting(self):
+        """{"dfm": "none"} switches the DFM add-on off (launch_nx.find_dfm): no "unknown setting" line."""
+        self.write("nxstyle.json", '{"dfm": "none"}')
+        self.assertEqual(self.report(), [f"{self.cfg_dir / 'nxstyle.json'} (dfm)"])
+        install = launch_nx.Install(self.tmp / "freecad.exe", (1, 1, 4))
+        self.assertEqual(launch_nx.find_dfm(self.profile, install), ((), "off (nxstyle.json: dfm = 'none')"))
+
+    def test_every_setting_the_launcher_reads_is_known(self):
+        import re
+        defaults = launch_nx.module_literal(launch_nx.CONFIG_SOURCE, "DEFAULTS")
+        src = (ROOT / "launch_nx.py").read_text(encoding="utf-8")
+        read = set(re.findall(r'(?:cfg|settings|read_settings\([^)]*\))\.get\("([a-z_]+)"', src))
+        self.assertTrue(read and read <= set(defaults), sorted(read - set(defaults)))
+
+
+class CarbonSettingsTests(Profile):
+    def test_saving_the_carbon_connection_keeps_a_bom_file(self):
+        """carbon_ui.save_settings reads nxstyle.json before it adds the server; a BOM must not break it."""
+        import types
+        self.write("nxstyle.json", '{"navigation": "native"}', encoding="utf-8-sig")
+        stack, config, _ = nxstyle_modules({})
+        class AnyClass:                         # QtWidgets.QDialog and friends, only subclassed at import
+            def __getattr__(self, name):
+                return object
+
+        qt = types.ModuleType("nxstyle.qt")
+        qt.QtCore = qt.QtWidgets = AnyClass()
+        with stack, mock.patch.dict(sys.modules, {"nxstyle.qt": qt}), \
+                mock.patch.dict(os.environ, {"NXSTYLE_PROFILE": str(self.profile)}):
+            sys.modules.pop("nxstyle.carbon_ui", None)
+            carbon_ui = importlib.import_module("nxstyle.carbon_ui")
+            carbon_ui.save_settings("https://carbon.example", "Main")
+            sys.modules.pop("nxstyle.carbon_ui", None)
+        data = json.loads((self.cfg_dir / "nxstyle.json").read_text(encoding="utf-8"))
+        self.assertEqual(data, {"navigation": "native", "carbon": {"url": "https://carbon.example",
+                                                                   "location": "Main"}})
+
+
 class NamesTests(Profile):
     def test_misspelt_setting_is_named_with_a_suggestion(self):
         self.write("nxstyle.json", '{"navigaton": "native"}')

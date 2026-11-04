@@ -106,7 +106,7 @@ For one start only, use `python launch_nx.py --import-preferences` (navigation) 
 
 With `navigation` imported, the graphics window behaves as in your normal FreeCAD, so NX-Style's own mouse handling (MB2 rotate, MB2 click = OK) is off.
 What you set in `nxstyle.json` still decides: `"navigation": "nx"` keeps NX-Style's mouse handling, and the same holds for `zoom_at_cursor` and `invert_wheel_zoom`.
-NX-Style's MB2 rotation then follows your orbit style (xref:mouse.adoc#orbit[]), but not your rotation mode: the rotation point is NX's (press and hold MB2 on the model); the wheel is FreeCAD's, so your zoom step applies.
+NX-Style's MB2 rotation then follows your orbit style (xref:mouse.adoc#orbit[]) on FreeCAD 1.1 and later, so with an orbit style set in your normal FreeCAD, MB2 turns that way rather than NX's; it does not follow your rotation mode: the rotation point is NX's (press and hold MB2 on the model); the wheel is FreeCAD's, so your zoom step applies.
 
 The launcher looks for your normal profile where FreeCAD keeps it: `%APPDATA%\FreeCAD` on Windows, `~/.config/FreeCAD` on Linux, `~/Library/Application Support/FreeCAD` on macOS, in the `v1-1` subfolder that FreeCAD 1.1 makes for each version.
 If you keep it elsewhere, give the folder that holds `user.cfg`, `Mod` and `Macro`: `"normal_profile": "D:/FreeCAD/profile"`.

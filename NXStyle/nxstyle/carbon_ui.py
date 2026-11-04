@@ -48,7 +48,7 @@ def save_settings(url, location):
     path = config.user_file()
     data = {}
     if os.path.isfile(path):
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:      # as config.load: a byte order mark is allowed
             data = json.load(f)
     data.setdefault("carbon", {}).update(url=url, location=location)
     os.makedirs(os.path.dirname(path), exist_ok=True)
