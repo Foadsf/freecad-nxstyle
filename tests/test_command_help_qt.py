@@ -140,6 +140,7 @@ class CommandHelpQt(unittest.TestCase):
         self.hover(raw)
         self.assertIn("F9", proxy.text())
         self.assertNotIn("F7", proxy.text())
+        self.assertEqual(proxy.shortcuts(), [])       # the refresh shows the new key, it does not register it
         self.assertIn("F9", raw.toolTip())
         calls = []
         self.actions["Test_Pad"].triggered.connect(lambda: calls.append("native"))
@@ -195,18 +196,12 @@ class CommandHelpQt(unittest.TestCase):
         self.assertEqual(action.text(), "&Pad")
         self.assertEqual(action.shortcut().toString(), "Ctrl+E")
 
-    def test_negative_controls_reject_hidden_alias_and_duplicate_proxy_registration(self):
+    def test_negative_control_rejects_hidden_alias(self):
         button = self.button()
         with patch.object(self.manager, "shortcuts_for", return_value=[]):
             self.hover(button)
             with self.assertRaisesRegex(AssertionError, "F7"):
                 self.assertIn("F7", button.toolTip())
-        dropdown = self.ribbon_module.DropdownButton("Features", [("Test_Pad", "Extrude")], "small")
-        self.widgets.append(dropdown)
-        proxy = dropdown.menu().actions()[0]
-        proxy.setShortcut(QtGui.QKeySequence("Ctrl+E"))
-        with self.assertRaises(AssertionError):
-            self.assertEqual(proxy.shortcuts(), [])
 
 
 if __name__ == "__main__":
