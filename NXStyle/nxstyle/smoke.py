@@ -179,6 +179,7 @@ class Smoke:
         yield self.s_extrude_key, 1500
         yield self.s_extrude_key_check, 300
         yield self.s_section, 300
+        yield self.s_section_attach, 300
         yield self.s_primitives, 300
         yield self.s_thread, 300
         yield self.s_move, 300
@@ -2725,6 +2726,12 @@ class Smoke:
         -Z, the flange revolved, then Cancel (smoke_section.py)."""
         from . import smoke_section
         smoke_section.run(self)
+
+    def s_section_attach(self):
+        """FreeCAD 26.3's sketch flow (issue #53), run here through 1.1's NewSketchUseAttachmentDialog: Extrude with
+        nothing selected takes the Attachment panel as its plane pick (smoke_section.attachment_first)."""
+        from . import smoke_section
+        smoke_section.run_attachment_first(self)
 
     def s_nxt(self):
         """FreeCAD-Nxt, off by default: with --nxt its features tried once and its clashes with NX's keys and

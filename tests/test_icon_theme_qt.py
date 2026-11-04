@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 """Real Qt rendering/action controls, without FreeCAD. CI runs these with PySide6."""
+import gc
 import os
 import sys
 import tempfile
@@ -86,9 +87,11 @@ class IconsQt(unittest.TestCase):
         icon_theme.bind(a, a.objectName())
         themed = a.icon().cacheKey()
         self.assertNotEqual(native, themed)
+        binding = icon_theme.binding_of(a)
         for _ in range(3):
             icon_theme.bind(a, a.objectName())
-        self.assertEqual(len(a.findChildren(QtCore.QObject, "NXStyleIconBinding")), 1)
+        self.assertIs(icon_theme.binding_of(a), binding)       # one binding, however often the action is bound
+        self.assertEqual(a.receivers(QtCore.SIGNAL("changed()")), 1)
         self.assertEqual(a.shortcut().toString(), "Ctrl+E")
         self.assertEqual(a.data(), "keep-model-command")
         a.setEnabled(False)
@@ -111,6 +114,52 @@ class IconsQt(unittest.TestCase):
         self.settings["icon_theme"] = "freecad"
         icon_theme.bind(a, a.objectName())
         self.assertEqual(a.icon().cacheKey(), newer.cacheKey())
+
+    @staticmethod
+    def lose_wrapper_state(action):
+        """What FreeCAD 26.3 (PySide6 6.11) showed in issue #53: an object Qt hands back for the action's child is
+        of the Python class but carries none of its Python attributes ('Binding' object has no attribute 'busy')."""
+        for child in action.findChildren(QtCore.QObject):
+            vars(child).clear()
+        gc.collect()
+
+    def test_binding_survives_python_wrappers_losing_their_attributes(self):
+        a = self.action("PartDesign_Pad")
+        native = a.icon().cacheKey()
+        icon_theme.bind(a, a.objectName())
+        themed = a.icon().cacheKey()
+        self.lose_wrapper_state(a)
+        icon_theme.bind(a, a.objectName())                    # issue #53 raised AttributeError here
+        a.setEnabled(False)                                   # and in the slot on every changed()
+        a.setEnabled(True)
+        self.assertEqual(a.icon().cacheKey(), themed)
+        self.settings["icon_theme"] = "freecad"
+        icon_theme.bind(a, a.objectName())
+        self.assertEqual(a.icon().cacheKey(), native)         # the native icon is still known
+
+    def test_group_binding_survives_python_wrappers_losing_their_attributes(self):
+        """The issue #53 traceback's path: ribbon.command_action binding a group's own action with its entries."""
+        owner = QtCore.QObject()
+        own = self.action("Sketcher_CompLine")
+        entries = [self.action("Sketcher_CreateLine"), self.action("UnmappedVariant")]
+        for e in entries:
+            icon_theme.bind(e, e.objectName())
+        owner.setProperty("defaultAction", 0)
+        icon_theme.bind(own, own.objectName(), entries, owner)
+        self.lose_wrapper_state(own)
+        icon_theme.bind(own, own.objectName(), entries, owner)
+        self.assertEqual(own.icon().cacheKey(), entries[0].icon().cacheKey())
+
+    def test_binding_is_dropped_with_its_action(self):
+        a = QtGui.QAction("PartDesign_Pad")
+        a.setObjectName("PartDesign_Pad")
+        a.setIcon(self.native_icon())
+        icon_theme.bind(a, a.objectName())
+        key = a.property(icon_theme.BINDING_KEY)
+        self.assertIn(key, icon_theme._bindings)
+        a.deleteLater()
+        QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.DeferredDelete)
+        self.assertNotIn(key, icon_theme._bindings)
 
     def test_unmapped_missing_invalid_and_off_keep_native(self):
         native = self.native_icon()

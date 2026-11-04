@@ -100,11 +100,33 @@ def _tasks_dock():
     return Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
 
 
-def _plane_pick_open():
-    """FreeCAD's 'select a plane for the sketch' panel (PartDesign_NewSketch with nothing selected) is open."""
+def _plane_pick_open(s=None):
+    """FreeCAD asks for the plane of the command's new sketch (PartDesign_NewSketch with nothing selected).
+
+    FreeCAD 1.1 lists the planes first (its 'select feature' panel) and makes the sketch once one is picked.
+    FreeCAD 26.3 makes the sketch first and opens its Attachment panel (SketchWorkflow.cpp: the plane list is
+    gone, 1.1's preference NewSketchUseAttachmentDialog became the only way; issue #53). That panel is the plane
+    pick then: the session's sketch exists, is not in edit, and a task panel is open."""
     dock = _tasks_dock()
     w = dock.findChild(QtWidgets.QWidget, "PartDesignGui__TaskFeaturePick") if dock is not None else None
-    return w is not None and w.isVisible()
+    if w is not None and w.isVisible():
+        return True
+    return _attachment_asked(s)
+
+
+def _new_sketches(doc, before):
+    return [o for o in doc.Objects if o.Name not in before and o.isDerivedFrom("Sketcher::SketchObject")]
+
+
+def _attachment_asked(s):
+    """FreeCAD's Attachment panel is open for the sketch it made first for session s (FreeCAD 26.3's plane pick)."""
+    if s is None or not s.attaching or s.doc is None:
+        return False
+    try:
+        sketch = s.doc.getObject(s.attaching)
+        return sketch is not None and bool(Gui.Control.activeDialog()) and not _sketch_in_edit()
+    except Exception:
+        return False
 
 
 def _sketch_in_edit():
@@ -588,6 +610,7 @@ class Session:
         self.edges = None                # the section's curves of the sketch; None: the whole sketch
         self.picks = []                  # picks waiting for the controller: ('add' | 'remove', sketch, element)
         self.picking = False             # the controller is selecting the section itself (not a user's pick)
+        self.attaching = None            # the sketch FreeCAD made first and asks the plane of (see _plane_pick_open)
         self.axis = {"vector": "sketch_v", "point": (0.0, 0.0, 0.0)}   # Revolve: FreeCAD's default axis
         self.limits = (0.0, 360.0)
         self.limits_typed = None         # Revolve: Start and End as typed while they are no valid pair (kept, as NX does)
@@ -957,13 +980,23 @@ class Controller:
         commands.pending_feature["command"] = self._section_done
         commands.pending_feature["sketch"] = None
         self._ensure_work_body(s)
+        before = {o.Name for o in s.doc.Objects}
         Gui.runCommand("PartDesign_NewSketch")
         try:
             edited = Gui.ActiveDocument.getInEdit()
         except Exception:
             edited = None
+        made = _new_sketches(s.doc, before)
+        dialog = bool(Gui.Control.activeDialog())
+        if made and edited is None and dialog:
+            # FreeCAD 26.3: the sketch is made first and its Attachment panel asks for the plane. It is this
+            # command's plane pick; a sketch curve picked meanwhile is still the section (take_picks)
+            s.attaching = made[0].Name
+            _status(f"{adapter.name}: pick the sketch plane in FreeCAD's Attachment panel and press OK, "
+                    "or pick curves of a sketch for the section")
         self.log(f"select: PartDesign_NewSketch gave {edited.Object.Name if edited is not None else 'no edit'}, "
-                 f"dialog {bool(Gui.Control.activeDialog())}")
+                 f"dialog {dialog}, made {[o.Name for o in made]}"
+                 f"{', attachment first' if s.attaching else ''}")
         return True
 
     def _ensure_work_body(self, s):
@@ -1104,7 +1137,7 @@ class Controller:
             from . import commands
             # only while FreeCAD asks for the plane: once the command's own sketch exists, finishing it selects
             # that sketch (measured in tutorial AE), and the sketch-first path carries on with it
-            if what != "add" or commands.pending_feature["sketch"] is not None or not _plane_pick_open():
+            if what != "add" or commands.pending_feature["sketch"] is not None or not _plane_pick_open(s):
                 s.picks.clear()
                 return
             self._switch_to_section(s, sketch, expand(sketch, element, selection_filter.manager().curve_rule))

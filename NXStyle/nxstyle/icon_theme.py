@@ -12,7 +12,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent / "resources"
 _icons = {}
-_binding_class = None
 
 
 @lru_cache(maxsize=1)
@@ -52,49 +51,59 @@ def icon(command, fallback):
     return _icons[key] if _icons[key] is not None else fallback
 
 
-def _type():
-    global _binding_class
-    if _binding_class is not None:
-        return _binding_class
-    from .qt import QtCore
+# A binding's state lives in plain Python objects held here, never as attributes of a Qt object found again through
+# Qt. Issue #53: on FreeCAD 26.3 (PySide6 6.11) the QObject child that used to hold it came back from findChild() as
+# a 'Binding' without its Python attributes ('no attribute busy'): the wrapper PySide hands out for a Qt object is
+# not guaranteed to be the one whose attributes were set. Qt keeps only the key, a dynamic property of the action.
+BINDING_KEY = "nxstyleIconBinding"
+_bindings = {}
+_next_key = [0]
 
-    class Binding(QtCore.QObject):
-        def __init__(self, action, command, entries, owner):
-            super().__init__(action)
-            self.setObjectName("NXStyleIconBinding")
-            self.action, self.command = action, command
-            self.entries, self.owner = entries, owner
-            self.native = action.icon()
-            self.last = self.native.cacheKey()
-            self.busy = False
-            action.changed.connect(self.sync)
 
-        def sync(self):
-            if self.busy:
-                return
-            self.busy = True
-            try:
-                current = self.action.icon()
-                if current.cacheKey() != self.last:
-                    self.native = current      # host changed the icon, not just enabled/checked
-                if self.entries is not None:
-                    # Group buttons must show the remembered entry, even when it has
-                    # no artwork. Never label another command with the first entry's icon.
-                    index = self.owner.property("defaultAction")
-                    if isinstance(index, int) and 0 <= index < len(self.entries):
-                        wanted = self.entries[index].icon()
-                    else:
-                        wanted = self.native
+class _Binding:
+    """The native icon of one action and what it shows instead; plain Python, so nothing Qt or PySide does to a
+    wrapper can take this state away. All fields are set before the action's signal is connected."""
+
+    def __init__(self, key, action, command, entries, owner):
+        self.key, self.action, self.command = key, action, command
+        self.entries, self.owner = entries, owner
+        self.native = action.icon()
+        self.last = self.native.cacheKey()
+        self.busy = False
+        action.changed.connect(self.sync)
+        action.destroyed.connect(lambda *_args, key=key: _bindings.pop(key, None))
+
+    def sync(self):
+        if self.busy:
+            return
+        self.busy = True
+        try:
+            current = self.action.icon()
+            if current.cacheKey() != self.last:
+                self.native = current      # host changed the icon, not just enabled/checked
+            if self.entries is not None:
+                # Group buttons must show the remembered entry, even when it has
+                # no artwork. Never label another command with the first entry's icon.
+                index = self.owner.property("defaultAction")
+                if isinstance(index, int) and 0 <= index < len(self.entries):
+                    wanted = self.entries[index].icon()
                 else:
-                    wanted = icon(self.command, self.native)
-                self.last = wanted.cacheKey()
-                if current.cacheKey() != self.last:
-                    self.action.setIcon(wanted)
-            finally:
-                self.busy = False
+                    wanted = self.native
+            else:
+                wanted = icon(self.command, self.native)
+            self.last = wanted.cacheKey()
+            if current.cacheKey() != self.last:
+                self.action.setIcon(wanted)
+        except RuntimeError:               # the action was deleted by FreeCAD (a workbench reload)
+            _bindings.pop(self.key, None)
+        finally:
+            self.busy = False
 
-    _binding_class = Binding
-    return Binding
+
+def binding_of(action):
+    """The binding of an action, or None; found through the key Qt keeps on the action."""
+    key = action.property(BINDING_KEY)
+    return _bindings.get(key) if isinstance(key, int) else None
 
 
 def bind(action, command, entries=None, owner=None):
@@ -107,10 +116,12 @@ def bind(action, command, entries=None, owner=None):
         return action
     if entries is not None and not any(a.objectName() in catalogue() for a in entries):
         return action
-    from .qt import QtCore
-    binding = action.findChild(QtCore.QObject, "NXStyleIconBinding")
+    binding = binding_of(action)
     if binding is None:
-        binding = _type()(action, command, entries, owner)
+        _next_key[0] += 1
+        key = _next_key[0]
+        action.setProperty(BINDING_KEY, key)
+        binding = _bindings[key] = _Binding(key, action, command, entries, owner)
     else:
         binding.entries, binding.owner = entries, owner
     binding.sync()
