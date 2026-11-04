@@ -36,7 +36,7 @@ def freecad(tree):
     app.Version = lambda: ["1", "1", "4"]
     app.Units = types.SimpleNamespace(listSchemas=lambda i=None: ["Standard (mm, kg, s, °)"] if i is None
                                       else "Standard (mm, kg, s, °)", setSchema=lambda i: None)
-    app.Console = types.SimpleNamespace(PrintWarning=lambda s: None)
+    app.Console = types.SimpleNamespace(PrintWarning=lambda s: None, PrintMessage=lambda s: None)
     return {"FreeCAD": app, "FreeCADGui": types.ModuleType("FreeCADGui")}
 
 

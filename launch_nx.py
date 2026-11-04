@@ -87,23 +87,31 @@ def _version_command(gui_exe: Path) -> list[str] | None:
     return None
 
 
+def version_from_output(text: str) -> tuple[int, int, int] | None:
+    """The version freecadcmd --version prints: "FreeCAD 1.1.4 Revision: ...", a release candidate
+    "FreeCAD 26.3.0RC2 Revision: ..." (FreeCAD's numbering after 1.1) or "FreeCAD 26.3 RC2"."""
+    m = VERSION_RE.search(text)
+    return (int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)) if m else None
+
+
+def version_from_path(gui_exe: Path) -> tuple[int, int, int] | None:
+    """A version embedded in the file name ("FreeCAD_1.1.4-Linux-x86_64.AppImage",
+    "FreeCAD_26.3.0-RC2-Linux-x86_64.AppImage") or the install folder's name ("FreeCAD 1.0", "FreeCAD 26.3")."""
+    m = (re.search(r"[Ff]ree[Cc][Aa][Dd][ _-]?(\d+)\.(\d+)(?:\.(\d+))?", gui_exe.name)
+         or re.search(r"(\d+)\.(\d+)(?:\.(\d+))?", str(gui_exe.parent.parent.name)))
+    return (int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)) if m else None
+
+
 def probe_version(gui_exe: Path) -> tuple[int, int, int] | None:
     cmd = _version_command(gui_exe)
-    m = None
+    found = None
     if cmd:
         try:
             out = subprocess.run(cmd, capture_output=True, text=True, timeout=60, env=_clean_env())
-            m = VERSION_RE.search(out.stdout + out.stderr)
+            found = version_from_output(out.stdout + out.stderr)
         except (OSError, subprocess.SubprocessError):
-            m = None
-    if not m:
-        # Fall back to a version embedded in the file name ("FreeCAD_1.1.4-Linux-x86_64.AppImage")
-        # or the folder name ("FreeCAD 1.0").
-        m = (re.search(r"[Ff]ree[Cc][Aa][Dd][ _-]?(\d+)\.(\d+)(?:\.(\d+))?", gui_exe.name)
-             or re.search(r"(\d+)\.(\d+)(?:\.(\d+))?", str(gui_exe.parent.parent.name)))
-    if not m:
-        return None
-    return int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
+            found = None
+    return found or version_from_path(gui_exe)
 
 
 def _clean_env() -> dict:
@@ -669,16 +677,110 @@ def find_user_addons(profile: Path, version: tuple[int, int, int] | None, enable
 STRATA_DIR = HERE / "vendor" / "freecad-strata"     # git submodule of github.com/Foadsf/freecad-strata
 
 
+def settings_file(profile: Path) -> Path:
+    """The nxstyle.json NXStyle reads: config/nxstyle.json, or an older one in the profile's root when config/ has
+    none (NXStyle before 2026-10-13 kept it there); config/nxstyle.json when there is neither."""
+    own, legacy = profile / "config" / "nxstyle.json", profile / "nxstyle.json"
+    return legacy if not own.is_file() and legacy.is_file() else own
+
+
+def load_settings(profile: Path) -> tuple[dict, str | None]:
+    """(settings, error) of the profile's nxstyle.json, as NXStyle reads it (nxstyle/config.py): {} and why when it
+    cannot be used, {} and None when there is none. A UTF-8 byte order mark, which Windows editors may write, is
+    allowed."""
+    path = settings_file(profile)
+    if not path.is_file():
+        return {}, None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError) as e:
+        return {}, str(e)
+    if not isinstance(data, dict):
+        return {}, "not a JSON object ({...})"
+    return data, None
+
+
 def read_settings(profile: Path) -> dict:
-    """The profile's nxstyle.json, as NXStyle reads it: config/nxstyle.json, or an older one in the
-    profile's root when config/ has none (NXStyle before 2026-10-13 kept it there)."""
-    for path in (profile / "config" / "nxstyle.json", profile / "nxstyle.json"):
-        if path.is_file():
-            try:
-                return json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                return {}
-    return {}
+    """The profile's nxstyle.json as NXStyle reads it; {} when there is none or it cannot be read."""
+    return load_settings(profile)[0]
+
+
+CONFIG_SOURCE = MODULE_DIR / "nxstyle" / "config.py"
+PREFS_SOURCE = MODULE_DIR / "nxstyle" / "prefs.py"
+DEFAULTS_FILE = "nxstyle.defaults.json"           # nxstyle/config.py DEFAULTS_FILE
+
+
+def module_literal(source: Path, name: str):
+    """A dict literal assigned at the top of one of NXStyle's modules (DEFAULTS, FREECAD_STYLES), read without
+    importing it: they need FreeCAD."""
+    for node in ast.parse(source.read_text(encoding="utf-8")).body:
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", "") == name for t in node.targets):
+            return ast.literal_eval(node.value)
+    raise ValueError(f"{source} has no {name}")
+
+
+def settings_fingerprint(values: dict) -> str:
+    """nxstyle/config.py fingerprint(): what NXStyle stamps into nxstyle.defaults.json."""
+    import hashlib
+    return hashlib.sha256(json.dumps(values, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def style_class(name: str, styles: dict) -> str | None:
+    """nxstyle/prefs.py style_class(): FreeCAD's class name for a navigation style's menu or class name."""
+    key = "".join(c for c in str(name).lower() if c.isalnum() or c == ":")
+    key = key[len("gui::"):] if key.startswith("gui::") else key
+    key = key[:-len("navigationstyle")] if key.endswith("navigationstyle") else key
+    return styles.get("openinventor" if key == "inventor" else key)
+
+
+def settings_report(profile: Path) -> list[str]:
+    """The start-up lines about nxstyle.json: which file is read and what it sets, or that there is none, and
+    each thing that would make a setting silently not apply: a file that is not valid JSON, an unknown setting
+    (a misspelt name), a navigation that is no style, a change made in nxstyle.defaults.json (never read)."""
+    import difflib
+
+    profile = profile.resolve()          # name the file by its full path, never an 8.3 form (C:\Users\RUNNER~1)
+    path = settings_file(profile)
+    data, error = load_settings(profile)
+    try:
+        defaults = module_literal(CONFIG_SOURCE, "DEFAULTS")
+        styles = module_literal(PREFS_SOURCE, "FREECAD_STYLES")
+    except (OSError, ValueError, SyntaxError):
+        defaults, styles = {}, {}
+    lines = []
+    if error:
+        lines.append(f"{path} could not be read ({error}); NX-Style starts with its defaults")
+    elif path.is_file():
+        shown = [k for k in data if not k.startswith("_")]
+        lines.append(f"{path}" + (f" ({', '.join(shown)})" if shown else " (empty)"))
+    else:
+        lines.append(f"none: {path} does not exist, so NX-Style's defaults apply")
+    if defaults:
+        unknown = [k for k in data if k not in defaults and not k.startswith("_")]
+        for k in unknown:
+            near = difflib.get_close_matches(k, list(defaults), n=1)
+            lines.append(f"unknown setting {k!r} is ignored" + (f" (did you mean {near[0]!r}?)" if near else ""))
+        nav = data.get("navigation")
+        if isinstance(nav, str) and nav not in ("nx", "native") and not style_class(nav, styles) \
+                and not (nav.startswith("Gui::") and nav.endswith("NavigationStyle")):
+            lines.append(f"navigation {nav!r} is no navigation style: use \"nx\" (NX-Style's), \"native\" (FreeCAD's "
+                         f"Siemens NX style) or one of FreeCAD's: {', '.join(sorted(styles))}")
+        ref = path.parent / DEFAULTS_FILE
+        try:
+            stamped = json.loads(ref.read_text(encoding="utf-8-sig")) if ref.is_file() else None
+        except (OSError, ValueError):
+            stamped = None
+        if isinstance(stamped, dict):
+            stamp = stamped.pop("_fingerprint", None)
+            stamped.pop("_note", None)
+            if stamp is None or stamp != settings_fingerprint(stamped):
+                edits = {k: v for k, v in stamped.items() if k in defaults and v != defaults[k] and data.get(k) != v}
+                if edits:
+                    what = "was changed" if stamp is not None else "lists values other than NX-Style's defaults"
+                    lines.append(f"{ref} {what} ({', '.join(f'{k}={v!r}' for k, v in edits.items())}), but that file "
+                                 f"is only a reference, never read and rewritten at every start: put the settings "
+                                 f"you change in {path}")
+    return lines
 
 
 def find_strata(profile: Path, disabled: bool = False) -> tuple[Path | None, str]:
@@ -1331,6 +1433,7 @@ def main(argv: list[str] | None = None) -> int:
         reset = args.reset_profile
 
     settings = read_settings(profile.resolve())
+    settings_why = settings_report(profile.resolve())
     try:
         groups = import_groups(args.import_preferences if args.import_preferences is not None
                                else settings.get("import_preferences"))
@@ -1362,7 +1465,8 @@ def main(argv: list[str] | None = None) -> int:
                         + ((nxt,) if nxt else ()) + tuple(addons))
     if args.dry_run:
         print(json.dumps({"freecad": str(install.exe), "version": install.version_str,
-                          "profile": str(profile.resolve()), "strata": strata_why, "katydid": katydid_why,
+                          "profile": str(profile.resolve()), "settings": settings_why,
+                          "strata": strata_why, "katydid": katydid_why,
                           "sheetmetal": sheetmetal_why, "lcinterlocking": lcinterlocking_why, "dfm": dfm_why,
                           "nxt": nxt_why, "carbon": carbon_why, "import_preferences": groups,
                           "user_addons": addons_why,
@@ -1376,6 +1480,8 @@ def main(argv: list[str] | None = None) -> int:
     env = build_env(paths, extra)
     print(f"FreeCAD {install.version_str}: {install.exe}")
     print(f"NX profile: {profile.resolve()}")
+    for line in settings_why:
+        print(f"Settings: {line}")
     print(f"Strata: {strata_why}")
     print(f"Katydid: {katydid_why}")
     print(f"SheetMetal: {sheetmetal_why}")
