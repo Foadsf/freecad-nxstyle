@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial AW: Holder :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/aw.html">
+    <link rel="prev" href="av.html">
+    <link rel="next" href="ax.html">
+    <meta name="description" content="The holder of tutorial AK modelled in 3D from its sketch: an arm extruded symmetric and hollowed, a hub of Cylinders and Cones, lugs, a cup cut from the sketch's circles, a cross, a slot and tapped holes (NX 12 for Engineering Design, exercise 4.10.2).">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="aw.html">AW: Holder</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/aw.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial AW: Holder</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Source
+</td>
+<td class="hdlist2">
+<p>Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, <em>NX 12 for Engineering Design</em> (Missouri University of Science and Technology), exercise 4.10.2 (Holder). It continues the sketch of <a href="ak.html" class="xref page">tutorial AK</a>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>Extrude with Symmetric Value, Block, Cylinder and Cone with Unite and Subtract, a Datum Plane at an offset, a sketch on it, Extrude (Subtract) of some of a sketch&#8217;s curves, Show and Hide</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>the drawing&#8217;s, in inches, typed in millimetres.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The book gives only the detail drawing and says to continue from the sketch. The steps are ours, and so is the reading of the views where the drawing leaves room:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The hub is Ø3.50 down to 1.75, then a cone to Ø2.76 at 2.41, then Ø2.76 down to 3.50. The drawing&#8217;s 30° and 0.37 make the cone 0.64 high; its 2.41 makes it 0.66 high (29.3°). The 2.41 is used.</p>
+</li>
+<li>
+<p>Inside, from below: a Ø2.00 bore, a cone to Ø2.76, and Ø2.76 up to 1.50 below the top. The cup is Ø2.76 and 1.38 deep, so a 0.12 web separates the two.</p>
+</li>
+<li>
+<p>The boss and the cross rise from the cup&#8217;s floor to 0.50 below the top. The ribs run 3.00 long into the wall.</p>
+</li>
+<li>
+<p>The arm is hollow from below, with walls 0.50 at the sides and 0.63 at the end. The slot is 0.50 deep.</p>
+</li>
+<li>
+<p>The tapped holes are drilled at their tap-drill sizes, 25/64 for the 7/16-20 and 29/64 for the 1/2-20, and the threads are not modelled. The 1/16 rounds and detail B are left out.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The replay runs tutorial AK first and starts from the sketch AK saved.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_arm"><a class="anchor" href="#_1_the_arm"></a>1. The arm</h3>
+<div class="paragraph">
+<p>Open <code>Holder</code> and save it as <code>Holder_part</code>.
+Click <strong>Sketch</strong>, pick the XC-ZC plane and draw the arm&#8217;s side with <strong>Line</strong> (<kbd>L</kbd>):</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>along the top from the axis to 2.00;</p>
+</li>
+<li>
+<p>17.8° down to the end, at 5.50 and 1.125 below the top;</p>
+</li>
+<li>
+<p>down the end to 3.50;</p>
+</li>
+<li>
+<p>back 0.63 along the bottom;</p>
+</li>
+<li>
+<p>25.7° up to 1.75 below the top;</p>
+</li>
+<li>
+<p>back to the axis, and up to the start.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Start each line on the last one&#8217;s end, so that the sketcher makes the two coincident, and type its other end. Then <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span>.</p>
+</div>
+<div class="paragraph">
+<p>Click <strong>Extrude</strong>, pick a line, choose <strong>Symmetric Value</strong> and type 88.9 mm (3.50 in), then click <strong>OK</strong>.
+Choose <strong>Block</strong>: origin (0, −1.25, −3.50), 4.87 × 2.50 × 2.00, Boolean <strong>Subtract</strong>. This leaves the arm hollow from below.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_hub"><a class="anchor" href="#_2_the_hub"></a>2. The hub</h3>
+<div class="paragraph">
+<p>With <strong>Cylinder</strong> (Axis, Diameter, and Height, vector ZC), make Ø3.50 × 1.75 at (0, 0, −1.75) with <strong>Unite</strong>.
+With <strong>Cone</strong> (Diameters and Height), make Ø2.76 to Ø3.50 × 0.66 at (0, 0, −2.41) with <strong>Unite</strong>.
+Add a <strong>Cylinder</strong> Ø2.76 × 1.09 at (0, 0, −3.50) with <strong>Unite</strong>.</p>
+</div>
+<div class="paragraph">
+<p>Hollow it from below with <strong>Subtract</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a <strong>Cylinder</strong> Ø2.00 × 1.09 at (0, 0, −3.50);</p>
+</li>
+<li>
+<p>a <strong>Cone</strong> from Ø2.00 to Ø2.76, 0.66 high, at (0, 0, −2.41);</p>
+</li>
+<li>
+<p>a <strong>Cylinder</strong> Ø2.76 × 0.25 at (0, 0, −1.75).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_the_lugs"><a class="anchor" href="#_3_the_lugs"></a>3. The lugs</h3>
+<div class="paragraph">
+<p>Select the XC-YC plane and choose <strong>Datum</strong> &gt; <strong>Datum Plane</strong>. Type −3.048 mm (0.12 in) along Z and press MB2.
+Click <strong>Sketch</strong> on the datum plane. Draw each lug&#8217;s straight part with <strong>Line</strong>: from the Ø3.50 circle, 1.00 wide, out to where its sides touch the R0.38 end. The ends are AK&#8217;s.
+Click <strong>Extrude</strong>, pick a line, choose <strong>Unite</strong>, type 12.7 mm (0.50 in) and tick <strong>Reversed</strong>.
+Make the round ends with three <strong>Cylinder</strong> features, each Ø0.76 × 0.50 on the bolt circle at (·, ·, −0.62), with <strong>Unite</strong>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_the_cup_from_the_sketchs_circles"><a class="anchor" href="#_4_the_cup_from_the_sketchs_circles"></a>4. The cup, from the sketch&#8217;s circles</h3>
+<div class="paragraph">
+<p>Select AK&#8217;s sketch and press <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></span> (<strong>Show</strong>): FreeCAD may have hidden it.
+Click <strong>Extrude (Subtract)</strong>, set the Curve Rule to <strong>Single Curve</strong> and pick the Ø2.76 circle and the lugs' three Ø0.38 circles.
+Type 35.052 mm (1.38 in) and click <strong>OK</strong>. This cuts the cup and the lug holes.</p>
+</div>
+<div class="paragraph">
+<p>Add the boss, a <strong>Cylinder</strong> Ø0.75 × 0.88 at (0, 0, −1.38), with <strong>Unite</strong>.
+Then make the cross from two <strong>Block</strong> features with <strong>Unite</strong>, each 3.00 × 0.25 × 0.88: one along XC and one along YC.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_the_slot_and_the_holes"><a class="anchor" href="#_5_the_slot_and_the_holes"></a>5. The slot and the holes</h3>
+<div class="paragraph">
+<p>Choose <strong>Block</strong> with <strong>Subtract</strong>: from the Ø3.50 circle (x = 1.732) to past the end, 0.50 wide and 0.50 deep. This is the sketch&#8217;s slot.
+Make the holes with <strong>Cylinder</strong> and <strong>Subtract</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ø25/64 through the boss and the web;</p>
+</li>
+<li>
+<p>two Ø29/64 along XC through the end, 1.09 up and 1.50 apart.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Select the datum plane and the sketch and press <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>B</kbd></span> (<strong>Hide</strong>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AW-01-holder.png" alt="The holder: hub" width="cup with its cross" height="lugs">
+</div>
+</div>
+<div class="paragraph">
+<p>Save the part.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Open the holder&#8217;s sketch and save it as Holder_part</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">File &gt; Open (by script); file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tutorial AK&#8217;s sketch, 30 curves; Holder_part.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch the arm&#8217;s side: its top flat, then 17.8° down to the end, the end, and 25.7° back under it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Direct Sketch &gt; Sketch' on 'XZ-plane (Base plane)'; L (Line) x7, 7 points typed, 7 clicked on the last line&#8217;s end (a coincident end); MB2 after each</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the outline closed True; its ends within 8.9e-10 mm of the drawing&#8217;s (in) [(0, 0), (2.0, 0), (5.5, -1.125), (5.5, -3.5), (4.87, -3.5), (1.2338, -1.75), (0, -1.75)]</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude the arm 3.50 wide, Symmetric Value</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature &gt; Extrude', a line picked (QuickPick; Curve Rule Inferred Curves), 'Symmetric', 'lengthEdit' = 88.9 mm, OK clicked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 9 faces (9 in the reference)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Block subtracted from below: the arm hollow, walls 0.50 at the sides and 0.63 at the end</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 0/-31.75/-88.9 typed, length 123.698, width 63.5, height 50.8 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 15 faces (15 in the reference); origin (0.0, -31.75, -88.9); one undo step ['Block']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø3.50 x 1.75 under the sketch, Unite: the hub</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-44.45 typed, diameter 88.9, height 44.45 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 15 faces (22 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cone Ø2.76 to Ø3.50, 0.66 high, under the hub, Unite</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Diameters and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-61.214 typed, Base 70.104, Top 88.9, Height 16.764 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 18 faces (21 in the reference); origin (0.0, 0.0, -61.214); one undo step ['Cone']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø2.76 down to 3.50, Unite: the foot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-88.9 typed, diameter 70.104, height 27.686 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 19 faces (22 in the reference); origin (0.0, 0.0, -88.9); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø2.00 subtracted from below: the bore</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-88.9 typed, diameter 50.8, height 27.686 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 21 faces (24 in the reference); origin (0.0, 0.0, -88.9); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cone Ø2.00 to Ø2.76 subtracted: the inside of the hub&#8217;s cone</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Diameters and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-61.214 typed, Base 50.8, Top 70.104, Height 16.764 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 22 faces (25 in the reference); origin (0.0, 0.0, -61.214); one undo step ['Cone']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø2.76 subtracted up to 1.50 below the top: under the web</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-44.45 typed, diameter 70.104, height 6.35 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 23 faces (26 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datum Plane 0.12 below the XC-YC plane (the lugs' top)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the XY plane selected (Part Navigator) + ribbon 'Home &gt; Datum &gt; Datum Plane', 'attachmentOffsetZ' = -3.048 mm, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">plane at z = -3.048 mm</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch the lugs' straight parts: from the Ø3.50 circle out to where their sides touch the R0.38 ends, three times</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the datum plane + ribbon 'Home › Direct Sketch &gt; Sketch'; L (Line) x12, 12 points typed, 12 clicked on an end; MB2 after each</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">three closed outlines [True, True, True], their ends within 7.1e-10 mm of tutorial AK&#8217;s: on the Ø3.50 circle 1.00 apart, and the tangent points of the R0.38 ends</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude the lugs 0.50 down, Unite</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature &gt; Extrude', a side picked (QuickPick; Curve Rule Inferred Curves), dialog opened True; Boolean 'Unite', 'lengthEdit' = 12.7 mm, Reversed clicked (True); OK clicked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø0.76 x 0.50, the lug&#8217;s R0.38 end at 180° on the bolt circle, Unite</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC -57.15/6.99886e-15/-15.748 typed, diameter 19.304, height 12.7 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference); origin (-57.15, 0.0, -15.748); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø0.76 x 0.50, the lug&#8217;s R0.38 end at 300° on the bolt circle, Unite</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 28.575/-49.4934/-15.748 typed, diameter 19.304, height 12.7 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference); origin (28.575, -49.493352, -15.748); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø0.76 x 0.50, the lug&#8217;s R0.38 end at 60° on the bolt circle, Unite</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 28.575/49.4934/-15.748 typed, diameter 19.304, height 12.7 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 38 faces (41 in the reference); origin (28.575, 49.493352, -15.748); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude (Subtract) the sketch&#8217;s Ø2.76 circle and the lugs' Ø0.38 circles 1.38 down: the cup and the lug holes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the sketch shown (Ctrl+Shift+K: True); ribbon 'Home › Feature &gt; Extrude (Subtract)', Curve Rule 'Single Curve', 4 circles picked (QuickPick), 'lengthEdit' = 35.052 mm, OK clicked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 43 faces (46 in the reference)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø0.75 up from the cup&#8217;s floor to 0.50 below the top, Unite: the boss</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-35.052 typed, diameter 19.05, height 22.352 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 45 faces (48 in the reference); origin (0.0, 0.0, -35.052); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Block 3.00 x 0.25 along XC, Unite: two arms of the cross</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -38.1/-3.175/-35.052 typed, length 76.2, width 6.35, height 22.352 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 51 faces (54 in the reference); origin (-38.1, -3.175, -35.052); one undo step ['Block']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Block 0.25 x 3.00 along YC, Unite: the other two</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC -3.175/-38.1/-35.052 typed, length 6.35, width 76.2, height 22.352 typed, Boolean 'Unite', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 59 faces (62 in the reference); origin (-3.175, -38.1, -35.052); one undo step ['Block']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Block subtracted: the sketch&#8217;s slot, 0.50 wide and 0.50 deep, from the Ø3.50 circle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Origin and Edge Lengths', XC/YC/ZC 43.9941/-6.35/-12.7 typed, length 102.056, width 12.7, height 19.05 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 63 faces (67 in the reference); origin (43.994091, -6.35, -12.7); one undo step ['Block']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø25/64 subtracted through the boss and the web: the 7/16-20 tap drill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'ZC', XC/YC/ZC 0/0/-44.45 typed, diameter 9.92188, height 44.45 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 64 faces (68 in the reference); origin (0.0, 0.0, -44.45); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW23</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø29/64 along XC through the end, 1.09 up, y = -0.75: a 1/2-20 tap drill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 120.65/-19.05/-61.214 typed, diameter 11.5094, height 22.098 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 65 faces (69 in the reference); origin (120.65, -19.05, -61.214); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cylinder Ø29/64 along XC through the end, 1.09 up, y = +0.75: a 1/2-20 tap drill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature', Type 'Axis, Diameter, and Height', Specify Vector 'XC', XC/YC/ZC 120.65/19.05/-61.214 typed, diameter 11.5094, height 22.098 typed, Boolean 'Subtract', OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 66 faces (70 in the reference); origin (120.65, 19.05, -61.214); one undo step ['Cylinder']; with Body</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW25</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The holder</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">compared with our reading of the drawing, built by the Part API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">same solid as the reference: 0 mm³ differ, box within 1e-07 mm, 66 faces (70 in the reference)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AW26</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Save the part</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Holder_part.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Each step is compared with FreeCAD&#8217;s Part API build of our reading of the drawing; the arm&#8217;s outline is taken from the sketch.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX extrudes the regions of AK&#8217;s sketch directly. FreeCAD&#8217;s sketch faces need closed loops, and the lugs, the cross and the slot end on circles that are not split there. So the replay draws the lugs again on a datum plane and makes the cross and the slot from Blocks. It still cuts the cup and the lug holes from AK&#8217;s whole circles.</p>
+</li>
+<li>
+<p>A typed end on the Line&#8217;s length and angle fields lands up to 3e-5 mm from the point: on its own it does not close an outline. The replay starts each line with a click on the last one&#8217;s end.</p>
+</li>
+<li>
+<p>The tapped holes are plain holes at the tap-drill size; NX&#8217;s Hole command makes them threaded.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="av.html">AV: Rocker Arm</a></span>
+  <span class="next"><a href="ax.html">AX: Impeller Upper Casing</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>
