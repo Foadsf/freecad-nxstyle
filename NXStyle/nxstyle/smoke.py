@@ -184,6 +184,8 @@ class Smoke:
         yield self.s_macros, 300
         yield self.s_view_cube, 300
         yield self.s_imported_prefs, 300
+        yield self.s_nav_settings, 300
+        yield self.s_orbit_style, 300
         yield self.s_user_addons, 300
         yield self.s_drafting_views, 300
         yield self.s_pmi_notes, 300
@@ -2752,6 +2754,18 @@ class Smoke:
         (smoke_user_setup.py; skipped when the run imported none)."""
         from . import smoke_user_setup
         smoke_user_setup.run_imported_prefs(self)
+
+    def s_nav_settings(self):
+        """The navigation style nxstyle.json names is the view's, and one picked in the session is kept
+        (smoke_navigation.py)."""
+        from . import smoke_navigation
+        smoke_navigation.run_nav_settings(self)
+
+    def s_orbit_style(self):
+        """A real MB2 drag rotates the camera the way FreeCAD's orbit style says, NX's own way when none is set
+        (smoke_navigation.py)."""
+        from . import smoke_navigation
+        smoke_navigation.run_orbit_style(self)
 
     def s_user_addons(self):
         """Add-ons loaded from the normal FreeCAD profile are applications with ribbons made from their toolbars
