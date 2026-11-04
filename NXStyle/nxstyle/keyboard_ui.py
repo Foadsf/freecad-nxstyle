@@ -440,6 +440,9 @@ class KeyboardAccess(QtCore.QObject):
             ev.accept()
             return True
         dx, dy = ARROWS[key]
+        # FreeCAD's orbit style, read at each press as MB2 reads it at each drag (navigation.NxMouse.read_orbit),
+        # so the keys turn the view the way a drag would and not the way the last drag did
+        nav.read_orbit()
         nav.rotate(dx * 10, dy * 10)
         return True
 

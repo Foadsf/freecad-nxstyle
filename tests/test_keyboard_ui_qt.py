@@ -67,6 +67,7 @@ class KeyboardUiQt(unittest.TestCase):
         self.finder = self.finder_module.CommandFinder(self.ribbon, self.ribbon.header)
         self.ribbon.corner.addWidget(self.finder)
         self.clicked, self.camera, self.mouse = [], [], []
+        self.orbit_reads = []       # how many camera moves preceded each read of FreeCAD's orbit style
         self.pages = []
         for title in ("Home", "View"):
             page = QtWidgets.QWidget()
@@ -112,6 +113,7 @@ class KeyboardUiQt(unittest.TestCase):
         self.nav = types.SimpleNamespace(
             widget=self.graphics.viewport(), view=types.SimpleNamespace(graphicsView=lambda: self.graphics),
             rotate=lambda dx, dy: self.camera.append(("rotate", dx, dy)),
+            read_orbit=lambda: self.orbit_reads.append(len(self.camera)),
             pan=lambda dx, dy: self.camera.append(("pan", dx, dy)),
             zoom=lambda delta: self.camera.append(("zoom", delta)))
         self.active_nav = self.nav
@@ -347,6 +349,16 @@ class KeyboardUiQt(unittest.TestCase):
         self.editor.setCursorPosition(3)
         self.key(self.editor, QtCore.Qt.Key_Left, QtCore.Qt.AltModifier)
         self.assertEqual(self.camera, [("rotate", -10, 0), ("rotate", 0, -10)])
+
+    def test_alt_arrows_read_the_orbit_style_before_each_turn(self):
+        # MB2 reads FreeCAD's orbit style at the start of each drag (#55); the keys read it at each press, so a
+        # change in Preferences counts from the next key and not only from the next drag
+        self.key(self.graphics, QtCore.Qt.Key_Left, QtCore.Qt.AltModifier)
+        self.key(self.graphics, QtCore.Qt.Key_Right, QtCore.Qt.AltModifier)
+        self.assertEqual(self.camera, [("rotate", -10, 0), ("rotate", 10, 0)])
+        self.assertEqual(self.orbit_reads, [0, 1])
+        self.key(self.graphics, QtCore.Qt.Key_Left)                  # FreeCAD's pan: no rotation, no read
+        self.assertEqual(self.orbit_reads, [0, 1])
 
     def test_freecad_view_keys_keep_their_meaning(self):
         # FreeCAD 1.1.4 pans with the arrows and zooms with PageUp/PageDown (measured with this override off);

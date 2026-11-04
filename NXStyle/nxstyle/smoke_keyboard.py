@@ -30,6 +30,36 @@ def displaced(smoke, when="start"):
     smoke.check(f"access keys take no FreeCAD binding ({when}; {len(record)} NX keys took one)", not taken, taken)
 
 
+def alt_arrow_orbit(press):
+    """One Alt+arrow press from FreeCAD's isometric view under the Turntable orbit style and with none set (NX's
+    own rotation), measured as smoke_navigation measures an MB2 drag. The orbit style and the animation setting are
+    put back as they were."""
+    from . import prefs, smoke_navigation as sn
+    import traceback
+    view = Gui.ActiveDocument.ActiveView
+    p = App.ParamGet(prefs.VIEW)
+    had, animated = p.GetInt(sn.ORBIT_PARAM, -1), p.GetBool("UseNavigationAnimations", True)
+    turned = {}
+    try:
+        p.SetBool("UseNavigationAnimations", False)
+        view.viewIsometric()
+        qtest().qWait(200)
+        iso = view.getCameraNode().orientation.getValue().getValue()
+        for label, style in (("Turntable", 0), ("none", None)):
+            sn.set_orbit(p, style)
+            view.getCameraNode().orientation.setValue(*iso)
+            QtWidgets.QApplication.processEvents()
+            before = sn.frame(view)
+            press()
+            turned[label] = sn.measure(before, sn.frame(view))
+    except Exception:
+        turned["error"] = traceback.format_exc().splitlines()[-1]
+    finally:
+        sn.set_orbit(p, None if had < 0 else had)
+        p.SetBool("UseNavigationAnimations", animated)
+    return turned
+
+
 def run(smoke):
     from . import keyboard_selection, shortcuts, command_help
     shell, app = smoke.shell, QtWidgets.QApplication.instance()
@@ -67,6 +97,14 @@ def run(smoke):
     before = smoke.camera()
     key("Alt+Right")
     smoke.check("Alt+arrow rotates native camera", before[0] != smoke.camera()[0], (before, smoke.camera()))
+    turned = alt_arrow_orbit(lambda: key("Alt+Right", graphics))
+    tt, nx = turned.get("Turntable", {}), turned.get("none", {})
+
+    def level(r):       # how far the press tilted the horizon
+        return abs(r.get("horizon tilt", 1) - r.get("horizon tilt at start", 0))
+    smoke.check("Alt+arrow follows FreeCAD's orbit style: Turntable turns about world Z with the horizon level; "
+                "with no orbit style NX's own rotation tilts it (control)",
+                level(tt) < 1e-3 and abs(tt.get("about Z", 0)) > 1 and level(nx) > 0.01, turned)
     before = smoke.camera()
     key("Right")
     after = smoke.camera()
