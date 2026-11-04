@@ -4,13 +4,16 @@
 import FreeCADGui as Gui
 
 from .qt import QtCore, QtGui, QtWidgets, Qt
-from . import icon_theme, theme
+from . import command_help, icon_theme, theme
 from .ribbon import clean_text, command_action
 
 ROLE_CMD = Qt.UserRole + 1
 ROLE_TITLE = Qt.UserRole + 2
 ROLE_DETAIL = Qt.UserRole + 3
 ROLE_SHORTCUT = Qt.UserRole + 4
+ROLE_DESCRIPTION = Qt.UserRole + 5
+ROLE_NATIVE = Qt.UserRole + 6
+ROLE_LOCATION = Qt.UserRole + 7
 
 
 class ResultDelegate(QtWidgets.QStyledItemDelegate):
@@ -110,6 +113,7 @@ class CommandFinder(QtWidgets.QLineEdit):
         # Run before QCompleter's own event filter: one Return chooses one result.
         self.installEventFilter(self)
         popup.installEventFilter(self)
+        popup.viewport().installEventFilter(self)
         self.returnPressed.connect(self._return)
         self.textEdited.connect(self._prepare_popup)
         self._dirty = True
@@ -123,9 +127,7 @@ class CommandFinder(QtWidgets.QLineEdit):
         if self._dirty:
             self.rebuild()
         else:
-            for row in range(self.model.rowCount()):
-                item = self.model.item(row)
-                item.setEnabled(self._enabled(item.data(ROLE_CMD)))
+            self._refresh_help()
         self._prepare_popup()
         super().focusInEvent(ev)
 
@@ -136,6 +138,7 @@ class CommandFinder(QtWidgets.QLineEdit):
     def _prepare_popup(self, *_):
         if not hasattr(self, "completer"):
             return
+        self._refresh_help()
         popup = self.completer.popup()
         screen = QtWidgets.QApplication.screenAt(self.mapToGlobal(self.rect().bottomLeft()))
         screen = screen or QtWidgets.QApplication.primaryScreen()
@@ -143,6 +146,8 @@ class CommandFinder(QtWidgets.QLineEdit):
         popup.setFixedWidth(max(1, min(available, max(440, self.width()))))
 
     def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.ToolTip:
+            self._refresh_help()
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 self._return()
@@ -172,11 +177,11 @@ class CommandFinder(QtWidgets.QLineEdit):
             act = command_action(name)
             if act is not None:
                 icon, fc_text = act.icon(), clean_text(act.text())
-                shortcut, tip = act.shortcut().toString(), clean_text(act.toolTip() or "")
+                tip = clean_text(act.toolTip() or "")
             elif name in labels:
                 info = Gui.Command.get(name).getInfo()
                 icon = icon_theme.icon(name, Gui.getIcon(info.get("pixmap") or "") or QtGui.QIcon())
-                fc_text, shortcut, tip = clean_text(info.get("menuText", "")), "", clean_text(info.get("toolTip", ""))
+                fc_text, tip = clean_text(info.get("menuText", "")), clean_text(info.get("toolTip", ""))
             else:
                 continue
             if not fc_text:
@@ -186,6 +191,7 @@ class CommandFinder(QtWidgets.QLineEdit):
             title = nx or fc_text
             alias = f"  /  {fc_text}" if nx and nx != fc_text else ""
             detail = f"{where}{alias}"
+            shortcut = command_help.shortcut_text(name, act)
             # Search metadata stays in DisplayRole for standard QCompleter filtering.
             text = f"{title}  {fc_text}  {name}  {where}  {shortcut}"
             item = QtGui.QStandardItem(icon, text)
@@ -193,17 +199,37 @@ class CommandFinder(QtWidgets.QLineEdit):
             item.setData(title, ROLE_TITLE)
             item.setData(detail, ROLE_DETAIL)
             item.setData(shortcut, ROLE_SHORTCUT)
-            item.setToolTip(tip or f"{title} - {detail}")
+            item.setData(tip, ROLE_DESCRIPTION)
+            item.setData(fc_text, ROLE_NATIVE)
+            item.setData(where, ROLE_LOCATION)
+            item.setToolTip(command_help.command_tooltip(name, title, act, tip))
             item.setData(f"{title}, {detail}, {shortcut}", Qt.AccessibleTextRole)
             item.setEditable(False)
             item.setEnabled(self._enabled(name))
             self.model.appendRow(item)
         self._dirty = False
 
+    def _refresh_help(self):
+        if not hasattr(self, "model"):
+            return
+        self.setToolTip("Search commands, native names, ribbon locations or shortcuts<br>Keyboard: "
+                        + command_help.escape(command_help.finder_route()))
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row)
+            name, title = item.data(ROLE_CMD), item.data(ROLE_TITLE)
+            shortcut = command_help.shortcut_text(name)
+            item.setData(shortcut, ROLE_SHORTCUT)
+            item.setText(f"{title}  {item.data(ROLE_NATIVE)}  {name}  {item.data(ROLE_LOCATION)}  {shortcut}")
+            item.setToolTip(command_help.command_tooltip(name, title, description=item.data(ROLE_DESCRIPTION)))
+            item.setData(f"{title}, {item.data(ROLE_DETAIL)}, {shortcut}", Qt.AccessibleTextRole)
+            item.setEnabled(self._enabled(name))
+
     def find(self, text):
         """Command names whose search entry contains text (also used by smoke checks)."""
         if self._dirty:
             self.rebuild()
+        else:
+            self._refresh_help()
         text = text.lower()
         return [self.model.item(row).data(ROLE_CMD) for row in range(self.model.rowCount())
                 if text in self.model.item(row).text().lower()]

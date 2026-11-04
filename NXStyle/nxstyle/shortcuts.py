@@ -133,6 +133,21 @@ TABLE = [
           note="FreeCAD's Draft layer manager"),
     Entry("Expressions", "Ctrl+E", "NXStyle_Expressions", note="a spreadsheet named Expressions"),
     Entry("Touch Mode", "F4", "NXStyle_TouchMode", note="larger ribbon and bar icons"),
+    # ---- Keyboard access (NXStyle extensions, not claimed NX defaults). Keys no FreeCAD command holds: F10 is
+    # Std_MacroStepOver and Ctrl+Space BIM's Arch_ToggleSubs, so the Finder is Alt+Q (Office's command search)
+    # and the ribbon Alt+0, beside the other areas' Alt+1 to Alt+5. The smoke lists what any of these displaces.
+    Entry("Command Finder", "Alt+Q", "NXStyle_CommandFinder", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Ribbon", "Alt+0", "NXStyle_FocusRibbon", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Part Navigator", "Alt+1", "NXStyle_FocusNavigator", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Task Panel", "Alt+2", "NXStyle_FocusTasks", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Graphics View", "Alt+3", "NXStyle_FocusView", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Resource Bar", "Alt+4", "NXStyle_FocusResourceBar", "global", note="NXStyle keyboard access extension"),
+    Entry("Focus Selection Bar", "Alt+5", "NXStyle_FocusSelectionBar", "global", note="NXStyle keyboard access extension"),
+    Entry("Select Geometry by Name", "Ctrl+Shift+Space", "NXStyle_SelectGeometry", "global",
+          note="NXStyle keyboard access extension: objects, faces, edges and vertices"),
+    Entry("Keyboard Access Help", "Ctrl+Alt+K", "NXStyle_KeyboardHelp", "global", note="NXStyle keyboard access extension"),
+    Entry("Keyboard Pointer", "F12", "NXStyle_KeyboardPointer", "global",
+          note="NXStyle keyboard access extension: arrows move, Enter clicks; Ctrl+Enter starts/ends dragging"),
 ]
 
 # Keys FreeCAD's own commands get instead, so nothing important is lost
@@ -192,8 +207,8 @@ class KeyGate(QtCore.QObject):
     action of an NX key's command gets the state its command reports now (enable_if_active). Without it, a key
     pressed right after a pick in the Part Navigator did nothing (tutorial AX: Ctrl+B, Ctrl+Shift+K).
 
-    Only the part-level keys ("doc" context): in a sketch FreeCAD greys a creation tool while it hands over from
-    the last one, and isActive() does not say so. Enabling Profile (Z) there right after the last Profile ended
+    Only the part-level keys ("doc" context) and the keyboard access keys ("global"): in a sketch FreeCAD greys a
+    creation tool while it hands over from the last one, and isActive() does not say so. Enabling Profile (Z) there right after the last Profile ended
     started it half-way (smoke: "Profile left open", measured 2026-10-28)."""
 
     def __init__(self, owner):
@@ -235,7 +250,11 @@ class Shortcuts:
         self.targets = {}       # key -> QAction that should fire
         self.commands = {}      # key -> command whose own action is the target (not an alias)
         self.rows = []          # report rows
+        self.entries = list(TABLE)
+        self.displaced = {}     # key -> {(FreeCAD command or action, its sequence)} that held it before us
         self.gate = KeyGate(self)
+        self.watched = {}
+        self.guarding = False
 
     # ---------------------------------------------------------------- apply
     def apply(self):
@@ -245,7 +264,7 @@ class Shortcuts:
                 Gui.Command.get(name).setShortcut(seq)
         primaries = {}
         wanted = []             # (key, entry, command or "")
-        for e in TABLE:
+        for e in self.entries:
             e.resolved = resolve(e, known)
             wanted.append((norm(e.keys), e))
         ours = set()
@@ -263,7 +282,7 @@ class Shortcuts:
             if act in self.aliases.values():
                 act.setShortcut(QtGui.QKeySequence(key))
             else:
-                if e.context == "doc":
+                if e.context in ("doc", "global"):
                     self.commands[key] = e.resolved
                 cmd = Gui.Command.get(e.resolved)
                 cmd.setShortcut(key)
@@ -274,16 +293,63 @@ class Shortcuts:
         self.rows = [self._row(k, e) for k, e in wanted]
         return self.rows
 
+    def shortcuts_for(self, command):
+        """Live keys, including aliases; never infer a binding from a default table."""
+        found = []
+        for entry in self.entries:
+            if entry.resolved != command:
+                continue
+            act = self.targets.get(norm(entry.keys))
+            if act is None:
+                continue
+            try:
+                found.extend(s.toString() for s in act.shortcuts() if not s.isEmpty())
+            except RuntimeError:
+                continue
+        return list(dict.fromkeys(found))
+
     def attach_to_window(self):
         """Qt only fires a window shortcut if its action sits on a *visible* widget.
         NXStyle hides FreeCAD's menu bar and toolbars, so every action with a key
         is also added to the main window itself (which shows nothing)."""
         attached = set(id(a) for a in self.mw.actions())
         for act in self.mw.findChildren(QAction):
+            if id(act) not in self.watched:
+                callback = lambda a=act: self.guard_action(a)
+                act.changed.connect(callback)
+                self.watched[id(act)] = (act, callback)
             if id(act) in attached:
                 continue
             if any(not s.isEmpty() for s in act.shortcuts()):
                 self.mw.addAction(act)
+
+    def guard_action(self, action):
+        """Native command groups can copy a child's shortcut after activation.
+
+        Keep reserved keys unique when that happens, without changing the
+        group's remembered command or registering another shortcut.
+        """
+        if self.guarding or any(action is own for own in self.targets.values()):
+            return
+        try:
+            before = action.shortcuts()
+            after = [seq for seq in before if not any(norm(seq.toString()) == key or
+                     norm(seq.toString()).startswith(key + ",") for key in self.targets)]
+            if before != after:
+                self.guarding = True
+                action.setShortcuts(after)
+        except RuntimeError:
+            pass
+        finally:
+            self.guarding = False
+
+    def disconnect_guards(self):
+        for action, callback in self.watched.values():
+            try:
+                action.changed.disconnect(callback)
+            except (RuntimeError, TypeError):
+                pass
+        self.watched.clear()
 
     def _target_action(self, key, e, primaries):
         cmd_act = None
@@ -328,15 +394,18 @@ class Shortcuts:
             if id(act) in ours:
                 continue
             seqs = [s.toString() for s in act.shortcuts()] or [act.shortcut().toString()]
-            hit = False
+            hits = []
             for s in seqs:
                 if not s:
                     continue
                 if norm(s) in singles or first_chord(s) in singles:
-                    hit = True
-            if not hit:
+                    hits.append(s)
+            if not hits:
                 continue
             name = by_cmd.get(id(act))
+            for s in hits:                        # what the key did in FreeCAD before (smoke, docs)
+                key = norm(s) if norm(s) in singles else first_chord(s)
+                self.displaced.setdefault(key, set()).add((name or act.objectName() or act.text(), s))
             if name and name not in cleared:
                 try:
                     Gui.Command.get(name).setShortcut("")
@@ -371,6 +440,7 @@ def apply(shell):
     global _instance
     if _instance is not None:
         QtWidgets.QApplication.instance().removeEventFilter(_instance.gate)
+        _instance.disconnect_guards()
     _instance = Shortcuts(shell)
     return _instance.apply()
 

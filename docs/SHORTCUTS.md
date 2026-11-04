@@ -72,4 +72,48 @@ One difference from the NX textbooks: NXtips binds **F4 to Touch Mode**, while t
 | Expressions | <kbd>Ctrl</kbd>+<kbd>E</kbd> | `NXStyle_Expressions` | anywhere | a spreadsheet named Expressions |
 | Touch Mode | <kbd>F4</kbd> | `NXStyle_TouchMode` | anywhere | larger ribbon and bar icons |
 
+## Keyboard access (NX-Style's own keys, not NX defaults)
+
+These ten keys let the whole interface be worked without a mouse. No FreeCAD command holds them; the self-test fails if one takes a FreeCAD binding. With `"nx_shortcuts": false` they are not assigned either. See the documentation's *Keyboard shortcuts* page for the keys inside each area.
+
+| Action | Key | Command |
+|---|---|---|
+| Command Finder | <kbd>Alt</kbd>+<kbd>Q</kbd> | `NXStyle_CommandFinder` |
+| Focus the ribbon tabs | <kbd>Alt</kbd>+<kbd>0</kbd> | `NXStyle_FocusRibbon` |
+| Focus the Part Navigator | <kbd>Alt</kbd>+<kbd>1</kbd> | `NXStyle_FocusNavigator` |
+| Focus the Task Panel | <kbd>Alt</kbd>+<kbd>2</kbd> | `NXStyle_FocusTasks` |
+| Focus the graphics view | <kbd>Alt</kbd>+<kbd>3</kbd> | `NXStyle_FocusView` |
+| Focus the Resource Bar | <kbd>Alt</kbd>+<kbd>4</kbd> | `NXStyle_FocusResourceBar` |
+| Focus the Selection Bar | <kbd>Alt</kbd>+<kbd>5</kbd> | `NXStyle_FocusSelectionBar` |
+| Select geometry by name | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> | `NXStyle_SelectGeometry` |
+| Keyboard pointer on/off | <kbd>F12</kbd> | `NXStyle_KeyboardPointer` |
+| Keyboard access help | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> | `NXStyle_KeyboardHelp` |
+
+## FreeCAD keys the NX bindings take
+
+An NX key also takes FreeCAD's key sequences that start with it (FreeCAD's two-key chords such as `S, B`), because Qt would otherwise wait for the second key. `"nx_shortcuts": false` gives them all back. The self-test lists them; this list is from a run with nine workbenches loaded (FreeCAD 1.1.4, 2026-11-02):
+
+| NX key | FreeCAD bindings it takes |
+|---|---|
+| A | Assembly_CreateAssembly; Draft_Arc (A, R), Draft_ArcTools (A, R / A, T), Draft_Arc_3Points (A, T); Sketcher_ConstrainHorVer |
+| C | Assembly_CreateJointCylindrical; Draft_Circle (C, I), Draft_Clone (C, L), Draft_ToggleConstructionMode (C, M); Part_SelectFilter (C, S); Sketcher_ConstrainCoincidentUnified |
+| D | Assembly_CreateJointDistance; Draft_Dimension (D, I), Draft_Downgrade (D, N), Draft_Edit (D, E), Draft_Label (D, L); TechDraw_Dimension |
+| E | Assembly_CreateView; Draft_Ellipse (E, L); Part_SelectFilter (E, S); Sketcher_ConstrainEqual |
+| F | Assembly_CreateJointFixed; Draft_Facebinder (F, F), Draft_Fillet (F, I); FEM_PostFilterGlyph (F, G); Part_SelectFilter (F, S) |
+| L | Assembly_CreateJointGearBelt; Draft_Line (L, I); Sketcher_ConstrainDistanceX |
+| O | Assembly_CreateBom; Draft_Offset (O, S); Sketcher_ConstrainPointOnObject |
+| P | Assembly_Insert, Assembly_InsertNewPart; Draft_Polygon (P, G), Draft_Wire (P, L); Sketcher_ConstrainParallel |
+| R | Assembly_CreateJointRevolute; Draft_Rectangle (R, E), Draft_Rotate (R, O); FEM_ResultShow (R, S), FEM_ResultsPurge (R, P); Sketcher_CompConstrainRadDia |
+| S | Assembly_CreateJointSlider; Draft_Scale, Draft_SetStyle, Draft_Split, Draft_Stretch (S, …); FEM analysis and solver chords (S, …); Sketcher_ConstrainSymmetric; Std_LinkSelectLinked (S, G), Std_LinkSelectLinkedFinal (S, D), Std_TreeViewActions (S, B / S, F) |
+| T | Assembly_CreateJointGearBelt, Assembly_CreateJointGears; Draft_Text (T, E), Draft_Trimex (T, R); Sketcher_ConstrainTangent; Std_DockOverlayMouseTransparent (T, T); Std_TreeViewActions (T, 1-5 / T, D / T, G) |
+| W | Assembly_CreateJointScrew; Draft_SelectPlane (W, P); Sketcher_Translate |
+| X | Assembly_CreateJointAngle; Part_SelectFilter (X, S) |
+| Z | Assembly_SolveAssembly; Sketcher's Z chords (Z, A / Z, E / Z, F / Z, H / Z, I / Z, K / Z, O / Z, P … / Z, R / Z, S / Z, T / Z, V / Z, Z) |
+| Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+Shift+A | Spreadsheet_StyleBold, StyleItalic, StyleUnderline, SetAlias |
+| Ctrl+C, Ctrl+V, Ctrl+X | Sketcher_CopyClipboard, Sketcher_Paste, Sketcher_Cut |
+| Ctrl+E, Ctrl+Shift+I | Std_Export, Std_Import |
+| Home, End, F5, Alt+Return | Std_ViewHome, Std_RecallWorkingView, Std_Refresh, Std_Properties |
+
+The ten keyboard access keys take none.
+
 FreeCAD's own shortcuts that don't clash with these keep working, even though FreeCAD's menus and toolbars are hidden: NXStyle attaches every action that has a key to the main window, because Qt ignores a shortcut whose action sits only in hidden widgets.
