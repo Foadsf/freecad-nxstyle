@@ -42,6 +42,9 @@ DEFAULTS = {
     "zoom_at_cursor": True,            # the wheel zooms towards the point under the cursor
     "invert_wheel_zoom": True,         # FreeCAD default: wheel forward zooms in
     "rotate_degrees_per_pixel": 0.4,   # MB2 drag: how fast the view turns
+    # MB2 drag: "freecad" = the axes of FreeCAD's orbit style (Preferences › Display › Navigation: Turntable, Free
+    # Turntable, Trackball...) once one is set there, NX's own rotation until then; "nx" = always NX's own
+    "orbit_style": "freecad",
     "zoom_drag_up_zooms_in": True,     # Ctrl+MB2 / MB1+MB2 drag: dragging up zooms in (false: down zooms in)
     "mb2_click_is_ok": True,           # middle click accepts the open feature dialog
     "mb2_hold_sets_rotation_point_ms": 450,  # press and hold MB2 this long on the model to rotate about that point
@@ -96,6 +99,38 @@ BACKGROUNDS = {
 
 _cfg = None
 IMPORTED_FILE = "nxstyle.imported.json"     # launch_nx.IMPORTED_FILE
+DEFAULTS_FILE = "nxstyle.defaults.json"     # launch_nx.DEFAULTS_FILE
+DEFAULTS_NOTE = ("For reference only: NX-Style rewrites this file at every start and never reads it. To change a "
+                 "setting, put it in nxstyle.json in this folder, for example {\"navigation\": \"native\"}.")
+# what load() read: {"path": nxstyle.json, "exists": bool, "error": why it was ignored or None,
+# "defaults edited": {setting: value} that nxstyle.defaults.json held other than the defaults (it is not read)}
+source = {}
+
+
+def fingerprint(values):
+    """The fingerprint written into nxstyle.defaults.json (launch_nx.settings_fingerprint: the same)."""
+    import hashlib
+    return hashlib.sha256(json.dumps(values, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def defaults_edits(path, defaults=None):
+    """({setting: value}, certain): what an nxstyle.defaults.json, which is never read, holds other than the
+    defaults. A file NX-Style wrote carries the fingerprint of what it wrote, so a difference there is a hand edit
+    (certain); an older file without one is compared with today's defaults, where a default changed since then
+    shows as well. ({}, False) when it is unchanged, missing or unreadable."""
+    defaults = DEFAULTS if defaults is None else defaults
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}, False
+    if not isinstance(data, dict):
+        return {}, False
+    stamp = data.pop("_fingerprint", None)
+    data.pop("_note", None)
+    if stamp is not None and stamp == fingerprint(data):
+        return {}, False
+    return {k: v for k, v in data.items() if k in defaults and v != defaults[k]}, stamp is not None
 
 
 def profile_dir():
@@ -134,24 +169,40 @@ def load():
     cfg = copy.deepcopy(DEFAULTS)
     # imported preferences sit between the defaults and nxstyle.json: what you set in nxstyle.json still decides
     try:
-        with open(imported_file(), encoding="utf-8") as f:
+        with open(imported_file(), encoding="utf-8-sig") as f:
             _merge(cfg, json.load(f).get("settings", {}))
     except FileNotFoundError:
         pass
     except (OSError, ValueError, AttributeError) as e:
         App.Console.PrintWarning(f"NXStyle: ignoring unreadable {imported_file()}: {e}\n")
     path = user_file()
-    if os.path.isfile(path):
+    source.clear()
+    source.update({"path": path, "exists": os.path.isfile(path), "error": None})
+    if source["exists"]:
         try:
-            with open(path, encoding="utf-8") as f:
-                _merge(cfg, json.load(f))
+            # utf-8-sig: Windows editors may save UTF-8 with a byte order mark, which plain utf-8 refuses
+            with open(path, encoding="utf-8-sig") as f:
+                own = json.load(f)
+            if not isinstance(own, dict):
+                raise ValueError("not a JSON object ({...})")
+            _merge(cfg, own)
         except (OSError, ValueError) as e:
+            source["error"] = str(e)
             App.Console.PrintWarning(f"NXStyle: ignoring unreadable {path}: {e}\n")
+    App.Console.PrintMessage(f"NXStyle: settings from {path}\n" if source["exists"] and not source["error"]
+                             else f"NXStyle: no settings file read ({path}); defaults apply\n")
     # A reference copy of every setting; nxstyle.json holds only what you change,
     # so new defaults still reach existing profiles.
+    reference = os.path.join(profile_dir(), DEFAULTS_FILE)
+    edits, certain = defaults_edits(reference)
+    if edits:
+        source["defaults edited"] = edits
+        what = f"was changed ({edits})" if certain else f"lists {edits}, not NX-Style's defaults"
+        App.Console.PrintWarning(f"NXStyle: {reference} {what}; that file is only a reference, never read and "
+                                 f"rewritten now: put the settings you change in {path}\n")
     try:
-        with open(os.path.join(profile_dir(), "nxstyle.defaults.json"), "w", encoding="utf-8") as f:
-            json.dump(DEFAULTS, f, indent=2)
+        with open(reference, "w", encoding="utf-8") as f:
+            json.dump({"_note": DEFAULTS_NOTE, **DEFAULTS, "_fingerprint": fingerprint(DEFAULTS)}, f, indent=2)
     except OSError:
         pass
     _cfg = cfg

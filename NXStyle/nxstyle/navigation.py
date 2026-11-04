@@ -26,7 +26,7 @@ import time
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import commands, config, prefs
+from . import commands, config, orbit_core, prefs
 from .qt import QtCore, QtGui, QtWidgets, Qt, global_pos, mouse_event, pos
 from .radial import RadialMenu
 from .ribbon import command_icon, is_enabled, known_commands, resolve, trigger
@@ -192,6 +192,7 @@ class NxMouse(QtCore.QObject):
         self.triad = None
         self.mode = None
         self.lmb_rotate = False
+        self.orbit = orbit_core.NX   # how the current rotation turns the camera (read_orbit)
         self.swallow_release = None
         self.manager = None
         self.hold_timer = QtCore.QTimer(self)
@@ -238,14 +239,51 @@ class NxMouse(QtCore.QObject):
         kind = cam.getTypeId().getName()
         return cam, str(kind)
 
-    def rotate(self, dx, dy):
+    def read_orbit(self):
+        """FreeCAD's orbit style as NX-Style's MB2 rotation uses it (orbit_core.mode), read at the start of each
+        rotation so a change in Preferences counts from the next drag."""
+        style = App.ParamGet(prefs.VIEW).GetInt("OrbitStyle", -1)       # -1: not set, NX's own rotation
+        self.orbit = orbit_core.mode(style, self.cfg.get("orbit_style", "freecad"))
+        return self.orbit
+
+    def owns_mouse(self):
+        """Does NX-Style handle MB2 and the MB1 hold on this view? With "navigation": "nx", while the view runs
+        NX-Style's base style; a style picked for the view in the session (FreeCAD's status-bar menu) gets the
+        mouse to itself."""
+        if not prefs.uses_own_navigation(self.cfg):
+            return False
+        try:
+            return self.view.getNavigationType() == prefs.NX_BASE_STYLE
+        except Exception:
+            return True
+
+    def rotate(self, dx, dy, p=None):
+        """Turn the camera for a mouse move of (dx, dy) pixels ending at p, in the way of FreeCAD's orbit style
+        (orbit_core); NX's own rotation about the screen's axes when none is set."""
         coin = _coin()
         cam, _ = self._camera()
         k = math.radians(float(self.cfg.get("rotate_degrees_per_pixel", 0.4)))
         orient = cam.orientation.getValue()
         up = orient.multVec(coin.SbVec3f(0, 1, 0))
         right = orient.multVec(coin.SbVec3f(1, 0, 0))
-        r = coin.SbRotation(up, -dx * k) * coin.SbRotation(right, -dy * k)
+        how = getattr(self, "orbit", orbit_core.NX)
+        if how == orbit_core.NX:
+            r = coin.SbRotation(up, -dx * k) * coin.SbRotation(right, -dy * k)
+        else:
+            last = cur = None
+            if p is not None:
+                cur = (p.x(), p.y())
+                last = (cur[0] - dx, cur[1] - dy)
+            r = coin.SbRotation.identity()
+            for axis, angle in orbit_core.steps(how, dx, dy, k, up_z=up[2], last=last, cur=cur,
+                                                size=(self.widget.width(), self.widget.height())):
+                now = orient * r                   # the camera as the turns so far left it
+                if axis == "z":
+                    vec = coin.SbVec3f(0, 0, 1)
+                else:
+                    local = {"up": (0, 1, 0), "right": (1, 0, 0)}.get(axis, axis)
+                    vec = now.multVec(coin.SbVec3f(*local))
+                r = r * coin.SbRotation(vec, angle)
         position = cam.position.getValue()
         if self.pivot is not None:
             pivot = coin.SbVec3f(self.pivot.x, self.pivot.y, self.pivot.z)
@@ -467,6 +505,7 @@ class NxMouse(QtCore.QObject):
             if button == Qt.LeftButton:
                 self.lmb_rotate = True
                 self.last = p
+                self.read_orbit()
                 self.widget.setCursor(Qt.ClosedHandCursor)
                 return True
             if button in (Qt.RightButton, Qt.MiddleButton):
@@ -474,7 +513,7 @@ class NxMouse(QtCore.QObject):
                 self.swallow_release = button
                 return True
         if t == QtCore.QEvent.MouseMove and self.lmb_rotate:
-            self.rotate(p.x() - self.last.x(), p.y() - self.last.y())
+            self.rotate(p.x() - self.last.x(), p.y() - self.last.y(), p)
             self.last = p
             return True
         if t == QtCore.QEvent.MouseButtonRelease and button == Qt.LeftButton and self.lmb_rotate:
@@ -484,7 +523,7 @@ class NxMouse(QtCore.QObject):
         return False
 
     def _handle(self, t, ev):
-        own = prefs.uses_own_navigation(self.cfg)
+        own = self.owns_mouse()
         button = ev.button()
         p = pos(ev)
         if self.swallow_release is not None and t == QtCore.QEvent.MouseButtonRelease \
@@ -519,6 +558,7 @@ class NxMouse(QtCore.QObject):
                 self.moved = False
                 self.hold_used = False
                 self.pivot = None
+                self.read_orbit()
                 self.t0 = time.monotonic()
                 self.hold_timer.start(int(self.cfg.get("mb2_hold_sets_rotation_point_ms", 450)))
                 return True
@@ -565,7 +605,7 @@ class NxMouse(QtCore.QObject):
                     elif self.extra_lmb or mods & Qt.ControlModifier:
                         self.zoom(dy)
                     else:
-                        self.rotate(dx, dy)
+                        self.rotate(dx, dy, p)
                     self.last = p
                 return True
             if self.rmb_pending:
@@ -702,13 +742,15 @@ class NavigationManager(QtCore.QObject):
                 view.graphicsView().installEventFilter(f)   # keyboard focus sits on the view, not the viewport
                 widget.destroyed.connect(lambda _=None, k=key: self.filters.pop(k, None))
                 self.filters[key] = f
+                # the style nxstyle.json names, once, when the view is first seen: a style picked for the view
+                # later (FreeCAD's status-bar menu) is the user's and stays for the session
+                prefs.apply_navigation_to_view(view)
                 if config.get().get("view_triad", "nx") == "nx":
                     try:
                         from .triad import ViewTriad
                         f.triad = ViewTriad(view, view.graphicsView())
                     except Exception as e:
                         App.Console.PrintWarning(f"NXStyle: view triad unavailable: {e}\n")
-        prefs.apply_navigation_to_open_views()
 
     def set_mode(self, mode):
         self.mode = mode

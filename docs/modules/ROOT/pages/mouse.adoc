@@ -52,4 +52,27 @@ The xref:settings.adoc[settings] adjust the mouse:
 * `mb2_hold_sets_rotation_point_ms`, `mb3_hold_radial_menu_ms` -- how long a hold takes (`0` switches the radial menu off);
 * `quickpick_hold_ms` -- how long the pointer rests (or MB1 is held) before QuickPick (`0` switches QuickPick and select-through off);
 * `mb2_click_is_ok` -- whether an MB2 click accepts the dialog;
-* `navigation` -- `"native"` uses FreeCAD 1.1's own Siemens NX navigation style instead of NX-Style's.
+* `navigation` -- `"native"` uses FreeCAD 1.1's own Siemens NX navigation style instead of NX-Style's; a FreeCAD style by its menu name (`"Touchpad"`, `"Blender"`, `"Gesture"`...) uses that one.
+
+[#orbit]
+== Orbit style
+
+MB2 drag follows FreeCAD's orbit style (*File › Preferences › Display › Navigation › Orbit style*) once one is chosen there:
+
+[cols="1,3",options="header"]
+|===
+| Orbit style | MB2 drag
+
+| none chosen (a new NX profile) | NX's own rotation, about the screen's vertical and horizontal axes.
+| Turntable | About the model's vertical (Z) axis or the screen's horizontal axis, whichever way the pointer mostly moves; the horizon stays level.
+| Free Turntable | Both at once: about Z and the screen's horizontal axis; the horizon stays level.
+| Trackball, Rounded Arcball | A trackball: dragged near the window's edge, the view rolls.
+| Trackball Classic | As NX: about the screen's axes.
+|===
+
+A change in Preferences counts from the next drag; kbd:[F7] Rotate turns the same way.
+How fast the view turns is still `rotate_degrees_per_pixel`.
+To keep NX's rotation whatever the orbit style says, set `"orbit_style": "nx"`.
+
+A navigation style picked from FreeCAD's status bar applies to that view for the session; NX-Style's own MB2 handling steps aside while the view runs it.
+At the next start the view gets the style `navigation` names again.

@@ -21,6 +21,23 @@ IMPERIAL_WORDS = ("imperial", "us ", "us customary", "inch", "ft", "feet", "lb")
 
 NATIVE_NX_STYLE = "Gui::SiemensNXNavigationStyle"   # FreeCAD 1.1+ (PR #21813)
 NX_BASE_STYLE = "Gui::BlenderNavigationStyle"       # MB2 rotate, Shift+MB2 pan, wheel zoom
+# FreeCAD's navigation styles (src/Gui/Navigation, FreeCAD 1.1.0), by the name its status-bar menu shows, written
+# without spaces and in lower case: "navigation": "Touchpad" means Gui::TouchpadNavigationStyle. The launcher reads
+# this table too (launch_nx.freecad_styles), so it is a plain literal.
+FREECAD_STYLES = {
+    "blender": "Gui::BlenderNavigationStyle",
+    "cad": "Gui::CADNavigationStyle",
+    "gesture": "Gui::GestureNavigationStyle",
+    "mayagesture": "Gui::MayaGestureNavigationStyle",
+    "opencascade": "Gui::OpenCascadeNavigationStyle",
+    "openinventor": "Gui::InventorNavigationStyle",
+    "openscad": "Gui::OpenSCADNavigationStyle",
+    "revit": "Gui::RevitNavigationStyle",
+    "siemensnx": "Gui::SiemensNXNavigationStyle",
+    "solidworks": "Gui::SolidWorksNavigationStyle",
+    "tinkercad": "Gui::TinkerCADNavigationStyle",
+    "touchpad": "Gui::TouchpadNavigationStyle",
+}
 
 
 def packed(hexstr):
@@ -42,6 +59,16 @@ def has_native_nx_style():
     return freecad_version() >= (1, 1)
 
 
+def style_class(name):
+    """FreeCAD's class name for a navigation style written as its menu name ("Touchpad", "Siemens NX",
+    "OpenInventor") or as the class name itself, in any case; None for a name that is no FreeCAD style."""
+    key = "".join(c for c in str(name).lower() if c.isalnum() or c == ":")
+    key = key.removeprefix("gui::").removesuffix("navigationstyle")
+    if key == "inventor":
+        key = "openinventor"
+    return FREECAD_STYLES.get(key)
+
+
 def navigation_style(cfg):
     choice = cfg.get("navigation", "nx")
     if choice == "native":
@@ -49,7 +76,10 @@ def navigation_style(cfg):
     if choice == "nx":
         # NXStyle's own event filter handles MB2; Blender style supplies the rest
         return NX_BASE_STYLE
-    return choice
+    style = style_class(choice)
+    if style == NATIVE_NX_STYLE and not has_native_nx_style():
+        return NX_BASE_STYLE
+    return style or choice       # an unknown name goes to FreeCAD as it is (the launcher warns about it)
 
 
 def base_stylesheet(cfg):
@@ -204,17 +234,21 @@ def show_view_cube(on):
     return view_cube_shown()
 
 
+def apply_navigation_to_view(view, cfg=None):
+    """Set the navigation style nxstyle.json names on one 3D view, if it runs another."""
+    style = navigation_style(cfg or config.get())
+    try:
+        if view.getNavigationType() != style:
+            view.setNavigationType(style)
+    except Exception:
+        pass
+
+
 def apply_navigation_to_open_views(cfg=None):
-    """Set the navigation style on views that already exist."""
-    cfg = cfg or config.get()
-    style = navigation_style(cfg)
+    """Set the navigation style on views that already exist (at start-up)."""
     for gdoc in _gui_documents():
         for view in gdoc.mdiViewsOfType("Gui::View3DInventor"):
-            try:
-                if view.getNavigationType() != style:
-                    view.setNavigationType(style)
-            except Exception:
-                pass
+            apply_navigation_to_view(view, cfg)
 
 
 def _gui_documents():

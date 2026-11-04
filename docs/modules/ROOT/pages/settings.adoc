@@ -5,6 +5,17 @@ NX-Style reads its settings from `nxstyle.json` in the NX profile's `config` fol
 The file holds only what you change; everything else keeps its default, so new defaults still reach an existing profile.
 
 At every start NX-Style writes `nxstyle.defaults.json` next to it: every setting with its default, for reference.
+That file is never read and is rewritten at every start, so a change made there has no effect: put it in `nxstyle.json`.
+A new profile has no `nxstyle.json` yet; create it.
+
+The launcher's `Settings:` line names the file it read and the settings in it, or says there is none:
+
+----
+Settings: C:\Users\you\AppData\Local\FreeCAD-NXStyle\profile-1.1\config\nxstyle.json (navigation)
+----
+
+It also says when the file is not valid JSON (NX-Style then starts with its defaults), when a setting's name is unknown (with the name it probably means), when `navigation` names no navigation style, and when `nxstyle.defaults.json` was changed.
+A file saved as UTF-8 with a byte order mark, as some Windows editors do, is read.
 
 == Changing a setting
 
@@ -50,6 +61,8 @@ include::partial$generated/settings.adoc[]
 | FreeCAD's own command icons | `"icon_theme": "freecad"` (independent of the chrome theme)
 | Start in Drafting | `"default_application": "drafting"`
 | FreeCAD 1.1's own NX mouse style | `"navigation": "native"`
+| One of FreeCAD's navigation styles | its menu name, for example `"navigation": "Touchpad"`
+| NX's MB2 rotation whatever FreeCAD's orbit style says (xref:mouse.adoc#orbit[]) | `"orbit_style": "nx"`
 | No radial menu | `"mb3_hold_radial_menu_ms": 0`
 | FreeCAD's view cube | not a setting here: *View › Visualization › View Cube*, kept by FreeCAD
 | Your normal FreeCAD's navigation and macros (xref:#import[below]) | `"import_preferences": ["navigation", "macros"]`
@@ -93,7 +106,7 @@ For one start only, use `python launch_nx.py --import-preferences` (navigation) 
 
 With `navigation` imported, the graphics window behaves as in your normal FreeCAD, so NX-Style's own mouse handling (MB2 rotate, MB2 click = OK) is off.
 What you set in `nxstyle.json` still decides: `"navigation": "nx"` keeps NX-Style's mouse handling, and the same holds for `zoom_at_cursor` and `invert_wheel_zoom`.
-NX-Style's MB2 rotation then turns the view its own way, so your orbit style and rotation mode do not apply to it; the wheel is FreeCAD's, so your zoom step does.
+NX-Style's MB2 rotation then follows your orbit style (xref:mouse.adoc#orbit[]), but not your rotation mode: the rotation point is NX's (press and hold MB2 on the model); the wheel is FreeCAD's, so your zoom step applies.
 
 The launcher looks for your normal profile where FreeCAD keeps it: `%APPDATA%\FreeCAD` on Windows, `~/.config/FreeCAD` on Linux, `~/Library/Application Support/FreeCAD` on macOS, in the `v1-1` subfolder that FreeCAD 1.1 makes for each version.
 If you keep it elsewhere, give the folder that holds `user.cfg`, `Mod` and `Macro`: `"normal_profile": "D:/FreeCAD/profile"`.
