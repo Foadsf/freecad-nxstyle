@@ -147,8 +147,8 @@ class KeyboardUiQt(unittest.TestCase):
         self.mw.deleteLater()
         self.app.sendPostedEvents(None, QtCore.QEvent.DeferredDelete)
 
-    def key(self, widget, key, mods=QtCore.Qt.NoModifier if QtCore is not None else None):
-        QtTest.QTest.keyClick(widget, key, mods)
+    def key(self, widget, key, mods=None):     # no Qt names at class level: the file imports without Qt
+        QtTest.QTest.keyClick(widget, key, QtCore.Qt.NoModifier if mods is None else mods)
         self.app.processEvents()
 
     def start_pointer(self):
@@ -207,9 +207,10 @@ class KeyboardUiQt(unittest.TestCase):
         self.app.processEvents()
         return combo, spin, button
 
-    def tabs_until(self, target, key=QtCore.Qt.Key_Tab if QtCore is not None else None):
+    def tabs_until(self, target, key=None):
         """Press Tab (Qt's own, which also stops on the panel's scroll area) until target has the focus; the
         widgets passed on the way."""
+        key = QtCore.Qt.Key_Tab if key is None else key
         dock = self.mw.findChild(QtWidgets.QDockWidget, "Tasks")
         seen = []
         for _ in range(6):

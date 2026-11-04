@@ -149,8 +149,8 @@ class KeyboardSelectionQt(unittest.TestCase):
         self.dialog.kind.setCurrentText(kind)
         self.app.processEvents()
 
-    def key(self, widget, key, modifiers=QtCore.Qt.NoModifier):
-        QtTest.QTest.keyClick(widget, key, modifiers)
+    def key(self, widget, key, modifiers=None):     # no Qt names at class level: the file imports without Qt
+        QtTest.QTest.keyClick(widget, key, QtCore.Qt.NoModifier if modifiers is None else modifiers)
         self.app.processEvents()
 
     def test_keyboard_search_tab_type_and_enter_select_exact_face(self):
