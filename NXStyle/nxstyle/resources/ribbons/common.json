@@ -90,6 +90,12 @@
         {"cmd": "Std_DlgPreferences", "label": "Preferences"},
         {"cmd": "Std_AddonMgr", "label": "Add-on Manager"},
         {"cmd": "NXStyle_ToggleNativeUI", "label": "FreeCAD Menus and Toolbars"}
+      ]},
+      {"name": "Keyboard Access", "items": [
+        {"cmd": "NXStyle_KeyboardHelp", "label": "Keyboard Help", "size": "large"},
+        {"cmd": "NXStyle_SelectGeometry", "label": "Select Geometry"},
+        {"cmd": "NXStyle_KeyboardPointer", "label": "Keyboard Pointer"},
+        {"cmd": "NXStyle_CommandFinder", "label": "Command Finder"}
       ]}
     ]},
     {"name": "PLM", "requires": ["Strata_Panel", "NXStyle_CarbonPublish"], "groups": [

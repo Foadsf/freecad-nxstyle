@@ -1,18 +1,127 @@
 = Keyboard shortcuts
-:description: All NX key bindings in FreeCAD NX-Style and the FreeCAD command each one runs.
+:description: NX-based command bindings, NX-Style keyboard access, named geometry selection and the keyboard pointer.
 
-The NX bindings follow {nxtips}[Foadsf/NXtips] (NX's default keys with their NX command IDs), plus kbd:[Ctrl+T] (Move Object) and kbd:[Ctrl+Q] (Finish Sketch) from the NX textbooks.
+The NX-based bindings follow {nxtips}[Foadsf/NXtips] (NX's default keys with their NX command IDs), plus kbd:[Ctrl+T] (Move Object) and kbd:[Ctrl+Q] (Finish Sketch) from the NX textbooks.
+The focus, Command Finder, named selection and keyboard pointer shortcuts below are *NX-Style accessibility extensions*.
+They are listed separately from the NX-based mappings and are not claimed as NX defaults.
 
 Every key below is pressed by the xref:testing.adoc[self-test] through Qt's real shortcut system, and must reach its FreeCAD command with no other action holding the same key.
-Keys marked *sketch edit* work while a sketch is open for editing.
+The reference table is generated from the shortcut definitions.
+It describes the default assignments; command availability depends on the document, active workbench and installed add-ons.
+Keys marked *sketch edit* apply while a sketch is open for editing.
+See xref:testing.adoc[] for the distinction between shortcut dispatch checks, offscreen Qt interaction tests and tests in a running FreeCAD.
 
 NOTE: NXtips binds kbd:[F4] to Touch Mode, while two textbooks give kbd:[F4] as Repeat Command.
 NX-Style follows NXtips; Repeat Command is on the Quick Access Toolbar.
 
 TIP: FreeCAD's own shortcuts that do not clash with these keep working, even with FreeCAD's menus and toolbars hidden.
-To keep FreeCAD's keys instead of NX's, set `"nx_shortcuts": false` in the xref:settings.adoc[settings].
+To keep FreeCAD's command keys instead of the NX-based mappings, set `"nx_shortcuts": false` in the xref:settings.adoc[settings].
+That leaves the keyboard access keys below unassigned too; their commands stay on *Tools › Keyboard Access* and in the Command Finder.
 
-include::partial$generated/shortcuts.adoc[]
+The keyboard access keys are ones no FreeCAD command holds.
+kbd:[F10] (FreeCAD's macro debugger *Step Over*) and kbd:[Ctrl+Space] (BIM's *Toggle Subcomponents*) were considered and left to FreeCAD.
+The self-test lists every FreeCAD binding an NX-Style key takes over and fails if an access key takes one.
+
+== Reach commands and interface areas
+
+[cols="1,3",options="header"]
+|===
+| Default keys | Action
+
+| kbd:[Alt+Q] | Focus Command Finder. Type an NX label, FreeCAD command name, ribbon location or shortcut; use the arrow keys to choose a result and kbd:[Enter] to run it.
+| kbd:[Alt+0] | Focus the ribbon tabs. kbd:[Left] / kbd:[Right] choose a tab; kbd:[Down] or kbd:[Enter] enters its page, opening the popup when the ribbon is collapsed.
+| kbd:[Alt+1] | Focus the Part Navigator.
+| kbd:[Alt+2] | Show and focus the Task Panel.
+| kbd:[Alt+3] | Focus the active graphics view.
+| kbd:[Alt+4] | Focus the Resource Bar's first available button.
+| kbd:[Alt+5] | Focus the Selection Bar's first available button.
+| kbd:[Ctrl+Shift+Space] | Open *Select Geometry by Name* for the active model.
+| kbd:[F12] | Toggle the keyboard pointer in the active graphics view.
+| kbd:[Ctrl+Alt+K] | Open Keyboard Access Help, including the currently assigned shortcuts.
+|===
+
+kbd:[Alt] with a digit on the numeric keypad does not run these: Windows uses it to type characters (kbd:[Alt+0177] is ±).
+
+Use kbd:[Tab] / kbd:[Shift+Tab] to move between controls and kbd:[Space] or kbd:[Enter] to activate a focused button.
+On a ribbon or bar button, kbd:[Down] opens its menu when one is available; a split button's kbd:[Enter] runs its current command.
+Ribbon menus use the normal arrow keys and kbd:[Enter].
+kbd:[Escape] closes an open menu first; from the ribbon it returns to the previous interface area.
+
+Ribbon command tooltips show the *currently assigned* shortcut, or say *No direct shortcut assigned* and give the Command Finder route.
+Menu command help also uses the current assignments.
+Resource Bar and Selection Bar controls give their focus shortcut, then the kbd:[Tab] and kbd:[Space] route.
+An icon can therefore be reached without giving its command a dedicated key; the guide does not assign a direct shortcut to every command.
+
+== Select objects, faces, edges and vertices
+
+kbd:[Ctrl+Shift+Space] opens a modeless dialog, so an existing task collector stays active.
+The object list shows each visible, selectable model's label and internal name.
+It supports valid B-rep shapes; hidden or non-selectable objects, null or invalid shapes, meshes, datums and shapeless containers are excluded, with the limitation explained in the dialog.
+
+. Press kbd:[Alt+F] and type part of an object's label or internal name.
+. Press kbd:[Alt+O] to focus the object list and use the arrows to choose a model.
+. Press kbd:[Alt+T] and choose *Object*, *Face*, *Edge* or *Vertex*.
+. Press kbd:[Alt+G] to focus the geometry list. Rows show the topological name, such as `Face2`, plus face area and centre, edge length or vertex coordinates.
+. Use the arrows to choose a row, kbd:[Space] to toggle it, and kbd:[Ctrl] / kbd:[Shift] with the list's selection keys to select multiple rows.
+. Press kbd:[Enter], or activate *Select*, to apply the highlighted picks.
+
+For large models the geometry list shows at most 200 rows per page, with *Previous page* and *Next page* buttons.
+Pending row selection belongs to the current object and page.
+Enable *Add to current selection* with kbd:[Alt+A] before selecting geometry across objects or pages; otherwise a successful selection replaces the earlier picks.
+Active command collectors always add to the current selection.
+
+The dialog uses the active Selection Scope, NX-Style filter and command collector, and sends the request through FreeCAD's native selection gate.
+A refused request reports its reason rather than claiming success.
+If the model changes, the document closes or an object is replaced, the request is rejected; use *Refresh* before choosing geometry again.
+The dialog rechecks geometry before selection so a cached `Face2` is not silently applied to changed topology.
+
+Browsing and kbd:[Escape] do not apply pending picks or alter geometry.
+Picks already applied with *Select* stay selected when the dialog closes.
+Selection itself does not create a feature, save the document or finish an active modeling task.
+
+== Typed tasks and graphics navigation
+
+Start a command through Command Finder or the ribbon, then use kbd:[Alt+2] to enter the Task Panel.
+Use kbd:[Tab] / kbd:[Shift+Tab] for fields and buttons, the dialog's underlined mnemonics where available, and typed values for dimensions and coordinates.
+kbd:[Tab] follows the task form's own order; past the last control it comes round to the first instead of leaving the panel (and kbd:[Shift+Tab] the other way round).
+Use the area shortcuts to leave it.
+Multiline editors and tables keep their native Tab behavior.
+The task's own validation, selection requirements, OK / Apply and Cancel behavior still apply.
+For example, find *Block*, enter its dimensions in the task fields, and activate its OK button; use named geometry selection when a later feature asks for a face or edge.
+
+With the graphics view focused and the keyboard pointer off, kbd:[Alt+Arrow] rotates the view.
+FreeCAD's own view keys keep their meaning: the arrow keys pan, kbd:[Page Up] / kbd:[Page Down] zoom, kbd:[Shift+Left] / kbd:[Shift+Right] turn the view by 90°, and kbd:[Ctrl+Arrow] toggles the dock overlays.
+Text fields, trees, menus and task dialogs retain their own navigation keys.
+
+== Keyboard pointer
+
+kbd:[F12] displays a crosshair in the active graphics view.
+It sends the same viewport events used by the existing interaction tools, so it can reach picks and interactions that do not have a typed field or named-selection route.
+
+[cols="1,3",options="header"]
+|===
+| While the pointer is active | Action
+
+| Arrow keys | Move the crosshair by 10 screen pixels.
+| kbd:[Shift+Arrow] | Move by 1 pixel.
+| kbd:[Ctrl+Arrow] | Move by 30 pixels.
+| kbd:[Enter] | Left-click at the crosshair.
+| kbd:[Ctrl+Enter] | Start or end a left-button drag; move with the arrows between presses.
+| kbd:[Space] | Middle-click at the crosshair, using the current tool's middle-button behavior, including accepting a task where MB2 means OK.
+| kbd:[Menu] or kbd:[Shift+F10] | Right-click at the crosshair.
+| kbd:[F12] or kbd:[Escape] | Stop the pointer. A further kbd:[Escape] can cancel the active command.
+|===
+
+The pointer is a screen-position tool: use typed values for exact coordinates and named selection for identifiable geometry.
+It does not add geometric snapping rules or replace a workbench's own task behavior.
+In a sketch tool, FreeCAD gives an on-view dimension box the keyboard focus whenever the pointer moves, as it does for mouse moves.
+Digits then go into that box, and the pointer's arrows and kbd:[Enter] still move and click: type a value, then press kbd:[Enter] to place the point with it.
+Turn the pointer off with kbd:[F12] to use the boxes' own kbd:[Enter] and kbd:[Tab].
+Keyboard access to native dialogs and add-on canvases also depends on their controls; these routes are not a claim that every FreeCAD or add-on workflow has been exercised without a mouse.
+
+== Command binding reference
+
+include::partial$generated/shortcuts.adoc[leveloffset=+1]
 
 == Hide and Show
 

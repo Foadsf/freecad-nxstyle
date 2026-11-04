@@ -174,6 +174,7 @@ Macro commands from your normal FreeCAD come across with `"import_preferences": 
 
 NX-Style layers one light theme over FreeCAD's own *FreeCAD Light* stylesheet: a single teal accent with its tints, line icons on the Resource Bar, the left panels in one tab strip, and the document tabs above the graphics window.
 Cool neutral surfaces and rounded fields and menus give the workspace a consistent hierarchy.
+Keyboard focus shows as an outline on every ribbon control, *File*, the Quick Access buttons and the collapse arrow included.
 Task-panel fields, menus, document tabs and the Resource Bar use the same palette.
 
 The new *Studio Background* is a quiet blue-grey gradient. Choose it from *View › Background*,

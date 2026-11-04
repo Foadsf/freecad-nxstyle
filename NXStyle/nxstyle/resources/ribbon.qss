@@ -8,7 +8,7 @@
 
 #NXFileButton {
     background: @nx-accent; color: @nx-on-accent; font-weight: 600;
-    border: none; padding: 5px 18px; margin: 0px 6px 0px 0px;
+    border: 1px solid transparent; padding: 4px 17px; margin: 0px 6px 0px 0px;
 }
 #NXFileButton:hover { background: @nx-accent-hover; }
 #NXFileButton:pressed { background: @nx-accent-pressed; }
@@ -63,8 +63,15 @@ QToolButton#NXRibbonOverflow { border-left: 1px solid @nx-line-soft; }
 #NXRibbonGroupLabel[nxstep="done"] { color: @nx-muted; }
 #NXRibbonGroup[nxstep="next"] { border-bottom: 2px solid @nx-accent; }
 
-#NXCollapseButton { border: none; padding: 3px; border-radius: 2px; }
+#NXCollapseButton { border: 1px solid transparent; padding: 2px; border-radius: 2px; }
 #NXCollapseButton:hover { background: @nx-tint; }
+
+/* keyboard focus stays visible on File, Quick Access and the collapse arrow too; same sizes as above */
+#NXFileButton:focus { border: 1px solid @nx-on-accent; }
+#NXQuickAccess QToolButton:focus, #NXCollapseButton:focus { border: 1px solid @nx-accent; }
+#NXQuickAccess QToolButton:pressed, #NXCollapseButton:pressed { background: @nx-tint2; }
+QToolButton#NXRibbonGroupButton:checked { background: @nx-tint2; border: 1px solid @nx-tintline-strong; }
+QLineEdit#NXCommandFinder:disabled { color: @nx-disabled; background: @nx-panel-alt; }
 
 QLineEdit#NXCommandFinder {
     border: 1px solid @nx-field; border-radius: 12px; padding: 3px 10px;
