@@ -767,7 +767,7 @@ Dimension values are applied through FreeCAD's API, the equivalent of typing the
 
 ## What the replay changed in NXStyle
 
-- **Extrude-first workflow (NX):** Extrude (X) or Revolve with nothing selected starts a sketch on the plane or face you pick. Finish Sketch (Ctrl+Q) then continues straight into the Extrude or Revolve dialog. With a sketch already selected, the feature starts at once. Extrude (Subtract) and Revolve (Subtract) work the same way.
+- **Extrude-first workflow (NX):** Extrude (X) or Revolve with nothing selected starts a sketch on the plane or face you pick. Finish Sketch (Ctrl+Q) then continues straight into the Extrude or Revolve dialog. With a sketch already selected, the feature starts at once. Extrude (Subtract) and Revolve (Subtract) work the same way. FreeCAD 1.1 asks for the plane in a list of planes; FreeCAD 26.3 makes the sketch first and asks in its Attachment panel, which is then the plane pick: pick the plane and press OK, or pick curves of a sketch for the section (issue #53).
 - **NX Model template:** a new, empty part starts with a Body (setting `new_part_datum`). Its datum planes appear when you pick a sketch plane.
 - **MB2 ends the active sketch tool**, as in NX.
 - **MB2 rotate/pan/zoom** now reads Shift/Ctrl from the mouse event. Before, a stale global modifier state after Ctrl shortcuts could turn MB2 rotate into a zoom.

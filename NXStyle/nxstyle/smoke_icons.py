@@ -54,6 +54,26 @@ def run(smoke):
         smoke.check("icon theme: grouped tool shows remembered entry", group is not None and
                     isinstance(index, int) and 0 <= index < len(entries) and
                     group.icon().cacheKey() == entries[index].icon().cacheKey(), index)
+        # issue #53 (FreeCAD 26.3): the group's binding came back from Qt without its Python attributes and
+        # command_action raised "'Binding' object has no attribute 'busy'". The same state, made here
+        import gc
+        from .qt import QtCore
+        stripped = 0
+        for child in (group.findChildren(QtCore.QObject) if group is not None else []):
+            if vars(child):
+                vars(child).clear()
+                stripped += 1
+        gc.collect()
+        try:
+            again, error = command_action("Sketcher_CompCreateBSpline"), None
+            group.setEnabled(not group.isEnabled())           # changed() runs the binding's slot as well
+            group.setEnabled(not group.isEnabled())
+        except AttributeError as e:
+            again, error = None, str(e)
+        smoke.check("icon theme: a group binding needs no Python state on a Qt object (issue #53)",
+                    error is None and again is not None and
+                    group.icon().cacheKey() == entries[index].icon().cacheKey(),
+                    {"error": error, "children stripped": stripped})
         cfg["icon_theme"] = "freecad"
         for name, _ in actions:
             command_action(name)

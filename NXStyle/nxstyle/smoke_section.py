@@ -679,6 +679,196 @@ def typed_limits_control(smoke):
                 {"checks": [(n[:60], ok, d[:300]) for n, ok, d in rec.checks]})
 
 
+ATTACH_PREF = "User parameter:BaseApp/Preferences/Mod/PartDesign"
+
+
+def _task_widgets():
+    """Class and object names of the visible widgets in the Tasks panel (which FreeCAD panel is up)."""
+    dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+    seen = set()
+    for w in dock.findChildren(QtWidgets.QWidget) if dock is not None else []:
+        name = w.metaObject().className()
+        if w.isVisible() and ("Task" in name or "Task" in w.objectName()):
+            seen.add(f"{name}/{w.objectName()}")
+    return sorted(seen)
+
+
+def _button_boxes():
+    """The task panel's button boxes: (visible, [(text, visible, enabled)]), for the report when a button is missing."""
+    dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+    return [(bb.isVisible(), [(b.text(), b.isVisible(), b.isEnabled()) for b in bb.buttons()])
+            for bb in (dock.findChildren(QtWidgets.QDialogButtonBox) if dock is not None else [])]
+
+
+def _panel_button(which):
+    """The task panel's visible, enabled OK or Cancel button, or None."""
+    dock = Gui.getMainWindow().findChild(QtWidgets.QDockWidget, "Tasks")
+    for bb in dock.findChildren(QtWidgets.QDialogButtonBox) if dock is not None else []:
+        b = bb.button(which)
+        if b is not None and b.isVisible() and b.isEnabled():
+            return b
+    return None
+
+
+def attachment_first(smoke, name="SmokeAttachFirst", planted=False):
+    """Issue #53: FreeCAD 26.3's PartDesign_NewSketch with nothing selected makes the sketch first and opens its
+    Attachment panel; 1.1 listed the planes. FreeCAD 1.1 runs the same code with its preference
+    NewSketchUseAttachmentDialog (26.3 made it the only way), so this FreeCAD runs 26.3's flow with it on.
+    Extrude with nothing selected: the Attachment panel is the plane pick, and (1) a sketch curve picked there is
+    the section (the panel is cancelled, its sketch gone); (2) Cancel in the panel ends Extrude leaving nothing;
+    (3) OK there goes on into the sketch, and Finish Sketch into the Extrude box with that sketch."""
+    from . import commands
+    p = App.ParamGet(ATTACH_PREF)
+    had = p.GetBool("NewSketchUseAttachmentDialog", False)
+    before = App.ActiveDocument
+    doc = App.newDocument(name)
+    p.SetBool("NewSketchUseAttachmentDialog", True)
+    try:
+        body, sk = casing(doc)
+        gdoc = Gui.getDocument(doc.Name)
+        gdoc.ActiveView.setActiveObject("pdbody", body)
+        gdoc.ActiveView.viewTop()
+        gdoc.ActiveView.fitAll()
+        settle(gdoc.ActiveView, 400)
+        run = Run(smoke, doc, body, sk, planted)
+        try:
+            # (1) a curve picked in the Attachment panel is the section
+            reset(run)
+            run.rule("single")
+            names0, undo0 = sorted(o.Name for o in doc.Objects), list(doc.UndoNames)
+            started = run.ribbon("NXStyle_Extrude")
+            asked = run.wait(lambda: Gui.Control.activeDialog(), 3000)
+            s = run.session()
+            made = s.attaching if s is not None else None
+            panel = _task_widgets()
+            made_sketch = [o.Name for o in doc.Objects if o.Name not in names0]
+            run.pick(4, clear=True)
+            one = run.opened(1)
+            picked = run.state()
+            gone = not any(doc.getObject(n) is not None for n in made_sketch)   # the panel's sketch is gone again
+            run.smoke.press("Escape")
+            run.wait(lambda: not run.ctl.busy(), 3000)
+            qwait(300)
+            after1 = (sorted(o.Name for o in doc.Objects), list(doc.UndoNames))
+            report(smoke, "FreeCAD 26.3's sketch flow (issue #53; FreeCAD 1.1 with NewSketchUseAttachmentDialog): "
+                   "Extrude with nothing selected opens the Attachment panel of a sketch FreeCAD made first, which "
+                   "is the plane pick: a sketch curve picked there is the section (the panel cancelled, its sketch "
+                   "gone); Esc then leaves the objects and undo list as before",
+                   {"ribbon": started, "a panel asks": asked, "FreeCAD made the sketch first": bool(made_sketch),
+                    "taken as the plane pick": bool(made) and made in made_sketch, "section of 1": one,
+                    "the panel's sketch gone": gone, "objects as before": after1[0] == names0,
+                    "undo as before": after1[1] == undo0},
+                   {"panel": panel, "made": made_sketch, "attaching": made, "picked": picked,
+                    "after": after1, "before": (names0, undo0[:3]), "routes": run.routes[-3:]})
+
+            # (2) Cancel in the Attachment panel ends the command and leaves nothing
+            reset(run)
+            names0, undo0 = sorted(o.Name for o in doc.Objects), list(doc.UndoNames)
+            run.ribbon("NXStyle_Extrude")
+            asked = run.wait(lambda: Gui.Control.activeDialog(), 3000)
+            shown = run.wait(lambda: _panel_button(QtWidgets.QDialogButtonBox.Cancel) is not None, 3000)
+            boxes = _button_boxes()
+            b = _panel_button(QtWidgets.QDialogButtonBox.Cancel)
+            cancelled = b is not None
+            if b is not None:
+                b.click()                                    # the user's Cancel, not closeDialog()
+            ended = run.wait(lambda: not run.ctl.busy(), 4000)
+            qwait(300)
+            last = run.ctl.history[-1] if run.ctl.history else {}
+            names, undo = sorted(o.Name for o in doc.Objects), list(doc.UndoNames)
+            report(smoke, "FreeCAD 26.3's sketch flow: Cancel in the Attachment panel ends Extrude as cancelled, "
+                   "with the objects and undo list as before",
+                   {"a panel asks": asked, "its Cancel button": shown, "Cancel pressed": cancelled, "ended": ended,
+                    "cancelled": last.get("outcome") == "cancelled" and last.get("command") == "Extrude",
+                    "objects as before": names == names0, "undo as before": undo == undo0,
+                    "nothing pending": commands.pending_feature["command"] is None},
+                   {"last": last, "added": sorted(set(names) - set(names0)), "undo": undo[:3],
+                    "button boxes": boxes, "trace": run.ctl.trace[-8:]})
+
+            # (3) OK in the Attachment panel: the sketch opens; Finish Sketch opens the Extrude box with it
+            reset(run)
+            names0 = sorted(o.Name for o in doc.Objects)
+            run.ribbon("NXStyle_Extrude")
+            asked = run.wait(lambda: Gui.Control.activeDialog(), 3000)
+            made = [o for o in doc.Objects if o.Name not in names0 and o.isDerivedFrom("Sketcher::SketchObject")]
+            run.wait(lambda: _panel_button(QtWidgets.QDialogButtonBox.Ok) is not None, 3000)
+            okb = _panel_button(QtWidgets.QDialogButtonBox.Ok)
+            if okb is not None:
+                okb.click()
+            new = made[0] if made else None
+
+            def editing():
+                vp = gdoc.getInEdit()
+                return vp is not None and new is not None and vp.Object is new
+            opened = run.wait(editing, 4000)
+            # a user draws for a while: the shell notices the command's sketch in edit (its periodic check)
+            noticed = run.wait(lambda: new is not None and commands.pending_feature["sketch"] is new, 4000)
+            waiting = run.ctl.busy() and run.session().stage == "select"
+            if opened:
+                import Part
+                V = App.Vector
+                pts = [V(-130, -60, 0), V(-110, -60, 0), V(-110, -40, 0), V(-130, -40, 0)]
+                for i in range(4):
+                    new.addGeometry(Part.LineSegment(pts[i], pts[(i + 1) % 4]), False)
+                doc.recompute()
+                gdoc.resetEdit()
+            box = run.opened(None)
+            s = run.session()
+            took = s is not None and s.sketch is new
+            report(smoke, "FreeCAD 26.3's sketch flow: OK in the Attachment panel opens that sketch with Extrude "
+                   "still waiting; Finish Sketch opens the Extrude box with the sketch as its section",
+                   {"a panel asks": asked, "OK button": okb is not None, "the sketch opens": opened,
+                    "the shell knows it is the command's sketch": noticed, "Extrude waits": waiting,
+                    "Extrude box": box, "section is that sketch": took},
+                   {"made": [o.Name for o in made], "state": run.state()})
+        finally:
+            if run.ctl.busy():
+                run.ctl.cancel()
+                qwait(300)
+            run.rule("inferred")
+    finally:
+        p.SetBool("NewSketchUseAttachmentDialog", had)
+        try:
+            if Gui.Control.activeDialog():
+                Gui.Control.closeDialog()
+            if Gui.ActiveDocument is not None and Gui.ActiveDocument.getInEdit() is not None:
+                Gui.ActiveDocument.resetEdit()
+            Gui.Selection.clearSelection()
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+        except Exception:
+            smoke.info["section: attachment-first cleanup"] = traceback.format_exc()
+
+
+def attachment_first_control(smoke):
+    """attachment_first with the controller blind to the Attachment panel (as before the fix, which knew only 1.1's
+    plane list): the curve-pick check must fail; Cancel and OK do not depend on it."""
+    from . import controller
+    rec = Recorder(smoke)
+    real = controller._attachment_asked
+    controller._attachment_asked = lambda s: False
+    try:
+        attachment_first(rec, "SmokeAttachFirstPlanted", planted=True)
+    finally:
+        controller._attachment_asked = real
+    first = rec.checks[0] if rec.checks else ("", True, "")
+    smoke.check("negative control: with the controller blind to the Attachment panel (before issue #53's fix), a "
+                "sketch curve picked there is not the section, so that check fails",
+                len(rec.checks) == 3 and not first[1],
+                {"checks": [(n[:60], ok, d[:300]) for n, ok, d in rec.checks]})
+
+
+def run_attachment_first(smoke):
+    for part in (attachment_first, attachment_first_control):
+        try:
+            part(smoke)
+        except Exception:
+            smoke.check(f"sections: {part.__name__} ran", False, traceback.format_exc().splitlines()[-1])
+            smoke.info[f"traceback sections {part.__name__}"] = traceback.format_exc()
+
+
 def run(smoke):
     for part in (scenario, negative_control, typed_limits, typed_limits_control):
         try:
