@@ -3819,20 +3819,41 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         kinds = sorted(g.TypeId.split("::")[-1] for g in sk.Geometry)
         tangent = any(c.Type == "Tangent" for c in sk.Constraints)
         self.i_dump(sk, "i_outline drawn")
+        added = self.i_tangent(sk) if not tangent else None
         self.step("Profile (outline), Circle, Line ending on the bottom line, tangent to the circle",
-                  "Z key + 4 MB1 clicks, O key + 2 clicks, L key + 2 clicks, MB2 after each",
-                  SAME if tool and ctool and ltool and len(sk.Geometry) >= 5 else FAIL,
-                  f"geometry {kinds}; tangent picked up while drawing {tangent}")
-        if not tangent:
-            import Sketcher
-            line = len(sk.Geometry) - 1
-            circ = next(i for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomCircle")
-            try:
-                sk.addConstraint(Sketcher.Constraint("Tangent", line, circ))
-            except Exception as e:
-                self.info["I tangent"] = str(e)
+                  "Z key + 4 MB1 clicks, O key + 2 clicks, L key + 2 clicks, MB2 after each" +
+                  ("" if tangent else "; line + circle selected, ribbon Tangent"),
+                  SAME if tool and ctool and ltool and len(sk.Geometry) >= 5 and (tangent or added) else FAIL,
+                  f"geometry {kinds}; tangent picked up while drawing {tangent}" +
+                  ("" if tangent else f"; Tangent applied: {added}"))
         App.ActiveDocument.recompute()
         self.wait = 300
+
+    def i_tangent(self, sk):
+        """The Line tool did not infer the tangency (it depends on where the clicks land in pixels): select the line
+        and the circle, ribbon Tangent, as a user does. FreeCAD's command, unlike Sketch.addConstraint, folds the
+        line's end already on the circle into one endpoint-to-edge tangency; an edge-to-edge Tangent beside that
+        point-on-object is left over after Quick Trim as a partially redundant constraint (I6, I7)."""
+        line = len(sk.Geometry) - 1
+        circ = next(i for i, g in enumerate(sk.Geometry) if g.TypeId == "Part::GeomCircle")
+        n0 = len(sk.Constraints)
+        Gui.Selection.clearSelection()
+        for g in (line, circ):
+            Gui.Selection.addSelection(App.ActiveDocument.Name, sk.Name, f"Edge{g + 1}")
+        b, _ = self.click_ribbon("Tangent", tab="Sketch")
+        if b is None:
+            Gui.runCommand("Sketcher_ConstrainTangent")
+        QtWidgets.QApplication.processEvents()
+        if self.nav().sketch_tool_active():
+            self.key("Escape")
+        Gui.Selection.clearSelection()
+        got = [(c.Type, c.First, c.FirstPos, c.Second, c.SecondPos) for c in sk.Constraints
+               if c.Type == "Tangent" and {c.First, c.Second} == {line, circ}]
+        self.info["I tangent"] = {"ribbon": b is not None, "constraints": len(sk.Constraints) - n0, "tangent": got,
+                                  "line end on the circle left": any(
+                                      c.Type == "PointOnObject" and c.First == line and c.Second == circ
+                                      for c in sk.Constraints)}
+        return got
 
     @staticmethod
     def i_horizontal(sk, highest):
