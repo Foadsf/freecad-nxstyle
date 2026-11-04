@@ -3938,7 +3938,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         self.step("The book's dimensions: centre in line with the top line (0.0), its horizontal location, the "
                   "radius, the corner on the origin; horizontal/vertical constraints confirmed; fully defined",
                   f"constraints: {', '.join(made)}; H/V: {', '.join(added) or 'none'}",
-                  (SAME if fully else DIFFERS) if abs(after) < 1e-6 and closed else FAIL,
+                  (SAME if fully and "redundant" not in msg.lower() else DIFFERS) if abs(after) < 1e-6 and closed
+                  else FAIL,
                   f"centre {before:+.3f} -> {after:+.3f} mm from the top line; outline closed {closed}; solver: "
                   f"'{msg}' ({dof} DoF). NX sets a 0.0 location dimension; FreeCAD has a point-on-object "
                   "constraint for it" + (f"; implied already: {', '.join(skipped)}" if skipped else ""))
@@ -4312,7 +4313,8 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         msg = []
         for lab in self.tasks_dock().findChildren(QtWidgets.QLabel):
             t = lab.text().strip()
-            if lab.isVisible() and t and any(k in t.lower() for k in ("constrain", "dof", "degree")):
+            # "redundant": FreeCAD's "Partially redundant:" names no constraint word, and was read as ''
+            if lab.isVisible() and t and any(k in t.lower() for k in ("constrain", "dof", "degree", "redundant")):
                 msg.append(re.sub("<[^>]+>", "", t))
         return int(sk.DoF), bool(sk.FullyConstrained), " / ".join(dict.fromkeys(msg))
 
