@@ -126,30 +126,43 @@ def run_nav_settings(smoke):
             App.closeDocument(doc.Name)
 
 
-def press_preferences_ok(smoke, wait_ms=2500, give_up_ms=20000):
-    """Open FreeCAD's Preferences (Std_DlgPreferences, modal) and press its OK: FreeCAD then saves every page,
-    Display › Navigation's orbit style among them. Returns what happened."""
-    seen = {}
+def press_preferences_ok(smoke, poll_ms=200, give_up_ms=30000):
+    """Open FreeCAD's Preferences (Std_DlgPreferences, modal) and press its OK once the dialog is up: FreeCAD then
+    saves every page, Display › Navigation's orbit style among them. Polls for the dialog rather than waiting a
+    fixed time (a second open took longer than 2.5 s in a full smoke); after give_up_ms it rejects whatever modal
+    dialog is up and says so. Returns what happened."""
+    import time
+    seen = {"waited ms": None}
+    t0 = time.monotonic()
+    timer = QtCore.QTimer()
+    timer.setInterval(poll_ms)
 
-    def ok():
+    def poll():
+        if seen.get("closed"):
+            timer.stop()
+            return
         dlg = QtWidgets.QApplication.activeModalWidget()
-        seen["dialog"] = dlg.metaObject().className() if dlg is not None else None
-        box = dlg.findChild(QtWidgets.QDialogButtonBox) if dlg is not None else None
-        button = box.button(QtWidgets.QDialogButtonBox.Ok) if box is not None else None
-        seen["ok button"] = button is not None
-        if button is not None:
-            button.click()
+        waited = int((time.monotonic() - t0) * 1000)
+        if dlg is not None and "DlgPreferences" in dlg.metaObject().className():
+            box = dlg.findChild(QtWidgets.QDialogButtonBox)
+            button = box.button(QtWidgets.QDialogButtonBox.Ok) if box is not None else None
+            if button is not None and button.isVisible() and button.isEnabled():
+                timer.stop()
+                seen.update({"dialog": dlg.metaObject().className(), "ok button": True, "waited ms": waited})
+                button.click()
+                return
+        if waited > give_up_ms:                  # never leave a modal dialog up
+            timer.stop()
+            seen.update({"gave up": True, "dialog": dlg.metaObject().className() if dlg is not None else None,
+                         "waited ms": waited})
+            if dlg is not None:
+                dlg.reject()
 
-    def give_up():                               # OK did not close it: never leave a modal dialog up
-        dlg = QtWidgets.QApplication.activeModalWidget()
-        if not seen.get("closed") and dlg is not None:
-            seen["gave up"] = True
-            dlg.reject()
-
-    QtCore.QTimer.singleShot(wait_ms, ok)
-    QtCore.QTimer.singleShot(give_up_ms, give_up)
+    timer.timeout.connect(poll)
+    timer.start()
     Gui.runCommand("Std_DlgPreferences")         # returns when the dialog has closed
     seen["closed"] = True
+    timer.stop()
     QtWidgets.QApplication.processEvents()
     return seen
 
