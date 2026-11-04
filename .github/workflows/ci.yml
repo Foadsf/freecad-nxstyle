@@ -26,6 +26,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_icon_theme_qt.py -v
           python -m unittest discover -s tests -p test_finder_qt.py -v
+      - name: Replays click a check box on its indicator, as a user does
+        run: python -m unittest discover -s tests -p test_widget_click_qt.py -v
       - name: Render icon contact sheet
         run: python tools/preview_icons.py --out icon-preview.png
       - uses: actions/upload-artifact@v4
