@@ -12,7 +12,29 @@ Strata: bundled (...\vendor\freecad-strata)
 Katydid: bundled (...\vendor\Katydid)
 ----
 
+A `Settings:` line follows the profile: the `nxstyle.json` read, or that there is none.
+
 `python launch_nx.py --dry-run` prints the same facts, and the full FreeCAD command, without starting anything.
+
+== A setting does not take effect
+
+Read the launcher's `Settings:` lines (xref:settings.adoc[]):
+
+`Settings: none: … does not exist`::
+NX-Style found no `nxstyle.json` in that folder. Create it there; `nxstyle.defaults.json` beside it is only a reference and is rewritten at every start.
+
+`Settings: … could not be read (…)`::
+The file is not valid JSON: names and text values need double quotes, items are separated by commas, and JSON allows no comments. The message gives the line and column.
+
+`Settings: unknown setting … (did you mean …?)` or `Settings: navigation … is no navigation style`::
+A misspelt name or value is ignored. `navigation` takes `"nx"`, `"native"` or a FreeCAD style's menu name.
+
+`Settings: …nxstyle.defaults.json was changed (…)`::
+Move those settings into `nxstyle.json`.
+
+The orbit style in Preferences seems ignored::
+MB2 follows it from the next drag (xref:mouse.adoc#orbit[]), unless `"orbit_style": "nx"` is set; on FreeCAD 1.0 only with `"orbit_style": "freecad"`.
+With `"import_preferences"` including `navigation`, the launcher copies your normal FreeCAD's orbit style over the NX profile's at every start.
 
 == The launcher stops
 
@@ -78,4 +100,4 @@ NX-Style switches an imperial schema back to millimetres at start unless `"units
 
 == Asking for help
 
-Open an issue on {repo}/issues[GitHub] with the launcher's three lines, your FreeCAD version (*Help › About FreeCAD*, *Copy to clipboard*) and what happened.
+Open an issue on {repo}/issues[GitHub] with the launcher's first lines, your FreeCAD version (*Help › About FreeCAD*, *Copy to clipboard*) and what happened.

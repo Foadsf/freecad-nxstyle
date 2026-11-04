@@ -156,7 +156,7 @@ def run_imported_prefs(smoke):
     want = [g for g in os.environ.get("NXSTYLE_SMOKE_EXPECT_IMPORT", "").split(",") if g]
     try:
         try:
-            with open(config.imported_file(), encoding="utf-8") as f:
+            with open(config.imported_file(), encoding="utf-8-sig") as f:
                 record = json.load(f)
         except FileNotFoundError:
             record = None
@@ -171,7 +171,7 @@ def run_imported_prefs(smoke):
         smoke.info["imported preferences"] = record
         cfg = config.get()
         try:
-            with open(config.user_file(), encoding="utf-8") as f:
+            with open(config.user_file(), encoding="utf-8-sig") as f:
                 own = json.load(f)
         except (OSError, ValueError):
             own = {}
