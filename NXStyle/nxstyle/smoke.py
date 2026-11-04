@@ -390,13 +390,10 @@ class Smoke:
         collapsed group whose menu lost a command."""
         from . import layout_check, ribbon_layout
         r = self.shell.ribbon
-        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: narrow ribbon
+        cell = ribbon_layout.matrix_cells()[2]                   # 1366x768 at 150 %: ribbon expanded, narrow
         Gui.getMainWindow().resize(*cell["window"])
         r.select("Home")
         layout_check.settle()
-        if r.is_collapsed():
-            r.show_popup()  # measure the visible page when theme/font metrics require minimisation
-            layout_check.settle()
         page = r.stack.currentWidget()
         page.layout_enabled = False
         page.refit()
@@ -427,7 +424,6 @@ class Smoke:
             fixed = layout_check.measure_page(page, "Home")
             self.check("layout check catches a command missing from a collapsed group's menu (negative control)",
                        broken["unreachable"] and not fixed["unreachable"], broken["unreachable"])
-        r.hide_popup()
         Gui.getMainWindow().resize(*self.SMOKE_WINDOW)
         layout_check.settle()
 
