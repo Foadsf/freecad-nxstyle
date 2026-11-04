@@ -136,16 +136,23 @@ def defaults_edits(path, defaults=None):
     return {k: v for k, v in data.items() if k in defaults and v != defaults[k]}, stamp is not None
 
 
+def profile_root():
+    """NXSTYLE_PROFILE, the NX profile's root the launcher sets, as a full path: an 8.3 form (C:\\Users\\RUNNER~1)
+    is expanded, so the "settings from" line names the same file as the launcher's Settings: line."""
+    root = os.environ.get("NXSTYLE_PROFILE")
+    return os.path.realpath(root) if root else None
+
+
 def profile_dir():
     """The folder that holds nxstyle.json: the NX profile's config folder, where the launcher and the
     documentation look too (the launcher sets NXSTYLE_PROFILE to the profile's root)."""
-    root = os.environ.get("NXSTYLE_PROFILE")
+    root = profile_root()
     return os.path.join(root, "config") if root else App.getUserConfigDir()
 
 
 def user_file():
     path = os.path.join(profile_dir(), "nxstyle.json")
-    root = os.environ.get("NXSTYLE_PROFILE")
+    root = profile_root()
     legacy = os.path.join(root, "nxstyle.json") if root else None
     # NXStyle before 2026-10-13 read nxstyle.json from the profile's root; keep honouring one there
     if not os.path.isfile(path) and legacy and os.path.isfile(legacy):

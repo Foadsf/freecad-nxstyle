@@ -74,7 +74,7 @@ class WhichFileTests(Profile):
 
     def test_an_old_file_in_the_profile_root_is_named(self):
         (self.profile / "nxstyle.json").write_text('{"navigation": "native"}', encoding="utf-8")
-        self.assertEqual(self.report()[0], f"{self.profile / 'nxstyle.json'} (navigation)")
+        self.assertEqual(self.report()[0], f"{self.profile.resolve() / 'nxstyle.json'} (navigation)")
 
     def test_a_broken_file_is_reported_not_silently_dropped(self):
         self.write("nxstyle.json", '{"navigation": native}')
@@ -124,6 +124,45 @@ class NativeTakesEffectTests(Profile):
         self.write("nxstyle.json", '{"navigation": "native"}')
         _, view, _ = self.nxstyle_load(("1", "0", "2"))
         self.assertEqual(view.GetString("NavigationStyle"), "Gui::BlenderNavigationStyle")
+
+
+def short_path(path):
+    """The 8.3 form of an existing path (C:\\Users\\RUNNER~1\\...), as the Windows CI runner's TEMP is; None when
+    the volume makes no short names or this is not Windows."""
+    if os.name != "nt":
+        return None
+    import ctypes
+    buf = ctypes.create_unicode_buffer(1024)
+    n = ctypes.windll.kernel32.GetShortPathNameW(str(path), buf, len(buf))
+    return Path(buf.value) if 0 < n < len(buf) and buf.value.lower() != str(path).lower() else None
+
+
+class ShortPathTests(Profile):
+    """A profile given by its 8.3 short name (the Windows runner's TEMP is C:\\Users\\RUNNER~1\\...): the launcher's
+    Settings: line and NXStyle's own "settings from" line both name the file by its full, long path."""
+
+    def setUp(self):
+        super().setUp()
+        short = short_path(self.profile)
+        if short is None:
+            self.skipTest("no 8.3 short names on this volume")
+        self.long_file = str(self.profile.resolve() / "config" / "nxstyle.json")
+        self.assertNotEqual(str(short / "config" / "nxstyle.json"), self.long_file)   # the input really differs
+        self.profile = short
+
+    def test_the_launcher_names_the_long_path(self):
+        self.write("nxstyle.json", '{"navigation": "native"}')
+        self.assertEqual(self.report(), [f"{self.long_file} (navigation)"])
+
+    def test_nxstyle_names_the_long_path(self):
+        self.write("nxstyle.json", '{"navigation": "native"}')
+        _, view, source = self.nxstyle_load()
+        self.assertEqual(source["path"], self.long_file)
+        self.assertEqual(view.GetString("NavigationStyle"), "Gui::SiemensNXNavigationStyle")
+
+    def test_no_file_names_the_long_path(self):
+        line, = self.report()
+        self.assertEqual(line, f"none: {self.long_file} does not exist, so NX-Style's defaults apply")
 
 
 class DefaultsFileTests(Profile):

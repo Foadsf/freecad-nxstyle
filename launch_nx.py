@@ -739,6 +739,7 @@ def settings_report(profile: Path) -> list[str]:
     (a misspelt name), a navigation that is no style, a change made in nxstyle.defaults.json (never read)."""
     import difflib
 
+    profile = profile.resolve()          # name the file by its full path, never an 8.3 form (C:\Users\RUNNER~1)
     path = settings_file(profile)
     data, error = load_settings(profile)
     try:
