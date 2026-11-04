@@ -969,10 +969,15 @@ class KatydidTutorials:
         # the unchanged solid (measured headless: 138495.8 mm^3 back; with it 35097.5 mm^3, valid, top open)
         inter = next((b for b in (panel.findChildren(QtWidgets.QCheckBox) if panel is not None else [])
                       if b.isVisible() and "intersection" in b.text().lower()), None)
+        # on its box: a check box that fills the panel's row does not toggle on a click right of its label
+        at = None
         if inter is not None and not inter.isChecked():
-            qtest().mouseClick(inter, Qt.LeftButton)
+            from .widget_click import check_box_point, click_check_box
+            p = check_box_point(inter)
+            at = {"box width": inter.width(), "clicked": [p.x(), p.y()], "centre": inter.rect().center().x()}
+            click_check_box(inter, qtest())
             QtWidgets.QApplication.processEvents()
-        self.info["Q thicken options"] = {"intersection box": inter is not None and inter.isChecked(),
+        self.info["Q thicken options"] = {"intersection box": inter is not None and inter.isChecked(), "click": at,
                                           "boxes": [b.text() for b in (panel.findChildren(QtWidgets.QCheckBox)
                                                                        if panel is not None else [])]}
         if dlg:
