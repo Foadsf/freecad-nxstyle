@@ -5,7 +5,8 @@ Import action/shortcut adapters lazily: ribbon and shortcuts both use this
 module, and neither a static key table nor a menu proxy owns a binding.
 """
 
-from html import escape
+import re
+from html import escape, unescape
 
 from .qt import QtCore, QtWidgets
 
@@ -14,6 +15,23 @@ FINDER_COMMAND = "NXStyle_CommandFinder"
 
 def plain(text):
     return str(text or "").split("\t", 1)[0].replace("&&", "\0").replace("&", "").replace("\0", "&").replace("...", "").strip()
+
+
+_TAG = re.compile(r"</?[A-Za-z][^<>]*>")
+_BREAK = re.compile(r"<br\s*/?>|</p\s*>|</div\s*>|</li\s*>", re.IGNORECASE)
+
+
+def tip_lines(tip, native=""):
+    """A native tooltip as plain lines. FreeCAD 1.1 writes command tooltips as HTML (<p><b>Polyline</b> (Z)</p>
+    <p>Creates ...</p><p><i>Sketcher_CreatePolyline</i></p>): the tags go, entities are decoded, and a first line
+    that only repeats the command's own name (and its key) is dropped, since the tooltip already says both."""
+    text = str(tip or "")
+    if _TAG.search(text):
+        text = unescape(_TAG.sub("", _BREAK.sub("\n", text)))
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if lines and native and re.fullmatch(re.escape(native) + r"(\s*\(.*\))?", lines[0]):
+        lines = lines[1:]
+    return lines
 
 
 def action_shortcuts(action):
@@ -81,7 +99,7 @@ def command_tooltip(name, label, action=None, description=""):
     if not keys:
         lines.append("Keyboard: " + escape(finder_route()) + "; type the command name")
     if tip and tip != native:
-        lines.append(escape(tip).replace("\n", "<br>"))
+        lines += [escape(ln) for ln in tip_lines(tip, native)]
     return "<br>".join(lines)
 
 

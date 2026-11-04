@@ -114,13 +114,31 @@ class CommandHelpQt(unittest.TestCase):
         button = self.button("Test_Pocket", "<Remove>")
         self.assertIn("Command Finder (Ctrl+Space)", button.toolTip())
         self.assertIn("&lt;Remove&gt;", button.toolTip())
-        self.assertIn("&lt;b&gt;unsafe", button.toolTip())
-        self.assertIn("&amp; text", button.toolTip())
-        self.assertNotIn("Use <b>", button.toolTip())
+        # a native tooltip's markup is read as markup, then its text is escaped: no live tags, no literal tags
+        self.assertIn("Use unsafe &amp; text", button.toolTip())
+        self.assertNotIn("<b>unsafe", button.toolTip())
+        self.assertNotIn("&lt;b&gt;", button.toolTip())
         action.setShortcut(QtGui.QKeySequence("Alt+Space"))
         self.hover(button)
         self.assertIn("Command Finder (Alt+Space)", button.toolTip())
         self.assertNotIn("Ctrl+Space", button.toolTip())
+
+    def test_freecad_html_tooltip_reads_as_text_not_tags(self):
+        """FreeCAD 1.1's command tooltips are HTML; they used to show as literal <p style=...> text."""
+        self.actions["Test_Pocket"].setText("Polyline")
+        self.actions["Test_Pocket"].setToolTip(
+            "<p style='white-space:pre; margin-bottom:0.5em;'><b>Polyline</b> (Z)</p>"
+            "<p style='white-space:pre; margin:0;'>Creates a continuous polyline. Press the 'M' key to switch "
+            "segment modes</p><p style='white-space:pre; margin-top:0.5em;'><i>Sketcher_CreatePolyline</i></p>")
+        tip = self.button("Test_Pocket", "Profile").toolTip()
+        self.assertIn("FreeCAD: Polyline", tip)
+        self.assertIn("Creates a continuous polyline. Press the &#x27;M&#x27; key", tip)
+        self.assertIn("Sketcher_CreatePolyline", tip)
+        for raw in ("<p", "&lt;p", "style=", "white-space", "&lt;i&gt;", "Polyline</b> (Z)"):
+            self.assertNotIn(raw, tip)
+        doc = QtGui.QTextDocument()
+        doc.setHtml(tip)
+        self.assertNotIn("<", doc.toPlainText())
 
     def test_raw_action_and_dropdown_show_aliases_without_registering_proxies(self):
         raw = self.ribbon_module.ActionButton(self.actions["Test_Pad"], "small")
