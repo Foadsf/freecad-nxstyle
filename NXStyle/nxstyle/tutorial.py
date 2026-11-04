@@ -43,6 +43,7 @@ from .tutorial_mst4 import (MstArborPressTutorials, MstDieCavityTutorials, MstFa
                             MstShaftTutorials, MstUpperCasingTutorials)
 from .tutorial_mst5 import MstBoltDrawingTutorials, MstImpellerPMITutorials, MstRackDrawingTutorials
 from .tutorial_precision import PrecisionTutorials
+from .widget_click import click_check_box
 
 OUT = os.environ.get("NXSTYLE_TUTORIAL_OUT", "")
 ALL_TUTORIALS = "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AL,AM,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,AZ,BA,BB,BC"
@@ -4110,8 +4111,10 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         # NX's "associative" offset: FreeCAD's "Add offset constraint" option
         box = next((c for c in self.tasks_dock().findChildren(QtWidgets.QCheckBox)
                     if c.isVisible() and "offset constraint" in c.text().lower()), None)
-        if box is not None and not box.isChecked():
-            qtest().mouseClick(box, Qt.LeftButton)
+        # on its box: the check box fills the panel's row, and a click right of its label does not toggle it
+        option = box.isChecked() if box is not None else None
+        if box is not None and not option:
+            option = click_check_box(box, qtest())
         # the offset goes where MB1 clicks: 15 mm inside the longest straight edge of the outline
         lines = [g for g in sk.ExternalGeo[2:] if g.TypeId == "Part::GeomLineSegment"]
         far = max(lines, key=lambda g: (g.EndPoint - g.StartPoint).Length)
@@ -4159,7 +4162,7 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
                 except Exception as e:
                     self.info.setdefault("I offset datum errors", []).append(f"{desc}: {e}")
         App.ActiveDocument.recompute()
-        self.info["I offset tool"] = {"constraint option": box.isChecked() if box else None, "made": made,
+        self.info["I offset tool"] = {"constraint option": option, "made": made,
                                       "new constraints": [(i, t) for i, t in new_c], "gap after click": gap0,
                                       "redundant": redundant, "typed": typed}
         self._i_cut_sk = sk
@@ -4167,7 +4170,9 @@ class Replay(KatydidTutorials, PrecisionTutorials, InspectionTutorials, Exchange
         self.step("Project Curve (the whole face), Offset 15 mm, Reverse Direction to the inside, OK",
                   f"{len(edges)} edges projected; ribbon '{where} > Offset Curve', 'Add offset constraint', MB1 "
                   "15 mm inside" + ("; Select Redundant Constraints + Delete" if redundant else "") +
-                  "; offset dimension typed 15", DIFFERS if made > 0 and fixed and typed else FAIL,
+                  "; offset dimension typed 15", DIFFERS if option and made > 0 and fixed and typed else FAIL,
+                  ("" if option else f"'Add offset constraint' did not take ({option}): no offset dimension to "
+                   "type. ") +
                   f"{n_ext} projected curves, {made} offset curves; the click gave "
                   f"{gap0 if gap0 is None else round(gap0, 3)} mm. " +
                   (f"FreeCAD's own offset constraints left the sketch unsolvable (solver: '{redundant['solver said']}'"
