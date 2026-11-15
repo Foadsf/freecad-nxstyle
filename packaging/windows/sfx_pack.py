@@ -146,7 +146,8 @@ def verify(exe: Path) -> int:
                         buf = bytearray()
         if files is None or got != logical or idx_len + sizes != logical:
             raise SystemExit(f"the payload does not decompress to its index: {got} of {logical} bytes")
-    print(f"{exe.name}: key {key.rstrip(b'\0').decode()}, {files} files, {logical / 2**20:.0f} MB, "
+    name = key.rstrip(b"\0").decode()
+    print(f"{exe.name}: key {name}, {files} files, {logical / 2**20:.0f} MB, "
           f"decompressed in {time.monotonic() - t0:.1f} s: ok")
     return 0
 
