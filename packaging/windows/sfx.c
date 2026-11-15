@@ -160,23 +160,197 @@ static void remove_tree(const wchar_t *dir)
     op.wFunc = FO_DELETE;
     op.pFrom = from;
     op.fFlags = FOF_NO_UI;
-    SHFileOperationW(&op);
+    /* an antivirus still scanning the files just written can hold a folder open for a moment */
+    for (int attempt = 0; attempt < 5 && GetFileAttributesW(dir) != INVALID_FILE_ATTRIBUTES; attempt++) {
+        if (attempt)
+            Sleep(400);
+        SHFileOperationW(&op);
+    }
+}
+
+/* Writing 35,000 files one after the other is what takes time, not decompressing: an antivirus scans each file
+ * as it is closed. Files up to BIG_FILE are therefore collected in memory and written by a pool of threads, with
+ * at most IN_FLIGHT_MAX bytes waiting; larger ones are streamed to disk by the decoding thread itself. */
+#define MAX_WORKERS 8
+#define QCAP 4096
+#define BIG_FILE (64ull << 20)
+#define IN_FLIGHT_MAX (512ull << 20)
+
+typedef struct {
+    wchar_t *path;
+    unsigned char *data;
+    size_t size;
+} job;
+
+typedef struct {
+    CRITICAL_SECTION cs;
+    CONDITION_VARIABLE changed;
+    job q[QCAP];
+    unsigned head, count;
+    unsigned long long in_flight;
+    int stop, failed;
+    char err[300];
+    HANDLE threads[MAX_WORKERS];
+    int nthreads;
+} pool;
+
+static int write_file(const wchar_t *path, const unsigned char *data, size_t size, char *err, size_t errn)
+{
+    wchar_t p[WPATH];
+    wcsncpy(p, path, WPATH - 1);
+    p[WPATH - 1] = 0;
+    if (!ensure_dirs(p)) {
+        _snprintf(err, errn, "cannot create a folder for %ls (error %lu)", path + 4, GetLastError());
+        return 0;
+    }
+    HANDLE h = CreateFileW(p, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE) {
+        _snprintf(err, errn, "cannot write %ls (error %lu)", path + 4, GetLastError());
+        return 0;
+    }
+    while (size) {
+        DWORD chunk = size > (1u << 30) ? (1u << 30) : (DWORD)size, w = 0;
+        if (!WriteFile(h, data, chunk, &w, NULL) || w != chunk) {
+            _snprintf(err, errn, "write failed (error %lu): is the disk full?", GetLastError());
+            CloseHandle(h);
+            return 0;
+        }
+        data += chunk;
+        size -= chunk;
+    }
+    if (!CloseHandle(h)) {
+        _snprintf(err, errn, "cannot finish %ls (error %lu)", path + 4, GetLastError());
+        return 0;
+    }
+    return 1;
+}
+
+static DWORD WINAPI worker(void *arg)
+{
+    pool *p = (pool *)arg;
+    for (;;) {
+        EnterCriticalSection(&p->cs);
+        while (p->count == 0 && !p->stop)
+            SleepConditionVariableCS(&p->changed, &p->cs, INFINITE);
+        if (p->count == 0) {
+            LeaveCriticalSection(&p->cs);
+            return 0;
+        }
+        job j = p->q[p->head];
+        p->head = (p->head + 1) % QCAP;
+        p->count--;
+        int skip = p->failed;
+        LeaveCriticalSection(&p->cs);
+        WakeAllConditionVariable(&p->changed);
+        char e[300] = "";
+        int ok = skip || write_file(j.path, j.data, j.size, e, sizeof e);
+        free(j.path);
+        free(j.data);
+        EnterCriticalSection(&p->cs);
+        p->in_flight -= j.size;
+        if (!ok && !p->failed) {
+            p->failed = 1;
+            memcpy(p->err, e, sizeof e);
+        }
+        LeaveCriticalSection(&p->cs);
+        WakeAllConditionVariable(&p->changed);
+    }
+}
+
+static int pool_start(pool *p)
+{
+    memset(p, 0, sizeof *p);
+    InitializeCriticalSection(&p->cs);
+    InitializeConditionVariable(&p->changed);
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    int n = (int)si.dwNumberOfProcessors;
+    n = n < 2 ? 2 : n > MAX_WORKERS ? MAX_WORKERS : n;
+    for (int i = 0; i < n; i++) {
+        p->threads[i] = CreateThread(NULL, 0, worker, p, 0, NULL);
+        if (!p->threads[i])
+            break;
+        p->nthreads++;
+    }
+    return p->nthreads > 0;
+}
+
+/* wait until size more bytes may be held in memory, and count them */
+static int pool_reserve(pool *p, size_t size)
+{
+    EnterCriticalSection(&p->cs);
+    while (!p->failed && p->in_flight && p->in_flight + size > IN_FLIGHT_MAX)
+        SleepConditionVariableCS(&p->changed, &p->cs, INFINITE);
+    int ok = !p->failed;
+    if (ok)
+        p->in_flight += size;
+    LeaveCriticalSection(&p->cs);
+    return ok;
+}
+
+/* hand a reserved, complete file to the writers (they free path and data) */
+static int pool_push(pool *p, wchar_t *path, unsigned char *data, size_t size)
+{
+    EnterCriticalSection(&p->cs);
+    while (!p->failed && p->count == QCAP)
+        SleepConditionVariableCS(&p->changed, &p->cs, INFINITE);
+    int ok = !p->failed;
+    if (ok) {
+        job j = {path, data, size};
+        p->q[(p->head + p->count) % QCAP] = j;
+        p->count++;
+    } else {
+        p->in_flight -= size;
+    }
+    LeaveCriticalSection(&p->cs);
+    WakeAllConditionVariable(&p->changed);
+    if (!ok) {
+        free(path);
+        free(data);
+    }
+    return ok;
+}
+
+/* wait for every queued file to be written; 1 if all were */
+static int pool_finish(pool *p)
+{
+    EnterCriticalSection(&p->cs);
+    p->stop = 1;
+    LeaveCriticalSection(&p->cs);
+    WakeAllConditionVariable(&p->changed);
+    if (p->nthreads)
+        WaitForMultipleObjects((DWORD)p->nthreads, p->threads, TRUE, INFINITE);
+    for (int i = 0; i < p->nthreads; i++)
+        CloseHandle(p->threads[i]);
+    p->nthreads = 0;
+    DeleteCriticalSection(&p->cs);
+    return !p->failed;
 }
 
 typedef struct {
     sfx_say_fn say;
     int gui;
     const wchar_t *root;   /* the .partial folder */
+    pool *pool;
     unsigned char *idx;    /* the index, collected until complete */
     size_t idx_len, idx_cap, idx_pos;
     unsigned files, file_no;
     int idx_done;
-    HANDLE out;            /* the file being written */
+    HANDLE out;            /* a big file, streamed by this thread */
     unsigned long long left;
+    wchar_t *cur_path;     /* a small file, collected for the writers */
+    unsigned char *cur;
+    size_t cur_size, cur_have;
     char err[300];
 } unpacker;
 
-/* the next file of the index: open it (a zero-length one is created and closed at once) */
+static int pool_failed(unpacker *u)
+{
+    _snprintf(u->err, sizeof u->err, "%s", u->pool->err);
+    return 0;
+}
+
+/* the next file of the index: big ones are opened here, small ones get a buffer; empty ones are queued at once */
 static int next_file(unpacker *u)
 {
     while (u->file_no < u->files) {
@@ -201,30 +375,53 @@ static int next_file(unpacker *u)
                 *c = L'\\';
         if (rel[0] == L'\\' || wcschr(rel, L':') || wcsstr(rel, L"..\\") || wcscmp(rel, L"..") == 0 ||
             (wcslen(rel) >= 3 && wcscmp(rel + wcslen(rel) - 3, L"\\..") == 0)) {
-            _snprintf(u->err, sizeof u->err, "unsafe path in the payload: %s", "(rejected)");
+            _snprintf(u->err, sizeof u->err, "unsafe path in the payload: %ls", rel);
             return 0;
         }
         wchar_t full[WPATH];
         if (_snwprintf(full, WPATH, L"\\\\?\\%s\\%s", u->root, rel) < 0) {
-            _snprintf(u->err, sizeof u->err, "path too long");
+            _snprintf(u->err, sizeof u->err, "path too long: %ls", rel);
             return 0;
         }
         full[WPATH - 1] = 0;
-        if (!ensure_dirs(full)) {
-            _snprintf(u->err, sizeof u->err, "cannot create a folder (error %lu)", GetLastError());
-            return 0;
+        if (size >= BIG_FILE) {
+            if (!ensure_dirs(full)) {
+                _snprintf(u->err, sizeof u->err, "cannot create a folder for %ls (error %lu)", rel, GetLastError());
+                return 0;
+            }
+            HANDLE h = CreateFileW(full, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h == INVALID_HANDLE_VALUE) {
+                _snprintf(u->err, sizeof u->err, "cannot write %ls (error %lu)", rel, GetLastError());
+                return 0;
+            }
+            u->out = h;
+            u->left = size;
+            return 1;
         }
-        HANDLE h = CreateFileW(full, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (h == INVALID_HANDLE_VALUE) {
-            _snprintf(u->err, sizeof u->err, "cannot write %ls (error %lu)", rel, GetLastError());
+        wchar_t *path = _wcsdup(full);
+        if (!path || !pool_reserve(u->pool, (size_t)size)) {
+            free(path);
+            return path ? pool_failed(u) : (_snprintf(u->err, sizeof u->err, "out of memory"), 0);
+        }
+        unsigned char *buf = size ? (unsigned char *)malloc((size_t)size) : NULL;
+        if (size && !buf) {
+            EnterCriticalSection(&u->pool->cs);
+            u->pool->in_flight -= (size_t)size;
+            LeaveCriticalSection(&u->pool->cs);
+            WakeAllConditionVariable(&u->pool->changed);
+            free(path);
+            _snprintf(u->err, sizeof u->err, "out of memory");
             return 0;
         }
         if (size == 0) {
-            CloseHandle(h);
+            if (!pool_push(u->pool, path, NULL, 0))
+                return pool_failed(u);
             continue;
         }
-        u->out = h;
-        u->left = size;
+        u->cur_path = path;
+        u->cur = buf;
+        u->cur_size = (size_t)size;
+        u->cur_have = 0;
         return 1;
     }
     return 1; /* no more files */
@@ -250,7 +447,6 @@ static int feed(unpacker *u, const unsigned char *p, size_t n)
                 u->idx = q;
                 u->idx_cap = cap;
             }
-            /* find out how much of p belongs to the index */
             size_t before = u->idx_len;
             memcpy(u->idx + u->idx_len, p, n);
             u->idx_len += n;
@@ -273,7 +469,7 @@ static int feed(unpacker *u, const unsigned char *p, size_t n)
                 pos += 4 + len + 8;
             }
             if (i < u->files)
-                return 1; /* the index continues in the next block */
+                return 1; /* the index continues in the next piece */
             u->idx_done = 1;
             u->idx_pos = 12;
             size_t used = pos - before; /* bytes of p that were index */
@@ -284,23 +480,44 @@ static int feed(unpacker *u, const unsigned char *p, size_t n)
                 return 0;
             continue;
         }
-        if (!u->out) {
+        if (u->out) {
+            DWORD chunk = (DWORD)(u->left < n ? u->left : n), w = 0;
+            if (!WriteFile(u->out, p, chunk, &w, NULL) || w != chunk) {
+                _snprintf(u->err, sizeof u->err, "write failed (error %lu): is the disk full?", GetLastError());
+                return 0;
+            }
+            p += chunk;
+            n -= chunk;
+            u->left -= chunk;
+            if (!u->left) {
+                BOOL closed = CloseHandle(u->out);
+                u->out = NULL;
+                if (!closed) {
+                    _snprintf(u->err, sizeof u->err, "cannot finish a file (error %lu)", GetLastError());
+                    return 0;
+                }
+                if (!next_file(u))
+                    return 0;
+            }
+        } else if (u->cur) {
+            size_t chunk = u->cur_size - u->cur_have < n ? u->cur_size - u->cur_have : n;
+            memcpy(u->cur + u->cur_have, p, chunk);
+            u->cur_have += chunk;
+            p += chunk;
+            n -= chunk;
+            if (u->cur_have == u->cur_size) {
+                wchar_t *path = u->cur_path;
+                unsigned char *data = u->cur;
+                u->cur_path = NULL;
+                u->cur = NULL;
+                if (!pool_push(u->pool, path, data, u->cur_size))
+                    return pool_failed(u);
+                if (!next_file(u))
+                    return 0;
+            }
+        } else {
             _snprintf(u->err, sizeof u->err, "the payload has more data than its index lists");
             return 0;
-        }
-        DWORD chunk = (DWORD)(u->left < n ? u->left : n), w = 0;
-        if (!WriteFile(u->out, p, chunk, &w, NULL) || w != chunk) {
-            _snprintf(u->err, sizeof u->err, "write failed (error %lu): is the disk full?", GetLastError());
-            return 0;
-        }
-        p += chunk;
-        n -= chunk;
-        u->left -= chunk;
-        if (!u->left) {
-            CloseHandle(u->out);
-            u->out = NULL;
-            if (!next_file(u))
-                return 0;
         }
     }
     return 1;
@@ -341,11 +558,19 @@ static int unpack(payload *pl, const wchar_t *dest, sfx_say_fn say, int gui, cha
     u.say = say;
     u.gui = gui;
     u.root = dest;
-    int ok = 0, frame_done = 0;
-    if (!in || !outbuf || !dctx) {
+    int ok = 0, frame_done = 0, pool_up = 0;
+    pool *writers = (pool *)malloc(sizeof(pool));
+    if (!in || !outbuf || !dctx || !writers) {
         _snprintf(err, errn, "out of memory");
         goto done;
     }
+    if (!pool_start(writers)) {
+        _snprintf(err, errn, "cannot start the writer threads (error %lu)", GetLastError());
+        DeleteCriticalSection(&writers->cs);
+        goto done;
+    }
+    pool_up = 1;
+    u.pool = writers;
     ZSTD_DCtx_setParameter(dctx, ZSTD_d_windowLogMax, (int)wlog);
     unsigned long long pos = pl->off + 20, end = pl->off + pl->size, done_bytes = 0;
     while (pos < end && !frame_done) {
@@ -391,15 +616,25 @@ static int unpack(payload *pl, const wchar_t *dest, sfx_say_fn say, int gui, cha
         more = zout.pos > 0;
         frame_done = r == 0;
     }
-    if (!frame_done || u.out || u.file_no != u.files || !u.idx_done || done_bytes != logical) {
+    if (!frame_done || u.out || u.cur || u.file_no != u.files || !u.idx_done || done_bytes != logical) {
         _snprintf(err, errn, "the payload ended early (%u of %u files, %llu of %llu bytes)", u.file_no, u.files,
                   done_bytes, logical);
         goto done;
     }
+    pool_up = 0;
+    if (!pool_finish(writers)) { /* every queued file written, or the first failure */
+        _snprintf(err, errn, "%s", writers->err);
+        goto done;
+    }
     ok = 1;
 done:
+    if (pool_up)
+        pool_finish(writers); /* after a failure: the writers skip what is left and stop */
     if (u.out)
         CloseHandle(u.out);
+    free(u.cur_path);
+    free(u.cur);
+    free(writers);
     ZSTD_freeDCtx(dctx);
     free(u.idx);
     free(in);

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import os
 import struct
 import sys
@@ -121,7 +122,8 @@ def verify(exe: Path) -> int:
         logical, wlog = struct.unpack("<QI", head[8:])
         t0 = time.monotonic()
         dctx = zstandard.ZstdDecompressor(max_window_size=1 << wlog)
-        reader = dctx.stream_reader(f, read_size=CHUNK, closefd=False)
+        frame = io.BytesIO(f.read(size - 20))          # the frame alone: the trailer is not a second frame
+        reader = dctx.stream_reader(frame, read_size=CHUNK)
         got, buf = 0, bytearray()
         files = sizes = None
         while chunk := reader.read(4 << 20):
@@ -152,6 +154,27 @@ def verify(exe: Path) -> int:
     return 0
 
 
+def restub(exe: Path, stub: Path, out: Path) -> int:
+    """out = stub + exe's payload and key: a rebuilt launcher tried on a packed payload without packing again."""
+    with exe.open("rb") as f:
+        f.seek(-64, os.SEEK_END)
+        off, size, key, magic = struct.unpack("<QQ32s16s", f.read(64))
+        if magic != END_MAGIC:
+            raise SystemExit("no payload trailer")
+        stub_bytes = stub.read_bytes()
+        with out.open("wb") as o:
+            o.write(stub_bytes)
+            f.seek(off)
+            left = size
+            while left:
+                chunk = f.read(min(left, 16 << 20))
+                o.write(chunk)
+                left -= len(chunk)
+            o.write(struct.pack("<QQ", len(stub_bytes), size) + key + END_MAGIC)
+    print(f"{out.name}: {stub.name} + the payload of {exe.name}")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("stub", type=Path)
@@ -160,9 +183,15 @@ def main(argv=None) -> int:
     ap.add_argument("--key", help="the version part of the unpack folder's name")
     ap.add_argument("--level", type=int, default=LEVEL)
     ap.add_argument("--verify", action="store_true", help="check the payload of STUB (a packed .exe) instead")
+    ap.add_argument("--restub", type=Path, metavar="NEW_STUB",
+                    help="write OUT (given as FOLDER) as NEW_STUB + the payload of STUB (a packed .exe)")
     args = ap.parse_args(argv)
     if args.verify:
         return verify(args.stub)
+    if args.restub:
+        if not args.folder:
+            ap.error("--restub needs the output path")
+        return restub(args.stub, args.restub, args.folder)
     if not (args.folder and args.out and args.key):
         ap.error("STUB FOLDER OUT and --key are needed to pack")
     pack(args.stub, args.folder, args.out, args.key, args.level)
