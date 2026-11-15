@@ -238,6 +238,41 @@ def run(smoke):
                     results[True]["value"] == 2 * BORE and results[True]["edge"] is not None
                     and results[True]["edge"] >= results[True]["visible edges"] and results[False]["value"] is None,
                     results)
+        # 7. as a script does it: Inherit PMI right after creating the view (TechDraw draws it in the background),
+        # with a ±0.05 on the 40 and an h6 fit on the Ø20; the sheet must show them in mm (TechDraw's own
+        # formatting followed the unit schema: "± 50" and "-13")
+        import os
+        import re
+        import tempfile
+        import TechDrawGui
+        lin.UpperDeviation, lin.LowerDeviation = 0.05, 0.05
+        dia.Fit = "h6"
+        doc.recompute()
+        page3 = doc.addObject("TechDraw::DrawPage", "Sheet3")
+        tmpl3 = doc.addObject("TechDraw::DrawSVGTemplate", "Template3")
+        tmpl3.Template = tmpl.Template
+        page3.Template = tmpl3
+        fresh = doc.addObject("TechDraw::DrawViewPart", "FrontAgain")
+        page3.addView(fresh)
+        fresh.Source = [part]
+        fresh.Direction, fresh.XDirection = App.Vector(0, -1, 0), App.Vector(1, 0, 0)
+        fresh.ScaleType, fresh.Scale = "Custom", 2.0
+        fresh.X, fresh.Y = 150.0, 150.0
+        doc.recompute()
+        lines_before = len(fresh.getVisibleEdges())
+        made4, skipped4 = pmi_ui.inherit(fresh, [lin, dia])
+        doc.recompute()
+        qwait(500)
+        svg = os.path.join(tempfile.mkdtemp(), "inherit.svg")
+        TechDrawGui.exportPageAsSvg(page3, svg)
+        with open(svg, encoding="utf-8") as fh:
+            texts = [re.sub(r"<[^>]+>", "", t).strip() for t in re.findall(r"<text[^>]*>(.*?)</text>", fh.read(), re.S)]
+        texts = [t for t in texts if t]
+        smoke.check("Inherit PMI right after creating the view places the dimensions, and their tolerances read in mm "
+                    "(± 0.05, 0/-0.013)", len([m for m in made4 if m.isDerivedFrom("TechDraw::DrawViewDimension")]) == 2
+                    and any("± 0.05" in t for t in texts) and "-0.013" in texts and "0" in texts
+                    and not any(t.endswith(("± 50", "± 50.000")) or t in ("-13", "+18") for t in texts),
+                    {"lines when inherit was called": lines_before, "skipped": skipped4, "sheet texts": texts})
     except Exception:
         smoke.check("PMI note and centerline scenario ran", False, traceback.format_exc().splitlines()[-1])
         smoke.info["traceback pmi notes"] = traceback.format_exc()

@@ -108,6 +108,27 @@ def deviation_text(v, digits=3):
     return f"{v:+.{digits}f}"
 
 
+def sheet_deviations(plus, minus, digits=3):
+    """(over, under, equal) texts of a dimension's limit deviations on a drawing: both with the same number of
+    decimals, the fewest that show them, at most digits (ISO 129-1); a zero one as 0; an equal pair as one
+    unsigned value (after "±"). minus is a magnitude below nominal, as deviations() gives it.
+    Drawings get these as text because TechDraw formats a deviation in the unit schema's unit: 0.05 mm became
+    50 µm, shown as "± 50", and an H7 bore's +0.018 as "+18"."""
+    tiny = 0.5 * 10 ** -digits
+    decimals = 0
+    for v in (plus, minus):
+        if abs(v) >= tiny:
+            s = f"{abs(v):.{digits}f}".rstrip("0")
+            decimals = max(decimals, len(s.partition(".")[2]))
+    equal = abs(plus - minus) < tiny
+
+    def text(v):
+        return "0" if abs(v) < tiny else f"{v:+.{decimals}f}"
+    if equal:
+        return f"{abs(plus):.{decimals}f}", f"{abs(plus):.{decimals}f}", True
+    return text(plus), text(-minus), False
+
+
 def dimension_text(a, digits=3):
     prefix = {"diameter": DIAMETER, "radius": "R"}.get(a.get("dim_type"), "")
     count = f"{a['count']}X " if a.get("count", 1) > 1 else ""
