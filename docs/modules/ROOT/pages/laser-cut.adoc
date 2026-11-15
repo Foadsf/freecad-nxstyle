@@ -48,8 +48,19 @@ Upstream LCInterlocking 1.5.1 has two errors on FreeCAD 1.1, which uses Qt 6:
 * opening the *Tabs and Slots* or *Cross Halving* task panel prints a `TypeError` about `StandardButton` in the Report view. The panel still gets its OK and Cancel buttons (https://github.com/execuc/LCInterlocking/issues/78[issue 78]);
 * *Add parts* or *Add faces* with nothing selected prints a `TypeError` instead of doing nothing (https://github.com/execuc/LCInterlocking/issues/75[issue 75]).
 
-The bundled fork fixes both in `panel/treepanel.py` (its `qt6-fixes` branch, offered upstream as https://github.com/execuc/LCInterlocking/pull/82[pull request 82]).
+The bundled fork fixes both in `panel/treepanel.py` (from its `qt6-fixes` branch, offered upstream as https://github.com/execuc/LCInterlocking/pull/82[pull request 82]).
 If you install upstream LCInterlocking into the NX profile with the Addon Manager instead, NX-Style applies the same two fixes when the add-on's task panel code loads (`nxstyle/lcinterlocking.py`), without changing its files.
+
+[#continuous]
+== Continuous joints at box corners
+
+The bundled fork also fixes Continuous joints that meet at a box corner (https://github.com/Foadsf/LCInterlocking/pull/1[fork pull request 1]).
+Take an open box with walls standing on its floor, side walls between front and back, joined with Continuous joints. In upstream LCInterlocking the floor comes out in several pieces (the plate plus a thin strip at each corner) and nothing warns.
+Each slot's kerf compensation and dog bone at its ends were judged against the uncut floor, while the neighbouring wall's slot removes that very corner.
+In the fork each end is judged against the floor without the other joints' slots, and a panel that still comes out in several pieces prints a warning in the Report view.
+*Number of elements* also starts at 1, the joint's default. It started at 2, which changed only the face shown in the panel.
+
+With upstream LCInterlocking from the Addon Manager, use *Tab* joints for such boxes.
 
 == Limits
 
