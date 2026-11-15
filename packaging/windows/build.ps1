@@ -66,6 +66,9 @@ $got = (Get-FileHash $ZstdTar -Algorithm SHA256).Hash.ToLower()
 if ($got -ne $ZstdSha) { throw "zstd-$ZstdVersion.tar.gz: SHA-256 $got is not the pinned $ZstdSha" }
 Invoke-Native "zstd sources" { tar -xzf $ZstdTar -C $Work "zstd-$ZstdVersion/lib" "zstd-$ZstdVersion/LICENSE" }
 $env:ZSTD_SRC = Join-Path $Work "zstd-$ZstdVersion\lib"
+# the launcher carries zstd's decoder: its BSD licence travels in the payload
+New-Item -ItemType Directory -Force (Join-Path $Payload "licenses") | Out-Null
+Copy-Item (Join-Path $Work "zstd-$ZstdVersion\LICENSE") (Join-Path $Payload "licenses\zstd-LICENSE.txt")
 Invoke-Native "zstandard" { python -m pip install --disable-pip-version-check --quiet "zstandard==0.24.0" }
 
 # the launcher, then the launcher with the payload appended
