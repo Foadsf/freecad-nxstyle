@@ -1654,6 +1654,7 @@ def run_harness(harness: str, cmd: list[str], env: dict, args: argparse.Namespac
         timeout_s = harness_timeout(harness, args.tutorials, args.timeout)
         print(f"time limit: {timeout_s} s")
         give_up = time.monotonic() + args.lock_wait
+        waited = False
         while True:
             try:
                 code = run_on_hidden_desktop(cmd, env, timeout_s=timeout_s, max_memory_gb=args.max_memory_gb,
@@ -1664,7 +1665,9 @@ def run_harness(harness: str, cmd: list[str], env: dict, args: argparse.Namespac
                     print(f"{harness} run refused: {e}"
                           + (f" (waited {args.lock_wait} s)" if args.lock_wait else ""), file=sys.stderr)
                     return 5
-                print(f"another run is active; waiting for it (up to {args.lock_wait} s in all)", flush=True)
+                if not waited:                      # said once, not on every poll
+                    print(f"another run is active; waiting for it (up to {args.lock_wait} s in all)", flush=True)
+                    waited = True
                 time.sleep(min(LOCK_POLL_S, max(0.0, give_up - time.monotonic())))
         if code == STATUS_NO_MEMORY:
             # the job's peak counter includes the request it refused
