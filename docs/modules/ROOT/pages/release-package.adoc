@@ -65,9 +65,13 @@ Others are critical, and fail a release:
 * a PMI that is not valid;
 * a stack-up without a valid result;
 * an inherited drawing annotation that no longer shows its PMI;
-* PMI the STEP lost for another reason.
+* PMI the STEP lost for another reason;
+* a drawing whose title block names another part number or revision than the package (a sheet that still reads B in the package of revision C).
 
 Values that are not current must not be released.
+A title block that leaves the part number or revision blank is listed, not critical.
+So fill a sheet's title block with the revision being released (xref:drafting.adoc#_title_block_and_revision_block[Populate Title Block], or the document's `DB_PART_REV` attribute) before the release records the version: the package is made from that recorded copy, whose sheet cannot learn the revision afterwards.
+Only templates with ISO 7200 fields (`drawing_number`, `revision_index`) are compared.
 
 A package is made in a staging folder and verified before it replaces an earlier package of the same revision.
 A package that does not verify, or one whose making fails half way, leaves the earlier package and its zip as they were.

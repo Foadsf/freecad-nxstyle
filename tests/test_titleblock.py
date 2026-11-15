@@ -14,6 +14,29 @@ ISO_FIELDS = ["legal_owner_1", "drawing_number", "revision_index", "date_of_issu
               "approval_person", "creator", "document_type", "scale", "general_tolerances", "part_material"]
 
 
+class Identity(unittest.TestCase):
+    """A packaged sheet must name the part and revision of its package (a rev C package verified with "B")."""
+
+    def test_a_sheet_of_another_revision(self):
+        texts = {"drawing_number": "ES-YA-204", "revision_index": "B", "title": "Holder"}
+        self.assertEqual(tb.identity_mismatches(texts, {"part_number": "ES-YA-204", "revision": "C"}),
+                         [("revision_index", "B", "C")])
+
+    def test_the_same_part_and_revision_and_a_blank_field(self):
+        record = {"part_number": "ES-YA-204", "revision": "C"}
+        self.assertEqual(tb.identity_mismatches({"drawing_number": "ES-YA-204", "revision_index": "C"}, record), [])
+        self.assertEqual(tb.identity_mismatches({"drawing_number": "ES-YA-204", "revision_index": " "}, record),
+                         [("revision_index", "", "C")])
+
+    def test_fields_the_template_lacks_and_an_unreleased_package(self):
+        self.assertEqual(tb.identity_mismatches({"FC-Title": "Holder"}, {"part_number": "X", "revision": "C"}), [])
+        self.assertEqual(tb.identity_mismatches({"drawing_number": "X", "revision_index": "B"},
+                                                {"part_number": "X", "revision": "-"}), [])
+        self.assertEqual(tb.identity_mismatches({"drawing_number": "OTHER", "revision_index": "C"},
+                                                {"part_number": "X", "revision": "C"}),
+                         [("drawing_number", "OTHER", "X")])
+
+
 class Values(unittest.TestCase):
     def test_release_wins_over_attributes_and_properties(self):
         attrs = {"DB_PART_NO": "OLD-1", "DB_PART_REV": "A", "DB_PART_NAME": "PLATE, MOUNTING"}
