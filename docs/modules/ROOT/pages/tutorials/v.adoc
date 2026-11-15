@@ -3,7 +3,7 @@
 
 [horizontal]
 Source:: Engineering change management as the PLM books describe it (Stark, Grieves, Saaksvuori and Immonen): a release with part number and revision, an engineering change, a new revision, the old one obsolete; the package NX publishes with File › Export › Publish Technical Data Package
-You learn:: PLM › Versions and History, Create Version, Release, Publish Release Package, Compare, Releases, Mark obsolete
+You learn:: PLM › Versions and History, Create Version, Release, Publish Release Package, Compare, Releases, Obsolete
 Needs:: xref:tutorials/t.adoc[Tutorial T] first (the replay runs it), and `git` on the PATH for Strata
 
 == Step by step
@@ -33,7 +33,8 @@ The PMI shows _Ø16.000 F7 (+0.034/+0.016) Ⓔ_, and the fit's stack-up from tut
 
 *Create Version* `V2`, then *PLM › Compare* V1 with V2: Strata lists the changed PMI property.
 Release V2: the same part number, revision B.
-*PLM › Releases*, select revision A, *Mark obsolete*.
+*PLM › Releases*, select revision A, *Obsolete...*, give the reason `Replaced by rev B` and press *Obsolete*.
+Leave *Mark revision as re-releasable* off, so no later release can reuse the letter A.
 
 image::tutorial-V-01-compare.png[Compare: what changed between V1 and V2]
 
