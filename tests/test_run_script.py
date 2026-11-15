@@ -177,8 +177,10 @@ class ThroughMain(unittest.TestCase):
             return 0
         with tempfile.TemporaryDirectory() as d:
             job = script(d, "pass\n")
-            self.assertEqual(self.main(["--run", job, "--lock-wait", "60"], busy_twice)[0], 0)
+            code, so, _ = self.main(["--run", job, "--lock-wait", "60"], busy_twice)
+            self.assertEqual(code, 0)
             self.assertEqual(len(calls), 3)
+            self.assertEqual(so.count("waiting for it"), 1)        # once, not on every poll
             calls.clear()
             self.assertEqual(self.main(["--run", job], busy_twice)[0], 5)
             self.assertEqual(len(calls), 1)
