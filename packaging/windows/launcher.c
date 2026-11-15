@@ -1,12 +1,10 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later
  *
- * NX-Style.exe: the entry point of the portable Windows bundle.
- *
- *   NX-Style-<ver>-windows-<arch>\
- *     NX-Style.exe        this program (NX-Style's icon)
- *     nxstyle.cmd         the same from a command prompt or script (waits, prints, returns the exit code)
+ * NX-Style.exe: the Windows release is this one file, NX-Style-<ver>-windows-<arch>.exe. Its payload (sfx.c) is a
+ * folder that it unpacks once into %LOCALAPPDATA%\FreeCAD-NXStyle\runtime\<key>:
  *     FreeCAD\            an unmodified FreeCAD release (its portable .7z)
  *     nxstyle\            launch_nx.py, NXStyle\ and vendor\
+ * Built without a payload, it runs that folder from beside itself instead (a development build).
  *
  * It runs  FreeCAD\bin\python.exe -E -s nxstyle\launch_nx.py --freecad FreeCAD\bin\freecad.exe <its own arguments>
  * so the launcher's every option works here too (--smoke-test, --list, --profile, files to open, ...).
@@ -18,8 +16,8 @@
  * from the program's folder before System32). NXSTYLE_SOFTWARE_GL=1 forces software rendering, =0 forbids it.
  *
  * Started from Explorer it has no console: output goes to %TEMP%\NX-Style-launch.log and a failure is shown in a
- * message box. Started with redirected output or from a console (nxstyle.cmd) it passes output through, waits
- * and returns launch_nx.py's exit code.
+ * message box. Started with redirected output (PowerShell: `& .\NX-Style-....exe --dry-run | Out-Host`; cmd:
+ * `start /wait`) it passes output through, waits and returns launch_nx.py's exit code.
  */
 #define WIN32_LEAN_AND_MEAN
 #define _CRT_SECURE_NO_WARNINGS /* every buffer below is sized and terminated by hand */
@@ -36,6 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+
+#include "sfx.h"
 
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
@@ -268,15 +268,11 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, LPWSTR cmdline, int show)
     DWORD n = GetModuleFileNameW(NULL, self, MAX_PATH * 2);
     if (!n || n >= MAX_PATH * 2 - 64) /* room for the longest suffix appended below */
         return 70;
+    wchar_t exe[MAX_PATH * 2];
+    wcscpy(exe, self);
     wchar_t *slash = wcsrchr(self, L'\\');
     if (slash)
-        *slash = 0; /* self is now the bundle folder */
-
-    wchar_t bin[MAX_PATH * 2], python[MAX_PATH * 2], freecad[MAX_PATH * 2], script[MAX_PATH * 2];
-    _snwprintf(bin, MAX_PATH * 2, L"%s\\FreeCAD\\bin", self);
-    _snwprintf(python, MAX_PATH * 2, L"%s\\python.exe", bin);
-    _snwprintf(freecad, MAX_PATH * 2, L"%s\\freecad.exe", bin);
-    _snwprintf(script, MAX_PATH * 2, L"%s\\nxstyle\\launch_nx.py", self);
+        *slash = 0; /* self is now the folder of the .exe */
 
     /* Where output goes: handles a parent passed (redirection), the parent's console, or a log file. */
     SECURITY_ATTRIBUTES sa = {sizeof sa, NULL, TRUE};
@@ -308,12 +304,36 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, LPWSTR cmdline, int show)
     }
     g_out = (err && err != INVALID_HANDLE_VALUE) ? err : NULL;
 
+    /* The single-file .exe carries the bundle as a payload, unpacked once into a cache; the folder layout of a
+     * development build has it beside the .exe */
+    char sfx_err[512] = "";
+    wchar_t unpacked[MAX_PATH * 2];
+    int sfx = sfx_bundle_dir(exe, unpacked, MAX_PATH * 2 - 64, say, gui, sfx_err, sizeof sfx_err);
+    if (sfx < 0) {
+        say("NX-Style: %s\n", sfx_err);
+        if (gui) {
+            wchar_t msg[700];
+            _snwprintf(msg, 700, L"NX-Style cannot unpack itself: %hs", sfx_err);
+            msg[699] = 0;
+            MessageBoxW(NULL, msg, L"NX-Style", MB_OK | MB_ICONERROR);
+        }
+        return 65;
+    }
+    if (sfx > 0)
+        wcscpy(self, unpacked);
+
+    wchar_t bin[MAX_PATH * 2], python[MAX_PATH * 2], freecad[MAX_PATH * 2], script[MAX_PATH * 2];
+    _snwprintf(bin, MAX_PATH * 2, L"%s\\FreeCAD\\bin", self);
+    _snwprintf(python, MAX_PATH * 2, L"%s\\python.exe", bin);
+    _snwprintf(freecad, MAX_PATH * 2, L"%s\\freecad.exe", bin);
+    _snwprintf(script, MAX_PATH * 2, L"%s\\nxstyle\\launch_nx.py", self);
+
     if (!file_exists(python) || !file_exists(freecad) || !file_exists(script)) {
         say("NX-Style: the bundle is incomplete: FreeCAD\\bin\\python.exe, FreeCAD\\bin\\freecad.exe or "
             "nxstyle\\launch_nx.py is missing next to NX-Style.exe\n");
         if (gui)
             MessageBoxW(NULL, L"The bundle is incomplete: FreeCAD\\bin\\python.exe, FreeCAD\\bin\\freecad.exe or "
-                              L"nxstyle\\launch_nx.py is missing next to NX-Style.exe. Unpack the whole zip again.",
+                              L"nxstyle\\launch_nx.py is missing. Download NX-Style again.",
                         L"NX-Style", MB_OK | MB_ICONERROR);
         return 66;
     }

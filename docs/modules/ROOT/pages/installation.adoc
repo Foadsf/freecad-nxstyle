@@ -14,12 +14,12 @@ Each https://github.com/Foadsf/freecad-nxstyle/releases[release] has one downloa
 | System | Download | Start it
 
 | Windows 10/11, Intel or AMD
-| `NX-Style-<version>-windows-x86_64.zip`
-| Unzip it anywhere you can write to, then double-click `NX-Style.exe`.
+| `NX-Style-<version>-windows-x86_64.exe`
+| Double-click the file; it is the whole of NX-Style and FreeCAD in one executable. The first start unpacks FreeCAD once (a progress window shows it, about 2.2 GB) into `%LOCALAPPDATA%\FreeCAD-NXStyle\runtime`; later starts go straight to FreeCAD.
 
 | Windows 11 on Arm
-| `NX-Style-<version>-windows-arm64.zip`
-| As above. FreeCAD 1.1.4 has no Arm build for Windows, so FreeCAD runs through Windows' built-in x64 emulation; only `NX-Style.exe` is native.
+| `NX-Style-<version>-windows-arm64.exe`
+| As above. FreeCAD 1.1.4 has no Arm build for Windows, so FreeCAD runs through Windows' built-in x64 emulation; only the launcher is native.
 
 | Linux, Intel or AMD
 | `NX-Style-<version>-linux-x86_64.AppImage`
@@ -46,7 +46,7 @@ Every bundle runs the same launcher as the project folder, so every xref:#option
 |===
 | System | From a terminal
 
-| Windows | `nxstyle.cmd --dry-run` in the unzipped folder (it waits and prints; `NX-Style.exe` is for double-clicking)
+| Windows | PowerShell: `& .\NX-Style-<version>-windows-x86_64.exe --dry-run \| Out-Host` (piping the output makes PowerShell wait for it and keep its exit code); cmd: `start /wait NX-Style-<version>-windows-x86_64.exe --dry-run`
 | Linux | `./NX-Style-<version>-linux-x86_64.AppImage --dry-run`
 | macOS | `/Applications/NX-Style.app/Contents/MacOS/NX-Style --dry-run`
 |===
@@ -64,7 +64,10 @@ In a virtual machine, over a remote desktop or without a working GPU driver, the
 Set `NXSTYLE_SOFTWARE_GL=1` to force software rendering, `0` to forbid it.
 On Linux the software renderer is the system's Mesa, which every desktop distribution has (Debian/Ubuntu: `libgl1-mesa-dri`, Fedora: `mesa-dri-drivers`).
 
-To update a bundle, download the new one; the NX profile is kept (xref:#profile[]). To remove it, delete the folder, AppImage or app, and the NX profile if you want.
+Where Windows unpacks to::
+`NXSTYLE_RUNTIME_DIR` chooses another folder than `%LOCALAPPDATA%\FreeCAD-NXStyle\runtime`, for example one beside the `.exe` on a USB stick. Each version unpacks into its own subfolder; delete the folders of versions you no longer use.
+
+To update a bundle, download the new one; the NX profile is kept (xref:#profile[]). To remove it, delete the `.exe` (and its unpacked folder), the AppImage or the app, and the NX profile if you want.
 
 The rest of this page is about running NX-Style from the project folder with a FreeCAD you installed yourself.
 
