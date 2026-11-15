@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>FreeCAD NX-Style</title>
+  <!-- FreeCAD NX-Style's own mark: a machined block with a bored hole, in the project's teal.
+       Drawn for this project; LGPL-2.1-or-later like the rest of it. -->
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="#0b6e79"/>
+  <path d="M32 11 L52 22.5 L32 34 L12 22.5 Z" fill="#ffffff"/>
+  <path d="M12 22.5 L32 34 L32 54 L12 42.5 Z" fill="#c7e3e7"/>
+  <path d="M52 22.5 L32 34 L32 54 L52 42.5 Z" fill="#7fbcc4"/>
+  <ellipse cx="32" cy="22.5" rx="7" ry="4" fill="#095a63"/>
+  <path d="M25 22.5 A7 4 0 0 1 39 22.5 A7 2.6 0 0 0 25 22.5 Z" fill="#3f8f99"/>
+</svg>

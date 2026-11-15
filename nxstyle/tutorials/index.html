@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorials :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/index.html">
+    <link rel="prev" href="../settings.html">
+    <link rel="next" href="a.html">
+    <meta name="description" content="NX textbook exercises and Grasshopper video tutorials, step by step in FreeCAD NX-Style, with what is the same and what differs.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="index.html">About the tutorials</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/index.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorials</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Build a part, try an engineering workflow, or explore parametric design.
+The tutorials pair textbook and practical exercises with NX-Style steps and recorded replay outcomes.
+They explain what works the same way, what differs and where FreeCAD reaches a limit.</p>
+</div>
+<div class="ulist nx-learning-paths">
+<ul>
+<li>
+<p><strong>Start with solid modeling</strong><br>
+<a href="a.html" class="xref page">The Adjuster</a> for a first sketch and extrude, <a href="ae.html" class="xref page">One Extrude, every way</a> for the command workflow, or the <a href="an.html" class="xref page">Arbor Press Plate</a> and <a href="ap.html" class="xref page">Impeller Shaft</a> for primitives, datums and holes.</p>
+</li>
+<li>
+<p><strong>Develop your sketching skills</strong><br>
+Try the <a href="af.html" class="xref page">Arbor Press Base</a>, <a href="ah.html" class="xref page">Impeller blade</a> and <a href="ak.html" class="xref page">Holder</a> for coordinates, tangent arcs and copied curves.</p>
+</li>
+<li>
+<p><strong>Document and inspect a part</strong><br>
+Follow the <a href="t.html" class="xref page">guide bush to ISO GPS</a>, <a href="aa.html" class="xref page">composite position evaluation</a> and <a href="ab.html" class="xref page">measurement capability</a> exercises.</p>
+</li>
+<li>
+<p><strong>Work with assemblies and fabrication</strong><br>
+Make the <a href="g.html" class="xref page">Shaft Support assembly</a>, check <a href="u.html" class="xref page">volume claims and clearance</a>, then try a <a href="w.html" class="xref page">sheet-metal bracket</a> or <a href="ad.html" class="xref page">laser-cut tray</a>.</p>
+</li>
+<li>
+<p><strong>Explore algorithmic design</strong><br>
+Start with <a href="o.html" class="xref page">Katydid basics</a>, then build a <a href="p.html" class="xref page">waffle canopy</a>, <a href="q.html" class="xref page">faceted planter</a> or <a href="r.html" class="xref page">attractor-driven frames</a>.</p>
+</li>
+<li>
+<p><strong>Exchange and release the design</strong><br>
+Send <a href="al.html" class="xref page">design intent through STEP</a>, inspect <a href="am.html" class="xref page">incoming STEP</a>, follow a <a href="v.html" class="xref page">release and engineering change</a>, or hand the release to <a href="bc.html" class="xref page">manufacturing in Carbon</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_to_read_the_results"><a class="anchor" href="#_how_to_read_the_results"></a>How to read the results</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The step tables are not written by hand.
+The <a href="../testing.html#tutorial-replay" class="xref page">tutorial replay</a> presses the same keys, clicks the same NX-named ribbon buttons, clicks sketch points with MB1 and accepts dialogs with MB2, places canvas components by typing their names and drags wires between grips, then checks each result by its volume.
+The tables show its last runs on FreeCAD 1.1.4: 744 steps.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_before_you_start"><a class="anchor" href="#_before_you_start"></a>Before you start</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Install and start NX-Style (<a href="../installation.html" class="xref page">Installation</a>), and try <a href="../quick-start.html" class="xref page">Your first part in five minutes</a> first.</p>
+</li>
+<li>
+<p>Parts are metric. The books work in inches; their sizes are typed in millimetres (2.5 in = 63.5 mm).</p>
+</li>
+<li>
+<p>Where a book gives a size only in a figure, the tutorial page says so and gives the size used here.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_which_one_to_start_with"><a class="anchor" href="#_which_one_to_start_with"></a>Which one to start with</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">You want to learn</th>
+<th class="tableblock halign-left valign-top">Tutorials</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch, extrude, revolve</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="a.html" class="xref page">A</a>, <a href="b.html" class="xref page">B</a>, <a href="l.html" class="xref page">L</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datum planes and holes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="c.html" class="xref page">C</a>, <a href="e.html" class="xref page">E</a>, <a href="an.html" class="xref page">AN</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Primitives: Block, Cylinder, Cone, Sphere</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="an.html" class="xref page">AN</a>, <a href="ap.html" class="xref page">AP</a>, <a href="aq.html" class="xref page">AQ</a>, <a href="ar.html" class="xref page">AR</a>, <a href="as.html" class="xref page">AS</a>, <a href="au.html" class="xref page">AU</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Move Object, combining bodies (Unite / Subtract)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="as.html" class="xref page">AS</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Threads, polygons, Intersect, chamfers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aq.html" class="xref page">AQ</a>, <a href="ar.html" class="xref page">AR</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datum axes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="an.html" class="xref page">AN</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Patterns, mirror, shell, edge blend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="d.html" class="xref page">D</a>, <a href="f.html" class="xref page">F</a>, <a href="ao.html" class="xref page">AO</a>, <a href="at.html" class="xref page">AT</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude and Revolve of curves picked one by one (Curve Rule, QuickPick)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ao.html" class="xref page">AO</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch constraints, trim, offset</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="i.html" class="xref page">I</a>, <a href="j.html" class="xref page">J</a>, <a href="af.html" class="xref page">AF</a>, <a href="ak.html" class="xref page">AK</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Copying sketch curves (Move Curve, Rotate Curve)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ag.html" class="xref page">AG</a>, <a href="ak.html" class="xref page">AK</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tangent arcs: by centre, by 3 points</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ah.html" class="xref page">AH</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cutting with Extrude (Subtract) from a face sketch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aj.html" class="xref page">AJ</a>, <a href="ae.html" class="xref page">AE</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Formulas and expressions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="j.html" class="xref page">J</a>, <a href="k.html" class="xref page">K</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Design changes, parent/child, suppress</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="e.html" class="xref page">E</a>, <a href="m.html" class="xref page">M</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Materials and mass</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="e.html" class="xref page">E</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Assemblies</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="g.html" class="xref page">G</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drawings</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="d.html" class="xref page">D</a>, <a href="n.html" class="xref page">N</a>, <a href="az.html" class="xref page">AZ</a>, <a href="bb.html" class="xref page">BB</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GD&amp;T</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="h.html" class="xref page">H</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Algorithmic modelling (a Grasshopper-style canvas)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="o.html" class="xref page">O</a>, <a href="p.html" class="xref page">P</a>, <a href="q.html" class="xref page">Q</a>, <a href="r.html" class="xref page">R</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data trees: Graft, Flatten, lists that pair up</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="q.html" class="xref page">Q</a>, <a href="p.html" class="xref page">P</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attractors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="r.html" class="xref page">R</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tolerance stack-ups: worst case, RSS, Monte Carlo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="s.html" class="xref page">S</a>, <a href="t.html" class="xref page">T</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ISO GPS documentation: fits, the envelope, ISO 2768, 3D PMI, inspection plan</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="t.html" class="xref page">T</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drawings made from the PMI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="t.html" class="xref page">T</a>, <a href="ba.html" class="xref page">BA</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Volume claims, assembly clearance and interference</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="u.html" class="xref page">U</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Release, engineering change, release packages</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="v.html" class="xref page">V</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">STEP AP242 with semantic PMI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="t.html" class="xref page">T</a>, <a href="v.html" class="xref page">V</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sheet metal: tab, flanges, flat pattern, bend allowance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="w.html" class="xref page">W</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Opto-mechanics: pin location, pointing error, thermal mismatch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="x.html" class="xref page">X</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Laser-cut parts: tabs and slots, flat parts for the cutter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ad.html" class="xref page">AD</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PMI model views: the work view, Display in Views, drawings from model views</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="y.html" class="xref page">Y</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MBD exchange: STEP AP242 out and in, datum reference frames</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="z.html" class="xref page">Z</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Composite position, functional gauges, evaluating CMM data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aa.html" class="xref page">AA</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Measurement uncertainty, TUR, guard bands, gauge R&amp;R</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ab.html" class="xref page">AB</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Title block and revision block from the release</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ac.html" class="xref page">AC</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Design intent through STEP: history, sketch constraints and parameters out and back in (ISO 10303-55, -108, -111)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="al.html" class="xref page">AL</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Checking a STEP file against ISO 10303 and its application protocol&#8217;s schema</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="al.html" class="xref page">AL</a>, <a href="am.html" class="xref page">AM</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bill of materials in a STEP file</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="am.html" class="xref page">AM</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketches sent as ISO 10303-112 commands</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="am.html" class="xref page">AM</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handing a release to manufacturing (Carbon): item and revision, model, documents, inspection plan; stock and non-conformances back</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="bc.html" class="xref page">BC</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_results"><a class="anchor" href="#_results"></a>Results</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+<col style="width: 10%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Tutorial</th>
+<th class="tableblock halign-left valign-top">same</th>
+<th class="tableblock halign-left valign-top">differs</th>
+<th class="tableblock halign-left valign-top">limit</th>
+<th class="tableblock halign-left valign-top">missing</th>
+<th class="tableblock halign-left valign-top">skipped</th>
+<th class="tableblock halign-left valign-top">FAILED</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="a.html" class="xref page">A: The Adjuster (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="b.html" class="xref page">B: First part, cylinder and cone (mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="c.html" class="xref page">C: Rod-Guide (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="d.html" class="xref page">D: Pulley with drawing (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="e.html" class="xref page">E: Saddle Bracket (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="f.html" class="xref page">F: Dryer Housing (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="g.html" class="xref page">G: Shaft Support assembly (metric parts of the replay&#8217;s own)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="h.html" class="xref page">H: GD&amp;T plate drawing (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">14</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="i.html" class="xref page">I: The Gasket (millimetres)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="j.html" class="xref page">J: Parametric constraints and relations (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="k.html" class="xref page">K: Parameter-driven flat bar (Leake, book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="l.html" class="xref page">L: The Locator (millimetres)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="m.html" class="xref page">M: The U-Bracket, parent/child relations (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="n.html" class="xref page">N: The U-Bracket drawing, associative (book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="o.html" class="xref page">O: Grasshopper basics, sphere and cylinder (Katydid)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="p.html" class="xref page">P: Waffle canopy (Katydid)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="q.html" class="xref page">Q: Faceted planter (Katydid)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="r.html" class="xref page">R: Beginner masterclass, tube and attractor openings (Katydid)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="s.html" class="xref page">S: Tolerance stack-up of a grooved pin (Fischer, Example 7.1 and 8.1)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="t.html" class="xref page">T: A guide bush documented to ISO GPS with 3D PMI (ISO 16792)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="u.html" class="xref page">U: Volume claims and assembly clearance in a system layout</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="v.html" class="xref page">V: Release and engineering change of the guide bush (Strata), with release packages</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="w.html" class="xref page">W: Sheet metal, the actuator bracket and its flat pattern (Shih ch. 13)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="x.html" class="xref page">X: Opto-mechanics, locating a laser module with two pins (Drake ch. 24, Fischer ch. 15)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="y.html" class="xref page">Y: PMI in model views</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="z.html" class="xref page">Z: MBD exchange, a part and its PMI through STEP AP242</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aa.html" class="xref page">AA: Composite position of a hole pattern, evaluated from CMM data</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ab.html" class="xref page">AB: Measurement capability: uncertainty, TUR, guard bands and gauge studies</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ac.html" class="xref page">AC: The title block and revision block from the release (runs T and V first)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ad.html" class="xref page">AD: A laser-cut tray with tabs and slots (LCInterlocking)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ae.html" class="xref page">AE: One Extrude, every way (command controller acceptance)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">24</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="af.html" class="xref page">AF: Arbor Press Base (NX 12 for Engineering Design, 3.5.1)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ag.html" class="xref page">AG: Impeller Lower Casing (NX 12 for Engineering Design, 3.5.2; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ah.html" class="xref page">AH: Impeller (NX 12 for Engineering Design, 3.5.3; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aj.html" class="xref page">AJ: Circular Base (NX 12 for Engineering Design, exercise 3.6.1)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ak.html" class="xref page">AK: Holder (NX 12 for Engineering Design, exercise 3.6.2; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="al.html" class="xref page">AL: Design intent through STEP (ISO 10303-55, -108, -111)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="am.html" class="xref page">AM: Receiving STEP: the application protocol, the BOM and an ISO 10303-112 sketch</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="an.html" class="xref page">AN: Arbor Press Plate (NX 12 for Engineering Design, 4.2.1, 4.3 and 4.5.1; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ao.html" class="xref page">AO: Impeller Lower Casing, Extrude and Revolve (NX 12 for Engineering Design, 4.4; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ap.html" class="xref page">AP: Impeller Shaft (NX 12 for Engineering Design, 4.2.2; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aq.html" class="xref page">AQ: Hexagonal Screw (NX 12 for Engineering Design, 4.7.1; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ar.html" class="xref page">AR: Hexagonal Nut (NX 12 for Engineering Design, 4.7.2; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="as.html" class="xref page">AS: Arbor Press L-Bar (NX 12 for Engineering Design, 4.7.3; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">19</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="at.html" class="xref page">AT: Arbor Press Rack (NX 12 for Engineering Design, 4.7.4; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="au.html" class="xref page">AU: Impeller, Cone, Extrude and Pattern (NX 12 for Engineering Design, 4.7.5; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="av.html" class="xref page">AV: Rocker Arm (NX 12 for Engineering Design, exercise 4.10.1; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="aw.html" class="xref page">AW: Holder (NX 12 for Engineering Design, exercise 4.10.2; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">26</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ax.html" class="xref page">AX: Impeller Upper Casing (NX 12 for Engineering Design, exercise 4.10.3; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ay.html" class="xref page">AY: Die Cavity (NX 12 for Engineering Design, exercise 4.10.4; mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">16</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="az.html" class="xref page">AZ: Arbor Press Rack drawing (NX 12 for Engineering Design, 5.2-5.4; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ba.html" class="xref page">BA: PMI on the impeller (NX 12 for Engineering Design, 5.5; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="bb.html" class="xref page">BB: Hex bolt drawing (NX 12 for Engineering Design, 5.6; book in inches, typed in mm)</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="bc.html" class="xref page">BC: Release to manufacturing: the guide bush into Carbon</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_books"><a class="anchor" href="#_the_books"></a>The books</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Randy H. Shih, <em>Parametric Modeling with Siemens NX</em> (SDC Publications): tutorials A, C–G, I–N and W (ch. 13, sheet metal).</p>
+</li>
+<li>
+<p>Gene R. Cogorno, <em>Geometric Dimensioning and Tolerancing for Mechanical Design</em>, 3rd ed. (McGraw-Hill): tutorial H.</p>
+</li>
+<li>
+<p>James Leake and Jacob Borgerson, <em>Engineering Design Graphics</em> (Wiley): tutorial K.</p>
+</li>
+<li>
+<p>Tutorial B is a synthesised first-part exercise.</p>
+</li>
+<li>
+<p>Bryan R. Fischer, <em>Mechanical Tolerance Stackup and Analysis</em>, 2nd ed. (Taylor &amp; Francis): tutorial S, and the stack-up method.</p>
+</li>
+<li>
+<p>Andreas Wünsch, Fabian Pilz and Sándor Vajna, <em>Siemens NX für Einsteiger – kurz und bündig</em>, 4th ed., section 6.10: the PMI workflow of tutorial T and the model views of tutorial Y.</p>
+</li>
+<li>
+<p>Sham Tickoo, <em>Siemens NX 12.0 for Designers</em>, ch. 12: the default model views, tutorial Y.</p>
+</li>
+<li>
+<p>Paul J. Drake, <em>Dimensioning and Tolerancing Handbook</em> (McGraw-Hill), ch. 6 (ASME and ISO compared), ch. 9 (statistical tolerancing) and ch. 24 (pinned interfaces, tutorial X); Gene R. Cogorno (above), ch. 3, 7, 8 and 13: the checks, the fastener formulas and the gauge sizes.</p>
+</li>
+<li>
+<p>Fischer (above), ch. 15: the lever of an angle error, tutorial X.</p>
+</li>
+<li>
+<p>Cogorno (above), ch. 12 and 13: composite position and its graphic analysis, tutorial AA. Drake (above), ch. 20 and 25: measurement systems and the gauge study example, tutorial AB; ch. 4: the title and revision blocks, tutorial AC.</p>
+</li>
+<li>
+<p>The PLM books of John Stark, Michael Grieves, and Antti Saaksvuori and Anselmi Immonen: release and engineering change, tutorial V.</p>
+</li>
+<li>
+<p>Tutorial U&#8217;s layout is ours; Assembly Clearance follows NX&#8217;s.</p>
+</li>
+<li>
+<p>Tutorial AE is ours: the acceptance case of the Extrude command (None for a new body, Unite, Subtract, edit, cancel, undo, reopen).</p>
+</li>
+<li>
+<p>Tutorial AL is ours: the plate and its parameters; the exchange follows ISO 10303-55 annex E and ISO 10303-108 Cor.1 annex F.</p>
+</li>
+<li>
+<p>Tutorial AM is ours: the fixture and the bracket profile; the commands follow ISO 10303-112 clause 4.2.2 (selection by ISO 10303-55).</p>
+</li>
+<li>
+<p>Tutorial BC is ours: tutorial V&#8217;s guide bush handed to manufacturing; the records are Carbon&#8217;s (<a href="https://docs.carbon.ms">Carbon&#8217;s documentation</a>).</p>
+</li>
+<li>
+<p>Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, <em>NX 12 for Engineering Design</em> (Missouri University of Science and Technology), sections 3.5 and 3.6: tutorials AF, AG, AH, AJ and AK; sections 4.2.1, 4.3 and 4.5.1: tutorial AN; section 4.2.2: tutorial AP; section 4.4: tutorial AO; sections 4.7.1 and 4.7.2: tutorials AQ and AR; sections 4.7.3, 4.7.4 and 4.7.5: tutorials AS, AT and AU; exercise 4.10.1: tutorial AV; exercise 4.10.2: tutorial AW; exercise 4.10.3: tutorial AX; exercise 4.10.4: tutorial AY; sections 5.2 to 5.4: tutorial AZ; section 5.5: tutorial BA; section 5.6: tutorial BB (exercise 5.7 is not replayed).</p>
+</li>
+<li>
+<p>ISO values (ISO 286 limits, ISO 2768 general tolerances) were checked against two published tables each; the unit tests also compare them with the ISO 286-1 formulas.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_videos"><a class="anchor" href="#_the_videos"></a>The videos</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Bastian Wibranek, <a href="https://www.youtube.com/watch?v=cN6XuHxrfxU">Rhino 3D and Grasshopper - Basics Tutorial</a>: tutorial O.</p>
+</li>
+<li>
+<p>Rhino Grasshopper (YouTube channel), <a href="https://www.youtube.com/watch?v=q0rWnXPHeFQ">Grasshopper Tutorial For beginners</a>: tutorial P.</p>
+</li>
+<li>
+<p>Rhino Grasshopper, <a href="https://www.youtube.com/watch?v=5WAzp1-SHh4">Rhino Grasshopper Tutorial (Beginner)</a>, the planter: tutorial Q.</p>
+</li>
+<li>
+<p>Rhino Grasshopper, <a href="https://www.youtube.com/watch?v=Y66bSN4QFUE">Rhino Grasshopper Tutorial (Beginner)</a>, the 54-minute masterclass: tutorial R.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The pages summarise the exercises; they do not reproduce the books or the videos.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="../settings.html">Settings</a></span>
+  <span class="next"><a href="a.html">A: The Adjuster</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

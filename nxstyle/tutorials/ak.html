@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial AK: Holder :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/ak.html">
+    <link rel="prev" href="aj.html">
+    <link rel="next" href="al.html">
+    <meta name="description" content="The 2D sketch of a holder: circles about the origin, an outline trimmed with Quick Trim, a cross and three lugs copied round the origin with Rotate Curve (NX 12 for Engineering Design, exercise 3.6.2).">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="ak.html">AK: Holder</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/ak.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial AK: Holder</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Source
+</td>
+<td class="hdlist2">
+<p>Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, <em>NX 12 for Engineering Design</em> (Missouri University of Science and Technology), exercise 3.6.2. The book gives only the dimensioned figure; the steps here are ours. Chapter 4 models the holder in 3D from this sketch: <a href="aw.html" class="xref page">tutorial AW</a>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>circles and their diameters, a reference curve, Quick Trim, a cross and lugs drawn once and copied with Rotate Curve (NX: Pattern Curve, circular), tangent arcs in Profile</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>the book&#8217;s, in inches, typed in millimetres. Circles Ø0.75, Ø2.00 and Ø2.76 about the origin. The outline is a Ø3.50 circle and a 5.50 × 3.50 rectangle to its right, opened by a 0.50 slot along the X axis. A cross 0.25 wide runs from the Ø0.75 circle to the Ø2.76 circle. Three lugs sit on a Ø4.50 bolt circle, 120° apart. Each lug is a Ø0.38 hole in an R0.38 end, and its sides are tangent to the end and 1.00 apart where they meet the Ø3.50 circle.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The figure does not say where the sides of the lugs at 60° and 300° end. Here they end on the Ø3.50 circle, as at 180°, so all three lugs are the same.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_a_new_part_and_a_sketch"><a class="anchor" href="#_1_a_new_part_and_a_sketch"></a>1. A new part and a sketch</h3>
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>, then <strong>Sketch</strong> on the XC-YC plane and MB2.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_circles"><a class="anchor" href="#_2_the_circles"></a>2. The circles</h3>
+<div class="paragraph">
+<p>Press <kbd>O</kbd> for <strong>Circle</strong>. Click the origin, then a point on the rim; do this four times, for Ø0.75, Ø2.00, Ø2.76 and Ø3.50, and press MB2.
+Give the diameters, biggest first: pick each circle and choose <strong>Radius / Diameter</strong> drop-down &gt; <strong>Constrain diameter</strong>.</p>
+</div>
+<div class="paragraph">
+<p>Draw the Ø4.50 bolt circle the same way. Select it and click <strong>Convert To/From Reference</strong>: it becomes a reference curve, drawn dashed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_the_outline_and_the_slot"><a class="anchor" href="#_3_the_outline_and_the_slot"></a>3. The outline and the slot</h3>
+<div class="paragraph">
+<p>Press <kbd>Z</kbd> for <strong>Profile</strong>. Click the top of the Ø3.50 circle, then go round the rectangle: right 5.50, down 3.50, back left to the bottom of the circle, and press MB2.
+The ends snap to the circle, tangent to it.
+Give the length: pick the top right corner and the Y axis, then <strong>Distance</strong> 5.50.</p>
+</div>
+<div class="paragraph">
+<p>Press <kbd>L</kbd> for <strong>Line</strong> and draw the slot&#8217;s two sides, from the Ø3.50 circle to the right side.
+Dimension them: <strong>Distance</strong> 0.50 between them, and 0.25 from the X axis for the upper one.</p>
+</div>
+<div class="paragraph">
+<p>Press <kbd>T</kbd> for <strong>Quick Trim</strong>, click the circle between the slot&#8217;s sides and press MB2.
+The sides stay tangent to what is left of the circle.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_the_cross"><a class="anchor" href="#_4_the_cross"></a>4. The cross</h3>
+<div class="paragraph">
+<p>Draw one arm with <strong>Line</strong>: two lines from the Ø0.75 circle to the Ø2.76 circle, 0.25 apart, the upper one 0.125 above the X axis.
+Select the two lines and click <strong>Rotate Curve</strong>. In the Dialog panel set <strong>Copies</strong> to 3. Click the origin as the centre, then type 0° and 270° in the fields beside the pointer.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AK-01-outline.png" alt="The circles" width="the outline with its slot" height="and one arm of the cross">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_the_lugs"><a class="anchor" href="#_5_the_lugs"></a>5. The lugs</h3>
+<div class="paragraph">
+<p>Draw the lug at 180° with <strong>Profile</strong>:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>start on the Ø3.50 circle, 0.5 below the X axis, and go out to the end;</p>
+</li>
+<li>
+<p>press <kbd>M</kbd> three times for a tangent arc and go round the end;</p>
+</li>
+<li>
+<p>go back to the circle, which FreeCAD draws as a tangent line.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Then fix it:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the arc&#8217;s centre on the bolt circle and on the X axis (<strong>Point on Curve</strong>);</p>
+</li>
+<li>
+<p>the radius 0.38 (<strong>Radius / Diameter</strong> drop-down &gt; <strong>Constrain radius</strong>);</p>
+</li>
+<li>
+<p><strong>Distance</strong> 1.00 between the two sides' ends on the circle, and the two sides <strong>Equal</strong>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Draw the Ø0.38 hole: <kbd>O</kbd>, click the arc&#8217;s centre and the rim, then give its diameter.
+Select the lug&#8217;s three curves and the hole, click <strong>Rotate Curve</strong>, set <strong>Copies</strong> to 2, click the origin and type 0° and 240°.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AK-02-holder.png" alt="The finished holder sketch">
+</div>
+</div>
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>Q</kbd></span>, and save with <span class="keyseq"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new part in inches (Holder)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+N, Model template</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">new document ['Unnamed1']</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Units in the New dialog (the book picks inches)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">metric part kept; book sizes typed in mm</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD sets units in Preferences, not in the New dialog; NXStyle defaults to millimetres (document: Standard (mm, kg, s, °); 25.4 mm shows as 25.40 mm)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sketch on the XC-YC plane, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Direct Sketch &gt; Sketch', plane row + MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">picked XY-plane (Base plane)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circles Ø0.75, Ø2.00, Ø2.76 and Ø3.50 about the origin</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">O key, MB1 at the origin and on the rim, 4 times, MB2; each circle + 'Radius / Diameter' drop-down &gt; 'Constrain diameter', biggest first</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ø3.50, Ø2.76, Ø2.00, Ø0.75; largest error 1.4e-14 mm (centres on the origin, diameters); DoF 0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Ø4.50 bolt circle, a reference curve</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">O key, MB1 at the origin and on the rim, MB2; circle + ribbon 'Sketch › Edit Curve &gt; Convert To/From Reference'; Diameter 4.50</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">reference True; diameter 4.5000 in; DoF 0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Profile: the rectangle&#8217;s three sides from the top of the Ø3.50 circle to its bottom, 5.50 long</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Z key, 4 MB1 clicks, MB2; the ends + circle or Y axis + 'Point on Curve'; corner + Y axis + 'Sketch › Constraints &gt; Distance' 5.50</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Horizontal/Vertical/Horizontal [True, True, True]; 4 of 4 end holds made by the clicks (2 as Tangent to the circle), 0 added; DoF 0; the sides match</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Line: the 0.50 slot&#8217;s two sides, from the circle to the right side</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L key, 4 MB1 clicks, MB2; 'Sketch › Constraints &gt; Distance' 0.50 between them and 0.25 from the X axis</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Horizontal as drawn [True, True]; 4 of 4 ends snapped to the circle or the side, 0 added; DoF 0; the sides match</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quick Trim: the Ø3.50 circle between the slot&#8217;s sides, MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">T key, MB1 on the circle inside the slot, MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1 arc R1.75, full circle left False; its ends held to the slot&#8217;s sides 2 of 2; DoF 0 ('Fully constrained'); geometry 10 &#8594; 10; 1 tangency FreeCAD&#8217;s trim dropped put back by NX-Style</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Line: one arm of the cross, 0.25 wide, from the Ø0.75 circle to the Ø2.76 circle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">L key, 4 MB1 clicks, MB2; 'Sketch › Constraints &gt; Distance' 0.25 between the lines and 0.125 from the X axis</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 of 4 ends snapped to the circles, 0 added; DoF 0; the arm matches</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rotate Curve: the arm, 3 copies 90° apart, about the origin (NX: Pattern Curve, circular)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2 lines selected + ribbon 'Sketch › Edit Curve &gt; Rotate Curve', Copies 3, MB1 at the origin, 0° and 270° typed in the on-view fields</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6 copies made; largest error 4.5e-07 mm; DoF 21</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Profile: the lug at 180°, a side, the tangent end arc, the other side</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Z key, 4 MB1 clicks (M 3x before the arc&#8217;s end), MB2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">curves ['line', 'arc', 'line']; tangent joints 2</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The lug: centre on the bolt circle and the X axis, R0.38, the sides 1.00 apart and Equal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">centre + bolt circle / X axis + 'Point on Curve', arc + 'Radius / Diameter' R0.38, the ends + 'Sketch › Constraints &gt; Distance' 1.00, the sides + 'Equal'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">centre on the bolt circle; centre on the X axis; R0.38; 1.00 between the sides' ends; sides Equal; 1 of 2 side ends snapped to the circle, 1 added; DoF 21 ('Under-constrained: / 21 Degrees of Freedom'); the lug matches</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Circle: the Ø0.38 hole about the lug&#8217;s centre</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">O key, MB1 on the arc&#8217;s centre and on the rim, MB2; Diameter 0.38</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">centre snapped to the arc&#8217;s centre; error 0.0e+00 mm; DoF 21</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rotate Curve: the lug and its hole, 2 copies 120° apart, about the origin (NX: Pattern Curve)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4 curves selected + ribbon 'Sketch › Edit Curve &gt; Rotate Curve', Copies 2, MB1 at the origin, 0° and 240° typed in the on-view fields</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8 copies made; largest error 3.6e-06 mm; DoF 29</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The sketch: 29 curves and the bolt circle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">compared with the book&#8217;s figure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">29 curves; all 29 match the book; DoF 29 ('Under-constrained: / 29 Degrees of Freedom')</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Finish Sketch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+Q</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sketch edit ended True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AK17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Save the file</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Holder.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Each of the 29 curves is compared with the book&#8217;s figure, rebuilt from its dimensions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>FreeCAD&#8217;s <strong>Rotate Curve</strong> takes the angle that the copies are spread over: 3 copies over 270° are 90° apart. NX&#8217;s Pattern Curve takes the count and the angle between the copies.</p>
+</li>
+<li>
+<p>The copies keep their own dimensions (the R0.38 and Ø0.38, the 1.00), but they are not tied to the original, so the sketch keeps degrees of freedom. NX&#8217;s pattern stays associative.</p>
+</li>
+<li>
+<p>FreeCAD&#8217;s Profile holds each end of the rectangle to the circle with two constraints: Point on Curve for the click, and Tangent because the side leaves the circle along its tangent. With the side horizontal, that pair is partly redundant: FreeCAD does not flag it, and its solver leaves the end up to 0.0001 mm from the point of contact. NX-Style leaves this pair as FreeCAD makes it: holding the end by one end-point Tangent instead would not keep the trim from dropping it (next point).</p>
+</li>
+<li>
+<p>FreeCAD&#8217;s Quick Trim keeps a tangency on the trimmed circle only when OCC finds the line and the arc intersecting. A side that touches the circle at its very end, held as Profile holds it or by an end-point Tangent, is found or not by the sign of a rounding error, and FreeCAD dropped one side&#8217;s Tangent in 3 of 4 replays. NX-Style puts back each tangency the trim dropped where the line still touches the arc, as part of the same trim (one Undo takes it back); the replay reports how many it put back.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="aj.html">AJ: Circular Base</a></span>
+  <span class="next"><a href="al.html">AL: Design intent through STEP</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

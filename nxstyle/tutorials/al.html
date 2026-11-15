@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial AL: Design intent through STEP (ISO 10303-55, -108, -111) :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/al.html">
+    <link rel="prev" href="ak.html">
+    <link rel="next" href="am.html">
+    <meta name="description" content="A parameter-driven plate sent as STEP with its history, sketch constraints and parameters, the file checked against ISO 10303, and the plate rebuilt from the file alone in a new part, where a design change works as at the source.">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="al.html">AL: Design intent through STEP</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/al.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial AL: Design intent through STEP (ISO 10303-55, -108, -111)</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Standards
+</td>
+<td class="hdlist2">
+<p>ISO 10303-21 (the STEP file), ISO 10303-11 (EXPRESS), ISO 10303-42 and -43 (geometry, representations), ISO 10303-55 (construction history), ISO 10303-108 with Cor.1 and Cor.2 (parameters, constraints, sketches), ISO 10303-111 (features)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>STEP with Parameters, Check STEP, Import STEP with Parameters, a design change in a part that came from a file</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>A plate 80 × 50 × 10, its long edge rounded R3, a Ø12 hole repeated three times 20 apart</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Background
+</td>
+<td class="hdlist2">
+<p><a href="../parametric-step.html" class="xref page">Parametric STEP (ISO 10303-55, -108, -111)</a></p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A STEP file usually carries the finished shape and nothing about how it was made.
+The supplier who receives it can measure it, machine it or cut it, but cannot change a dimension: there is no dimension to change.
+Here the plate goes out with its design intent, the history, the sketch constraints and the parameters, in the same STEP file as its shape, and a new part is rebuilt from that file and edited.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_plate_and_its_parameters"><a class="anchor" href="#_1_the_plate_and_its_parameters"></a>1. The plate and its parameters</h3>
+<div class="paragraph">
+<p>The plate is made by script, the way tutorials <a href="j.html" class="xref page">J</a> and <a href="k.html" class="xref page">K</a> make expressions with the ribbon:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a spreadsheet with <strong>Length</strong> 80 mm, <strong>Width</strong> 50 mm, <strong>Thick</strong> 10 mm and <strong>HoleR</strong> 6 mm;</p>
+</li>
+<li>
+<p>a sketch on XY, a rectangle constrained to the origin, its two sizes the expressions <code>Spreadsheet.Length</code> and <code>Spreadsheet.Width</code>;</p>
+</li>
+<li>
+<p><strong>Extrude</strong> by <code>Spreadsheet.Thick</code>, <strong>Edge Blend</strong> R3 on the long vertical edge;</p>
+</li>
+<li>
+<p>a circle of radius <code>Spreadsheet.HoleR</code>, cut through all with <strong>Extrude (Subtract)</strong>, and a <strong>Pattern Feature</strong> of the hole: three, 40 mm overall along X.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_out_step_with_parameters"><a class="anchor" href="#_2_out_step_with_parameters"></a>2. Out: STEP with Parameters</h3>
+<div class="paragraph">
+<p>Select the body, then <strong>PMI › STEP with Parameters</strong>, a file name, OK.</p>
+</div>
+<div class="paragraph">
+<p>The Information window lists what went into the file, by part of ISO 10303: the B-rep OpenCASCADE writes (Part 42), the history (Part 55), the features (Part 111), the sketches with their constraints and the four parameters with the expressions that use them (Part 108).
+The last line is the file&#8217;s check against the standards: no error.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AL-01-export.png" alt="What went into the STEP file" width="by part of ISO 10303">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_check_step"><a class="anchor" href="#_3_check_step"></a>3. Check STEP</h3>
+<div class="paragraph">
+<p><strong>PMI › Check STEP</strong>, the same file, OK.
+It reads the file as ISO 10303-21, names its application protocol (AP242), checks every instance against the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112, and lists the product structure (here one part): 0 errors.</p>
+</div>
+<div class="paragraph">
+<p>The warnings are not mistakes in the file.
+Each names a place where the standards contradict themselves, so that no file can meet every rule there (see <a href="../parametric-step.html#_where_iso_10303_contradicts_itself" class="xref page">Where ISO 10303 contradicts itself</a>).
+Every rule of the schemas is evaluated, the schemas' own functions included, and the report says how many: the rules that are not met are exactly those warnings.
+The notes count the entities of the application protocol itself (the product structure, the B-rep shape representation), and the rules that need them are counted as not evaluated: tick <strong>Download the AP&#8217;s schema if it is missing</strong> and they are checked against AP242&#8217;s own long form too, every rule decided, with the same result, no error (see <a href="../parametric-step.html#_application_protocols" class="xref page">Application protocols</a>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AL-02-check.png" alt="Check STEP: no errors" width="the warnings and what they mean">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_in_import_step_with_parameters"><a class="anchor" href="#_4_in_import_step_with_parameters"></a>4. In: Import STEP with Parameters</h3>
+<div class="paragraph">
+<p><span class="keyseq"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>, <strong>PMI › Import STEP with Parameters</strong>, the file, OK.</p>
+</div>
+<div class="paragraph">
+<p>The new part&#8217;s body fills with the history: the sketches with their constraints, the extrusion, the edge blend, the hole through all and its pattern, with the names they had at the source.
+A <strong>Parameters</strong> spreadsheet holds Length, Width, Thick and HoleR, and the four expressions use it.
+The rebuilt solid is compared with the B-rep in the file: they are the same, to the last mm³.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AL-03-import.png" alt="The import report: the rebuilt history against the B-rep in the file">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_a_design_change_in_the_received_part"><a class="anchor" href="#_5_a_design_change_in_the_received_part"></a>5. A design change in the received part</h3>
+<div class="paragraph">
+<p>Change <strong>HoleR</strong> to 4 mm in the Parameters spreadsheet.
+The three holes follow; the same change in the source part gives the same solid.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AL-04-rebuilt.png" alt="The rebuilt plate after the change" width="with its feature tree">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AL1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A plate driven by parameters: Length, Width, Thick, HoleR in a spreadsheet; the sketch&#8217;s dimensions and the extrusion&#8217;s length are expressions of them; an edge blend, a hole through all and a pattern of it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">modelled by script (tutorials J and K build such expressions with the ribbon and the Expressions table)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">features ['Pad', 'EdgeBlend', 'ExtrudeSubtract', 'PatternFeature']; volume 36587.766 mm³; expressions ['HoleSketch: Spreadsheet.HoleR', 'Pad: Spreadsheet.Thick', 'Sketch: Spreadsheet.Length', 'Sketch: Spreadsheet.Width']</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AL2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PMI &gt; STEP with Parameters: the part, its history, its sketches with their constraints and its parameters in one STEP AP242 file</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Plate selected, ribbon 'PMI › Exchange &gt; STEP with Parameters', file name typed, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">instances by part: ISO 10303-42 448, ISO 10303-55 10, ISO 10303-108 85, ISO 10303-111 3; nothing left out. NX&#8217;s STEP export writes the B-rep (and PMI); the history, the sketch constraints and the expressions stay in the .prt</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AL3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Check STEP: the file against ISO 10303-21 and the EXPRESS schemas of Parts 42, 43, 55, 108, 111 and 112</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'PMI › Exchange &gt; Check STEP', file name typed, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0 error(s), 7 warning(s), 8 note(s); the warnings name the places where the standards contradict themselves. NX has no such check</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AL4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">New part, PMI &gt; Import STEP with Parameters: the part rebuilt from the file, editable</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ctrl+N, ribbon 'PMI › Exchange &gt; Import STEP with Parameters', the file typed, MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">into the new part&#8217;s Body: features ['Pad', 'Fillet', 'Pocket', 'LinearPattern']; a Parameters spreadsheet and the expressions ['Parameters.HoleR', 'Parameters.Length', 'Parameters.Thick', 'Parameters.Width']; against the source part: 0.000000 mm³ differ, and against the B-rep in the file the same (the report&#8217;s last line). NX&#8217;s STEP import gives a solid without history</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AL5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A design change in the received part: HoleR 6 → 4 mm; the three holes follow, as in the source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HoleR typed into the Parameters spreadsheet by script (the same change in the source part)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 36587.766 → 38472.721 mm³ in both parts; 0.000000 mm³ differ</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AL6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The rebuilt plate after the change</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">render of the graphics window</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">22.6% of the view shows the part (an occupancy check: something is drawn; the shape itself is checked by its geometry)</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX&#8217;s STEP export writes the B-rep (with PMI in AP242); the history, the sketch constraints and the expressions stay in the <code>.prt</code>, and a STEP import gives a solid without history.</p>
+</li>
+<li>
+<p>Sketches attached to an origin plane or to a face come back attached (the face found again by its geometry); others come back placed where they were.</p>
+</li>
+<li>
+<p>A feature ISO 10303-111 and -42 cannot represent (Draft, Loft…) is written as a hybrid step with its explicit solid, so the history goes on past it; the report names it, and the B-rep in the file still carries the whole part.</p>
+</li>
+<li>
+<p>In FreeCAD 1.1.4 itself, changing this plate&#8217;s Length or Thick loses the edge blend&#8217;s edge (FreeCAD&#8217;s topological naming, in the source part as much as in the rebuilt one), so the change here is HoleR.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="ak.html">AK: Holder</a></span>
+  <span class="next"><a href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>

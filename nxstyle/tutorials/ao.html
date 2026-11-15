@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tutorial AO: Impeller Lower Casing, Extrude and Revolve :: FreeCAD NX-Style</title>
+    <link rel="canonical" href="https://foadsf.github.io/freecad-nxstyle/nxstyle/tutorials/ao.html">
+    <link rel="prev" href="an.html">
+    <link rel="next" href="ap.html">
+    <meta name="description" content="The casing sketch of tutorial AG made solid: its wall revolved 180° about XC from curves picked one by one, its edge extruded 0.5 along -ZC and mirrored, and its flange revolved (NX 12 for Engineering Design, 4.4).">
+    <meta name="generator" content="Antora 3.2.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/nxstyle.css">
+<meta name="theme-color" content="#122f3a">
+<link rel="icon" href="../../_/img/logo.svg" type="image/svg+xml">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item nx-brand" aria-label="FreeCAD NX-Style home" href="../../index.html">
+        <img class="site-logo" src="../../_/img/logo.svg" alt="" width="30" height="30">
+        <span class="nx-title">FreeCAD NX-Style</span>
+        <span class="nx-title-short" aria-hidden="true">NX-Style</span>
+      </a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs" aria-label="Search the documentation">
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../nxstyle/installation.html">Install</a>
+        <a class="navbar-item" href="../../nxstyle/quick-start.html">Quick start</a>
+        <a class="navbar-item" href="../../nxstyle/tutorials/index.html">Tutorials</a>
+        <a class="navbar-item" href="../../nxstyle/whats-new.html">What's new</a>
+        <a class="navbar-item nx-github" href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="nxstyle" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">FreeCAD NX-Style</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../whats-new.html">What&#8217;s new</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../quick-start.html">Your first part in five minutes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using FreeCAD NX-Style</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../user-interface.html">The user interface</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../mouse.html">Mouse and view control</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../selection.html">Selecting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../keyboard-shortcuts.html">Keyboard shortcuts</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sketching.html">Sketching</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modeling.html">Modeling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../assemblies.html">Assemblies</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../drafting.html">Drafting and GD&amp;T</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sheet-metal.html">Sheet Metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../laser-cut.html">Laser Cut (LCInterlocking)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pmi.html">PMI and technical product documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parametric-step.html">Parametric STEP (ISO 10303-55, -108, -111)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tolerance-analysis.html">Tolerance analysis</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../inspection.html">Inspection: measured parts and gauges</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../pin-location.html">Pin location</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../clearance.html">Assembly clearance and volume claims</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../dfm.html">Molded part validation (DFM)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../algorithmic-modeling.html">Algorithmic Modeling (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-management.html">Data management (Strata)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nxt.html">FreeCAD-Nxt (trial)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-package.html">Release packages</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../settings.html">Settings</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">About the tutorials</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="a.html">A: The Adjuster</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="b.html">B: Cylinder and cone</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="c.html">C: The Rod-Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="d.html">D: The Pulley and its drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="e.html">E: The Saddle Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="f.html">F: The Dryer Housing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="g.html">G: The Shaft Support assembly</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="h.html">H: A GD&amp;T plate drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="i.html">I: The Gasket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="j.html">J: Parametric constraints</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="k.html">K: A part driven by expressions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="l.html">L: The Locator</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="m.html">M: The U-Bracket</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="n.html">N: The U-Bracket drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="o.html">O: Grasshopper basics (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="p.html">P: Waffle canopy (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="q.html">Q: Faceted planter (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="r.html">R: Tube and attractor frames (Katydid)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="s.html">S: Tolerance stack-up of a pin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="t.html">T: A guide bush to ISO GPS (PMI)</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="u.html">U: Volume claims and clearance</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="v.html">V: Release and engineering change</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="w.html">W: The actuator bracket in sheet metal</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="x.html">X: Locating a laser module with two pins</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="y.html">Y: PMI in model views</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="z.html">Z: MBD exchange through STEP AP242</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aa.html">AA: Composite position, evaluated from CMM data</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ab.html">AB: Measurement capability</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ac.html">AC: Title block and revision block from the release</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ad.html">AD: A laser-cut tray with tabs and slots</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ae.html">AE: One Extrude, every way</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="af.html">AF: Arbor Press Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ag.html">AG: Impeller Lower Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ah.html">AH: Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aj.html">AJ: Circular Base</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ak.html">AK: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="al.html">AL: Design intent through STEP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="am.html">AM: Receiving STEP: AP, BOM, Part 112 sketch</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="an.html">AN: Arbor Press Plate</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ap.html">AP: Impeller Shaft</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aq.html">AQ: Hexagonal Screw</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ar.html">AR: Hexagonal Nut</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="as.html">AS: Arbor Press L-Bar</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="at.html">AT: Arbor Press Rack</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="au.html">AU: Impeller, the solid</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="av.html">AV: Rocker Arm</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="aw.html">AW: Holder</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ax.html">AX: Impeller Upper Casing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ay.html">AY: Die Cavity</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="az.html">AZ: Arbor Press Rack Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ba.html">BA: PMI on the Impeller</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bb.html">BB: Hex Bolt Drawing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="bc.html">BC: Release to manufacturing (Carbon)</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../nx-to-freecad.html">NX commands and their FreeCAD equivalents</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../differences.html">Differences from NX</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues.html">FreeCAD limits and known issues</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting.html">Troubleshooting and FAQ</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">For contributors</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../testing.html">Self-test and tutorial replay</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../development.html">How NX-Style works</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../writing-docs.html">Writing this documentation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../about.html">Licence and trademarks</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">FreeCAD NX-Style</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">FreeCAD NX-Style</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">FreeCAD NX-Style</a></li>
+    <li>Tutorials</li>
+    <li><a href="ao.html">AO: Impeller Lower Casing, Extrude and Revolve</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/Foadsf/freecad-nxstyle/edit/main/docs/modules/ROOT/pages/tutorials/ao.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Tutorial AO: Impeller Lower Casing, Extrude and Revolve</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Source
+</td>
+<td class="hdlist2">
+<p>Ming C. Leu, Wenjin Tao, Amir Ghazanfari and Krishna Kolan, <em>NX 12 for Engineering Design</em> (Missouri University of Science and Technology), section 4.4 (Swept Features). It continues the casing sketch of section 3.5.2, <a href="ag.html" class="xref page">tutorial AG</a>; <a href="ax.html" class="xref page">tutorial AX</a> turns it into the upper casing.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+You learn
+</td>
+<td class="hdlist2">
+<p>the Curve Rule (Single Curve), Revolve with Specify Vector, Specify Point and the angle limits, Extrude of picked curves as a body of its own, QuickPick for curves that lie on a solid, Mirror Feature</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Sizes
+</td>
+<td class="hdlist2">
+<p>the book&#8217;s, in inches, typed in millimetres. The wall and the flange revolved about XC through (0, 0, 0) from 0 to 180°. The edge extruded 0.5 (12.7 mm) along -ZC.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The replay runs tutorial AG first and opens the part it saved.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step"><a class="anchor" href="#_step_by_step"></a>Step by step</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_the_wall"><a class="anchor" href="#_1_the_wall"></a>1. The wall</h3>
+<div class="paragraph">
+<p>Open <code>Impeller_lower_casing</code>, the part of tutorial AG.
+Click <strong>Revolve</strong>.
+FreeCAD first offers its list of sketch planes; you don&#8217;t need it, because picking a curve of the sketch closes the list and opens the Revolve dialog with that curve.</p>
+</div>
+<div class="paragraph">
+<p>Set the Curve Rule on the Top Border Bar (beside the Selection Filter) to <strong>Single Curve</strong>.
+The default, Inferred Curves, would take the whole sketch, which is not one closed profile.
+Click the 10 curves of the wall: the inner curve&#8217;s four, the four of the curve 0.5 above it, and the two short lines that close its ends.</p>
+</div>
+<div class="paragraph">
+<p>In the dialog choose <strong>XC</strong> in Specify Vector, keep Specify Point at (0, 0, 0), and type Start 0 and End 180.
+Click <strong>OK</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AO-01-wall.png" alt="The wall of the casing" width="revolved half a turn about XC">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_the_edge"><a class="anchor" href="#_2_the_edge"></a>2. The edge</h3>
+<div class="paragraph">
+<p>Click <strong>Extrude</strong>, keep <strong>Single Curve</strong>, and click the 10 curves of the edge: the inner curve&#8217;s four again, the four of the curve 1.5 below it, and the two lines that close its ends.
+Most of these curves now lie on a face or an edge of the wall as well. Press and hold MB1 on the curve, as the book&#8217;s note says, and choose the sketch curve in QuickPick.</p>
+</div>
+<div class="paragraph">
+<p>Keep Boolean <strong>None</strong>.
+Type 12.7 mm (0.5 in) as the length and tick <strong>Reversed</strong> in FreeCAD&#8217;s panel, which turns the extrusion to -ZC.
+Click <strong>OK</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The edge becomes a body of its own.
+With Unite it would touch the wall only along a line, which would leave two solids in one body, so the dialog does not allow it.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AO-02-edge.png" alt="The edge extruded down from the sketch plane">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_the_edge_on_the_other_side"><a class="anchor" href="#_3_the_edge_on_the_other_side"></a>3. The edge on the other side</h3>
+<div class="paragraph">
+<p>Make the edge&#8217;s body the work body, select its Extrude in the Part Navigator, and click <strong>Mirror Feature</strong> (Home › Pattern).
+Choose the plane <strong>XZ</strong>, the plane through the casing&#8217;s centre line, and press MB2.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AO-03-mirror.png" alt="The edge mirrored to the other side of the casing">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_the_flange"><a class="anchor" href="#_4_the_flange"></a>4. The flange</h3>
+<div class="paragraph">
+<p>Click <strong>Revolve</strong> again and, with <strong>Single Curve</strong>, click the 4 sides of the flange at the casing&#8217;s smaller opening.
+Two of them lie on lines of the wall and of the edge: QuickPick lists both, and you choose the flange&#8217;s.
+Choose <strong>XC</strong>, keep (0, 0, 0), and type Start 0 and End 180.
+The Boolean is <strong>Unite</strong>, with the wall, by itself; click <strong>OK</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/tutorial-AO-04-casing.png" alt="The lower casing with its flange">
+</div>
+</div>
+<div class="paragraph">
+<p>Save the part.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_replay"><a class="anchor" href="#_the_replay"></a>The replay</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch steps">
+<colgroup>
+<col style="width: 5.2631%;">
+<col style="width: 26.3157%;">
+<col style="width: 26.3157%;">
+<col style="width: 10.5263%;">
+<col style="width: 31.5792%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">In the book (NX)</th>
+<th class="tableblock halign-left valign-top">In FreeCAD NX-Style</th>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Open Impeller_lower_casing (tutorial AG&#8217;s part)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">File &gt; Open (by script)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the sketch with 19 of the 19 curves of the book&#8217;s figure; shown True</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Revolve, Selection Filter Single Curve, the 10 curves of the wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature &gt; Revolve' (FreeCAD asks for a plane: True), Curve Rule 'Single Curve', MB1 on each curve: 10 by click</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the section holds 10 curves, the wall&#8217;s True; the first pick closes FreeCAD&#8217;s plane list and opens the dialog with it</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axis: Specify Vector XC, Specify Point (0, 0, 0); Start 0, End 180</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">'XC' chosen, X, Y, Z and the angles typed in the box</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axis {'vector': 'XC', 'point': (0.0, 0.0, 0.0)}, limits (0.0, 180.0)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OK: the revolved wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OK clicked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 10035706.5 mm^3, expected 10035706.5; 1 solid(s); Profile the 10 curves True; below the sketch plane True; one undo step True (['Revolve'])</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude, Single Curve, the outer curves of the casing (its edge)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature &gt; Extrude' (plane asked: True), Curve Rule 'Single Curve', MB1 on each curve: 9 by QuickPick, 1 by click</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the section holds 10 curves, the edge&#8217;s True; where a curve lies on the wall&#8217;s face, QuickPick lists it (the book&#8217;s note: press and hold MB1)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extrude it 0.5 in along -ZC, OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Boolean 'None' in the box; 'lengthEdit' = 12.7 mm and Reversed clicked (True) in FreeCAD&#8217;s panel; OK clicked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 381783.6 mm^3, expected 381783.6; z -12.70 to 0.00 mm; its own body (2 bodies): with Unite it would touch the wall only along a line, two solids in one body, so the edge is a body of its own, as the book&#8217;s Solid Body filter in the next step shows</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mirror the edge through the centre plane, Copy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the edge&#8217;s body made the work body and its Extrude selected (Part Navigator) + ribbon 'Home › Pattern &gt; Mirror Feature', plane 'Base XZ-plane', MB2 = OK</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the edge&#8217;s body holds 2 solids, 763567.1 mm^3 (twice 381783.6), symmetric about XZ (y -419.1 to 419.1 mm). NX&#8217;s Edit &gt; Transform copies the solid unparametrised; Mirror Feature keeps the copy following the edge</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Revolve, Single Curve, the 4 curves of the flange</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ribbon 'Home › Feature &gt; Revolve' (plane asked: True), Curve Rule 'Single Curve', MB1 on each curve: 4 by QuickPick</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the section holds 4 curves, the flange&#8217;s True; two of them lie on the wall&#8217;s and the edge&#8217;s lines, and QuickPick tells them apart</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">XC through the origin, Start 0, End 180, as for the casing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">'XC', X, Y, Z and the angles typed; Boolean Unite by itself</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axis {'vector': 'XC', 'point': (0.0, 0.0, 0.0)}, limits (0.0, 180.0), Boolean unite</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OK: the flange, united with the wall</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OK clicked</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">volume 10377414.8 mm^3, expected 10377414.8; 1 solid(s); the flange&#8217;s volume added to the wall&#8217;s</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The lower casing: the wall with its flange, the edge on both sides</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">compared with the book&#8217;s curves revolved and extruded by the Part API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">wall and flange: same solid as the reference: 0 mm³ differ, box within 0 mm, 14 faces (14 in the reference); edges: same solid as the reference: 0 mm³ differ, box within 0 mm, 24 faces (24 in the reference)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AO12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Save the model</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">file name given once by script (the system file dialog is not driven); a change, then the Ctrl+S key</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Impeller_lower_casing.FCStd rewritten by Ctrl+S: the file holds the change and the part is unmodified afterwards (modified before the key: True); FreeCAD format, not .prt</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch legend">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Result</th>
+<th class="tableblock halign-left valign-top">Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome same">same</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s NX steps work as written.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome differs">differs</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It works, but the FreeCAD way is different; the notes say how.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome limit">limit</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The book&#8217;s way fails in FreeCAD itself; a workaround follows in the next steps.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome missing">missing</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FreeCAD has no such function; a stand-in follows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome skipped">skipped</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not replayed; the notes give the reason.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="outcome failed">FAILED</span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Did not work.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The finished casing is compared with the book&#8217;s curves revolved and extruded by FreeCAD&#8217;s Part API: the wall with its flange, and the edge on both sides.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_differs_from_nx"><a class="anchor" href="#_what_differs_from_nx"></a>What differs from NX</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>NX&#8217;s Revolve and Extrude start with the Section selection. In FreeCAD a feature without a sketch first offers the sketch planes; picking a curve instead closes that list.</p>
+</li>
+<li>
+<p>NX&#8217;s Extrude limits give the direction. Here the length and the direction are set in FreeCAD&#8217;s panel under the NX dialog: 12.7 mm with Reversed is NX&#8217;s 0.5 in along -ZC.</p>
+</li>
+<li>
+<p>The book mirrors the edge with Edit &gt; Transform &gt; Mirror Through a Plane and Copy, which makes an unparametrised copy. NX-Style uses Mirror Feature, so the copy follows the edge when it changes.</p>
+</li>
+<li>
+<p>Mirror Feature mirrors a feature inside its body: the edge&#8217;s body then holds both edges, two separate solids.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="an.html">AN: Arbor Press Plate</a></span>
+  <span class="next"><a href="ap.html">AP: Impeller Shaft</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>FreeCAD NX-Style is free software under the
+    <a href="https://github.com/Foadsf/freecad-nxstyle/blob/main/LICENSE">LGPL-2.1-or-later</a>, like FreeCAD.
+    Source on <a href="https://github.com/Foadsf/freecad-nxstyle">GitHub</a>.</p>
+  <p>Siemens, NX and Teamcenter are trademarks of Siemens. This project is not affiliated with or endorsed by Siemens
+    and uses no Siemens software, icons or documentation text.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>
