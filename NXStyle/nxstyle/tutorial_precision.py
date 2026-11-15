@@ -1235,19 +1235,28 @@ class PrecisionTutorials:
             if state["asked"]:
                 return
             state["asked"] = True
-            b = w.button(QtWidgets.QMessageBox.Yes) if isinstance(w, QtWidgets.QMessageBox) else None
-            if b is not None:
-                QtCore.QTimer.singleShot(100, b.click)
+            if isinstance(w, QtWidgets.QMessageBox):  # Strata before 0.3: a yes/no box
+                b = w.button(QtWidgets.QMessageBox.Yes)
+                if b is not None:
+                    QtCore.QTimer.singleShot(100, b.click)
+            else:  # Strata 0.3+: "Obsolete BUSH-100 rev A" asks for a reason, as Teamcenter does
+                comment = getattr(w, "comment", None)
+                if comment is not None:
+                    comment.setText("Replaced by rev B")
+                QtCore.QTimer.singleShot(100, lambda: self.v_press(w, "Obsolete"))
             if state["dialog"] is not None:
                 QtCore.QTimer.singleShot(700, state["dialog"].cancel_btn.click)
-        self.v_modal({"Releases": releases, "Mark obsolete": confirm})
+        self.v_modal({"Releases": releases, "Mark obsolete": confirm, "Obsolete ": confirm})
         b, where = self.click_ribbon("Releases", tab="PLM")
         QtWidgets.QApplication.processEvents()
         self.modals.handler = None
-        rels = [(r.part_number, r.revision, r.state) for r in self.v_project().releases()]
+        all_rels = self.v_project().releases()
+        rels = [(r.part_number, r.revision, r.state) for r in all_rels]
+        reason = next((getattr(r, "comment", "") for r in all_rels if r.revision == "A"), "")
         ok = ("BUSH-100", "A", "Obsolete") in rels and ("BUSH-100", "B", "Released") in rels
-        self.step("Releases: rev A marked obsolete", f"ribbon '{where} > Releases', row A, 'Mark obsolete', Yes",
-                  SAME if ok else FAIL, f"releases {rels}")
+        self.step("Releases: rev A marked obsolete",
+                  f"ribbon '{where} > Releases', row A, 'Obsolete...', reason 'Replaced by rev B', Obsolete",
+                  SAME if ok else FAIL, f"releases {rels}; reason {reason!r}")
         self.wait = 400
 
     def v_package2(self):
