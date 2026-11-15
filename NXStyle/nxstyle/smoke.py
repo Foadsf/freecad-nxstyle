@@ -175,6 +175,7 @@ class Smoke:
         yield self.s_ap242, 300
         yield self.s_model_views, 300
         yield self.s_assembly_links, 200
+        yield self.s_assembly_components, 200
         yield self.s_selection, 300
         yield self.s_extrude_key, 1500
         yield self.s_extrude_key_check, 300
@@ -2710,6 +2711,56 @@ class Smoke:
                        got == [("BlockLink", 100.0, 50.0), ("Wall", 105.0, 55.0)] and abs(vol - 125) < 1e-6,
                        f"parts {got}; overlap with the wall {vol:.1f} mm³ (want 125)")
         finally:
+            App.closeDocument(doc.Name)
+            if before is not None and before.Name in App.listDocuments():
+                App.setActiveDocument(before.Name)
+                Gui.getDocument(before.Name)
+
+    def s_assembly_components(self):
+        """The Clearance Browser at component level: a clash inside a linked sub-assembly is found and named by its
+        path, and Study Interference selects the two parts inside it (tests/fc_components.py covers sub-assemblies
+        in other documents)."""
+        from . import clearance
+        before = App.ActiveDocument
+        doc = App.newDocument("SmokeComponents")
+        panel = None
+        try:
+            plate = doc.addObject("Part::Box", "Plate")
+            plate.Length, plate.Width, plate.Height = 40, 40, 5
+            pin = doc.addObject("Part::Cylinder", "Pin")
+            pin.Radius, pin.Height = 2, 10
+            pin.Placement.Base = App.Vector(20, 20, 0)                 # through the plate: 5 mm of a Ø4 pin
+            sub = doc.addObject("App::Part", "Fixture")
+            sub.addObject(plate)
+            sub.addObject(pin)
+            top = doc.addObject("App::Part", "Machine")
+            lk = doc.addObject("App::Link", "FixtureLink")
+            lk.LinkedObject = sub
+            lk.Label = "Fixture"
+            lk.Placement.Base = App.Vector(100, 0, 0)
+            top.addObject(lk)
+            sub.Visibility = False                                     # the source of the link
+            doc.recompute()
+            cset = clearance.create(doc, [lk])
+            panel = clearance.BrowserPanel(cset)
+            top_rows = len(clearance.perform(cset)[0])
+            panel.level.setCurrentText("Components")
+            panel.run()
+            rows, _ = clearance.results_of(cset)
+            names = sorted(tuple(sorted((r["a"], r["b"]))) for r in rows)
+            vol = rows[0]["volume"] if rows else 0.0
+            panel.tree.setCurrentItem(panel.tree.topLevelItem(0).child(0))
+            panel.study()
+            picked = sorted(s.SubElementNames[0] if s.SubElementNames else "" for s in Gui.Selection.getSelectionEx("", 0))
+            panel.restore()
+            self.check("Clearance Browser at component level: the clash inside a linked sub-assembly, named by path; "
+                       "Study Interference selects both parts",
+                       top_rows == 0 and cset.Level == "Components" and names == [("Fixture / Pin", "Fixture / Plate")]
+                       and abs(vol - 3.14159265 * 4 * 5) < 1e-3 and picked == ["FixtureLink.Pin.", "FixtureLink.Plate."],
+                       f"top level rows {top_rows}, level {cset.Level}, rows {names}, volume {vol:.3f}, "
+                       f"selected {picked}")
+        finally:
+            Gui.Selection.clearSelection()
             App.closeDocument(doc.Name)
             if before is not None and before.Name in App.listDocuments():
                 App.setActiveDocument(before.Name)

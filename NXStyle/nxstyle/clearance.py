@@ -51,6 +51,11 @@ class ClearanceSet:
               "One per line: 'A|B=exclude' leaves a pair out, 'A|B=0.5' gives it its own zone (object names, or labels "
               "that only one object has)")
         _prop(obj, "App::PropertyBool", "IgnoreTouching", g, "Do not report touching pairs (mating faces)", False)
+        from . import claims
+        _prop(obj, "App::PropertyEnumeration", "Level", g, "Which parts are paired. " + claims.LEVEL_DOC)
+        if not obj.Level:
+            obj.Level = claims.LEVELS
+            obj.Level = claims.LEVELS[0]
         _prop(obj, "App::PropertyStringList", "Results", "Results", "One JSON line per interference", mode=2)
         _prop(obj, "App::PropertyStringList", "Previous", "Results", "The run before (for New / Gone)", mode=2)
         for k in cc.KINDS:
@@ -104,13 +109,14 @@ def sets(doc):
     return [o for o in doc.Objects if isinstance(getattr(o, "Proxy", None), ClearanceSet)]
 
 
-def create(doc=None, objects=(), second=(), zone=0.0, label="Clearance Set"):
+def create(doc=None, objects=(), second=(), zone=0.0, label="Clearance Set", level="Top level"):
     doc = doc or App.ActiveDocument
     obj = doc.addObject("App::FeaturePython", "ClearanceSet")
     ClearanceSet(obj)
     obj.Objects = list(objects)
     obj.SecondObjects = list(second)
     obj.ClearanceZone = zone
+    obj.Level = level
     obj.Label = label
     if App.GuiUp:
         ClearanceSetView(obj.ViewObject)
@@ -125,9 +131,10 @@ def solid_of(o):
 
 
 def candidates(doc):
-    """Every solid of the document a clearance check is about (see claims.parts)."""
+    """Every solid of the document a clearance check is about (see claims.parts, which leaves out the checks'
+    own result bodies)."""
     from . import claims
-    return [o for o, _ in claims.parts(doc) if not o.Name.startswith((RESULT, "Interference"))]
+    return [o for o, _ in claims.parts(doc)]
 
 
 def penetration(common):
@@ -167,12 +174,18 @@ def analyse_pair(a, b, sa, sb, zone):
         return None
     row = {"a": a.Label, "b": b.Label, "a_name": a.Name, "b_name": b.Name, "kind": kind, "distance": dist,
            "zone": zone, "volume": cv, "penetration": penetration(common) if cv > cc.VOLUME_TOL else 0.0}
+    for key, o in (("a", a), ("b", b)):
+        if hasattr(o, "sub"):           # a component inside a sub-assembly: where it is, to select it
+            row[f"{key}_top"], row[f"{key}_root"], row[f"{key}_sub"] = o.top.Name, o.root.Name, o.sub
     return row, (common if cv > cc.VOLUME_TOL else None)
 
 
 def analysed(cset):
+    """The objects paired (first, second): at component level the parts inside sub-assemblies."""
+    from . import claims
+    level = getattr(cset, "Level", "Top level")
     first = list(cset.Objects) or candidates(cset.Document)
-    return first, list(cset.SecondObjects)
+    return claims.expand(first, level), claims.expand(cset.SecondObjects, level)
 
 
 def fingerprint(objs):
@@ -240,7 +253,7 @@ def perform(cset):
     shapes = {o.Name: solid_of(o) for o in first + second}
     pairs = []
     if second:
-        pairs = [(a, b) for a in first for b in second if a is not b]
+        pairs = [(a, b) for a in first for b in second if a.Name != b.Name]
     else:
         pairs = [(a, b) for i, a in enumerate(first) for b in first[i + 1:]]
     rows, solids = [], []
@@ -306,7 +319,9 @@ def results_of(cset):
 
 def report(cset):
     rows, gone = results_of(cset)
-    lines = [f"Assembly clearance: {cset.Label}",
+    level = getattr(cset, "Level", "Top level")
+    lines = [f"Assembly clearance: {cset.Label}" + (" (components inside sub-assemblies)" if level == "Components"
+                                                    else ""),
              f"Default clearance zone {float(cset.ClearanceZone):g} mm; " + ", ".join(
                  f"{getattr(cset, k.capitalize())} {k}" for k in cc.KINDS)]
     if is_stale(cset):
@@ -315,10 +330,12 @@ def report(cset):
     for p in getattr(cset, "RuleProblems", []) or []:
         lines.append(f"pair rule not applied: {p}")
     lines.append("")
-    lines.append(f"{'Object 1':<22} {'Object 2':<22} {'Interference':<12} {'Distance':>9} {'Penetration':>11} "
+    # component paths are long ("Wire feeder head / Ceramic bearing"): the columns grow with them, up to a point
+    w = min(max([22] + [len(r[k]) for r in rows for k in ("a", "b")]), 60)
+    lines.append(f"{'Object 1':<{w}} {'Object 2':<{w}} {'Interference':<12} {'Distance':>9} {'Penetration':>11} "
                  f"{'Volume mm³':>11}  Status")
     for r in sorted(rows, key=lambda r: (cc.KINDS.index(r["kind"]), -r["volume"], r["distance"])):
-        lines.append(f"{r['a'][:22]:<22} {r['b'][:22]:<22} {r['kind']:<12} {r['distance']:>9.3f} "
+        lines.append(f"{r['a'][:w]:<{w}} {r['b'][:w]:<{w}} {r['kind']:<12} {r['distance']:>9.3f} "
                      f"{r['penetration']:>11.3f} {r['volume']:>11.1f}  {r['status']}")
     for k in gone:
         lines.append(f"  gone since the last run: {k}")
@@ -349,11 +366,18 @@ class BrowserPanel:
         self.touching = QtWidgets.QCheckBox("Ignore touching pairs")
         self.touching.setObjectName("ignoreTouching")
         self.touching.setChecked(bool(cset.IgnoreTouching))
+        from . import claims
+        self.level = QtWidgets.QComboBox()
+        self.level.setObjectName("clearanceLevel")
+        self.level.addItems(claims.LEVELS)
+        self.level.setCurrentText(getattr(cset, "Level", claims.LEVELS[0]))
+        self.level.setToolTip(claims.LEVEL_DOC)
         what = (f"{len(cset.Objects)} selected objects" if cset.Objects else "every solid in the document")
         if cset.SecondObjects:
             what += f" against {len(cset.SecondObjects)} others"
         top.addRow("Set", QtWidgets.QLabel(f"{cset.Label}: {what}"))
         top.addRow("Default clearance zone", self.zone)
+        top.addRow("Level", self.level)
         top.addRow("", self.touching)
         lay.addLayout(top)
         row = QtWidgets.QHBoxLayout()
@@ -399,6 +423,8 @@ class BrowserPanel:
     def run(self, *_):
         self.cset.ClearanceZone = self.zone.value()
         self.cset.IgnoreTouching = self.touching.isChecked()
+        if self.cset.Level != self.level.currentText():
+            self.cset.Level = self.level.currentText()
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
             perform(self.cset)
@@ -417,7 +443,8 @@ class BrowserPanel:
         r = self.current()
         if r is None:
             return
-        keep = {r["a_name"], r["b_name"], RESULT}
+        # a component inside a sub-assembly is kept by keeping its top-level object (the link to the sub-assembly)
+        keep = {r.get("a_top", r["a_name"]), r.get("b_top", r["b_name"]), RESULT}
         for o in self.doc.Objects:
             vo = getattr(o, "ViewObject", None)
             if vo is None or not vo.Visibility or o.Name in keep or not o.isDerivedFrom("App::GeoFeature"):
@@ -428,8 +455,11 @@ class BrowserPanel:
             vo.Visibility = False
             self.hidden.append(o.Name)
         Gui.Selection.clearSelection()
-        for n in (r["a_name"], r["b_name"]):
-            Gui.Selection.addSelection(self.doc.Name, n)
+        for k in ("a", "b"):
+            if f"{k}_sub" in r:
+                Gui.Selection.addSelection(self.doc.Name, r[f"{k}_root"], r[f"{k}_sub"])
+            else:
+                Gui.Selection.addSelection(self.doc.Name, r[f"{k}_name"])
         try:
             Gui.SendMsgToActiveView("ViewSelection")
         except Exception:
