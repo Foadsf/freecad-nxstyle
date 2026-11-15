@@ -46,6 +46,10 @@ class ClaimFeature:
         _prop(obj, "App::PropertyLinkList", "Members", g, "The parts that must stay inside this claim")
         _prop(obj, "App::PropertyLength", "Margin", g, "Clearance members keep to the boundary and others keep to "
               "the claim", 0.0)
+        _prop(obj, "App::PropertyEnumeration", "Level", g, "Which parts the check looks at. " + LEVEL_DOC)
+        if not obj.Level:
+            obj.Level = LEVELS
+            obj.Level = LEVELS[0]
         _prop(obj, "App::PropertyLink", "Source", g, "Take the claim's shape from this object (else a box)")
         _prop(obj, "App::PropertyLength", "Length", g, "Box size along X", 100.0)
         _prop(obj, "App::PropertyLength", "Width", g, "Box size along Y", 100.0)
@@ -127,12 +131,13 @@ def colour(obj):
 
 
 def create(doc=None, owner="", members=(), size=(100, 100, 100), placement=None, kind="Keep-in", margin=0.0,
-           source=None, name="VolumeClaim"):
+           source=None, name="VolumeClaim", level="Top level"):
     doc = doc or App.ActiveDocument
     obj = doc.addObject("Part::FeaturePython", name)
     ClaimFeature(obj)
     obj.Owner = owner
     obj.ClaimType = kind
+    obj.Level = level
     obj.Members = list(members)
     obj.Margin = margin
     obj.Length, obj.Width, obj.Height = size
@@ -165,6 +170,8 @@ def global_shape(o):
     placement Part.getShape(o, transform=True) alone leaves out (measured: a link at y 50 in an assembly
     moved to x 100 came out at x 0)."""
     import Part
+    if isinstance(o, Component):
+        return o.Shape
     try:
         parents = o.Parents
     except Exception:
@@ -173,6 +180,78 @@ def global_shape(o):
         top, sub = parents[0]
         return Part.getShape(top, sub, transform=True)
     return Part.getShape(o, "", transform=True)
+
+
+LEVELS = ["Top level", "Components"]
+LEVEL_DOC = ("Top level: each part, body or link of the document as one solid, so a linked sub-assembly is one; "
+             "Components: down to the parts inside sub-assemblies (also those in other documents), named by their "
+             "path, so clashes inside a sub-assembly count too")
+CONTAINERS = ("App::Part", "App::DocumentObjectGroup")     # App::Part includes Assembly::AssemblyObject
+
+
+class Component:
+    """One part of an assembly where it is in the top document, for a check at component level.
+
+    Name is the path of object names from the top-level object (unique: 'Link.Link001'), Label the path of
+    labels ('Wire feeder head / Ceramic bearing'), Shape the solid where it is. top is the top-level object
+    it belongs to; root and sub select it in the 3D view (Gui.Selection.addSelection(doc, root.Name, sub))."""
+
+    def __init__(self, name, label, shape, top, root, sub):
+        self.Name, self.Label, self.Shape = name, label, shape
+        self.top, self.root, self.sub = top, root, sub
+
+    @property
+    def Document(self):
+        return self.top.Document
+
+    def __repr__(self):  # pragma: no cover - debug aid
+        return f"Component({self.Name!r}, {self.Label!r})"
+
+
+def _is_container(so):
+    lo = so.getLinkedObject(True)
+    if any(lo.isDerivedFrom(t) for t in CONTAINERS):
+        return True
+    return so.TypeId == "App::Link" and getattr(so, "ElementCount", 0) > 0     # a link array: its elements
+
+
+def components(o, depth=12):
+    """o's parts where they are: o itself when it holds no parts, otherwise every part inside it, through links
+    to sub-assemblies in other documents, link arrays, App::Parts and folders, down to `depth` levels. Hidden
+    children are left out, as they are not part of the assembly that is shown."""
+    import Part
+    try:
+        parents = o.Parents
+    except Exception:
+        parents = []
+    root, base = parents[0] if parents else (o, "")
+    out = []
+
+    def walk(so, rel, names, labels, d):
+        if d > 0 and _is_container(so):
+            for child in so.getSubObjects():
+                cs = root.getSubObject(base + rel + child, retType=1)
+                if cs is None or not getattr(cs, "Visibility", True):
+                    continue
+                walk(cs, rel + child, names + [child.rstrip(".")], labels + [cs.Label], d - 1)
+            return
+        try:
+            s = Part.getShape(root, base + rel, transform=True)
+        except Exception:
+            return
+        if s.isNull() or not s.Solids:
+            return
+        out.append(Component(".".join(names), " / ".join(labels), s, o, root, base + rel))
+
+    walk(o, "", [o.Name], [o.Label], depth)
+    return out
+
+
+def expand(objs, level):
+    """objs as a check at this level sees them: the objects themselves (Top level) or their components."""
+    if level != "Components":
+        return list(objs)
+    return [c for o in objs for c in components(o)]
 
 
 def link_sources(doc):
@@ -187,16 +266,21 @@ def link_sources(doc):
     return out
 
 
+# the red bodies the checks leave in the document: Check Volume Claims', Assembly Clearance's, Simple Interference's
+# (counting Clearance's own result as a part made it "enter" a claim)
+CHECK_RESULTS = ("ClaimViolations", "ClearanceInterferences", "Interference")
+
+
 def parts(doc):
     """The solids of the layout that claims apply to: top-level parts, bodies and links, where they are in
     their assembly (not the claims, not features consumed by others, not the hidden sources of links, not
-    the check's own result)."""
+    the checks' own results)."""
     out = []
     sources = link_sources(doc)
     for o in doc.Objects:
         if o.Name in sources:
             continue
-        if isinstance(getattr(o, "Proxy", None), ClaimFeature) or o.Name.startswith("ClaimViolations"):
+        if isinstance(getattr(o, "Proxy", None), ClaimFeature) or o.Name.startswith(CHECK_RESULTS):
             continue
         if o.isDerivedFrom("PartDesign::Feature") and not o.isDerivedFrom("PartDesign::Body"):
             continue
@@ -251,29 +335,39 @@ def check(doc):
     for c in cs:
         for m in c.Members:
             owner_of.setdefault(m.Name, []).append(c)
+    layout_components = None                 # the layout's parts inside sub-assemblies, for claims at that level
     for c in cs:
         cshape = global_shape(c)
         margin = float(c.Margin)
+        level = getattr(c, "Level", LEVELS[0])
         own = []
         if c.ClaimType == "Keep-in":
             inner = _inner(cshape, margin)
             for m in c.Members:
-                ms = global_shape(m)
-                out = ms.cut(inner)
-                if out.Volume > TOL:
-                    findings.append({"kind": "outside", "claim": c.Label, "other": m.Label, "volume": out.Volume,
-                                     "text": f"{m.Label} sticks out of {c.Label}" + (f" (margin {margin:g} mm)" if
-                                                                                    margin else "") +
-                                     f": {out.Volume:.1f} mm³ outside"})
-                    bad.append(out)
+                for part in expand([m], level):
+                    out = global_shape(part).cut(inner)
+                    if out.Volume > TOL:
+                        findings.append({"kind": "outside", "claim": c.Label, "other": part.Label,
+                                         "volume": out.Volume,
+                                         "text": f"{part.Label} sticks out of {c.Label}" +
+                                         (f" (margin {margin:g} mm)" if margin else "") +
+                                         f": {out.Volume:.1f} mm³ outside"})
+                        bad.append(out)
                 own.append(m.Name)
         grown = _grown(cshape, margin)
-        for o, s in layout:
-            if o.Name in own:
+        if level == "Components":
+            if layout_components is None:
+                layout_components = [(p, p.Shape) for o, _ in layout for p in components(o)]
+            others = layout_components
+        else:
+            others = layout
+        for o, s in others:
+            top = o.top if isinstance(o, Component) else o       # membership is held by the top-level object
+            if top.Name in own:
                 continue
             common = s.common(grown)
             if common.Volume > TOL:
-                who = ", ".join(x.Label for x in owner_of.get(o.Name, [])) or "no claim"
+                who = ", ".join(x.Label for x in owner_of.get(top.Name, [])) or "no claim"
                 findings.append({"kind": "intrusion", "claim": c.Label, "other": o.Label, "volume": common.Volume,
                                  "text": f"{o.Label} ({who}) enters {c.Label}" + (f" or its {margin:g} mm margin"
                                                                                   if margin else "") +
@@ -376,6 +470,10 @@ class ClaimPanel:
         self.margin.setRange(0, 1000)
         self.margin.setDecimals(2)
         self.margin.setSuffix(" mm")
+        self.level = QtWidgets.QComboBox()
+        self.level.setObjectName("claimLevel")
+        self.level.addItems(LEVELS)
+        self.level.setToolTip(LEVEL_DOC)
         lay.addRow("Owner", self.owner)
         lay.addRow("Type", self.kind)
         for n, s in zip(("Length (X)", "Width (Y)", "Height (Z)"), self.size):
@@ -383,6 +481,7 @@ class ClaimPanel:
         for n, s in zip(("Corner X", "Corner Y", "Corner Z"), self.pos):
             lay.addRow(n, s)
         lay.addRow("Margin", self.margin)
+        lay.addRow("Level", self.level)
         mem = QtWidgets.QLabel("Members: " + (", ".join(o.Label for o in self.members) or
                                               "none (select the parts first, or add them to Members later)"))
         mem.setWordWrap(True)
@@ -408,7 +507,7 @@ class ClaimPanel:
         create(self.doc, self.owner.text().strip(), self.members if self.kind.currentText() == "Keep-in" else [],
                tuple(s.value() for s in self.size), App.Placement(App.Vector(*(s.value() for s in self.pos)),
                                                                   App.Rotation()),
-               self.kind.currentText(), self.margin.value())
+               self.kind.currentText(), self.margin.value(), level=self.level.currentText())
         self.doc.commitTransaction()
         Gui.Control.closeDialog()
         Gui.Selection.clearSelection()
