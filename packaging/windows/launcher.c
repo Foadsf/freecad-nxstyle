@@ -225,11 +225,39 @@ static void use_software_gl(const wchar_t *bin, int want)
             CloseHandle(h);
         }
     } else if (file_exists(mark)) {
-        if (DeleteFileW(dll) || GetLastError() == ERROR_FILE_NOT_FOUND)
+        /* A copy just made may still be open (an antivirus scanning it), or loaded by a FreeCAD of this bundle that
+         * is still running. Windows lets a file in use be renamed though not deleted: rename it aside, and delete
+         * such leftovers at a later start. */
+        wchar_t aside[MAX_PATH * 2];
+        _snwprintf(aside, MAX_PATH * 2, L"%s\\opengl32.dll.old-%lu", bin, GetCurrentProcessId());
+        aside[MAX_PATH * 2 - 1] = 0;
+        int gone = 0;
+        for (int attempt = 0; attempt < 10 && !gone; attempt++) {
+            if (attempt)
+                Sleep(200);
+            gone = DeleteFileW(dll) || GetLastError() == ERROR_FILE_NOT_FOUND ||
+                   MoveFileExW(dll, aside, MOVEFILE_REPLACE_EXISTING);
+        }
+        if (gone)
             DeleteFileW(mark);
         else
-            say("NX-Style: software rendering stays on: opengl32.dll is in use (a FreeCAD of this bundle is still "
-                "running)\n");
+            say("NX-Style: software rendering stays on: bin\\opengl32.dll cannot be removed or renamed (error %lu)\n",
+                GetLastError());
+    }
+    /* copies renamed aside by earlier starts, once nothing holds them */
+    wchar_t pattern[MAX_PATH * 2];
+    _snwprintf(pattern, MAX_PATH * 2, L"%s\\opengl32.dll.old-*", bin);
+    pattern[MAX_PATH * 2 - 1] = 0;
+    WIN32_FIND_DATAW fd;
+    HANDLE find = FindFirstFileW(pattern, &fd);
+    if (find != INVALID_HANDLE_VALUE) {
+        do {
+            wchar_t old[MAX_PATH * 2];
+            _snwprintf(old, MAX_PATH * 2, L"%s\\%s", bin, fd.cFileName);
+            old[MAX_PATH * 2 - 1] = 0;
+            DeleteFileW(old);
+        } while (FindNextFileW(find, &fd));
+        FindClose(find);
     }
 }
 
