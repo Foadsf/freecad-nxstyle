@@ -136,6 +136,12 @@ Each run uses a fresh throwaway profile. To test what a second start sees (setti
 Self-test and tutorial runs are capped at 4 GB of memory (`--max-memory-gb`), run one at a time, and end with exit code 4 if FreeCAD asks for more.
 
 ```bash
+python launch_nx.py --run build.py --env PART=tank
+```
+
+Runs your own script in FreeCAD with NX-Style and its bundled add-ons, under the same bounds (throwaway profile, hidden desktop, memory ceiling, time limit, one run at a time; `--lock-wait SECONDS` waits for another run). The launcher prints what the script printed and exits with its exit code. See [docs/testing](https://foadsf.github.io/freecad-nxstyle/nxstyle/testing.html#run).
+
+```bash
 python -m unittest discover -s tests
 ```
 

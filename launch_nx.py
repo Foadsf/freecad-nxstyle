@@ -13,6 +13,7 @@ Usage:
     python launch_nx.py --freecad PATH         # pick a specific FreeCAD
     python launch_nx.py --reset-profile        # start from a clean NX profile
     python launch_nx.py --smoke-test OUTDIR    # self-test in a throwaway profile
+    python launch_nx.py --run SCRIPT           # run a script in FreeCAD with NX-Style, bounded
 
 Only the Python standard library is used, so any Python 3.8+ (including the
 one bundled with FreeCAD) can run it.
@@ -1028,7 +1029,7 @@ STATUS_NO_MEMORY = 0xC0000017      # exit code of a run ended at the memory ceil
 
 # The result a harness run must leave (written by NXStyle/nxstyle/harness_result.py, same schema)
 HARNESS_SCHEMA = "nxstyle-harness/1"
-RESULT_FILES = {"smoke": "smoke.json", "tutorial": "tutorial.json"}
+RESULT_FILES = {"smoke": "smoke.json", "tutorial": "tutorial.json", "run": "run.json"}
 EXIT_INVALID_RESULT = 6            # stale, empty, truncated, unfinished or another run's result
 EXIT_CHILD_FAILED = 7              # FreeCAD exited with an error code
 
@@ -1042,6 +1043,8 @@ SMOKE_BASE_S = 120                 # FreeCAD's start, Strata's wait, writing the
 SMOKE_STEP_S = 24                  # per planned step of smoke.py's plan(); the 89-step plan -> 2256 s
 TUTORIAL_BASE_S = 300
 TUTORIAL_EACH_S = 300              # a textbook tutorial takes about a minute, a Katydid one up to about 8
+RUN_DEFAULT_S = 1800               # --run SCRIPT: the launcher cannot know what a user's script plans to do
+LOCK_POLL_S = 15                   # --lock-wait: how often to try the harness lock again
 SMOKE_SOURCE = MODULE_DIR / "nxstyle" / "smoke.py"
 
 
@@ -1058,13 +1061,15 @@ def smoke_planned_steps(source: Path = SMOKE_SOURCE) -> int:
 
 def harness_timeout(harness: str, tutorials: str, override: int | None = None,
                     steps: int | None = None) -> int:
-    """Seconds a smoke or tutorial run may take before it is ended as hung: override if given, otherwise
-    a base plus an allowance per planned self-test step (steps, default counted from smoke.py) or per
-    tutorial."""
+    """Seconds a smoke, tutorial or script run may take before it is ended as hung: override if given,
+    otherwise a base plus an allowance per planned self-test step (steps, default counted from smoke.py) or per
+    tutorial, or RUN_DEFAULT_S for a script."""
     if override is not None:
         if override <= 0:
             raise ValueError(f"the time limit must be positive, not {override}")
         return override
+    if harness == "run":
+        return RUN_DEFAULT_S
     if harness == "tutorial":
         return TUTORIAL_BASE_S + TUTORIAL_EACH_S * len([t for t in tutorials.split(",") if t.strip()])
     return SMOKE_BASE_S + SMOKE_STEP_S * (smoke_planned_steps() if steps is None else steps)
@@ -1145,6 +1150,43 @@ def judge_result(path: Path, harness: str, run_id: str, child_code: int | None,
     if child_code:
         return bad(f"FreeCAD exited with code {child_code} after writing its result", EXIT_CHILD_FAILED)
     return 1 if failed else 0
+
+
+def judge_run(path: Path, run_id: str, child_code: int | None) -> int:
+    """The exit code of a --run SCRIPT run: the script's own (sys.exit(n), 1 for an uncaught exception), from
+    the result NXStyle/nxstyle/run_script.py wrote. Prints what the script printed, and its traceback. A script
+    that ended FreeCAD itself (os._exit) leaves no result: then FreeCAD's exit code, with a note saying so."""
+    def bad(why: str, code: int = EXIT_INVALID_RESULT) -> int:
+        print(f"run not accepted: {why}", file=sys.stderr)
+        return code
+
+    if not path.is_file():
+        if child_code is None:
+            return bad("no result and no exit code", 2)
+        print(f"run: FreeCAD exited with code {child_code} before NX-Style recorded the script's end: the script "
+              "ended FreeCAD itself (os._exit), or FreeCAD crashed", file=sys.stderr)
+        return child_code if 0 <= child_code < 256 else EXIT_CHILD_FAILED
+    try:
+        result = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        return bad(f"{path.name} cannot be read ({e}): a truncated or corrupted file")
+    if not isinstance(result, dict) or result.get("schema") != HARNESS_SCHEMA or result.get("harness") != "run":
+        return bad(f"{path.name} is not a run result of schema {HARNESS_SCHEMA}")
+    if result.get("run_id") != run_id:
+        return bad(f"{path.name} is from another run ({result.get('run_id')!r}), not this one ({run_id})")
+    if result.get("status") != "complete" or not isinstance(result.get("exit_code"), int):
+        return bad(f"the run did not finish (status {result.get('status')!r})")
+    if result.get("output"):
+        print(result["output"], end="" if result["output"].endswith("\n") else "\n")
+    if result.get("traceback"):
+        print(result["traceback"], file=sys.stderr, end="")
+    code = result["exit_code"]
+    print(f"run: {result.get('script')} ended with exit code {code} after {result.get('seconds')} s")
+    if code == 0 and child_code:
+        return bad(f"FreeCAD exited with code {child_code} after the script ended", EXIT_CHILD_FAILED)
+    return code if 0 <= code < 256 else 1
+
+
 HARNESS_MUTEX = "Local\\FreeCAD-NXStyle-harness"
 
 
@@ -1373,7 +1415,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("files", nargs="*", help="documents to open")
     ap.add_argument("--freecad", help="FreeCAD executable or install folder (default: newest found)")
     ap.add_argument("--profile", type=Path, help=f"profile folder (default: {default_profile_root()}/profile-<ver>; "
-                    "with --smoke-test/--tutorial a fresh temporary one, or this folder kept between runs)")
+                    "with --smoke-test/--tutorial/--run a fresh temporary one, or this folder kept between runs)")
     ap.add_argument("--reset-profile", action="store_true", help="delete the NX profile before starting")
     ap.add_argument("--list", action="store_true", help="list FreeCAD installs and exit")
     ap.add_argument("--dry-run", action="store_true", help="print what would run, start nothing")
@@ -1382,6 +1424,17 @@ def main(argv: list[str] | None = None) -> int:
                     help="run the built-in self-test in a fresh throwaway profile, write results to OUTDIR")
     ap.add_argument("--tutorial", type=Path, metavar="OUTDIR",
                     help="replay the NX textbook tutorials in a throwaway profile, write results to OUTDIR")
+    ap.add_argument("--run", type=Path, metavar="SCRIPT",
+                    help="run the Python SCRIPT in FreeCAD once NX-Style and the add-ons it bundles are up, then close "
+                         "FreeCAD and exit with the script's exit code (sys.exit(n); 1 for an uncaught exception). "
+                         "Bounded like --smoke-test: a throwaway profile unless --profile, a hidden desktop on Windows "
+                         f"unless --visible, --max-memory-gb, --timeout (default {RUN_DEFAULT_S} s), one run at a "
+                         "time. What the script prints is shown afterwards; parameters go in with --env")
+    ap.add_argument("--env", action="append", default=[], metavar="NAME=VALUE",
+                    help="set an environment variable for FreeCAD (repeatable), e.g. a --run script's parameters")
+    ap.add_argument("--lock-wait", type=int, default=0, metavar="SECONDS",
+                    help="with --smoke-test/--tutorial/--run: when another such run is active, wait up to this long "
+                         "for it to finish instead of refusing (exit 5)")
     ap.add_argument("--tutorials", default="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB,AC,AD,AE,AF,AG,AH,AJ,AK,AN,AO,AP,AQ,AR,AS,AT,AU,AV,AW,AX,AY,AZ,BA,BB",
                     help="with --tutorial: which exercises to replay (A Adjuster, B cylinder+cone, "
                          "C Rod-Guide, D Pulley with drawing, E Saddle Bracket, F Dryer Housing, "
@@ -1420,13 +1473,14 @@ def main(argv: list[str] | None = None) -> int:
                     help="with --smoke-test: a check skipped because this FreeCAD lacks what it needs (no pythonocc, "
                          "no FEM, no QtTest) fails the run instead of being reported apart")
     ap.add_argument("--visible", action="store_true",
-                    help="with --smoke-test on Windows: show FreeCAD on your desktop instead of a hidden one")
+                    help="with --smoke-test/--tutorial/--run on Windows: show FreeCAD on your desktop instead of a "
+                         "hidden one")
     ap.add_argument("--timeout", type=int, metavar="SECONDS",
-                    help=f"with --smoke-test/--tutorial: end the run after this many seconds (default: "
-                         f"{SMOKE_BASE_S} s + {SMOKE_STEP_S} s per planned self-test step, or {TUTORIAL_BASE_S} s + "
-                         f"{TUTORIAL_EACH_S} s per tutorial)")
+                    help=f"with --smoke-test/--tutorial/--run: end the run after this many seconds (default: "
+                         f"{SMOKE_BASE_S} s + {SMOKE_STEP_S} s per planned self-test step, {TUTORIAL_BASE_S} s + "
+                         f"{TUTORIAL_EACH_S} s per tutorial, {RUN_DEFAULT_S} s for a script)")
     ap.add_argument("--max-memory-gb", type=float, default=HARNESS_MEMORY_GB,
-                    help=f"with --smoke-test/--tutorial on Windows: end the run when FreeCAD uses more "
+                    help=f"with --smoke-test/--tutorial/--run on Windows: end the run when FreeCAD uses more "
                          f"(default {HARNESS_MEMORY_GB:g})")
     ap.add_argument("--no-strata", action="store_true",
                     help="start without Strata (versions, releases and sync; on by default)")
@@ -1463,6 +1517,18 @@ def main(argv: list[str] | None = None) -> int:
     set_console_errors()
     if args.timeout is not None and args.timeout <= 0:
         ap.error(f"--timeout must be a positive number of seconds, not {args.timeout}")
+    if args.lock_wait < 0:
+        ap.error(f"--lock-wait must be 0 or more seconds, not {args.lock_wait}")
+    if sum(bool(x) for x in (args.smoke_test, args.tutorial, args.run)) > 1:
+        ap.error("--smoke-test, --tutorial and --run each start their own run: give one of them")
+    if args.run is not None and not args.run.is_file():
+        ap.error(f"--run: no such script: {args.run}")
+    user_env = {}
+    for item in args.env:
+        name, sep, value = item.partition("=")
+        if not sep or not name:
+            ap.error(f"--env takes NAME=VALUE, not {item!r}")
+        user_env[name] = value
     passthrough = args.passthrough[1:] if args.passthrough[:1] == ["--"] else args.passthrough
 
     if args.list:
@@ -1478,15 +1544,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.headless_check:
         return headless_check(install, args)
 
-    extra = {}
-    harness = "smoke" if args.smoke_test else "tutorial" if args.tutorial else None
+    extra = dict(user_env)
+    harness = "smoke" if args.smoke_test else "tutorial" if args.tutorial else "run" if args.run else None
     if harness:
-        out = (args.smoke_test or args.tutorial).resolve()
-        out.mkdir(parents=True, exist_ok=True)
+        if harness == "run":                  # the result goes to a folder of its own, removed afterwards
+            out = Path(tempfile.mkdtemp(prefix="nxstyle-run-out-"))
+        else:
+            out = (args.smoke_test or args.tutorial).resolve()
+            out.mkdir(parents=True, exist_ok=True)
         profile = args.profile or Path(tempfile.mkdtemp(prefix=f"nxstyle-{harness}-"))
         run_id = uuid.uuid4().hex             # the result must carry it: a file from another run is rejected
-        extra = {f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1",
-                 "NXSTYLE_TUTORIALS": args.tutorials, "NXSTYLE_RUN_ID": run_id}
+        if harness == "run":
+            extra.update(NXSTYLE_RUN_SCRIPT=str(args.run.resolve()), NXSTYLE_RUN_OUT=out, NXSTYLE_RUN_ID=run_id)
+        else:
+            extra.update({f"NXSTYLE_{harness.upper()}_OUT": out, "NXSTYLE_SMOKE_EXIT": "0" if args.keep_open else "1",
+                          "NXSTYLE_TUTORIALS": args.tutorials, "NXSTYLE_RUN_ID": run_id})
         # a throwaway profile by default; a --profile given is kept between runs (a second start sees
         # what the first one saved), unless --reset-profile is given too
         reset = args.reset_profile if args.profile else True
@@ -1556,37 +1628,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Your add-ons: {addons_why}")
 
     if harness:
-        if os.name == "nt":
-            stats = {}
-            timeout_s = harness_timeout(harness, args.tutorials, args.timeout)
-            print(f"time limit: {timeout_s} s")
-            try:
-                code = run_on_hidden_desktop(cmd, env, timeout_s=timeout_s, max_memory_gb=args.max_memory_gb,
-                                             hidden=not args.visible, stats=stats)
-            except HarnessBusy as e:
-                print(f"{harness} run refused: {e}", file=sys.stderr)
-                return 5
-            if code == STATUS_NO_MEMORY:
-                # the job's peak counter includes the request it refused
-                print(f"{harness} run stopped: FreeCAD asked for {stats.get('peak_mb', 0)} MB in total, over the "
-                      f"{args.max_memory_gb:g} GB ceiling; the request was refused and the run ended, "
-                      f"the rest of the machine was not affected", file=sys.stderr)
-                return 4
-            print(f"peak memory: {stats.get('peak_mb', 0)} MB of {stats.get('limit_mb', 0)} MB allowed")
-            if code is None:
-                print(f"{harness} run timed out", file=sys.stderr)
-                return 3
-        else:
-            proc = subprocess.Popen(cmd, env=env)
-            try:
-                code = proc.wait(timeout=harness_timeout(harness, args.tutorials, args.timeout))
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                print(f"{harness} run timed out", file=sys.stderr)
-                return 3
-        if not args.profile:
-            shutil.rmtree(profile, ignore_errors=True)
-        return judge_result(out / RESULT_FILES[harness], harness, run_id, code, require_all=args.require_all)
+        try:
+            return run_harness(harness, cmd, env, args, profile, out, run_id)
+        finally:
+            if harness == "run":
+                shutil.rmtree(out, ignore_errors=True)
 
     kwargs = {}
     if os.name == "nt" and not args.wait:
@@ -1598,6 +1644,51 @@ def main(argv: list[str] | None = None) -> int:
         return proc.wait()
     time.sleep(0.2)
     return 0
+
+
+def run_harness(harness: str, cmd: list[str], env: dict, args: argparse.Namespace, profile: Path, out: Path,
+                run_id: str) -> int:
+    """Run a smoke, tutorial or script run bounded (time, memory, one at a time) and judge its result."""
+    if os.name == "nt":
+        stats = {}
+        timeout_s = harness_timeout(harness, args.tutorials, args.timeout)
+        print(f"time limit: {timeout_s} s")
+        give_up = time.monotonic() + args.lock_wait
+        while True:
+            try:
+                code = run_on_hidden_desktop(cmd, env, timeout_s=timeout_s, max_memory_gb=args.max_memory_gb,
+                                             hidden=not args.visible, stats=stats)
+                break
+            except HarnessBusy as e:
+                if time.monotonic() >= give_up:
+                    print(f"{harness} run refused: {e}"
+                          + (f" (waited {args.lock_wait} s)" if args.lock_wait else ""), file=sys.stderr)
+                    return 5
+                print(f"another run is active; waiting for it (up to {args.lock_wait} s in all)", flush=True)
+                time.sleep(min(LOCK_POLL_S, max(0.0, give_up - time.monotonic())))
+        if code == STATUS_NO_MEMORY:
+            # the job's peak counter includes the request it refused
+            print(f"{harness} run stopped: FreeCAD asked for {stats.get('peak_mb', 0)} MB in total, over the "
+                  f"{args.max_memory_gb:g} GB ceiling; the request was refused and the run ended, "
+                  f"the rest of the machine was not affected", file=sys.stderr)
+            return 4
+        print(f"peak memory: {stats.get('peak_mb', 0)} MB of {stats.get('limit_mb', 0)} MB allowed")
+        if code is None:
+            print(f"{harness} run timed out", file=sys.stderr)
+            return 3
+    else:
+        proc = subprocess.Popen(cmd, env=env)
+        try:
+            code = proc.wait(timeout=harness_timeout(harness, args.tutorials, args.timeout))
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            print(f"{harness} run timed out", file=sys.stderr)
+            return 3
+    if not args.profile:
+        shutil.rmtree(profile, ignore_errors=True)
+    if harness == "run":
+        return judge_run(out / RESULT_FILES["run"], run_id, code)
+    return judge_result(out / RESULT_FILES[harness], harness, run_id, code, require_all=args.require_all)
 
 
 if __name__ == "__main__":

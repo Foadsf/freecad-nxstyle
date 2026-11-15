@@ -1042,4 +1042,7 @@ def start():
     elif os.environ.get("NXSTYLE_TUTORIAL_OUT"):
         from . import tutorial
         tutorial.start(_shell)
+    elif os.environ.get("NXSTYLE_RUN_SCRIPT"):
+        from . import run_script
+        run_script.start(_shell)
     return _shell
