@@ -61,19 +61,30 @@ def release_meta(rel):
 
 
 # ------------------------------------------------------------------ exporters
+def is_flat_pattern(o):
+    """The SheetMetal add-on's Unfold (Flat Pattern): the part laid flat for cutting, not the part. Known by its
+    proxy, or by its properties where the add-on is not loaded."""
+    if type(getattr(o, "Proxy", None)).__name__ == "SMUnfold":
+        return True
+    props = getattr(o, "PropertiesList", [])
+    return "baseObject" in props and "KFactorStandard" in props
+
+
 def solids(doc):
-    """What a STEP of the part holds: assemblies, else bodies and other solids not used by others."""
+    """What a STEP of the part holds: assemblies, else bodies and other solids not used by others. A flat
+    pattern is neither one of them nor uses the formed part up (the package held the flat plate instead of
+    the bent part, and the PMI on its faces did not land)."""
     tops = [o for o in doc.Objects if o.isDerivedFrom("Assembly::AssemblyObject")]
     if tops:
         return tops
     out = []
     for o in doc.Objects:
         shape = getattr(o, "Shape", None)
-        if shape is None or shape.isNull() or not shape.Solids:
+        if shape is None or shape.isNull() or not shape.Solids or is_flat_pattern(o):
             continue
         if o.isDerivedFrom("PartDesign::Feature") and not o.isDerivedFrom("PartDesign::Body"):
             continue
-        if any(p.isDerivedFrom("Part::Feature") for p in o.InList):     # consumed by another solid
+        if any(p.isDerivedFrom("Part::Feature") and not is_flat_pattern(p) for p in o.InList):   # used by another
             continue
         out.append(o)
     return out
