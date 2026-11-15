@@ -160,7 +160,7 @@ jobs:
         shell: pwsh
         run: |
           Get-ChildItem dl
-          python -m pip install --disable-pip-version-check pefile
+          python -m pip install --disable-pip-version-check pefile zstandard==0.24.0
           python packaging/check_exe.py $env:EXE --arch ${{ matrix.arch }} --version $env:NXSTYLE_EXPECT_VERSION --icon packaging/icons/nxstyle.ico
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python packaging/windows/sfx_pack.py $env:EXE --verify
