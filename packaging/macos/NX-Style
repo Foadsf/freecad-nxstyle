@@ -1,0 +1,15 @@
+#!/bin/bash
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# NX-Style.app's executable. The app carries FreeCAD's own app, unmodified, and NX-Style:
+#   NX-Style.app/Contents/MacOS/NX-Style              this script
+#   NX-Style.app/Contents/Resources/FreeCAD.app       FreeCAD (from its release .dmg)
+#   NX-Style.app/Contents/Resources/nxstyle/          launch_nx.py, NXStyle/, vendor/
+#
+# It runs launch_nx.py with FreeCAD's own Python, so every launch_nx.py option works from a terminal too:
+#   /Applications/NX-Style.app/Contents/MacOS/NX-Style --smoke-test /tmp/nx
+# macOS draws OpenGL itself (Apple's driver, with a software fallback), so nothing here depends on a GPU vendor.
+CONTENTS="$(cd "$(dirname "$0")/.." && pwd)"
+FC="$CONTENTS/Resources/FreeCAD.app"
+exec "$FC/Contents/Resources/bin/python" -E -s "$CONTENTS/Resources/nxstyle/launch_nx.py" \
+    --freecad "$FC/Contents/MacOS/FreeCAD" "$@"

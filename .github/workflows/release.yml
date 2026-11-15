@@ -1,0 +1,341 @@
+# Release bundles: NX-Style with an unmodified official FreeCAD release, one self-contained artifact per
+# platform and architecture (packaging/README.md describes them). A tag v<version> builds every bundle, checks
+# each one on a fresh native runner from the uploaded artifact, and creates a draft GitHub release with the
+# bundles and SHA256SUMS.txt; publishing the draft is a person's decision. Pull requests that touch the
+# packaging, and manual runs, build and check without releasing.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "packaging/**"
+      - ".github/workflows/release.yml"
+      - "launch_nx.py"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  meta:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      freecad: ${{ steps.v.outputs.freecad }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          version="$(python3 packaging/bundle.py version)"
+          freecad="$(python3 -c 'import json; print(json.load(open("packaging/freecad.json"))["version"])')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "freecad=$freecad" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match NX-Style's version $version (NXStyle/nxstyle/__init__.py)"
+            exit 1
+          fi
+          echo "NX-Style $version with FreeCAD $freecad"
+
+  build-windows:
+    needs: meta
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            msvc: x64
+          - arch: arm64
+            msvc: amd64_arm64        # the launcher is cross-compiled; the bundle is checked on an arm64 runner
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc }}
+      - name: Build the bundle
+        shell: pwsh
+        run: packaging/windows/build.ps1 -Arch ${{ matrix.arch }} -Out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: dist/*.zip
+          compression-level: 0
+          retention-days: 7
+
+  build-linux:
+    needs: meta
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Tools (FreeCAD's AppImage runtime needs libfuse2 even to unpack itself)
+        run: sudo apt-get update && sudo apt-get install -y libfuse2t64 desktop-file-utils
+      - name: Build the AppImage
+        run: |
+          desktop-file-validate packaging/linux/nxstyle.desktop
+          packaging/linux/build.sh ${{ matrix.arch }} dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/*.AppImage
+          compression-level: 0
+          retention-days: 7
+
+  build-macos:
+    needs: meta
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build the app and its disk image
+        run: packaging/macos/build.sh ${{ matrix.arch }} dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/*.dmg
+          compression-level: 0
+          retention-days: 7
+
+  # Each bundle is checked as a user gets it: downloaded onto a fresh runner of its own platform and architecture,
+  # started through its own entry point (NX-Style.exe, the AppImage, NX-Style.app). The headless check loads
+  # NX-Style and its add-ons in the bundled freecadcmd; the GUI check starts FreeCAD with NX-Style and runs the
+  # self-test's start-up steps (profile, ribbon, icons, a document, Strata).
+  verify-windows:
+    needs: [meta, build-windows]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      NXSTYLE_EXPECT_FREECAD: ${{ needs.meta.outputs.freecad }}
+      NXSTYLE_EXPECT_VERSION: ${{ needs.meta.outputs.version }}
+      BUNDLE: C:\nx\NX-Style-${{ needs.meta.outputs.version }}-windows-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: dl
+      - name: Unpack
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force C:\nx | Out-Null
+          tar -xf (Get-ChildItem dl\*.zip).FullName -C C:\nx
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Get-ChildItem $env:BUNDLE
+      - name: NX-Style.exe carries the icon, the version and the right architecture
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check pefile
+          python packaging/check_exe.py "$env:BUNDLE\NX-Style.exe" --arch ${{ matrix.arch }} --version $env:NXSTYLE_EXPECT_VERSION --icon packaging/icons/nxstyle.ico
+      - name: Headless check (freecadcmd loads NX-Style and its add-ons)
+        shell: pwsh
+        run: '& "$env:BUNDLE\nxstyle.cmd" --headless-check; exit $LASTEXITCODE'
+      - name: GUI check (FreeCAD starts with NX-Style)
+        shell: pwsh
+        env:
+          NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
+        run: '& "$env:BUNDLE\nxstyle.cmd" --smoke-test C:\r\s --timeout 900 --max-memory-gb 6; exit $LASTEXITCODE'
+      - name: OpenGL choice can be overridden
+        shell: pwsh
+        run: |
+          $sw = "$env:BUNDLE\FreeCAD\bin\opengl32.dll"
+          $env:NXSTYLE_SOFTWARE_GL = "1"
+          $o = & "$env:BUNDLE\nxstyle.cmd" --dry-run 2>&1 | Out-String
+          if ($o -notmatch "OpenGL: Mesa software renderer" -or -not (Test-Path $sw)) { Write-Error "forcing software rendering failed: $o"; exit 1 }
+          $env:NXSTYLE_SOFTWARE_GL = "0"
+          $o = & "$env:BUNDLE\nxstyle.cmd" --dry-run 2>&1 | Out-String
+          if ($o -notmatch "OpenGL: system driver" -or (Test-Path $sw)) { Write-Error "forbidding software rendering failed: $o"; exit 1 }
+          "both overrides work"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-windows-${{ matrix.arch }}
+          path: C:\r\s
+          retention-days: 7
+
+  verify-linux:
+    needs: [meta, build-linux]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      NXSTYLE_EXPECT_FREECAD: ${{ needs.meta.outputs.freecad }}
+      NXSTYLE_EXPECT_VERSION: ${{ needs.meta.outputs.version }}
+      IMG: ${{ github.workspace }}/dl/NX-Style-${{ needs.meta.outputs.version }}-linux-${{ matrix.arch }}.AppImage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dl
+      - name: A desktop as a user has one (FUSE, X server without a GPU, Mesa)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fuse3 xvfb xauth libgl1 libegl1 libglx-mesa0 libgl1-mesa-dri libxkbcommon-x11-0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0 libxcb-randr0 \
+            libxcb-render-util0 libxcb-image0 fontconfig
+          chmod +x "$IMG"
+      - name: The AppImage carries NX-Style's icon and desktop entry
+        run: |
+          mkdir -p x && cd x
+          "$IMG" --appimage-extract nxstyle.desktop >/dev/null
+          "$IMG" --appimage-extract nxstyle.png >/dev/null
+          "$IMG" --appimage-extract .DirIcon >/dev/null
+          cat squashfs-root/nxstyle.desktop
+          grep -qx 'Icon=nxstyle' squashfs-root/nxstyle.desktop
+          cmp squashfs-root/nxstyle.png "$GITHUB_WORKSPACE/packaging/icons/nxstyle.png"
+          [ "$(readlink squashfs-root/.DirIcon)" = nxstyle.png ]
+          echo "icon ok"
+      - name: Headless check (freecadcmd loads NX-Style and its add-ons)
+        run: '"$IMG" --headless-check'
+      - name: GUI check on the system's OpenGL (Xvfb gives Mesa)
+        env:
+          NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
+        run: |
+          rc=0
+          xvfb-run -a -s "-screen 0 1920x1200x24" "$IMG" --smoke-test "$RUNNER_TEMP/s1" --timeout 900 2> err1.txt || rc=$?
+          cat err1.txt >&2
+          [ "$rc" -eq 0 ] || exit "$rc"
+          grep -q "OpenGL: system driver" err1.txt
+      - name: GUI check with a broken vendor driver falls back to software rendering
+        env:
+          NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
+          __GLX_VENDOR_LIBRARY_NAME: nvidia      # no NVIDIA driver here: the system's OpenGL fails
+        run: |
+          rc=0
+          xvfb-run -a -s "-screen 0 1920x1200x24" "$IMG" --smoke-test "$RUNNER_TEMP/s2" --timeout 900 2> err2.txt || rc=$?
+          cat err2.txt >&2
+          [ "$rc" -eq 0 ] || exit "$rc"
+          grep -q "OpenGL: Mesa software renderer" err2.txt
+          grep -q "the system driver gave none" err2.txt
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-linux-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/s1
+            ${{ runner.temp }}/s2
+          retention-days: 7
+
+  verify-macos:
+    needs: [meta, build-macos]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    env:
+      NXSTYLE_EXPECT_FREECAD: ${{ needs.meta.outputs.freecad }}
+      NXSTYLE_EXPECT_VERSION: ${{ needs.meta.outputs.version }}
+      APP: /Users/runner/Applications/NX-Style.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dl
+      - name: Install from the disk image
+        run: |
+          hdiutil attach -nobrowse -readonly -mountpoint /tmp/nxdmg dl/*.dmg
+          mkdir -p /Users/runner/Applications
+          ditto /tmp/nxdmg/NX-Style.app "$APP"
+          hdiutil detach /tmp/nxdmg
+          ls "$APP/Contents" "$APP/Contents/Resources"
+      - name: NX-Style.app carries its icon, version and signature
+        run: |
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist")" = nxstyle ]
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")" = "$NXSTYLE_EXPECT_VERSION" ]
+          cmp "$APP/Contents/Resources/nxstyle.icns" packaging/icons/nxstyle.icns
+          codesign --verify --verbose "$APP" || echo "::warning::the outer app's ad-hoc signature does not verify"
+          file "$APP/Contents/Resources/FreeCAD.app/Contents/Resources/bin/freecadcmd"
+          echo "icon ok"
+      - name: Headless check (freecadcmd loads NX-Style and its add-ons)
+        run: '"$APP/Contents/MacOS/NX-Style" --headless-check'
+      - name: GUI check (FreeCAD starts with NX-Style)
+        env:
+          NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
+        run: '"$APP/Contents/MacOS/NX-Style" --smoke-test "$RUNNER_TEMP/s" --timeout 900'
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-macos-${{ matrix.arch }}
+          path: ${{ runner.temp }}/s
+          retention-days: 7
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [meta, verify-windows, verify-linux, verify-macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "{windows,linux,macos}-*"
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        working-directory: dist
+        run: |
+          sha256sum NX-Style-* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Draft release (published by a person after review)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="packaging/release-notes/${GITHUB_REF_NAME}.md"
+          [ -f "$notes" ] || { echo "::error::missing $notes"; exit 1; }
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "NX-Style ${{ needs.meta.outputs.version }}" --notes-file "$notes" dist/*

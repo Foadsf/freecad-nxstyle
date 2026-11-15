@@ -1,0 +1,69 @@
+#!/bin/bash
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# NX-Style AppImage entry point. The AppImage is FreeCAD's own AppImage, unmodified, with NX-Style added:
+#   AppRun.freecad          FreeCAD's AppRun (sets PYTHONHOME, SSL certificates, X11 platform, ...)
+#   usr/                    FreeCAD (conda environment: freecad, freecadcmd, python, Qt, ...)
+#   usr/share/nxstyle/      launch_nx.py, NXStyle/, vendor/
+#   usr/libexec/nxstyle/    glprobe.py
+#
+#   NX-Style.AppImage [launch_nx.py options] [files]    NX-Style (every launch_nx.py option works)
+#   NX-Style.AppImage freecadcmd|python|... [args]      FreeCAD's own tools, as in FreeCAD's AppImage
+#
+# OpenGL: FreeCAD needs OpenGL 2 or newer. The AppImage brings no GPU driver: libglvnd hands OpenGL to the
+# system's driver, whatever its vendor. Before FreeCAD starts, glprobe.py asks that driver for a context; when
+# none of OpenGL 2+ comes (a VM, a remote X display, a missing or broken GPU driver), FreeCAD runs on Mesa's
+# software renderer (llvmpipe) instead. NXSTYLE_SOFTWARE_GL=1 forces software rendering, =0 forbids it.
+HERE="$(dirname "$(readlink -f "${0}")")"
+FREECAD_APPRUN="$HERE/AppRun.freecad"
+NX="$HERE/usr/share/nxstyle"
+
+if [ -n "$1" ] && [ -e "$HERE/usr/bin/$1" ]; then
+    exec "$FREECAD_APPRUN" "$@"
+fi
+
+probe() {
+    timeout 30 "$FREECAD_APPRUN" python -E -s "$HERE/usr/libexec/nxstyle/glprobe.py" 2>/dev/null | tail -n 1
+    return "${PIPESTATUS[0]}"
+}
+
+software_gl() {
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export GALLIUM_DRIVER=llvmpipe
+    # a broken vendor driver (an NVIDIA library without its kernel module) must not take the call
+    if ldconfig -p 2>/dev/null | grep -q 'libGLX_mesa\.so\.0'; then
+        export __GLX_VENDOR_LIBRARY_NAME=mesa
+    fi
+    export NXSTYLE_GL=software
+}
+
+case "${NXSTYLE_SOFTWARE_GL:-auto}" in
+    1)
+        software_gl
+        echo "OpenGL: Mesa software renderer (NXSTYLE_SOFTWARE_GL=1)" >&2
+        ;;
+    0)
+        export NXSTYLE_GL=hardware
+        echo "OpenGL: system driver (NXSTYLE_SOFTWARE_GL=0)" >&2
+        ;;
+    *)
+        if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+            echo "OpenGL: not probed (no display)" >&2
+        elif why="$(probe)"; then
+            export NXSTYLE_GL=hardware
+            echo "OpenGL: system driver ($why)" >&2
+        else
+            software_gl
+            if soft="$(probe)"; then
+                echo "OpenGL: Mesa software renderer ($soft), the system driver gave none of OpenGL 2+: $why" >&2
+            else
+                echo "OpenGL: none works, FreeCAD's 3D view will fail. System driver: $why; Mesa software: $soft." \
+                     "Install Mesa (Debian/Ubuntu: libgl1-mesa-dri libglx-mesa0; Fedora: mesa-dri-drivers" \
+                     "mesa-libGL)." >&2
+            fi
+        fi
+        ;;
+esac
+
+# --wait: the AppImage stays mounted while FreeCAD runs from it
+exec "$FREECAD_APPRUN" python -E -s "$NX/launch_nx.py" --freecad "$HERE/usr/bin/freecad" --wait "$@"

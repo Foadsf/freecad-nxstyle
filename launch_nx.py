@@ -62,11 +62,13 @@ def _exe_names() -> list[str]:
 
 
 def _console_exe(gui_exe: Path) -> Path | None:
-    """freecadcmd sits next to the GUI binary; it prints --version reliably."""
-    for name in ("freecadcmd.exe", "FreeCADCmd.exe", "freecadcmd", "FreeCADCmd"):
-        cand = gui_exe.with_name(name)
-        if cand.is_file():
-            return cand
+    """freecadcmd sits next to the GUI binary; it prints --version reliably. In a macOS bundle the GUI binary is
+    FreeCAD.app/Contents/MacOS/FreeCAD and freecadcmd is in Contents/Resources/bin."""
+    for folder in (gui_exe.parent, gui_exe.parent.parent / "Resources" / "bin"):
+        for name in ("freecadcmd.exe", "FreeCADCmd.exe", "freecadcmd", "FreeCADCmd"):
+            cand = folder / name
+            if cand.is_file():
+                return cand
     return None
 
 
@@ -1290,6 +1292,62 @@ def run_on_hidden_desktop(cmd: list[str], env: dict, timeout_s: int,
 
 
 # --------------------------------------------------------------------------
+# Headless check: NX-Style and its bundled add-ons load in this FreeCAD's freecadcmd (the release workflow runs
+# it on every bundle; packaging/check_bundle.py does the checking inside FreeCAD)
+# --------------------------------------------------------------------------
+CHECK_SCRIPT = HERE / "packaging" / "check_bundle.py"
+
+
+def headless_check_command(install: Install, modules: tuple[Path, ...]) -> list[str] | None:
+    """freecadcmd with NX-Style and modules on -M, running CHECK_SCRIPT; None when this FreeCAD has no
+    freecadcmd to run."""
+    if install.exe.suffix.lower() == ".appimage":
+        base = [str(install.exe), "freecadcmd"]     # an AppImage runs its bundled tool named first
+    else:
+        console = _console_exe(install.exe)
+        if console is None:
+            return None
+        base = [str(console)]
+    extra = [arg for m in modules for arg in ("-M", str(m))]
+    return [*base, "-M", str(MODULE_DIR), *extra, str(CHECK_SCRIPT)]
+
+
+def headless_check(install: Install, args) -> int:
+    profile = Path(tempfile.mkdtemp(prefix="nxstyle-check-"))
+    try:
+        modules = tuple(m for m, _why in (find_strata(profile, args.no_strata), find_katydid(profile, args.no_katydid),
+                                          find_sheetmetal(profile, args.no_sheetmetal),
+                                          find_lcinterlocking(profile, args.no_lcinterlocking)) if m)
+        cmd = headless_check_command(install, modules)
+        if cmd is None:
+            print(f"no freecadcmd found for {install.exe}", file=sys.stderr)
+            return 2
+        if not CHECK_SCRIPT.is_file():
+            print(f"missing {CHECK_SCRIPT}", file=sys.stderr)
+            return 2
+        out = profile / "check.json"
+        # NXSTYLE_EXPECT_FREECAD / NXSTYLE_EXPECT_VERSION, if set, reach the script with the rest of the environment
+        env = build_env(prepare_profile(profile / "p"), {"NXSTYLE_CHECK_OUT": out})
+        print(f"FreeCAD {install.version_str}: {install.exe}")
+        print(" ".join(cmd), flush=True)
+        try:
+            code = subprocess.run(cmd, env=env, timeout=600).returncode
+        except subprocess.TimeoutExpired:
+            print("headless check timed out", file=sys.stderr)
+            return 3
+        try:
+            result = json.loads(out.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            print(f"headless check left no result ({e}); freecadcmd exited with {code}", file=sys.stderr)
+            return 2
+        ok = code == 0 and result.get("ok") is True
+        print(f"headless check: {'passed' if ok else 'FAILED'} (freecadcmd exit {code})")
+        return 0 if ok else 1
+    finally:
+        shutil.rmtree(profile, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------
 def pick_install(path: str | None) -> Install:
@@ -1396,6 +1454,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--install-dfm-deps", action="store_true",
                     help=f"install what the DFM add-on needs ({', '.join(DFM_DEPS)}) with FreeCAD's own Python "
                          f"into {default_profile_root()}/pydeps, then exit (downloads about 165 MB)")
+    ap.add_argument("--headless-check", action="store_true",
+                    help="load NX-Style and the add-ons it bundles in this FreeCAD's freecadcmd (no GUI) in a "
+                         "throwaway profile, report, and exit 0 only if all of it loads")
     ap.add_argument("passthrough", nargs=argparse.REMAINDER,
                     help="arguments after -- go to FreeCAD unchanged")
     args = ap.parse_args(argv)
@@ -1414,6 +1475,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"warning: FreeCAD {install.version_str} is older than 1.0 and is not supported", file=sys.stderr)
     if args.install_dfm_deps:
         return install_dfm_deps(install)
+    if args.headless_check:
+        return headless_check(install, args)
 
     extra = {}
     harness = "smoke" if args.smoke_test else "tutorial" if args.tutorial else None

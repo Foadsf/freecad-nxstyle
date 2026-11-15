@@ -110,12 +110,44 @@ class VersionProbeTests(unittest.TestCase):
             (Path(tmp) / "freecadcmd").touch()
             self.assertEqual(launch_nx._version_command(gui), [str(Path(tmp) / "freecadcmd"), "--version"])
 
+    def test_macos_bundle_is_asked_through_its_resources_freecadcmd(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            contents = Path(tmp) / "FreeCAD.app" / "Contents"
+            gui = contents / "MacOS" / "FreeCAD"
+            cmd = contents / "Resources" / "bin" / "freecadcmd"
+            for p in (gui, cmd):
+                p.parent.mkdir(parents=True)
+                p.touch()
+            self.assertEqual(launch_nx._version_command(gui), [str(cmd), "--version"])
+
     @unittest.skipIf(os.name == "nt", "the GUI binary prints --version on Windows")
     def test_lone_gui_binary_is_not_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             gui = Path(tmp) / "freecad"
             gui.touch()
             self.assertIsNone(launch_nx._version_command(gui))
+
+    def test_headless_check_runs_freecadcmd_with_nxstyle_and_addons(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gui = Path(tmp) / "freecad"
+            gui.touch()
+            (Path(tmp) / "freecadcmd").touch()
+            cmd = launch_nx.headless_check_command(launch_nx.Install(gui, (1, 1, 4)), (Path("strata"),))
+            self.assertEqual(cmd, [str(Path(tmp) / "freecadcmd"), "-M", str(launch_nx.MODULE_DIR), "-M", "strata",
+                                   str(launch_nx.CHECK_SCRIPT)])
+            self.assertTrue(launch_nx.CHECK_SCRIPT.is_file())
+
+    def test_headless_check_through_an_appimage(self):
+        img = Path("/opt/FreeCAD_1.1.4-Linux-x86_64-py311.AppImage")
+        cmd = launch_nx.headless_check_command(launch_nx.Install(img, (1, 1, 4)), ())
+        self.assertEqual(cmd[:2], [str(img), "freecadcmd"])
+
+    @unittest.skipIf(os.name == "nt", "freecad.exe is never without freecadcmd.exe on Windows")
+    def test_headless_check_needs_freecadcmd(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gui = Path(tmp) / "freecad"
+            gui.touch()
+            self.assertIsNone(launch_nx.headless_check_command(launch_nx.Install(gui, (1, 1, 4)), ()))
 
     def test_version_falls_back_to_appimage_file_name(self):
         with tempfile.TemporaryDirectory() as tmp:
