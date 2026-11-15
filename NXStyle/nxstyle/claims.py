@@ -76,9 +76,12 @@ class ClaimFeature:
                 own = obj.getGlobalPlacement().multiply(obj.Placement.inverse())   # the claim's own container
             except Exception:
                 own = App.Placement()
-            if not own.isIdentity():
-                s.transformShape(own.inverse().toMatrix())
+            at = own.inverse().multiply(s.Placement)                      # the source's place in that container
+            # assigning a shape during a recompute gives it the claim's Placement and drops the source's own
+            # (the claim sat at the origin, not on its source): the claim's Placement follows the source instead
             obj.Shape = s
+            if not obj.Placement.isSame(at, 1e-9):
+                obj.Placement = at
             return
         pl = obj.Placement                         # a box at its own placement (assigning a shape resets it)
         obj.Shape = Part.makeBox(float(obj.Length), float(obj.Width), float(obj.Height))
@@ -271,12 +274,20 @@ def link_sources(doc):
 CHECK_RESULTS = ("ClaimViolations", "ClearanceInterferences", "Interference")
 
 
+def claim_sources(doc):
+    """Names of the objects claims take their shape from (Source): the envelope of a space, not a part in it
+    (counting one made every claim with a Source enter itself). A part a claim also lists as a member is kept."""
+    claims = [o for o in doc.Objects if isinstance(getattr(o, "Proxy", None), ClaimFeature)]
+    members = {m.Name for c in claims for m in (c.Members or [])}
+    return {c.Source.Name for c in claims if c.Source is not None and c.Source.Document is doc} - members
+
+
 def parts(doc):
     """The solids of the layout that claims apply to: top-level parts, bodies and links, where they are in
-    their assembly (not the claims, not features consumed by others, not the hidden sources of links, not
-    the checks' own results)."""
+    their assembly (not the claims, not their Source shapes, not features consumed by others, not the hidden
+    sources of links, not the checks' own results)."""
     out = []
-    sources = link_sources(doc)
+    sources = link_sources(doc) | claim_sources(doc)
     for o in doc.Objects:
         if o.Name in sources:
             continue
