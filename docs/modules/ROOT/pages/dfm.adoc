@@ -1,8 +1,9 @@
 = Molded Part Validation (DFM)
-:description: Design-for-manufacturing checks for injection-molded parts on the bundled DFM Workbench: draft, wall thickness, undercuts and sharp corners, under NX's Molded Part Validation names.
+:description: Design-for-manufacturing checks on the bundled DFM Workbench: injection molding, FDM, resin and powder bed printing, and CNC milling, under NX's Molded Part Validation names.
 
-*Analysis › Molded Part Validation* on the Modeling ribbon checks a part against the rules of a manufacturing process before it goes to the toolmaker.
-The checks come from the https://github.com/ryankembrey/FreeCAD-DFM-Workbench[DFM Workbench] (Ryan Kembrey, LGPL-2.1-or-later), which NX-Style bundles unmodified in `vendor/FreeCAD-DFM-Workbench` and the launcher loads.
+*Analysis › Molded Part Validation* on the Modeling ribbon checks a part against the rules of a manufacturing process before it goes to the toolmaker, the printer or the machine shop.
+The checks come from the https://github.com/ryankembrey/FreeCAD-DFM-Workbench[DFM Workbench] (Ryan Kembrey, LGPL-2.1-or-later), which NX-Style bundles in `vendor/FreeCAD-DFM-Workbench` and the launcher loads.
+The bundled copy is https://github.com/Foadsf/FreeCAD-DFM-Workbench[a fork] of its version 0.4.3 that adds a CNC milling process (xref:#cnc[]).
 Its commands exist from start-up, so they sit on the Modeling ribbon; there is no separate application to switch to.
 The add-on's own command name is shown in each button's tooltip (*FreeCAD: DFM Analysis* under *Moldability Validation*).
 
@@ -38,27 +39,65 @@ NX's Check-Mate checkers are not mapped: the add-on has no checker framework of 
 
 == What Moldability Validation checks
 
-The add-on ships one process, *Plastic Injection Molding*, with these rules. The limits shown are its *Default* material's; each other material (ABS, PC, PP, …) overrides some of them.
+The bundled add-on has five processes. Each has a *Default* material and others that override some of its limits; the Process Library shows every rule and limit.
 
-[cols="2,1,4",options="header"]
+[cols="2,1,3,3",options="header"]
 |===
-| Rule | Severity | Finding
-| Minimum Draft Angle | error below 0.5°, warning below 1° | A face too close to parallel with the pull direction (default +Z), so it drags on ejection.
-| Minimum Wall Thickness | error below 0.5 mm, warning below 1 mm | A section too thin to fill.
-| Maximum Wall Thickness | error above 5 mm, warning above 4 mm | A section that cools slowly: sink marks and voids.
-| Undercut | error | A face trapped behind other geometry along the pull direction (needs a slider or lifter).
-| Sharp Internal Corners | error | A concave edge with no radius: a stress raiser that disturbs the flow.
-| Sharp External Corners | warning | A convex edge with no radius: a sharp inside corner in the mold, which needs EDM.
+| Process | Rules | Asks for | Materials
+| Plastic Injection Molding | 29 | Pull direction, side actions, nominal wall | ABS, PC, PP, PA, POM and 10 more
+| FDM | 15 | Print direction, nozzle diameter, layer height | PLA, PETG, ABS, ASA, TPU, PA, PC and fibre-filled grades
+| Resin 3D Printing (SLA) | 15 | Print direction | standard, tough and flexible resins
+| Powder Bed Fusion (SLS) | 16 | nothing (the powder holds the part) | PA12 (SLS, MJF), PA11, PA12 carbon-filled, TPU
+| CNC Milling (3-axis) | 2 | Tool axis | Aluminium 6061, Brass, Stainless Steel 304, POM (Acetal)
 |===
 
-The add-on's rulebook also has a maximum overhang angle and a maximum bridge span, for processes such as 3D printing that you define in the Process Library.
+Injection molding checks draft, wall thickness, undercuts and sharp corners, and the recognised features: bosses, ribs, holes, living hinges, snap fits and molded text.
+The printing processes check overhangs, bridges, holes, pins, text, gaps and, for resin and powder, sealed hollows.
+
+[#cnc]
+=== CNC milling
+
+*CNC Milling (3-axis)* comes from the bundled fork. An end mill cuts walls parallel to its axis and leaves its own radius in every inside corner between them, so its *Tool Corner Radius* rule looks at the edges that run along the tool axis:
+
+* a sharp inside corner there is a corner of radius 0: no end mill cuts it;
+* a rounded inside corner or the end of a slot is a corner of its radius;
+* a whole hole is drilled or bored, not milled round a corner, and is left out.
+
+A corner below *At least* (the radius of the smallest end mill the shop will use for those walls; 0.5 mm by default, 1 mm in stainless steel) is an error, one below *Aim for* (3 mm, a Ø6 end mill) a warning.
+*Minimum Wall Thickness* uses the Protolabs Network (Hubs) figures: 0.8 mm aimed for and 0.5 mm at least in metals, 1.5 and 1.0 mm in POM.
+Run the analysis once per setup, with that setup's tool axis: corners along other axes are another setup's.
 
 == How to run it
 
 . Select the part (a Body, or a Part solid), then *Analysis › Molded Part Validation › Moldability Validation*.
-. In the task panel, choose the material. The category and the process fill themselves while the add-on has only one of each. The pull direction is +Z unless you click a face or an edge for it.
-. *Run Analysis*. The results panel lists the findings by criticality and rule; click one to highlight its face or edge, and double-click to zoom to it. Rules with no finding are listed under *Passed*.
+. In the task panel, choose the process, then the material. Directions (pull, print, tool axis) start along +Z; click a face or an edge to change one.
+. *Run analysis*. A progress panel shows each rule as it is measured, with an *Abort* button. The results panel then lists the findings by criticality and rule; click one to highlight its face or edge, and double-click to zoom to it. Rules with no finding are listed under *Passed*.
 . *Save* keeps the results in the document; *Close* restores the part's colours. The panel also exports CSV and compares runs (its History tab).
+
+The add-on measures the heavier rules in worker processes, one per processor core but one (at most 12). Each worker loads its own FreeCAD, so a run with many cores uses several GB; *ParallelWorkers* in `BaseApp/Preferences/Mod/DFM` caps them. NX-Style's self-test runs with 2.
+
+[#script]
+== Running it from a script
+
+[source,python]
+----
+import time
+from OCP.gp import gp_Dir
+from freecad.DFM.app.analysis_runner import AnalysisRunner
+
+deadline = time.monotonic() + 600          # give up after 10 minutes
+results = AnalysisRunner().run_analysis(
+    "CNC Milling (3-axis)", "Aluminium 6061", body.Shape,
+    progress_cb=lambda done, total, name: print(f"{done}/{total} {name}"),
+    check_abort=lambda: time.monotonic() > deadline,
+    TOOL_AXIS=gp_Dir(0, 0, 1))
+for r in results:
+    print(r.rule_id.name, r.severity.name, r.overview, r.failing_geometry)
+----
+
+`check_abort` is asked before each face or edge, so the time limit holds within a second or so (measured on a 579-face engraved panel: stopped at 20.3 s for a 20 s limit).
+Name the inputs a process asks for as keyword arguments: `PULL_DIRECTION`, `PRINT_ORIENTATION`, `TOOL_AXIS` (each a `gp_Dir`), `NOZZLE_DIAMETER`, `LAYER_HEIGHT` (mm), and for injection molding `SIDE_ACTIONS=[]` and `NOMINAL_WALL_THICKNESS={"mode": "auto"}`.
+With `launch_nx.py --run`, `--timeout` bounds the whole run as well.
 
 == Switching it off
 
@@ -70,3 +109,5 @@ A DFM Workbench already installed in the NX profile's `Mod` folder (by the Addon
 * The checks are rule-of-thumb checks for a designer, not a mold-flow simulation.
 * Findings name faces and edges by number (`Edge7`). If the part changes after a saved analysis, the add-on warns when the document is opened again that those numbers may have moved.
 * Check Wall Thickness and Draft Analysis mesh the part with gmsh; a very fine mesh on a large part takes a while.
+* Tool Corner Radius looks at corners along one tool axis per run, for flat end mills: the radius between a wall and a pocket floor (a ball or bull-nose end mill) is not checked. A drilled hole that a slot cuts open is a partial cylinder, and is reported as a corner of its radius.
+* There is no turning process: a turned part's checks (grooves, threads, internal corners against the insert's nose radius) are not covered.
