@@ -934,7 +934,7 @@ def find_carbon(profile: Path, disabled: bool = False) -> str:
 # Analysis > Molded Part Validation. It imports OCP (cadquery-ocp) on load, which FreeCAD does not ship, so
 # --install-dfm-deps puts a pinned copy in a folder of NXStyle's own; the launcher never downloads by itself.
 # --------------------------------------------------------------------------
-DFM_DIR = HERE / "vendor" / "FreeCAD-DFM-Workbench"   # git submodule of github.com/ryankembrey/FreeCAD-DFM-Workbench
+DFM_DIR = HERE / "vendor" / "FreeCAD-DFM-Workbench"   # git submodule: github.com/Foadsf/FreeCAD-DFM-Workbench (fork)
 # OCCT 7.8.1, the one FreeCAD 1.1 is built on; OCP loads vtk's DLLs on import; gmsh meshes the part for
 # Draft Analysis and Check Wall Thickness. --no-deps: vtk's own requirements (numpy 2, matplotlib) would
 # shadow FreeCAD's.

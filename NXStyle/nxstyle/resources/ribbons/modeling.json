@@ -1,5 +1,5 @@
 {
-  "_comment": "NX Modeling application. 'cmd' is a FreeCAD command name or a list of candidates (first one that exists wins). 'label' is the NX name shown on the button. size: large | small. Analysis > Molded Part Validation runs the bundled DFM add-on (github.com/ryankembrey/FreeCAD-DFM-Workbench), whose commands exist from start-up without its workbench; its items are optional, so the group is gone when the add-on is off.",
+  "_comment": "NX Modeling application. 'cmd' is a FreeCAD command name or a list of candidates (first one that exists wins). 'label' is the NX name shown on the button. size: large | small. Analysis > Molded Part Validation runs the bundled DFM add-on (github.com/Foadsf/FreeCAD-DFM-Workbench, a fork of ryankembrey's), whose commands exist from start-up without its workbench; its items are optional, so the group is gone when the add-on is off.",
   "title": "Modeling",
   "workbench": "PartDesignWorkbench",
   "preload": ["SketcherWorkbench", "PartWorkbench", "SurfaceWorkbench", "AssemblyWorkbench", "SpreadsheetWorkbench"],

@@ -166,9 +166,17 @@ class Smoke:
         yield self.s_dfm, 1500
         yield self.s_dfm_check, 300
         yield self.s_dfm_run_notched, 500
+        yield self.s_dfm_wait_results, 500
         yield self.s_dfm_result_notched, 300
         yield self.s_dfm_run_clean, 500
+        yield self.s_dfm_wait_results, 500
         yield self.s_dfm_result_clean, 300
+        yield self.s_dfm_run_pocket, 500
+        yield self.s_dfm_wait_results, 500
+        yield self.s_dfm_result_pocket, 300
+        yield self.s_dfm_run_rounded, 500
+        yield self.s_dfm_wait_results, 500
+        yield self.s_dfm_result_rounded, 300
         yield self.s_dfm_after, 100
         yield self.s_layout_persist, 2500          # switches applications: after the other switching steps
         yield self.s_layout_persist_check, 300
@@ -2085,18 +2093,33 @@ class Smoke:
     DFM_BUTTONS = {"DFM_SetupAnalysis": "Moldability Validation", "DFM_ThicknessAnalysis": "Check Wall Thickness",
                    "DFM_DraftAnalysis": "Draft Analysis", "DFM_ProcessLibrary": "Process Library"}
     DFM_RULE = "Sharp Internal Corners"
+    DFM_MOLDING = ("Plastic Injection Molding", "Default")
+    DFM_MILLING = ("CNC Milling (3-axis)", "Aluminium 6061")
+    DFM_TOOL_RULE = "Tool Corner Radius"
+    DFM_WORKERS = 2                     # the add-on starts a worker per core: a bounded run keeps it to 2
 
     def dfm_want(self):
         return os.environ.get("NXSTYLE_DFM_EXPECTED", "1") == "1"
 
     def s_dfm(self):
-        """DFM (github.com/ryankembrey/FreeCAD-DFM-Workbench), on by default once its OCP is installed: two
-        30 x 20 x 10 blocks with a 15 x 5 step, one with the step's inside edge sharp (a known Sharp
-        Internal Corner), one with it filleted R2 (none)."""
+        """DFM (the bundled fork of github.com/ryankembrey/FreeCAD-DFM-Workbench), on by default once its OCP is
+        installed. Injection moulding: two 30 x 20 x 10 blocks with a 15 x 5 step, one with the step's inside
+        edge sharp (a known Sharp Internal Corner), one with it filleted R2 (none). CNC milling: a 40 x 30 x 10
+        block with a 20 x 10 x 5 pocket, its corners along the tool axis sharp (4 Tool Corner Radius findings)
+        or rounded R4 (none)."""
         if not self.dfm_want():
             return
         import Part
+        App.ParamGet("User parameter:BaseApp/Preferences/Mod/DFM").SetInt("ParallelWorkers", self.DFM_WORKERS)
         doc = App.newDocument("SmokeDFM")
+        pocket = Part.makeBox(20, 10, 5, App.Vector(10, 10, 5))
+        sharp = doc.addObject("Part::Feature", "Pocketed")
+        sharp.Shape = Part.makeBox(40, 30, 10).cut(pocket)
+        sharp.Placement.Base = App.Vector(60, 0, 0)
+        vertical = [e for e in pocket.Edges if abs(e.Vertexes[0].Point.z - e.Vertexes[1].Point.z) > 1]
+        rounded = doc.addObject("Part::Feature", "RoundedPocket")
+        rounded.Shape = Part.makeBox(40, 30, 10).cut(pocket.makeFillet(4.0, vertical))
+        rounded.Placement.Base = App.Vector(60, 40, 0)
         notched = Part.makeBox(30, 20, 10).cut(Part.makeBox(15, 20, 5, App.Vector(15, 0, 5)))
         inner = [i for i, e in enumerate(notched.Edges)
                  if all(abs(v.X - 15) < 1e-6 and abs(v.Z - 5) < 1e-6 for v in e.Vertexes)]
@@ -2144,9 +2167,10 @@ class Smoke:
         found = [w for w in Gui.getMainWindow().findChildren(kind, name) if w.isVisible()]
         return found[-1] if found else None
 
-    def dfm_run(self, target):
-        """Select the part, Moldability Validation on the ribbon, then the add-on's own panel: material
-        Default (category and process are its only ones and fill themselves), Run Analysis."""
+    def dfm_run(self, target, process=DFM_MOLDING):
+        """Select the part, Moldability Validation on the ribbon, then the add-on's own panel: the process and
+        the material chosen in its lists (directions start along +Z), Run analysis. The add-on then shows its
+        progress panel and, when done, its results panel (dfm_findings waits for it)."""
         doc = App.listDocuments().get("SmokeDFM")
         b = self.lc_button("DFM_SetupAnalysis")
         if doc is None or b is None:
@@ -2159,21 +2183,66 @@ class Smoke:
         b.click()
         QtWidgets.QApplication.processEvents()
         target_box = self.dfm_widget(QtWidgets.QLineEdit, "leSelectModel")
-        material = self.dfm_widget(QtWidgets.QComboBox, "cbMaterial")
-        run = self.dfm_widget(QtWidgets.QPushButton, "pbRunAnalysis")
+        choice = self.dfm_widget(QtWidgets.QComboBox, "cbManProcess")
         state = {"dialog": bool(Gui.Control.activeDialog()), "target": target_box.text() if target_box else None}
+        if choice is not None:
+            choice.setCurrentIndex(choice.findData(process[0]))
+            QtWidgets.QApplication.processEvents()
+            state["process"] = choice.currentText()
+        material = self.dfm_widget(QtWidgets.QComboBox, "cbMaterial")
         if material is not None:
-            material.setCurrentIndex(material.findText("Default"))
+            material.setCurrentIndex(material.findText(process[1]))
+            QtWidgets.QApplication.processEvents()
             state["material"] = material.currentText()
+        run = self.dfm_widget(QtWidgets.QPushButton, "pbRunAnalysis")
+        self._dfm_trees_before = self.dfm_trees()          # the run's results panel is a new one
+        self._dfm_deadline = time.monotonic() + 90
         if run is not None:
             state["run enabled"] = run.isEnabled()
-            run.click()                 # the add-on analyses in the click, then opens its results panel
+            state["run tooltip"] = run.toolTip()
+            run.click()
         self.info[f"dfm run {target}"] = state
 
+    @staticmethod
+    def dfm_trees():
+        """The add-on's results trees by C++ address (a wrapper's id is not stable)."""
+        import shiboken6
+        return {shiboken6.getCppPointer(w)[0]: w
+                for w in Gui.getMainWindow().findChildren(QtWidgets.QTreeView, "tvResults")}
+
+    def dfm_new_results(self):
+        """The results tree this run opened, once it has rows, or None."""
+        before = getattr(self, "_dfm_trees_before", {})
+        fresh = [w for p, w in self.dfm_trees().items() if p not in before]
+        tree = fresh[-1] if fresh else None
+        return tree if tree is not None and tree.model() is not None and tree.model().rowCount() else None
+
+    def s_dfm_wait_results(self):
+        """Until the run's results panel is up (or 90 s): come back in half a second. Never wait inside the step:
+        the add-on analyses in its progress panel while processing events, so a step can run inside that, and a
+        step looping there kept the analysis from going on ("Getting started" for good)."""
+        if self.dfm_want() and self.dfm_new_results() is None and time.monotonic() < getattr(self, "_dfm_deadline", 0):
+            self.again(self.s_dfm_wait_results, 500)
+
     def dfm_findings(self):
-        """What the results panel shows: {rule: [geometry of each finding]} and the rules listed as Passed."""
-        tree = self.dfm_widget(QtWidgets.QTreeView, "tvResults")
-        if tree is None:
+        """What the results panel shows: {rule: [geometry of each finding]} and the rules listed as Passed (the
+        wait step before has waited for it)."""
+        tree = self.dfm_new_results()
+        report = self.report_text().splitlines()
+        mw = Gui.getMainWindow()
+        titles = sorted({w.windowTitle() for w in mw.findChildren(QtWidgets.QWidget)
+                         if w.isVisible() and w.windowTitle() and w is not mw})
+        labels = [lb.text() for lb in mw.findChildren(QtWidgets.QLabel)
+                  if lb.isVisible() and lb.text() in ("Getting started",) or lb.text().startswith(("Measuring", "Checking"))]
+        bars = [(b.value(), b.maximum()) for b in mw.findChildren(QtWidgets.QProgressBar) if b.isVisible()]
+        run_buttons = [b.isEnabled() for b in mw.findChildren(QtWidgets.QPushButton, "pbRunAnalysis") if b.isVisible()]
+        self.info.setdefault("dfm waits", []).append({
+            "titles": titles, "labels": labels[:6], "bars": bars, "run buttons (enabled)": run_buttons,
+            "found": tree is not None, "dialog": bool(Gui.Control.activeDialog()),
+            "trees": [(w.isVisible(), w.model().rowCount() if w.model() else None)
+                      for w in self.dfm_trees().values()],
+            "report tail": report[-8:]})
+        if tree is None or tree.model() is None:
             return None, None
         model, kind, label = tree.model(), Qt.UserRole + 1, Qt.UserRole + 2
         findings, passed = {}, []
@@ -2230,6 +2299,37 @@ class Smoke:
                    "(the rule listed as Passed)",
                    findings is not None and self.DFM_RULE not in findings and self.DFM_RULE in passed,
                    {"findings": findings, "passed": passed})
+        self.dfm_close()
+
+    def s_dfm_run_pocket(self):
+        if self.dfm_want():
+            self.dfm_run("Pocketed", self.DFM_MILLING)
+
+    def s_dfm_result_pocket(self):
+        if not self.dfm_want():
+            return
+        findings, passed = self.dfm_findings()
+        self.info["dfm pocket"] = {"findings": findings, "passed": passed, "run": self.info.get("dfm run Pocketed")}
+        corners = (findings or {}).get(self.DFM_TOOL_RULE, [])
+        self.check("CNC Milling (3-axis) flags the four sharp inside corners of a pocket along the tool axis "
+                   "(Tool Corner Radius, the bundled fork's rule)", findings is not None and len(corners) == 4,
+                   {"findings": findings, "run": self.info.get("dfm run Pocketed")})
+        if findings is not None:
+            self.shot("11_dfm_cnc_milling.png")
+        self.dfm_close()
+
+    def s_dfm_run_rounded(self):
+        if self.dfm_want():
+            self.dfm_run("RoundedPocket", self.DFM_MILLING)
+
+    def s_dfm_result_rounded(self):
+        if not self.dfm_want():
+            return
+        findings, passed = self.dfm_findings()
+        self.info["dfm rounded"] = {"findings": findings, "passed": passed}
+        self.check("negative control: the same pocket with R4 corners has no Tool Corner Radius finding (aim for "
+                   "R3; the rule listed as Passed)", findings is not None and self.DFM_TOOL_RULE not in findings
+                   and self.DFM_TOOL_RULE in passed, {"findings": findings, "passed": passed})
         self.dfm_close()
 
     def s_dfm_after(self):
@@ -3105,12 +3205,18 @@ class Smoke:
                 Gui.getDocument(before.Name)
 
     # --------------------------------------------------------------- runner
+    def again(self, fn, delay):
+        """Run step fn again after delay ms, instead of waiting inside it (it counts as run once, when it ends)."""
+        self.steps.insert(0, (fn, delay))
+        self._again = True
+
     def next(self):
         if not self.steps:
             self.finish()
             return
         fn, delay = self.steps.pop(0)
         t0 = time.monotonic()
+        self._again = False
         try:
             fn()
         except Exception:
@@ -3118,7 +3224,8 @@ class Smoke:
             self.info[f"traceback {fn.__name__}"] = traceback.format_exc()
         # [name, seconds in the step, ms waited after it]: shows which steps a slower run spends its time in
         self.info.setdefault("step seconds", []).append([fn.__name__, round(time.monotonic() - t0, 2), delay])
-        self.ran.append(fn.__name__)
+        if not self._again:
+            self.ran.append(fn.__name__)
         QtCore.QTimer.singleShot(delay, self.next)
 
     def finish(self):
