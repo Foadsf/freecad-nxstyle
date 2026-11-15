@@ -66,13 +66,13 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.msvc }}
-      - name: Build the bundle
+      - name: Build the single-file executable
         shell: pwsh
         run: packaging/windows/build.ps1 -Arch ${{ matrix.arch }} -Out dist
       - uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}
-          path: dist/*.zip
+          path: dist/*.exe
           compression-level: 0
           retention-days: 7
 
@@ -146,7 +146,7 @@ jobs:
     env:
       NXSTYLE_EXPECT_FREECAD: ${{ needs.meta.outputs.freecad }}
       NXSTYLE_EXPECT_VERSION: ${{ needs.meta.outputs.version }}
-      BUNDLE: C:\nx\NX-Style-${{ needs.meta.outputs.version }}-windows-${{ matrix.arch }}
+      EXE: ${{ github.workspace }}\dl\NX-Style-${{ needs.meta.outputs.version }}-windows-${{ matrix.arch }}.exe
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -156,35 +156,43 @@ jobs:
         with:
           name: windows-${{ matrix.arch }}
           path: dl
-      - name: Unpack
+      - name: The executable carries the icon, the version, the right architecture and an intact payload
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force C:\nx | Out-Null
-          tar -xf (Get-ChildItem dl\*.zip).FullName -C C:\nx
+          Get-ChildItem dl
+          python -m pip install --disable-pip-version-check pefile zstandard==0.24.0
+          python packaging/check_exe.py $env:EXE --arch ${{ matrix.arch }} --version $env:NXSTYLE_EXPECT_VERSION --icon packaging/icons/nxstyle.ico
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          Get-ChildItem $env:BUNDLE
-      - name: NX-Style.exe carries the icon, the version and the right architecture
+          python packaging/windows/sfx_pack.py $env:EXE --verify
+      # PowerShell waits for a GUI program and gets its output and exit code when the output is piped
+      - name: First start unpacks it, then the headless check (freecadcmd loads NX-Style and its add-ons)
         shell: pwsh
         run: |
-          python -m pip install --disable-pip-version-check pefile
-          python packaging/check_exe.py "$env:BUNDLE\NX-Style.exe" --arch ${{ matrix.arch }} --version $env:NXSTYLE_EXPECT_VERSION --icon packaging/icons/nxstyle.ico
-      - name: Headless check (freecadcmd loads NX-Style and its add-ons)
+          & $env:EXE --headless-check 2>&1 | Tee-Object -Variable lines | Out-Host; $code = $LASTEXITCODE
+          if ($code) { exit $code }
+          if (-not ($lines -match "First start of NX-Style")) { Write-Error "the first start did not unpack"; exit 1 }
+      - name: A second start runs the unpacked copy without unpacking again
         shell: pwsh
-        run: '& "$env:BUNDLE\nxstyle.cmd" --headless-check; exit $LASTEXITCODE'
+        run: |
+          & $env:EXE --dry-run 2>&1 | Tee-Object -Variable lines | Out-Host; $code = $LASTEXITCODE
+          if ($code) { exit $code }
+          if ($lines -match "First start of NX-Style") { Write-Error "the second start unpacked again"; exit 1 }
+          Get-ChildItem "$env:LOCALAPPDATA\FreeCAD-NXStyle\runtime"
       - name: GUI check (FreeCAD starts with NX-Style)
         shell: pwsh
         env:
           NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
-        run: '& "$env:BUNDLE\nxstyle.cmd" --smoke-test C:\r\s --timeout 900 --max-memory-gb 6; exit $LASTEXITCODE'
+        run: '& $env:EXE --smoke-test C:\r\s --timeout 900 --max-memory-gb 6 2>&1 | Out-Host; exit $LASTEXITCODE'
       - name: OpenGL choice can be overridden
         shell: pwsh
         run: |
-          $sw = "$env:BUNDLE\FreeCAD\bin\opengl32.dll"
+          $rt = Get-ChildItem "$env:LOCALAPPDATA\FreeCAD-NXStyle\runtime" -Directory | Select-Object -First 1
+          $sw = Join-Path $rt.FullName "FreeCAD\bin\opengl32.dll"
           $env:NXSTYLE_SOFTWARE_GL = "1"
-          $o = & "$env:BUNDLE\nxstyle.cmd" --dry-run 2>&1 | Out-String
+          $o = & $env:EXE --dry-run 2>&1 | Out-String
           if ($o -notmatch "OpenGL: Mesa software renderer" -or -not (Test-Path $sw)) { Write-Error "forcing software rendering failed: $o"; exit 1 }
           $env:NXSTYLE_SOFTWARE_GL = "0"
-          $o = & "$env:BUNDLE\nxstyle.cmd" --dry-run 2>&1 | Out-String
+          $o = & $env:EXE --dry-run 2>&1 | Out-String
           if ($o -notmatch "OpenGL: system driver" -or (Test-Path $sw)) { Write-Error "forbidding software rendering failed: $o"; exit 1 }
           "both overrides work"
       - if: always()
