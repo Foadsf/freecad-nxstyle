@@ -219,12 +219,24 @@ def export_analysis(doc, folder):
 FORMAT_LIMITS = ("has no AP242 semantic form", "OCCT has no form variance")
 
 
-def losses_of(src, info):
+def losses_of(src, info, meta=None):
     """What the package does not carry as it is in the model: [{"what", "critical"}]. A loss the STEP format
     cannot hold through OpenCASCADE (FORMAT_LIMITS: pmi.json keeps it) is listed; values that are not current
-    (an invalid PMI, a stack-up without a valid result) or PMI the STEP lost for another reason are critical."""
-    from . import pmi_ui, stackup_ui
+    (an invalid PMI, a stack-up without a valid result) or PMI the STEP lost for another reason are critical.
+    So is a drawing whose title block names another part number or revision than the package (a rev C package
+    verified with a sheet that read "Revision: B"); a title block that states none is listed."""
+    from . import pmi_ui, stackup_ui, titleblock
     out = []
+    for page in [o for o in src.Objects if o.isDerivedFrom("TechDraw::DrawPage")]:
+        try:
+            texts = dict(page.Template.EditableTexts)
+        except Exception:
+            continue
+        for field, have, want in titleblock.identity_mismatches(texts, meta or {}):
+            what = "part number" if field == "drawing_number" else "revision"
+            out.append({"what": f"drawing {page.Label}: the title block states no {what}; the package is {want}"
+                        if not have else f"drawing {page.Label}: the title block's {what} is {have}, the package's "
+                        f"is {want} (Populate Title Block before the release)", "critical": bool(have)})
     for p in info.get("step_pmi_not_written", []) or []:
         out.append({"what": f"STEP: {p}", "critical": not any(k in p for k in FORMAT_LIMITS)
                     and "not valid" not in p})
@@ -296,7 +308,7 @@ def _build(doc, folder, name, meta, parts, released_file):
             info.update(export_pmi(src, os.path.join(folder, "pmi")))
         if "analysis" in parts:
             info["stackups"] = export_analysis(src, os.path.join(folder, "analysis"))
-        losses = losses_of(src, info)
+        losses = losses_of(src, info, meta)
     finally:
         if opened is not None:
             App.closeDocument(opened.Name)

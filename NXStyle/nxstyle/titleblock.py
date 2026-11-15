@@ -61,6 +61,25 @@ def values(info):
     return out
 
 
+#: Title block fields that say which part and revision a sheet is (template field -> release record key)
+IDENTITY = {"drawing_number": "part_number", "revision_index": "revision"}
+
+
+def identity_mismatches(texts, record):
+    """[(field, on the sheet, in the record)] where a sheet's title block names another part number or revision
+    than the release record it is packaged under; a blank field is listed with "" (the sheet states none).
+    Fields the template lacks are not compared."""
+    out = []
+    for field, key in IDENTITY.items():
+        want = str(record.get(key, "") or "").strip()
+        if field not in texts or not want or want == "-":
+            continue
+        have = str(texts.get(field) or "").strip()
+        if have != want:
+            out.append((field, have, want))
+    return out
+
+
 def fill(template_fields, info, keep=None):
     """The EditableTexts of a template: its fields filled from info; fields info does not cover keep
     their current text (keep)."""
