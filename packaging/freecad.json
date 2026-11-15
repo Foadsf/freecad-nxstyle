@@ -1,0 +1,32 @@
+{
+  "_comment": "The official FreeCAD release each NX-Style bundle carries, unmodified, with the SHA-256 its release page publishes. FreeCAD 1.1.4 has no Windows arm64 build, so windows-arm64 carries the x86_64 one, which Windows 11 on Arm runs through its x64 emulation.",
+  "version": "1.1.4",
+  "release": "https://github.com/FreeCAD/FreeCAD/releases/tag/1.1.4",
+  "assets": {
+    "windows-x86_64": {
+      "name": "FreeCAD_1.1.4-Windows-x86_64-py311.7z",
+      "sha256": "4828741fc91ee37fafcdb97a1abacb18b04ba451ac4372d9ff7a7349b36f4d6d"
+    },
+    "windows-arm64": {
+      "name": "FreeCAD_1.1.4-Windows-x86_64-py311.7z",
+      "sha256": "4828741fc91ee37fafcdb97a1abacb18b04ba451ac4372d9ff7a7349b36f4d6d",
+      "emulated": "x86_64"
+    },
+    "linux-x86_64": {
+      "name": "FreeCAD_1.1.4-Linux-x86_64-py311.AppImage",
+      "sha256": "f6dc6ba676e5ac96a565ebc8d657232f94c6158e85b4352141bd1a46f6b43434"
+    },
+    "linux-aarch64": {
+      "name": "FreeCAD_1.1.4-Linux-aarch64-py311.AppImage",
+      "sha256": "675d1a4295b2183e0e1d816a4b5557dcb63aeced4e60aaa28d6c3686f4c71dc9"
+    },
+    "macos-arm64": {
+      "name": "FreeCAD_1.1.4-macOS-arm64-py311.dmg",
+      "sha256": "071343b4abb70492b75c973f41eaf1d2528f9b9c7ea018d22a4f46ae14d27ac0"
+    },
+    "macos-x86_64": {
+      "name": "FreeCAD_1.1.4-macOS-x86_64-py311.dmg",
+      "sha256": "e173d0dcf47a5166b59cbb33adccf54cd751eb9ceaa2c86486230d0d079648c1"
+    }
+  }
+}

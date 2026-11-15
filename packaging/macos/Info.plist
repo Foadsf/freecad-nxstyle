@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleDisplayName</key>
+  <string>NX-Style</string>
+  <key>CFBundleExecutable</key>
+  <string>NX-Style</string>
+  <key>CFBundleIconFile</key>
+  <string>nxstyle</string>
+  <key>CFBundleIdentifier</key>
+  <string>io.github.foadsf.freecad-nxstyle</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>NX-Style</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>@VERSION@</string>
+  <key>CFBundleVersion</key>
+  <string>@VERSION@</string>
+  <key>CFBundleGetInfoString</key>
+  <string>FreeCAD NX-Style @VERSION@ with FreeCAD @FREECAD@. Not affiliated with Siemens.</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>@MINOS@</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeExtensions</key>
+      <array>
+        <string>FCStd</string>
+        <string>fcstd</string>
+      </array>
+      <key>CFBundleTypeName</key>
+      <string>FreeCAD Document</string>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+    </dict>
+  </array>
+</dict>
+</plist>

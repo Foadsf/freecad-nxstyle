@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=FreeCAD NX-Style
+GenericName=3D CAD modeler
+Comment=Unmodified FreeCAD with a Siemens NX-style interface. Not affiliated with Siemens.
+Exec=AppRun %F
+Icon=nxstyle
+Terminal=false
+Categories=Graphics;3DGraphics;Engineering;
+MimeType=application/x-extension-fcstd;
+Keywords=CAD;FreeCAD;NX;3D;modeling;
+X-AppImage-Version=@VERSION@
