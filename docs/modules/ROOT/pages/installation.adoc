@@ -2,9 +2,76 @@
 :description: Install FreeCAD NX-Style, start it, update it and remove it.
 
 FreeCAD NX-Style is a launcher and a FreeCAD module.
-You need FreeCAD itself, the project folder, and Python to run the launcher.
+There are two ways to get it: a release bundle, which carries FreeCAD itself and needs nothing else, or the project folder from Git, which runs with a FreeCAD you already have.
 
+[#bundle]
+== Download a release bundle
+
+Each https://github.com/Foadsf/freecad-nxstyle/releases[release] has one download per system: an official FreeCAD release, unmodified, with NX-Style, the add-ons it bundles and the launcher. Nothing is installed into the system and nothing is downloaded when it starts. Your normal FreeCAD, if you have one, is never touched.
+
+[cols="2,2,4",options="header"]
+|===
+| System | Download | Start it
+
+| Windows 10/11, Intel or AMD
+| `NX-Style-<version>-windows-x86_64.zip`
+| Unzip it anywhere you can write to, then double-click `NX-Style.exe`.
+
+| Windows 11 on Arm
+| `NX-Style-<version>-windows-arm64.zip`
+| As above. FreeCAD 1.1.4 has no Arm build for Windows, so FreeCAD runs through Windows' built-in x64 emulation; only `NX-Style.exe` is native.
+
+| Linux, Intel or AMD
+| `NX-Style-<version>-linux-x86_64.AppImage`
+| `chmod +x` the file, then run it. It needs FUSE (`fuse3` on current distributions) like any AppImage.
+
+| Linux on 64-bit Arm
+| `NX-Style-<version>-linux-aarch64.AppImage`
+| As above.
+
+| macOS, Apple silicon
+| `NX-Style-<version>-macos-arm64.dmg`
+| Open the disk image and drag NX-Style to Applications.
+
+| macOS, Intel
+| `NX-Style-<version>-macos-x86_64.dmg`
+| As above.
+|===
+
+`SHA256SUMS.txt` on the release page lists the checksum of each download (`sha256sum -c SHA256SUMS.txt --ignore-missing` on Linux, `shasum -a 256` on macOS, `Get-FileHash` in PowerShell).
+
+Every bundle runs the same launcher as the project folder, so every xref:#options[launcher option] works when you give it on the command line:
+
+[cols="1,3",options="header"]
+|===
+| System | From a terminal
+
+| Windows | `nxstyle.cmd --dry-run` in the unzipped folder (it waits and prints; `NX-Style.exe` is for double-clicking)
+| Linux | `./NX-Style-<version>-linux-x86_64.AppImage --dry-run`
+| macOS | `/Applications/NX-Style.app/Contents/MacOS/NX-Style --dry-run`
+|===
+
+`--headless-check` loads NX-Style and its add-ons in the bundled FreeCAD without a window and says whether all of it loads; the release workflow runs it, and the start-up steps of the xref:testing.adoc[self-test], on every bundle before a release.
+
+First start of a downloaded bundle::
+The bundles are not signed by Apple or Microsoft yet.
+On macOS the first start is refused until you allow it in *System Settings › Privacy & Security › Open Anyway* (or run `xattr -dr com.apple.quarantine /Applications/NX-Style.app`).
+On Windows, SmartScreen may ask: *More info › Run anyway*.
+
+OpenGL without a GPU driver::
+FreeCAD needs OpenGL 2 or newer, and no bundle carries a GPU maker's driver: each uses the system's.
+In a virtual machine, over a remote desktop or without a working GPU driver, the Windows and Linux bundles notice and start FreeCAD on Mesa's software renderer instead (the first line they print says which). It is slower but works.
+Set `NXSTYLE_SOFTWARE_GL=1` to force software rendering, `0` to forbid it.
+On Linux the software renderer is the system's Mesa, which every desktop distribution has (Debian/Ubuntu: `libgl1-mesa-dri`, Fedora: `mesa-dri-drivers`).
+
+To update a bundle, download the new one; the NX profile is kept (xref:#profile[]). To remove it, delete the folder, AppImage or app, and the NX profile if you want.
+
+The rest of this page is about running NX-Style from the project folder with a FreeCAD you installed yourself.
+
+[#source]
 == Requirements
+
+You need FreeCAD itself, the project folder, and Python to run the launcher.
 
 [cols="1,3",options="header"]
 |===
@@ -77,6 +144,7 @@ Open files directly by naming them:
 python launch_nx.py part.FCStd
 ----
 
+[#options]
 == Launcher options
 
 [cols="2,5",options="header"]
@@ -133,6 +201,9 @@ python launch_nx.py part.FCStd
 
 | `--smoke-test OUTDIR`, `--tutorial OUTDIR`
 | Run the self-test or the tutorial replay. See xref:testing.adoc[].
+
+| `--headless-check`
+| Loads NX-Style and the add-ons it bundles in this FreeCAD's `freecadcmd` (no window), in a throwaway profile, prints each check and exits 0 only if all of it loads.
 |===
 
 [#profile]

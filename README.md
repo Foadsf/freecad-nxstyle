@@ -6,6 +6,10 @@ Run your normal, unmodified FreeCAD with a user interface laid out and behaving 
 
 **Documentation: [foadsf.github.io/freecad-nxstyle](https://foadsf.github.io/freecad-nxstyle)**: installation, a five-minute first part, step-by-step tutorials (textbook exercises and precision-engineering work), every keyboard shortcut and every setting.
 
+**Download:** each [release](https://github.com/Foadsf/freecad-nxstyle/releases) has a self-contained bundle per system, an official FreeCAD 1.1.4 with NX-Style and its add-ons, nothing else to install: Windows x86_64 and arm64 (zip, run `NX-Style.exe`), Linux x86_64 and aarch64 (AppImage), macOS Apple silicon and Intel (dmg). See [Installation](https://foadsf.github.io/freecad-nxstyle/nxstyle/installation.html) and [packaging/README.md](packaging/README.md).
+
+Or run it from the project folder with a FreeCAD you already have:
+
 ```bash
 git clone --recursive https://github.com/Foadsf/freecad-nxstyle
 ```
