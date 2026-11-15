@@ -66,6 +66,7 @@ Type the owner, the size and corner, and a margin: members keep it to the claim'
 *Level* sets whether sub-assemblies are checked as one solid or part by part (xref:#components[]).
 *Keep-out* claims have no members.
 A claim can also take its shape from another object (its *Source* property), such as a sketch extruded by the system architect.
+The claim sits where its source is, also inside a module's App::Part, and follows it when it moves. The source is the shape of a space, not a part of the layout: the checks leave it out, unless a claim also lists it as a member.
 
 *Check Volume Claims*:: Every claim against every part, and every claim against every other claim:
 +
