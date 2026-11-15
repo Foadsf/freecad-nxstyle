@@ -209,6 +209,9 @@ jobs:
       NXSTYLE_EXPECT_FREECAD: ${{ needs.meta.outputs.freecad }}
       NXSTYLE_EXPECT_VERSION: ${{ needs.meta.outputs.version }}
       IMG: ${{ github.workspace }}/dl/NX-Style-${{ needs.meta.outputs.version }}-linux-${{ matrix.arch }}.AppImage
+    defaults:
+      run:
+        shell: bash          # -eo pipefail: a failing run is not hidden by tee
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -238,23 +241,17 @@ jobs:
       - name: GUI check on the system's OpenGL (Xvfb gives Mesa)
         env:
           NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
+        # Debian's xvfb-run runs the command with 2>&1: the AppRun's OpenGL line arrives on stdout
         run: |
-          rc=0
-          xvfb-run -a -s "-screen 0 1920x1200x24" "$IMG" --smoke-test "$RUNNER_TEMP/s1" --timeout 900 2> err1.txt || rc=$?
-          cat err1.txt >&2
-          [ "$rc" -eq 0 ] || exit "$rc"
-          grep -q "OpenGL: system driver" err1.txt
-      - name: GUI check with a broken vendor driver falls back to software rendering
+          xvfb-run -a -s "-screen 0 1920x1200x24" "$IMG" --smoke-test "$RUNNER_TEMP/s1" --timeout 900 2>&1 | tee out1.txt
+          grep -q "^OpenGL: system driver" out1.txt
+      - name: GUI check with a broken system driver falls back to software rendering
         env:
           NXSTYLE_SMOKE_ONLY: s_static,s_icon_theme,s_document,s_strata
-          __GLX_VENDOR_LIBRARY_NAME: nvidia      # no NVIDIA driver here: the system's OpenGL fails
+          GALLIUM_DRIVER: bogus        # a misconfigured Mesa: the system's OpenGL gives no context at all
         run: |
-          rc=0
-          xvfb-run -a -s "-screen 0 1920x1200x24" "$IMG" --smoke-test "$RUNNER_TEMP/s2" --timeout 900 2> err2.txt || rc=$?
-          cat err2.txt >&2
-          [ "$rc" -eq 0 ] || exit "$rc"
-          grep -q "OpenGL: Mesa software renderer" err2.txt
-          grep -q "the system driver gave none" err2.txt
+          xvfb-run -a -s "-screen 0 1920x1200x24" "$IMG" --smoke-test "$RUNNER_TEMP/s2" --timeout 900 2>&1 | tee out2.txt
+          grep -q "^OpenGL: Mesa software renderer (.*), the system driver gave none" out2.txt
       - if: always()
         uses: actions/upload-artifact@v4
         with:
