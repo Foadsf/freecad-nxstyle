@@ -2731,6 +2731,7 @@ class Smoke:
             pin.Radius, pin.Height = 2, 10
             pin.Placement.Base = App.Vector(20, 20, 0)                 # through the plate: 5 mm of a Ø4 pin
             sub = doc.addObject("App::Part", "Fixture")
+            sub.Label = "Fixture source"                               # labels are unique: the link takes "Fixture"
             sub.addObject(plate)
             sub.addObject(pin)
             top = doc.addObject("App::Part", "Machine")
@@ -2751,12 +2752,14 @@ class Smoke:
             vol = rows[0]["volume"] if rows else 0.0
             panel.tree.setCurrentItem(panel.tree.topLevelItem(0).child(0))
             panel.study()
-            picked = sorted(s.SubElementNames[0] if s.SubElementNames else "" for s in Gui.Selection.getSelectionEx("", 0))
+            # picks under one root (here both under Machine) share one SelectionObject: read all its sub-elements
+            picked = sorted(f"{s.ObjectName}:{n}" for s in Gui.Selection.getSelectionEx("", 0)
+                            for n in (s.SubElementNames or [""]))
             panel.restore()
             self.check("Clearance Browser at component level: the clash inside a linked sub-assembly, named by path; "
                        "Study Interference selects both parts",
                        top_rows == 0 and cset.Level == "Components" and names == [("Fixture / Pin", "Fixture / Plate")]
-                       and abs(vol - 3.14159265 * 4 * 5) < 1e-3 and picked == ["FixtureLink.Pin.", "FixtureLink.Plate."],
+                       and abs(vol - 3.14159265 * 4 * 5) < 1e-3 and picked == ["Machine:FixtureLink.Pin.", "Machine:FixtureLink.Plate."],
                        f"top level rows {top_rows}, level {cset.Level}, rows {names}, volume {vol:.3f}, "
                        f"selected {picked}")
         finally:
