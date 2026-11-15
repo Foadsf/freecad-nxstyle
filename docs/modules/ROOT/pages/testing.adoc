@@ -217,6 +217,24 @@ python launch_nx.py --smoke-test out1 --profile p
 python launch_nx.py --smoke-test out2 --profile p
 ----
 
+[#run]
+== Running your own script
+
+`--run` runs a Python script in FreeCAD with NX-Style and the add-ons it bundles (Strata, SheetMetal, LCInterlocking, DFM...), with the same bounds as a test run. Use it for batch jobs: building parts, exporting drawings, checking a model.
+
+[source,bash]
+----
+python launch_nx.py --run build.py --env PART=tank --max-memory-gb 6 --timeout 900
+----
+
+* The script runs once NX-Style is up: the main window, the ribbons and the add-ons are there. It runs as `+__main__+`, and its own folder comes first on `sys.path`. To let the user interface catch up, for example after pressing a panel's button, it calls `QApplication.processEvents()` itself.
+* Parameters go in as environment variables (`--env NAME=VALUE`, repeatable).
+* When the script ends, the documents are closed *without saving* and FreeCAD closes, so the script saves what it wants to keep.
+* The launcher prints what the script printed, and its traceback if it raised. It then exits with the script's exit code: `sys.exit(n)` gives `n`, an uncaught exception gives 1. If the run itself fails, the launcher's codes in the table above apply: 3 timed out, 4 memory ceiling, 5 another run is going. A script that ends FreeCAD itself with `os._exit(n)` gives `n`, with a note that no result was recorded.
+* A throwaway profile is used unless you give `--profile DIR`. On Windows the run uses a hidden desktop unless `--visible`. The default time limit is 1800 s.
+
+Test and script runs never overlap. `--lock-wait SECONDS` waits for the other run instead of refusing.
+
 == From results to the docs
 
 The tutorial pages' step tables come from `docs/results/tutorials.json`: a replay's steps and the FreeCAD version, nothing else.

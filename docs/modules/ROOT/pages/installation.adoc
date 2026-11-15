@@ -202,6 +202,15 @@ python launch_nx.py part.FCStd
 | `--smoke-test OUTDIR`, `--tutorial OUTDIR`
 | Run the self-test or the tutorial replay. See xref:testing.adoc[].
 
+| `--run SCRIPT`
+| Runs your Python script in FreeCAD with NX-Style and the add-ons it bundles, bounded like a test run, and exits with the script's exit code. See xref:testing.adoc#run[].
+
+| `--env NAME=VALUE`
+| Sets an environment variable for FreeCAD; repeat it for several. A `--run` script reads its parameters this way.
+
+| `--lock-wait SECONDS`
+| When another test or script run is going, waits up to this long for it instead of refusing with exit code 5.
+
 | `--headless-check`
 | Loads NX-Style and the add-ons it bundles in this FreeCAD's `freecadcmd` (no window), in a throwaway profile, prints each check and exits 0 only if all of it loads.
 |===
