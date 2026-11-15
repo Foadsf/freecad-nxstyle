@@ -154,13 +154,16 @@ def place_revision_block(page, rows):
 
 
 def apply(page, values, template=None, rows=None):
-    """Fill the page's title block (switching to template first, when given) and place the revision block."""
+    """Fill the page's title block (switching to template first, when given) and place the revision block.
+    values may name template fields ("drawing_number") or canonical keys as info() returns them
+    ("part_number"), so apply(page, info(page)) fills the block; a template field named outright wins."""
     doc = page.Document
     keep = dict(page.Template.EditableTexts)
     if template:
         page.Template.Template = template
         doc.recompute()
         keep = {}                     # a new template's texts are its samples ("A. Nemesis"): not this part's
+    values = {**titleblock.values(values), **values}
     page.Template.EditableTexts = {f: values.get(f, keep.get(f, "")) for f in template_fields(page)}
     from . import pmi_ui
     pmi_ui.tolerancing_note(page)    # the title block states the tolerancing now: Inherit PMI's note goes

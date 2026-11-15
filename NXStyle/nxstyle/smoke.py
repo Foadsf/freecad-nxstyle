@@ -2564,8 +2564,9 @@ class Smoke:
             doc.recompute()
             doc.Meta = {"DB_PART_NO": "PLT-300", "DB_PART_REV": "C", "DB_PART_NAME": "PLATE, COVER"}
             had = titleblock_ui.has_title_block(page)
-            values = {k: v for k, v in titleblock_ui.titleblock.values(titleblock_ui.info(page)).items()}
-            titleblock_ui.apply(page, values, titleblock_ui.iso_template(page), [("C", "First release", "", "")])
+            # info()'s canonical keys go straight in (part_number fills drawing_number); the panel passes field names
+            titleblock_ui.apply(page, titleblock_ui.info(page), titleblock_ui.iso_template(page),
+                                [("C", "First release", "", "")])
             t = dict(page.Template.EditableTexts)
             block = [v for v in page.Views if getattr(v, "NX_Kind", "") == "revision block"]
             self.check("Populate Title Block: ISO 7200 fields from the part's attributes, a revision block",
