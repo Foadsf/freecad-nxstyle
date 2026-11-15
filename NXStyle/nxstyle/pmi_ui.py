@@ -1429,6 +1429,12 @@ def inherit(view, objs=None, refresh=True):
     page = gdt_ui.owning_page(view)
     doc = view.Document
     made, skipped = [], []
+    if not wait_for_lines(view):
+        objs = objs if objs is not None else all_pmi(doc)
+        skipped = [(o.Label, f"the view has no lines: TechDraw had not drawn it after {LINES_WAIT_S} s")
+                   for o in objs]
+        last_inherit[view.Name] = skipped
+        return made, skipped
     anns = {a["id"]: a for a in annotations(doc)}
     refreshed = refresh_inherited(doc, page) if refresh else set()
     on_sheet = {getattr(v, "NX_Pmi", "") for v in page.Views}
@@ -1506,6 +1512,25 @@ def inherit(view, objs=None, refresh=True):
 
 last_inherit = {}
 last_inherit_how = {}
+LINES_WAIT_S = 30
+
+
+def wait_for_lines(view, timeout_s=LINES_WAIT_S):
+    """Whether the view has its lines, waiting for them as a user waits for the view to appear. In the GUI
+    TechDraw draws a new or changed view in a background thread, and its edges are empty until then: Inherit
+    PMI right after creating the views placed nothing ("no matching edge" for circles the PDF shows)."""
+    if view.getVisibleEdges():
+        return True
+    if not App.GuiUp:                  # without the GUI the recompute draws the view
+        return False
+    import time
+    end = time.monotonic() + timeout_s
+    while time.monotonic() < end:
+        QtWidgets.QApplication.processEvents()
+        if view.getVisibleEdges():
+            return True
+        time.sleep(0.02)
+    return False
 
 
 # ---------------------------------------------- inherited annotations follow their PMI
@@ -1736,11 +1761,15 @@ def inherit_dimension(view, page, o, a):
     if a.get("basic"):
         dim.TheoreticalExact = True
     elif plus or minus:
-        dim.EqualTolerance = abs(plus - minus) < 1e-12
+        # the deviations as text: TechDraw's own formatting follows the unit schema, which writes 0.05 mm as
+        # 50 µm ("± 50" on the sheet, an H7 bore's +0.018 as "+18")
+        over, under, equal = pmi.sheet_deviations(plus, minus)
+        dim.EqualTolerance = equal
         dim.OverTolerance = plus
         dim.UnderTolerance = -minus
-        dim.FormatSpecOverTolerance = "%+.3w"
-        dim.FormatSpecUnderTolerance = "%+.3w"
+        dim.ArbitraryTolerances = True
+        dim.FormatSpecOverTolerance = over
+        dim.FormatSpecUnderTolerance = under
     count = f"{a['count']}X " if a.get("count", 1) > 1 else ""
     fit = f" {a['fit']}" if a.get("fit") else ""
     env = f" {pmi.ENVELOPE}" if a.get("envelope") else ""

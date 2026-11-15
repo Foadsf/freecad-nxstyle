@@ -69,6 +69,17 @@ class Text(unittest.TestCase):
         a = {"kind": "dimension", "dim_type": "distance", "nominal": 10.0, "plus": 0.05, "minus": -0.02}
         self.assertEqual(pmi.dimension_text(a), "10.000 +0.050/+0.020")
 
+    def test_sheet_deviations_keep_millimetres(self):
+        # what a drawing shows; TechDraw's own formatting turned 0.05 into "50" (µm) and +0.018 into "+18"
+        self.assertEqual(pmi.sheet_deviations(0.05, 0.05), ("0.05", "0.05", True))
+        self.assertEqual(pmi.sheet_deviations(0.1, 0.1), ("0.1", "0.1", True))
+        self.assertEqual(pmi.sheet_deviations(0.018, 0.0), ("+0.018", "0", False))       # Ø16 H7
+        self.assertEqual(pmi.sheet_deviations(0.0, 0.013), ("0", "-0.013", False))      # Ø20 h6
+        self.assertEqual(pmi.sheet_deviations(0.1, 0.05), ("+0.10", "-0.05", False))    # same decimals, ISO 129-1
+        self.assertEqual(pmi.sheet_deviations(0.05, -0.02), ("+0.05", "+0.02", False))  # zone above nominal
+        self.assertEqual(pmi.sheet_deviations(0.0004, 0.0), ("0", "0", True))           # below the last digit
+        self.assertEqual(pmi.sheet_deviations(1.0, 0.5), ("+1.0", "-0.5", False))
+
 
 class Checks(unittest.TestCase):
     def test_the_plate_is_clean(self):
