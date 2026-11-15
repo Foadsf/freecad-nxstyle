@@ -159,6 +159,19 @@ def penetration(common):
         return min(bb.XLength, bb.YLength, bb.ZLength)
 
 
+def distance(sa, sb):
+    """Shortest distance between two solids that share no volume. Solids that touch are found by their section
+    first: distToShape cannot skip any pair of faces when they all lie 0 apart, and a pocketed plate of 1458
+    faces resting on a panel took 1417 s to return 0 (the section: a fraction of a second)."""
+    try:
+        sec = sa.section(sb)
+        if not sec.isNull() and (sec.Edges or sec.Vertexes):
+            return 0.0
+    except Exception:
+        pass
+    return sa.distToShape(sb)[0]
+
+
 def analyse_pair(a, b, sa, sb, zone):
     """dict for one pair, or None when they are clear."""
     if sa.BoundBox.isValid() and sb.BoundBox.isValid():
@@ -168,7 +181,7 @@ def analyse_pair(a, b, sa, sb, zone):
             return None
     common = sa.common(sb)
     cv = common.Volume if not common.isNull() else 0.0
-    dist = 0.0 if cv > cc.VOLUME_TOL else sa.distToShape(sb)[0]
+    dist = 0.0 if cv > cc.VOLUME_TOL else distance(sa, sb)
     kind = cc.classify(dist, cv, sa.Volume, sb.Volume, zone)
     if kind is None:
         return None
